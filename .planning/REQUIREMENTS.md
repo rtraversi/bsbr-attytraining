@@ -147,8 +147,82 @@ A requirement is complete when:
 
 ## Traceability
 
-*(Filled by roadmap step — maps each REQ-ID to the phase that delivers it.)*
+Every v1 REQ-ID is mapped to exactly one phase. Coverage: **63 / 63 (100%)**.
 
 | REQ-ID | Phase |
 |--------|-------|
-| _(populated by roadmapper)_ | |
+| FND-01 | Phase 0 |
+| FND-02 | Phase 0 |
+| FND-03 | Phase 0 |
+| FND-04 | Phase 0 |
+| FND-05 | Phase 0 |
+| FND-06 | Phase 0 |
+| FND-07 | Phase 0 |
+| AUTH-01 | Phase 1 |
+| AUTH-02 | Phase 1 |
+| AUTH-03 | Phase 1 |
+| AUTH-04 | Phase 1 |
+| AUTH-05 | Phase 1 |
+| PAY-01 | Phase 1 |
+| PAY-02 | Phase 1 |
+| PAY-03 | Phase 1 |
+| PAY-04 | Phase 1 |
+| PAY-05 | Phase 1 |
+| PAY-06 | Phase 1 |
+| PAY-07 | Phase 1 |
+| COURSE-01 | Phase 2 |
+| COURSE-02 | Phase 2 |
+| COURSE-03 | Phase 2 |
+| COURSE-04 | Phase 2 |
+| COURSE-05 | Phase 2 |
+| COURSE-06 | Phase 2 |
+| COURSE-07 | Phase 2 |
+| COURSE-08 | Phase 2 |
+| COURSE-09 | Phase 2 |
+| COURSE-10 | Phase 2 |
+| COURSE-11 | Phase 2 |
+| CERT-01 | Phase 1 |
+| CERT-02 | Phase 1 |
+| CERT-03 | Phase 1 |
+| CERT-04 | Phase 1 |
+| CERT-05 | Phase 1 |
+| CERT-06 | Phase 1 |
+| CERT-07 | Phase 1 |
+| CERT-08 | Phase 1 |
+| CERT-09 | Phase 1 |
+| DASH-01 | Phase 3 |
+| DASH-02 | Phase 3 |
+| DASH-03 | Phase 3 |
+| DASH-04 | Phase 3 |
+| DASH-05 | Phase 3 |
+| DASH-06 | Phase 3 |
+| DASH-07 | Phase 3 |
+| DASH-08 | Phase 3 |
+| DASH-09 | Phase 3 |
+| AUTO-01 | Phase 1 |
+| AUTO-02 | Phase 1 |
+| AUTO-03 | Phase 4 |
+| AUTO-04 | Phase 4 |
+| AUTO-05 | Phase 4 |
+| AUTO-06 | Phase 4 |
+| AUDIT-01 | Phase 0 |
+| AUDIT-02 | Phase 0 |
+| AUDIT-03 | Phase 0 |
+| RENEW-01 | Phase 5 |
+| RENEW-02 | Phase 5 |
+| RENEW-03 | Phase 5 |
+| RENEW-04 | Phase 5 |
+| RENEW-05 | Phase 5 |
+| RENEW-06 | Phase 5 |
+
+### Phase Coverage Summary
+
+| Phase | Requirement count | Categories |
+|-------|-------------------|------------|
+| Phase 0 — Foundations | 10 | FND-01..07, AUDIT-01..03 |
+| Phase 1 — Hello-cert end-to-end stub | 23 | AUTH-01..05, PAY-01..07, CERT-01..09, AUTO-01..02 |
+| Phase 2 — Real video + custom React quiz | 11 | COURSE-01..11 |
+| Phase 3 — Firm admin dashboard | 9 | DASH-01..09 |
+| Phase 4 — Automation hardening | 4 | AUTO-03..06 |
+| Phase 5 — Renewal flow + launch polish | 6 | RENEW-01..06 |
+| **Total** | **63** | **9 categories, 0 orphans** |
