@@ -19,8 +19,29 @@
 - **Phase:** 0 of 5
 - **Phase name:** Foundations
 - **Plan:** None (not yet planned)
-- **Status:** Roadmap approved; ready for `/gsd:plan-phase 0`
+- **Status:** Infrastructure prerequisites complete; Phase 0 code not yet started
 - **Progress:** `[░░░░░░░░░░░░░░░░░░░░] 0% — 0 of 6 phases complete`
+
+### Infrastructure Prerequisites Completed (pre-Phase 0)
+
+| Item | Status | Owner | Notes |
+|------|--------|-------|-------|
+| Cloudflare account | Done | Rob | Connected to GitHub |
+| Supabase (dev + prod projects) | Done | Rob | Pro tier not yet confirmed |
+| Resend account | Done | Rob | Sending domain config not yet verified |
+| GitHub repo (`rtraversi/bsbr-attytraining`) | Done | Max | — |
+| Node.js | Done | Max | ⚠️ Installed v24; spec calls for v22 LTS |
+| pnpm | Done | Max | — |
+| Wrangler CLI | Done | Max | — |
+| Supabase CLI | In Progress | Max | — |
+| Stripe account | Not started | Rob | — |
+| Stripe CLI | Not started | Rob | — |
+
+### Phase 0 Requirements Status (FND-01..07, AUDIT-01..03)
+
+All 10 Phase 0 requirements are **not yet started** — none require accounts alone; they require running code, migrations, and live pages. Phase 0 work begins once Stripe account is set up and Max completes Supabase CLI install.
+
+⚠️ **Branding note:** FND-04 references `builtsmartbyrob.com` as the sending domain. Domain decision has moved to `aistaffcompliance.com` — sending domain config should target `noreply@aistaffcompliance.com`.
 
 ---
 
@@ -51,15 +72,17 @@
 
 ### Locked Decisions (carried from PROJECT.md + research)
 
-- **Stack:** Next.js 15.5 LTS (App Router) on Netlify PRO, Supabase (Auth/Postgres/Storage) Pro tier, Cloudflare Stream, Stripe (`2025-09-30.acacia`), n8n self-hosted at `n8n.katychavezlaw.com`, Resend (email via n8n).
-- **Stripe webhook lands in Next.js, not n8n.** HMAC verified, idempotency table `processed_stripe_events(event_id PK)`, transactional Postgres write, fire-and-forget to n8n for side effects.
-- **PDF generation lives in n8n** (Puppeteer node). Not Netlify Functions. Not Supabase Edge Functions.
+- **Stack (rescoped 2026-06-11):** Next.js 15.5 LTS (App Router, **Edge Runtime throughout**) on **Cloudflare Pages** (`@cloudflare/next-on-pages`), Supabase (Auth/Postgres/Storage) Pro tier, Cloudflare Stream, Stripe (`2025-09-30.acacia`), **CF Workers** for all automation, Resend (called directly via REST API from CF Workers). No n8n. No VPS. No Netlify for this product.
+- **Stripe webhook lands in a CF Pages Route Handler (Edge Runtime).** Raw body via `await req.text()`, HMAC verified with Stripe SDK v17 (Edge-compatible), idempotency table `processed_stripe_events(event_id PK)`, transactional Postgres write, fire-and-forget POST to CF Worker cert endpoint for async work.
+- **PDF generation lives in a CF Worker** using `pdf-lib` (pure JS, no headless browser, no VPS). Triggered by Supabase Database Webhook → authenticated POST to the Worker.
+- **JWT signing for Cloudflare Stream:** use `jose` library (Edge-compatible), NOT `jsonwebtoken` (Node.js only).
 - **Quiz layer is custom React** (~150–200 lines) over Cloudflare Stream native player. Not H5P. Not Articulate Rise. Fallback to H5P Path A only if custom quiz exceeds ~5 days of work.
 - **Data model:** single `firm_members(firm_id, user_id, role)` table; `role ∈ {firm_admin, employee}`. `employees` may be exposed as a VIEW for UI clarity.
 - **Cert downloads:** routed through `/api/certificates/[id]/url` (auth-checked) → 60-second Supabase signed URL. No raw storage URLs in emails.
 - **Cloudflare Stream:** signed playback URLs minted server-side on every page load (4–8h TTL); Allowed Origins locked to production domain.
 - **Auth:** magic-link invite + password on first visit; password + magic-link backup for repeat logins.
 - **Environments:** two Supabase projects (`attytraining-dev`, `attytraining-prod`). Free-tier 2-project cap forces this.
+- **Note:** `research/STACK.md` was written for the original Netlify + n8n stack. The CF Pages + CF Workers architecture supersedes any Netlify/n8n guidance in that file.
 
 ### Open Decisions (from research/SUMMARY.md "Decisions Needed Before Phase 1")
 
