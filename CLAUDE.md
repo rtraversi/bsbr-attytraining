@@ -330,7 +330,8 @@ This project is built by two people (Rob and Max) on different machines, so the 
   **Date + who** (Rob or Max), **What was done** (features, files, decisions), **Status** (working vs.
   needs deploy/run/test), **Next steps**, **Open questions**. Commit it with the session's final commit
   so the other person can pull it.
-- **Load:** at the start of every session, read `session_handoff.md` at the repo root (suggest a
-  `git pull` first if the working tree is clean) and surface a 2–3 sentence recap: what was last worked
-  on, by whom, and the next steps. Read it once per session, not every turn.
+- **Load:** at the start of every session, FIRST run `git pull` to fetch the other person's latest
+  handoff/work (if the working tree has uncommitted changes, skip the pull, say so, and read the local
+  copy instead). Then read `session_handoff.md` at the repo root and surface a 2–3 sentence recap:
+  what was last worked on, by whom, and the next steps. Do this once per session, not every turn.
 - This file is the cross-person sync point — it complements (does not replace) GSD's `.planning/` state.
