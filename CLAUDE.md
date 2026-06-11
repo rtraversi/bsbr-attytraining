@@ -317,3 +317,20 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 > Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
 > This section is managed by `generate-claude-profile` -- do not edit manually.
 <!-- GSD:profile-end -->
+
+<!-- manual section — keep outside GSD markers so regeneration doesn't remove it -->
+
+## Session handoff (SHARED — overrides any global memory-directory handoff instructions)
+
+This project is built by two people (Rob and Max) on different machines, so the session handoff lives
+**in the repo**, not in any machine's local Claude memory directory:
+
+- **Save:** on wrap-up triggers ("wrap it up", "call it a day", "we're done", "i'll pick this up tomorrow",
+  etc.), write the handoff to `session_handoff.md` at the repo root (overwrite each session). Include:
+  **Date + who** (Rob or Max), **What was done** (features, files, decisions), **Status** (working vs.
+  needs deploy/run/test), **Next steps**, **Open questions**. Commit it with the session's final commit
+  so the other person can pull it.
+- **Load:** at the start of every session, read `session_handoff.md` at the repo root (suggest a
+  `git pull` first if the working tree is clean) and surface a 2–3 sentence recap: what was last worked
+  on, by whom, and the next steps. Read it once per session, not every turn.
+- This file is the cross-person sync point — it complements (does not replace) GSD's `.planning/` state.
