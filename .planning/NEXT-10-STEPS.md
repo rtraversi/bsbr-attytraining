@@ -1,7 +1,7 @@
 # Next 10 Steps — AI Compliance Training Platform
 
 Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps" spreadsheet.
-**Updated 2026-06-12** — reflects the adapter swap from `@cloudflare/next-on-pages` to `@opennextjs/cloudflare` and current status of each item.
+**Updated 2026-06-12** — reflects the adapter swap from `@cloudflare/next-on-pages` (deprecated) to `@opennextjs/cloudflare` and current status of each item.
 
 ---
 
@@ -42,9 +42,9 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
 **Owner:** Max | **Status:** In Progress (CHANGED — adapter swap required)
 
 > **The `create next-app@15.5` scaffold is already in place and `pnpm dev` works. Do NOT start from scratch.**
-> **Remove any `@cloudflare/next-on-pages` work. The adapter has changed. Follow the steps below.**
+> **Remove any `@cloudflare/next-on-pages` work (deprecated adapter). Follow the steps below.**
 
-- [ ] Remove `@cloudflare/next-on-pages` if it was added: `pnpm remove @cloudflare/next-on-pages`
+- [ ] Remove `@cloudflare/next-on-pages` (deprecated) if it was added: `pnpm remove @cloudflare/next-on-pages`
 - [ ] Install the OpenNext adapter: `pnpm add @opennextjs/cloudflare@latest`
 - [ ] Install/upgrade Wrangler as dev dep: `pnpm add -D wrangler@latest`
 - [ ] Create `wrangler.jsonc` at the project root with this shape:
@@ -198,7 +198,7 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
 
 ## What Changed vs the Spreadsheet (2026-06-12)
 
-The original "First 10 Steps" spreadsheet was written when the adapter decision was `@cloudflare/next-on-pages` on CF Pages. Three things changed on 2026-06-12:
+The original "First 10 Steps" spreadsheet was written when the adapter decision was `@cloudflare/next-on-pages` (now deprecated by Cloudflare) on CF Pages. Three things changed on 2026-06-12:
 
 1. **Adapter swap in Step 3:** `@cloudflare/next-on-pages` → `@opennextjs/cloudflare`. The old adapter is deprecated by Cloudflare; the OpenNext adapter on CF Workers is the official path. The scaffold method, config files (`wrangler.jsonc` + `open-next.config.ts`), and scripts all changed accordingly. `export const runtime = 'edge'` must NOT be added anywhere.
 
