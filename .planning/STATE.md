@@ -27,7 +27,7 @@
 | Item | Status | Owner | Notes |
 |------|--------|-------|-------|
 | Cloudflare account | Done | Rob | Connected to GitHub |
-| Supabase (dev + prod projects) | Done | Rob | Pro tier not yet confirmed |
+| Supabase (dev + prod projects) | Done ⚠️ | Rob | Pro tier not yet confirmed; ⚠️ 2026-06-12: `attytraining-dev/prod` not found in Rob's Supabase org — likely under Max's account, confirm ownership |
 | Resend account | Done | Rob | Sending domain config not yet verified |
 | GitHub repo (`rtraversi/bsbr-attytraining`) | Done | Max | — |
 | Node.js | Done | Max | ⚠️ Installed v24; spec calls for v22 LTS |
@@ -112,6 +112,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 | 260612-dzf | Propagate CF Pages + Workers stack pivot through CLAUDE.md, research docs, and STATE.md | 2026-06-12 | a31e15d | [260612-dzf-propagate-cf-pages-workers-stack-pivot-t](./quick/260612-dzf-propagate-cf-pages-workers-stack-pivot-t/) |
 | 260612-efr | Re-lock hosting adapter to @opennextjs/cloudflare on Workers; add NEXT-10-STEPS.md for Max | 2026-06-12 | 728fab3 | [260612-efr-switch-locked-adapter-decision-to-openne](./quick/260612-efr-switch-locked-adapter-decision-to-openne/) |
 | 260612-kqe | Mark Stripe CLI install + login done in NEXT-10-STEPS.md | 2026-06-12 | 583dc57 | [260612-kqe-mark-stripe-cli-install-login-done-in-ne](./quick/260612-kqe-mark-stripe-cli-install-login-done-in-ne/) |
+| 260612-ky5 | Record Max's progress report (steps 4–7) in NEXT-10-STEPS.md as unverified + Verification Gaps section | 2026-06-12 | 98289da | [260612-ky5-record-max-s-progress-report-in-next-10-](./quick/260612-ky5-record-max-s-progress-report-in-next-10-/) |
 
 ### Decisions to Log
 
@@ -121,7 +122,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 
 ## Session Continuity
 
-- **Last action:** Completed quick task 260612-kqe (2026-06-12) — Stripe CLI installed (v1.42.11) and authenticated on Rob's machine; NEXT-10-STEPS.md Step 2 now fully Done. All pre-Phase-0 infrastructure prerequisites are complete.
+- **Last action:** Completed quick task 260612-ky5 (2026-06-12) — recorded Max's progress report (Steps 4–6 done, 7 partial, 3 pending) in NEXT-10-STEPS.md as unverified, with a Verification Gaps section: no app code pushed to GitHub yet, attytraining-dev/prod Supabase projects not in Rob's org (ownership unconfirmed), CF deploy unverifiable, and Step 7 logically blocked on Step 3 (adapter).
 - **Next action:** `/gsd:plan-phase 0` to decompose Phase 0 (Foundations) into executable plans.
 - **Branch:** none (git branching_strategy = `none` per config)
 - **Files of record:**
