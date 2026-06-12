@@ -39,7 +39,7 @@
 
 ### Phase 0 Requirements Status (FND-01..07, AUDIT-01..03)
 
-All 10 Phase 0 requirements are **not yet started** — none require accounts alone; they require running code, migrations, and live pages. Phase 0 work begins once Stripe account is set up and Max completes Supabase CLI install.
+All 10 Phase 0 requirements are **not yet started** — none require accounts alone; they require running code, migrations, and live pages. All account/CLI prerequisites are now Done except Stripe CLI (Rob) — Phase 0 work can begin (see `.planning/NEXT-10-STEPS.md`).
 
 ⚠️ **Branding note:** FND-04 references `builtsmartbyrob.com` as the sending domain. Domain decision has moved to `aistaffcompliance.com` — sending domain config should target `noreply@aistaffcompliance.com`.
 
@@ -108,6 +108,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260612-dzf | Propagate CF Pages + Workers stack pivot through CLAUDE.md, research docs, and STATE.md | 2026-06-12 | a31e15d | [260612-dzf-propagate-cf-pages-workers-stack-pivot-t](./quick/260612-dzf-propagate-cf-pages-workers-stack-pivot-t/) |
+| 260612-efr | Re-lock hosting adapter to @opennextjs/cloudflare on Workers; add NEXT-10-STEPS.md for Max | 2026-06-12 | 728fab3 | [260612-efr-switch-locked-adapter-decision-to-openne](./quick/260612-efr-switch-locked-adapter-decision-to-openne/) |
 
 ### Decisions to Log
 
@@ -117,7 +118,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 
 ## Session Continuity
 
-- **Last action:** Completed quick task 260612-dzf (2026-06-12) — propagated the CF Pages + Workers stack pivot through CLAUDE.md, PROJECT/REQUIREMENTS/ROADMAP, research-doc banners, and STATE.md.
+- **Last action:** Completed quick task 260612-efr (2026-06-12) — re-locked the hosting adapter to `@opennextjs/cloudflare` on Cloudflare Workers (next-on-pages is deprecated), updated all docs, and created `.planning/NEXT-10-STEPS.md` for Max's onboarding.
 - **Next action:** `/gsd:plan-phase 0` to decompose Phase 0 (Foundations) into executable plans.
 - **Branch:** none (git branching_strategy = `none` per config)
 - **Files of record:**
