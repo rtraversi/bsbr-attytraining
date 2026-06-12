@@ -92,7 +92,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 - [ ] Question pool size + per-attempt count (recommend ~24–32 pool / 8–10 per attempt)
 - [ ] Stripe Price IDs (3 Products × 2 Prices = 6 Price IDs) confirmed
 - [ ] Stripe Tax enabled + home-state sales-tax registration completed
-- [ ] n8n monitoring service picked (UptimeRobot vs BetterStack)
+- [ ] External uptime monitor for CF Worker health endpoint picked (UptimeRobot vs BetterStack)
 - [ ] CPA consult on SaaS sales tax (~$300–$500)
 
 ### Todos (carried)

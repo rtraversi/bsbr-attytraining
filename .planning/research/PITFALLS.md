@@ -1,5 +1,7 @@
 # Pitfalls Research
 
+> ⚠️ **STACK SUPERSEDED (2026-06-11):** This document was researched for the original Netlify + n8n + H5P stack. The locked stack is now Cloudflare Pages (`@cloudflare/next-on-pages`) + CF Workers + custom React quiz — see `.planning/STATE.md` Locked Decisions and `CLAUDE.md`. Netlify/n8n/H5P-specific guidance below is historical; domain findings (Stripe, Supabase RLS, Cloudflare Stream, compliance) remain valid.
+
 **Domain:** Compliance Training SaaS for Attorneys (ABA Model Rule 5.3 / AI staff supervision)
 **Researched:** 2026-05-19
 **Confidence:** HIGH for stack-specific pitfalls (Supabase, Stripe, Cloudflare Stream, n8n — verified against current docs and community reports). MEDIUM-HIGH for compliance/legal framing (verified against ABA Formal Opinion 512 and state bar guidance, but operator should still have a lawyer review marketing copy and TOS).

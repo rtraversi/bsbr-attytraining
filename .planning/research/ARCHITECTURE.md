@@ -1,5 +1,7 @@
 # Architecture Research
 
+> ⚠️ **STACK SUPERSEDED (2026-06-11):** This document was researched for the original Netlify + n8n + H5P stack. The locked stack is now Cloudflare Pages (`@cloudflare/next-on-pages`) + CF Workers + custom React quiz — see `.planning/STATE.md` Locked Decisions and `CLAUDE.md`. Netlify/n8n/H5P-specific guidance below is historical; domain findings (Stripe, Supabase RLS, Cloudflare Stream, compliance) remain valid.
+
 **Domain:** Self-serve B2B SaaS — compliance training / cert delivery (tiny multi-tenant LMS slice)
 **Researched:** 2026-05-19
 **Confidence:** HIGH (stack is locked; patterns map cleanly to documented Supabase + Stripe + n8n behaviors)

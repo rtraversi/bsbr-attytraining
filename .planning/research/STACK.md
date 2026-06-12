@@ -1,5 +1,7 @@
 # Stack Research
 
+> ⚠️ **STACK SUPERSEDED (2026-06-11):** This document was researched for the original Netlify + n8n + H5P stack. The locked stack is now Cloudflare Pages (`@cloudflare/next-on-pages`) + CF Workers + custom React quiz — see `.planning/STATE.md` Locked Decisions and `CLAUDE.md`. Netlify/n8n/H5P-specific guidance below is historical; domain findings (Stripe, Supabase RLS, Cloudflare Stream, compliance) remain valid.
+
 **Domain:** Tiny SaaS — AI compliance certification platform for solo/small-firm attorneys (1–15 staff), self-serve, $199–$499/year
 **Researched:** 2026-05-19
 **Confidence:** HIGH (all major versions verified against current official docs; H5P-vs-Rise recommendation has explicit rationale)
