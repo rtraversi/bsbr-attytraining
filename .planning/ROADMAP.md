@@ -25,7 +25,7 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
 - [ ] **Phase 1: Hello-cert end-to-end stub** — Paid Stripe checkout → admin invite → employee invite → "Mark Pass" button → trivial PDF cert emailed and downloadable
 - [ ] **Phase 2: Real video + custom React quiz** — Cloudflare Stream signed playback, custom React quiz overlay, identity attestation, server-trusted scoring (replaces "Mark Pass" stub)
 - [ ] **Phase 3: Firm admin dashboard** — Single-table employee status view, CSV upload, reminders, seat reassignment, audit-log CSV export, firm-level attestation PDF
-- [ ] **Phase 4: Automation hardening** — Real branded cert template, expiry-reminder cron, UptimeRobot alerts, daily n8n backups, shared-secret headers on every public n8n webhook
+- [ ] **Phase 4: Automation hardening** — Real branded cert template, expiry-reminder cron (CF Workers Cron Trigger), UptimeRobot alerts, Supabase PITR verified, shared-secret header on the Supabase→Worker webhook
 - [ ] **Phase 5: Renewal flow + launch polish** — Stripe renewal pricing (60%), 30/14/3-day reminder cadence, 30-day grace period, marketing landing final copy, iPad Safari + Chromebook QA, attorney-reviewed launch
 
 ---
@@ -69,6 +69,8 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
 
 ### Phase 2: Real video + custom React quiz
 **Goal:** Employees watch a real Cloudflare Stream video and take a real custom React quiz with identity attestation — the "Mark Pass" stub from Phase 1 is replaced by a real, server-trusted pass/fail loop.
+
+> 📝 **Course-format pivot (2026-06-12, pending trial validation):** content delivery is moving to interactive Articulate Rise 360 content (hosted web export with ungraded knowledge checks) + the custom React certification quiz as the certifiable layer. Success criteria 1–2 (video player) will be rewritten when the trial decision locks; criteria 3–5 (quiz/attestation/scoring) are unaffected. See REQUIREMENTS.md COURSE-section note and STATE.md Open Decisions.
 **Mode:** mvp
 **Depends on:** Phase 1
 **Requirements:** COURSE-01, COURSE-02, COURSE-03, COURSE-04, COURSE-05, COURSE-06, COURSE-07, COURSE-08, COURSE-09, COURSE-10, COURSE-11

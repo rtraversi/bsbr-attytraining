@@ -39,6 +39,8 @@ REQ-IDs use `CATEGORY-NN` format. Each requirement is user-centric, specific, an
 
 ### Course Delivery & Quiz (COURSE)
 
+> 📝 **Course-format pivot (2026-06-12, pending trial validation):** Course content is moving from a single 20–30 min video to **interactive Articulate Rise 360 content** (hosted web export: flip cards, scenarios, click-to-reveal, *ungraded* knowledge checks) followed by the **custom React certification quiz** as the certifiable layer. Rob is validating Rise via the 30-day Articulate 360 trial before the $1,449/yr commit. COURSE-06..11 (quiz, attestation, server-side scoring) are unaffected. COURSE-01..05 (video player) will be rewritten once the trial decision locks — Cloudflare Stream likely shrinks to short clips embedded within the interactive content.
+
 - [ ] **COURSE-01**: An enrolled employee can view a single course page that loads a Cloudflare Stream video via a signed playback URL minted server-side on page load (4–8h TTL)
 - [ ] **COURSE-02**: The Cloudflare Stream signed playback configuration locks Allowed Origins to the production domain
 - [ ] **COURSE-03**: The video player displays closed captions (provided by Cloudflare Stream)

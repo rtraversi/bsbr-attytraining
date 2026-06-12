@@ -76,7 +76,8 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 - **Stripe webhook lands in a Next.js Route Handler running in the Worker (Node runtime).** Raw body via `await req.text()`; HMAC via Stripe SDK v17 — `constructEventAsync` recommended but `constructEvent` works (Node crypto available under nodejs_compat). Idempotency table `processed_stripe_events(event_id PK)`, transactional Postgres write, fire-and-forget POST to the cert Worker for async work.
 - **PDF generation lives in a CF Worker** using `pdf-lib` (pure JS, no headless browser, no VPS). Triggered by Supabase Database Webhook → authenticated POST to the Worker.
 - **JWT signing for Cloudflare Stream:** use `jose` library (web-standard JWT library; works in plain CF Workers (cert Worker) and the Next.js Worker alike), NOT `jsonwebtoken` (heavier, Node-only assumptions, unnecessary).
-- **Quiz layer is custom React** (~150–200 lines) over Cloudflare Stream native player. Not H5P. Not Articulate Rise. Fallback to H5P Path A only if custom quiz exceeds ~5 days of work.
+- **Certification quiz is custom React** (~150–200 lines): server-side scoring, identity attestation, audit logging — this is the certifiable layer and does not change regardless of content format.
+- **Course content format (2026-06-12, pending trial validation):** moving from a single 20–30 min video to **interactive Articulate Rise 360 content** (hosted web export: flip cards, scenario interactions, click-to-reveal, *ungraded* knowledge checks) ahead of the custom React certification quiz. Rise's web export cannot report scores to the app — acceptable because all certifiable events live in the custom quiz. Rob validates via the 30-day Articulate 360 trial before committing $1,449/yr. Fallbacks if the trial disappoints: custom React interactive blocks, then H5P (Dialog Cards / Branching Scenario).
 - **Data model:** single `firm_members(firm_id, user_id, role)` table; `role ∈ {firm_admin, employee}`. `employees` may be exposed as a VIEW for UI clarity.
 - **Cert downloads:** routed through `/api/certificates/[id]/url` (auth-checked) → 60-second Supabase signed URL. No raw storage URLs in emails.
 - **Cloudflare Stream:** signed playback URLs minted server-side on every page load (4–8h TTL); Allowed Origins locked to production domain.
@@ -93,6 +94,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 - [ ] Stripe Price IDs (3 Products × 2 Prices = 6 Price IDs) confirmed
 - [ ] Stripe Tax enabled + home-state sales-tax registration completed
 - [ ] External uptime monitor for CF Worker health endpoint picked (UptimeRobot vs BetterStack)
+- [ ] Articulate 360 trial outcome (Rob, 30-day trial) — lock Rise-hybrid course format or fall back to custom React interactive blocks / H5P; rewrite COURSE-01..05 + ROADMAP Phase 2 criteria 1–2 once decided
 - [ ] CPA consult on SaaS sales tax (~$300–$500)
 
 ### Todos (carried)
