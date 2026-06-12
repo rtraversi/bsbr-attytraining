@@ -29,7 +29,7 @@ An attorney can pay, invite their staff, see them complete the training, and pro
 - [ ] Certificate is emailed to the employee and accessible from the firm dashboard
 - [ ] Firm admin dashboard shows each employee's status, score, completion date, and certificate link
 - [ ] Certificates have a 12-month validity; system tracks expiry and surfaces re-certification due dates
-- [ ] Annual renewal flow priced at ~60% of original cost re-enrolls existing staff for a new cycle
+- [ ] Annual renewal flow (priced at the same flat annual price as year one) re-enrolls existing staff for a new cycle.
 - [ ] n8n handles enrollment confirmations, completion triggers, certificate generation, and reminder nudges
 - [ ] Stripe webhook provisions firm account + seats on payment
 
@@ -67,7 +67,7 @@ An attorney can pay, invite their staff, see them complete the training, and pro
 - **Tech stack — video:** Cloudflare Stream (paid add-on required) — for signed-URL streaming and bandwidth economics
 - **Tech stack — payments:** Stripe — standard for self-serve SaaS checkout; supports tiered pricing + webhooks
 - **Tech stack — interactive video/quiz:** Custom React quiz component (~150–200 lines) over Cloudflare Stream native player — no H5P, no Articulate Rise
-- **Pricing constraint:** $199 / 5 seats, $349 / 6–15 seats, $499 / 16+ seats — annual; renewal ~60% of original
+- **Pricing constraint:** $199 / 5 seats, $349 / 6–15 seats, $499 / 16+ seats — annual; flat price on renewal (no renewal discount).
 - **Target market constraint:** Solo and small firms (1–15 staff) — UX, marketing, and pricing tiers reflect this; product is self-serve only
 - **Compliance framing:** ABA Model Rule 5.3 — generic national framing; no state-specific accreditation claims in v1
 - **Operator burden:** Self-run platform — operator (Rob) should not be in the loop for normal customer flows (purchase, invite, certify, renew); all of that is automated end-to-end
@@ -84,7 +84,7 @@ An attorney can pay, invite their staff, see them complete the training, and pro
 | Cloudflare Stream for video hosting | Signed URLs + bandwidth economics vs. self-hosting; willing to enable paid add-on | — Pending |
 | CF Workers as the only automation runtime | No VPS to manage, no n8n to maintain; CF Workers handle cert gen (pdf-lib), email (Resend REST), and scheduled reminders (CF Cron) | — Decided 2026-06-11 |
 | Score-gate with unlimited retakes (no attempt cap) | Maximizes completion rate; cert is the outcome customers paid for, not a hurdle | — Pending |
-| 12-month certificate validity with annual recertification | Drives renewal revenue (~60% repeat) and aligns with annual compliance review cadence | — Pending |
+| 12-month certificate validity with annual recertification | Drives renewal revenue (flat annual price; renewal costs as much to produce as year one) and aligns with annual compliance review cadence | — Pending — renewal pricing decided flat 2026-06-12 |
 | ABA Model Rule 5.3 generic, national scope (no state variants in v1) | Single course → single content production track → fastest path to launch | — Pending |
 | Solo/small firms (1–15 staff), self-serve only | Pricing tiers fit; no sales motion; one-page checkout → onboarding | — Pending |
 | Curriculum produced in parallel, not gating platform build | Platform can scaffold with placeholder content; final video drops in before launch | — Pending |

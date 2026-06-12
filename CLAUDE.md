@@ -16,7 +16,7 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 - **Tech stack — payments:** Stripe — standard for self-serve SaaS checkout; supports tiered pricing + webhooks
 - **Tech stack — API/automation:** Cloudflare Workers for all serverless functions, cert generation, email, and scheduled jobs; no n8n, no VPS
 - **Tech stack — interactive video/quiz:** Custom React quiz component (~150–200 lines) over the Cloudflare Stream native player — no H5P, no Articulate Rise
-- **Pricing constraint:** $199 / 5 seats, $349 / 6–15 seats, $499 / 16+ seats — annual; renewal ~60% of original
+- **Pricing constraint:** $199 / 5 seats, $349 / 6–15 seats, $499 / 16+ seats — annual; flat price on renewal (no renewal discount).
 - **Target market constraint:** Solo and small firms (1–15 staff) — UX, marketing, and pricing tiers reflect this; product is self-serve only
 - **Compliance framing:** ABA Model Rule 5.3 — generic national framing; no state-specific accreditation claims in v1
 - **Operator burden:** Self-run platform — operator (Rob) should not be in the loop for normal customer flows (purchase, invite, certify, renew); all of that is automated end-to-end
@@ -128,9 +128,11 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 
 ### 4. Stripe — tiered seat pricing, webhooks, portal
 
-- `prod_basic`: "Compliance Training — Up to 5 Seats" → Prices: `price_basic_first_$199`, `price_basic_renewal_$119`
-- `prod_standard`: "Compliance Training — 6–15 Seats" → Prices: `price_standard_first_$349`, `price_standard_renewal_$209`
-- `prod_pro`: "Compliance Training — 16+ Seats" → Prices: `price_pro_first_$499`, `price_pro_renewal_$299`
+- `prod_UgyZjCbV9uJdzX`: "Compliance Training — Up to 5 Seats" → Price: lookup_key `basic_annual` — $199/yr (flat annual; same Price ID on renewal)
+- `prod_UgyZ7rqNgXZYao`: "Compliance Training — 6–15 Seats" → Price: lookup_key `standard_annual` — $349/yr (flat annual; same Price ID on renewal)
+- `prod_UgyZ30zgvigsd6`: "Compliance Training — 16+ Seats" → Price: lookup_key `pro_annual` — $499/yr (flat annual; same Price ID on renewal)
+- **Flat annual pricing, same Price ID on renewal — locked 2026-06-12 (Rob). 3 prices total, one per tier. No separate renewal Price IDs.**
+- Test-mode IDs: `price_1ThachCzT2268ei9HlR1YivD` (basic), `price_1ThaciCzT2268ei9tooaKk8j` (standard), `price_1ThaciCzT2268ei9MRI94R1i` (pro). Live-mode objects pending Stripe Tax.
 - Use **Stripe Checkout (hosted)**, mode `subscription`. Don't build a card form.
 - After payment, Stripe redirects to `/onboarding?session_id={CHECKOUT_SESSION_ID}` where the app waits for the webhook to provision the firm.
 - Route: `app/api/webhooks/stripe/route.ts` (runs in the Worker, Node runtime — do NOT add `export const runtime = 'edge'`).
@@ -197,7 +199,7 @@ The quiz layer is a **custom React component (~150–200 lines)** rendered below
 | `fetch()` default caching in Next.js 15 | Changed behavior from Next.js 14 — was cached, now is not. Easy to assume old behavior. | Explicit `cache: 'force-cache'` or `next: { revalidate: N }` per request |
 | `jsonwebtoken` for Cloudflare Stream signed URLs | Heavier, Node-only assumptions, unnecessary — may load under nodejs_compat but not needed | `jose` (web-standard, works in plain CF Workers and the Next.js Worker alike) |
 | PDF generation requiring a headless browser (Puppeteer/Chrome) on edge | No headless Chrome on CF Workers edge | `pdf-lib` (pure JS) in a CF Worker — no native deps, runs without a browser |
-| Stripe per-seat `quantity` for tier pricing | Tiers here are bands (5, 15, 16+), not strict per-seat — using `quantity` invites accidental proration math | Three distinct Prices, seat cap as subscription metadata |
+| Stripe per-seat `quantity` for tier pricing | Tiers here are bands (5, 15, 16+), not strict per-seat — using `quantity` invites accidental proration math | One annual Price per tier (3 prices total), seat cap as subscription metadata; same Price ID on renewal (flat pricing) |
 | Storing `STRIPE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` in client code | Total compromise — these keys can do anything on your account | Worker environment variables/secrets (encrypted at rest); set via `wrangler secret put` or the Worker's CF dashboard Settings; never in source code |
 | Free-tier Supabase in production | Pauses after 7 days inactivity, 500 MB RAM, no point-in-time recovery | Pro tier ($25/mo) before launch |
 | Old Supabase API keys for new projects | Will be retired end of 2026 | New `sb_publishable_*` + `sb_secret_*` key format |

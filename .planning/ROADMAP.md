@@ -26,7 +26,7 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
 - [ ] **Phase 2: Real video + custom React quiz** — Cloudflare Stream signed playback, custom React quiz overlay, identity attestation, server-trusted scoring (replaces "Mark Pass" stub)
 - [ ] **Phase 3: Firm admin dashboard** — Single-table employee status view, CSV upload, reminders, seat reassignment, audit-log CSV export, firm-level attestation PDF
 - [ ] **Phase 4: Automation hardening** — Real branded cert template, expiry-reminder cron (CF Workers Cron Trigger), UptimeRobot alerts, Supabase PITR verified, shared-secret header on the Supabase→Worker webhook
-- [ ] **Phase 5: Renewal flow + launch polish** — Stripe renewal pricing (60%), 30/14/3-day reminder cadence, 30-day grace period, marketing landing final copy, iPad Safari + Chromebook QA, attorney-reviewed launch
+- [ ] **Phase 5: Renewal flow + launch polish** — Stripe renewal at the same flat annual price, 30/14/3-day reminder cadence, 30-day grace period, marketing landing final copy, iPad Safari + Chromebook QA, attorney-reviewed launch
 
 ---
 
@@ -118,13 +118,13 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
 ---
 
 ### Phase 5: Renewal flow + launch polish
-**Goal:** Annual renewal at ~60% price is wired end-to-end with the pre-renewal email cadence, expiry/grace logic, marketing landing copy, and cross-browser QA — the platform is ready for public launch under the Built Smart by Rob brand.
+**Goal:** Annual renewal at the same flat annual price is wired end-to-end with the pre-renewal email cadence, expiry/grace logic, marketing landing copy, and cross-browser QA — the platform is ready for public launch under the Built Smart by Rob brand.
 **Mode:** mvp
 **Depends on:** Phase 4
 **Requirements:** RENEW-01, RENEW-02, RENEW-03, RENEW-04, RENEW-05, RENEW-06
 **Success Criteria** (what must be TRUE):
   1. 30 days before a firm's annual cycle ends, every firm admin receives a summary email of staff cert status with a one-click "Renew now" link; if the firm has not renewed, follow-up emails fire at 14 and 3 days pre-renewal (RENEW-01, RENEW-02).
-  2. The renewal Checkout flow uses Stripe's `renewal_price` Price ID set to 60% of the original tier (Basic $119, Standard $209, Pro $299); a successful renewal automatically re-enrolls every currently-active employee from the prior cycle, departed employees are NOT re-enrolled, and re-enrolled employees are notified by email (RENEW-03, RENEW-04).
+  2. The renewal Checkout flow reuses the same flat annual Price ID as the original purchase (Basic $199, Standard $349, Pro $499 — no renewal discount); a successful renewal automatically re-enrolls every currently-active employee from the prior cycle, departed employees are NOT re-enrolled, and re-enrolled employees are notified by email (RENEW-03, RENEW-04).
   3. When a certificate's `expires_at` passes, its dashboard status flips to "expired"; the employee retains read access to past cert PDFs for the 7-year retention window but cannot generate a new cert without re-enrollment (RENEW-05).
   4. A 30-day grace period applies after `expires_at` during which a firm can renew at the renewal price without losing continuity of supervision documentation; after grace, the renewal flow treats it as a fresh purchase at full price (RENEW-06).
   5. The marketing landing page final copy is published, the attorney review of cert + landing copy + TOS is complete (signed sign-off recorded), and the platform passes manual QA on real iPad Safari and a real Chromebook (Stream player, custom quiz overlay, dashboard, cert download).

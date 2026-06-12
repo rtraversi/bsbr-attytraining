@@ -96,7 +96,7 @@ REQ-IDs use `CATEGORY-NN` format. Each requirement is user-centric, specific, an
 
 - [ ] **RENEW-01**: 30 days before a firm's annual cycle ends, all firm admins receive an email summarizing their staff's cert status and a one-click "Renew now" link
 - [ ] **RENEW-02**: Renewal emails repeat at 14 days and 3 days pre-renewal if the firm has not yet renewed
-- [ ] **RENEW-03**: Each Stripe Product has a `renewal_price` Price ID set to 60% of the first-year price (Basic $119, Standard $209, Pro $299); the renewal Checkout flow uses the renewal Price ID
+- [ ] **RENEW-03**: Renewal reuses the SAME annual Stripe Price ID as the original purchase (flat annual pricing — no renewal discount); the renewal Checkout / Stripe subscription renewal charges the same price as year one ($199/$349/$499 per tier). There is exactly one Price per tier — no separate discounted price for renewals.
 - [ ] **RENEW-04**: After a successful renewal, all currently-active employees from the prior cycle are automatically re-enrolled and notified; departed employees are NOT re-enrolled
 - [ ] **RENEW-05**: When a cert's `expires_at` passes, its status flips to "expired" in the dashboard; the employee retains read access to past cert PDFs for the 7-year retention window but cannot generate a new cert without re-enrollment
 - [ ] **RENEW-06**: A 30-day grace period applies after `expires_at` during which a firm can renew at the renewal price without losing continuity of supervision documentation; after grace, the renewal is treated as a fresh purchase
