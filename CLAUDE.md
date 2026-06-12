@@ -16,7 +16,7 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 - **Tech stack — payments:** Stripe — standard for self-serve SaaS checkout; supports tiered pricing + webhooks
 - **Tech stack — API/automation:** Cloudflare Workers for all serverless functions, cert generation, email, and scheduled jobs; no n8n, no VPS
 - **Tech stack — interactive video/quiz:** Custom React quiz component (~150–200 lines) over the Cloudflare Stream native player — no H5P, no Articulate Rise
-- **Pricing constraint:** $199 / 5 seats, $349 / 6–15 seats, $499 / 16+ seats — annual; flat price on renewal (no renewal discount).
+- **Pricing constraint:** $35/user/yr for 1–9 users, $32/user/yr for 10–24 users, $28/user/yr for 25+ users — billed annually per enrolled user; volume bands (all seats billed at the band rate the firm's headcount lands in); FLAT on renewal — no renewal discount (course substantially updated each year).
 - **Target market constraint:** Solo and small firms (1–15 staff) — UX, marketing, and pricing tiers reflect this; product is self-serve only
 - **Compliance framing:** ABA Model Rule 5.3 — generic national framing; no state-specific accreditation claims in v1
 - **Operator burden:** Self-run platform — operator (Rob) should not be in the loop for normal customer flows (purchase, invite, certify, renew); all of that is automated end-to-end
@@ -41,7 +41,7 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 | **Supabase** | **JS client `supabase-js` v2.49+** with **`@supabase/ssr` v0.6+** | Auth + Postgres + Storage | Single integrated provider. RLS handles firm-vs-employee tenancy at DB level. Storage signs cert URLs natively. Stay on free tier during dev; **upgrade to Pro ($25/mo) before launch** — free-tier 500MB RAM + project-pause-after-7-days is incompatible with paid customers. |
 | **Postgres** | **15** (Supabase managed) | Source of truth | Schema: `firms`, `firm_members`, `seats`, `enrollments`, `quiz_attempts`, `certificates`. JWT custom claims (`firm_id`, `role`) drive RLS. |
 | **Cloudflare Stream** | (current) | Video hosting, signed URLs, HLS delivery | Paid add-on. Pricing: $5 per 1,000 min stored, $1 per 1,000 min delivered. Ingress + encoding free. Pro/Business CF plan includes 100 min storage + 10,000 min delivery monthly. For one 30-min course × thousands of plays: delivery cost dominates. At 30 min × 100 employees × 5 firms/mo = 15,000 min/mo = ~$15/mo — well within tolerance. |
-| **Stripe** | **Node SDK `stripe` v17.x**, API version `2025-09-30.acacia` (latest) | Checkout, subscriptions, webhooks, customer portal | Standard SaaS billing. Three tiered Prices, one Product per tier or one Product with three Prices. Customer Portal handles renewals — no custom UI needed. |
+| **Stripe** | **Node SDK `stripe` v17.x**, API version `2025-09-30.acacia` (latest) | Checkout, subscriptions, webhooks, customer portal | Standard SaaS billing. ONE Product + ONE volume-tiered Price (`tiers_mode=volume`); Checkout `quantity` = seats; Stripe auto-computes the per-seat band rate. Customer Portal handles renewals — no custom UI needed. |
 | **Cloudflare Workers** (automation) | Workers runtime | All automation: cert PDF generation, email (Resend REST API), renewal reminders, reprint links | Triggered by Supabase Database Webhooks (authenticated POST to a Worker endpoint), app-initiated `fetch()` POST from route handlers (fire-and-forget), or CF Workers Cron Triggers (scheduled jobs). No VPS, no n8n. Secrets managed via `wrangler secret put` or the CF dashboard. |
 | **Custom React quiz** | ~150–200 LOC React component | Interactive quiz layer over the Cloudflare Stream native player | postMessage events from the CF Stream player gate quiz reveal at ~95% watched. Score submit → Server Action / Route Handler → `quiz_attempts` insert. No H5P. No Articulate Rise. H5P Path A (CF iframe + H5P Question Set below) is the documented fallback ONLY if the custom quiz exceeds ~5 days of work. |
 
@@ -126,13 +126,12 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 - **Path A (chosen):** Don't use H5P Interactive Video. Instead, embed the Cloudflare Stream iframe in the page, and place H5P **Question Set** / **Single Choice Set** content blocks below or alongside it. Use the Stream player's `postMessage` events to drive UI logic (e.g., reveal the quiz when video reaches 95%). Simpler, no custom H5P plugin, full Cloudflare Stream features (DRM-lite via signed URLs, analytics).
 - **Path B:** Use H5P with a direct MP4 URL from the Cloudflare Stream Downloads API. This gives you timestamp-locked interactions in-video but: (a) signed MP4 URLs are awkward (one URL per download enable, separate API), (b) you lose adaptive bitrate streaming, (c) bandwidth costs may go up. **Avoid.**
 
-### 4. Stripe — tiered seat pricing, webhooks, portal
+### 4. Stripe — per-seat volume pricing, webhooks, portal
 
-- `prod_UgyZjCbV9uJdzX`: "Compliance Training — Up to 5 Seats" → Price: lookup_key `basic_annual` — $199/yr (flat annual; same Price ID on renewal)
-- `prod_UgyZ7rqNgXZYao`: "Compliance Training — 6–15 Seats" → Price: lookup_key `standard_annual` — $349/yr (flat annual; same Price ID on renewal)
-- `prod_UgyZ30zgvigsd6`: "Compliance Training — 16+ Seats" → Price: lookup_key `pro_annual` — $499/yr (flat annual; same Price ID on renewal)
-- **Flat annual pricing, same Price ID on renewal — locked 2026-06-12 (Rob). 3 prices total, one per tier. No separate renewal Price IDs.**
-- Test-mode IDs: `price_1ThachCzT2268ei9HlR1YivD` (basic), `price_1ThaciCzT2268ei9tooaKk8j` (standard), `price_1ThaciCzT2268ei9MRI94R1i` (pro). Live-mode objects pending Stripe Tax.
+- ONE Product: `prod_UgzKT3NrGNAvDA` — "AI Staff Compliance Training — Annual Certification" — metadata: `pricing_model=per_seat_volume`, `tax_code=txcd_20060058`
+- ONE Price: `price_1ThbLNCzT2268ei9nkadS8kD` — lookup_key `per_seat_annual` — recurring yearly, `billing_scheme=tiered`, `tiers_mode=volume`, tiers: up_to 9 → $35/unit, up_to 24 → $32/unit, inf → $28/unit; `tax_behavior=exclusive`
+- **Per-seat volume pricing, flat on renewal — locked 2026-06-12 (Rob).** ONE product, ONE price. Stripe Checkout `quantity` = number of seats purchased; `adjustable_quantity` enabled so the buyer picks seat count in Checkout; Stripe auto-computes the band rate automatically via `tiers_mode=volume`. Seat enforcement: seats owned = subscription `quantity` (no `seat_cap` metadata). Renewal reuses the same single Price ID at the same band rate — no separate renewal price.
+- Old test-mode objects archived (active=false, lookup keys released): products `prod_UgyZjCbV9uJdzX` / `prod_UgyZ7rqNgXZYao` / `prod_UgyZ30zgvigsd6`; prices `price_1ThachCzT2268ei9HlR1YivD` / `price_1ThaciCzT2268ei9tooaKk8j` / `price_1ThaciCzT2268ei9MRI94R1i`. Live-mode object creation deferred pending Stripe Tax.
 - Use **Stripe Checkout (hosted)**, mode `subscription`. Don't build a card form.
 - After payment, Stripe redirects to `/onboarding?session_id={CHECKOUT_SESSION_ID}` where the app waits for the webhook to provision the firm.
 - Route: `app/api/webhooks/stripe/route.ts` (runs in the Worker, Node runtime — do NOT add `export const runtime = 'edge'`).
@@ -199,16 +198,15 @@ The quiz layer is a **custom React component (~150–200 lines)** rendered below
 | `fetch()` default caching in Next.js 15 | Changed behavior from Next.js 14 — was cached, now is not. Easy to assume old behavior. | Explicit `cache: 'force-cache'` or `next: { revalidate: N }` per request |
 | `jsonwebtoken` for Cloudflare Stream signed URLs | Heavier, Node-only assumptions, unnecessary — may load under nodejs_compat but not needed | `jose` (web-standard, works in plain CF Workers and the Next.js Worker alike) |
 | PDF generation requiring a headless browser (Puppeteer/Chrome) on edge | No headless Chrome on CF Workers edge | `pdf-lib` (pure JS) in a CF Worker — no native deps, runs without a browser |
-| Stripe per-seat `quantity` for tier pricing | Tiers here are bands (5, 15, 16+), not strict per-seat — using `quantity` invites accidental proration math | One annual Price per tier (3 prices total), seat cap as subscription metadata; same Price ID on renewal (flat pricing) |
+| Multiple fixed-price Stripe Prices with `seat_cap` metadata (old 3-tier pattern) | Old pattern — three distinct fixed-price Products/Prices with `seat_cap` metadata. Replaced by per-seat volume pricing: a single volume-tiered Price where `quantity` = seats and Stripe computes the band rate automatically. | ONE Product `prod_UgzKT3NrGNAvDA` + ONE volume-tiered Price `price_1ThbLNCzT2268ei9nkadS8kD` (lookup_key `per_seat_annual`, `tiers_mode=volume`); Checkout `quantity` = seats; seat enforcement = subscription `quantity` |
 | Storing `STRIPE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` in client code | Total compromise — these keys can do anything on your account | Worker environment variables/secrets (encrypted at rest); set via `wrangler secret put` or the Worker's CF dashboard Settings; never in source code |
 | Free-tier Supabase in production | Pauses after 7 days inactivity, 500 MB RAM, no point-in-time recovery | Pro tier ($25/mo) before launch |
 | Old Supabase API keys for new projects | Will be retired end of 2026 | New `sb_publishable_*` + `sb_secret_*` key format |
 
 ## Stack Patterns by Variant
 
-- Use `prod_basic` ($199). Seat metadata `{ seat_count: 5 }`. Enforce at invite time.
-- No special pattern — this is the default flow.
-- Use `prod_standard` ($349). Same flow.
+- All variants use the single Price `per_seat_annual` (lookup_key) with Stripe Checkout `quantity` = the firm's seat count; Stripe computes the band rate automatically (`tiers_mode=volume`). No per-tier product selection.
+- No special pattern — this is the default flow for all seat counts.
 - Out of v1 scope. Customer Portal disables plan changes initially. Operator handles manually for v1. Add proration logic if it becomes a pattern.
 - Stripe Smart Retries handles retries. After final failure, `invoice.payment_failed` webhook → mark firm as `payment_failed`, employees lose access to *new* enrollments but keep access to existing certs (immutable record). Email firm admin with payment recovery link.
 - Cloudflare Stream cost scales linearly with delivered minutes. At ~$1 per 1,000 min delivered, a 60-min video × 1,000 plays = 60,000 min = $60/mo. Still fine.
@@ -237,7 +235,7 @@ The quiz layer is a **custom React component (~150–200 lines)** rendered below
 | Supabase Auth + RLS pattern | HIGH | Standard multi-tenant pattern documented by Supabase itself; pattern matches firm/employee model exactly. |
 | Cloudflare Stream signed URLs | HIGH | Direct match to product needs (signed video access tied to enrollment); pricing verified for our volume. |
 | Custom React quiz | HIGH | Small surface (~150–200 LOC), no vendor lock, direct Supabase score reporting via Server Action. Fallback (H5P Path A) is documented if needed. |
-| Stripe pattern (three Prices + metadata) | HIGH | Standard tiered SaaS shape; Customer Portal handles renewal. |
+| Stripe pattern (single volume-tiered Price, `tiers_mode=volume`) | HIGH | Per-seat volume pricing with one Product + one Price; Checkout `quantity` = seats; Customer Portal handles renewal. |
 | `pdf-lib` in CF Worker | MEDIUM-HIGH | Pure JS, no browser — runs cleanly on Workers. Layout fidelity for the cert template is the one risk; external PDF API is the documented fallback. |
 | Resend over Postmark | MEDIUM | Functionally correct for this scale; Postmark is the safer pick for absolute deliverability. Decide before launch based on operator's risk tolerance on missed emails. |
 | Tailwind v4 | MEDIUM-HIGH | v4 is stable but newer than v3; one-time migration cost for any v3-era components copy-pasted from elsewhere. |
