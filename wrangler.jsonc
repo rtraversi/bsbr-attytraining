@@ -1,0 +1,8 @@
+{
+  "name": "bsbr-attytraining",
+  "main": ".open-next/worker.js",
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_date": "2026-06-12",
+  "preview_urls": true
+}

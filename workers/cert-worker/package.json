@@ -1,0 +1,19 @@
+{
+  "name": "@bsbr/cert-worker",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260612.1",
+    "typescript": "^5",
+    "wrangler": "^4.99.0"
+  }
+}
