@@ -116,6 +116,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 | 260612-kqe | Mark Stripe CLI install + login done in NEXT-10-STEPS.md | 2026-06-12 | 583dc57 | [260612-kqe-mark-stripe-cli-install-login-done-in-ne](./quick/260612-kqe-mark-stripe-cli-install-login-done-in-ne/) |
 | 260612-ky5 | Record Max's progress report (steps 4–7) in NEXT-10-STEPS.md as unverified + Verification Gaps section | 2026-06-12 | 98289da | [260612-ky5-record-max-s-progress-report-in-next-10-](./quick/260612-ky5-record-max-s-progress-report-in-next-10-/) |
 | 260612-lg8 | Create Stripe test-mode products/prices (flat annual pricing) + propagate pricing change through docs | 2026-06-12 | d612d53 | [260612-lg8-record-stripe-products-prices-created-fl](./quick/260612-lg8-record-stripe-products-prices-created-fl/) |
+| 260612-mdv | Switch to per-seat volume pricing ($35/$32/$28 from aistaffcompliance.com); redo Stripe objects; propagate through docs | 2026-06-12 | 27d799f | [260612-mdv-switch-pricing-model-to-per-seat-volume-](./quick/260612-mdv-switch-pricing-model-to-per-seat-volume-/) |
 
 ### Decisions to Log
 
@@ -125,7 +126,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 
 ## Session Continuity
 
-- **Last action:** Completed quick task 260612-lg8 (2026-06-12) — created Stripe TEST-mode products + prices via CLI under flat annual pricing (Rob's decision: no renewal discount; supersedes ~60% renewal model) and propagated the change through PROJECT/REQUIREMENTS/ROADMAP/CLAUDE/STATE. Remaining Stripe items: head_office address → activate Stripe Tax, state registration, recreate objects in live mode before launch, hand Price IDs to Max.
+- **Last action:** Completed quick task 260612-mdv (2026-06-12) — switched the pricing model to per-seat volume tiers ($35/$32/$28 per user/yr by band, flat on renewal; source: aistaffcompliance.com marketing site), archived the 3-tier test-mode Stripe objects, created the single product + volume-tiered Price, and propagated the model through CLAUDE/PROJECT/REQUIREMENTS/ROADMAP/STATE/NEXT-10-STEPS. Remaining Stripe items: head_office address → activate Stripe Tax, state registration, live-mode recreation, hand Price ID to Max.
 - **Next action:** `/gsd:plan-phase 0` to decompose Phase 0 (Foundations) into executable plans.
 - **Branch:** none (git branching_strategy = `none` per config)
 - **Files of record:**
