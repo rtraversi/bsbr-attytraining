@@ -27,7 +27,7 @@
 | Item | Status | Owner | Notes |
 |------|--------|-------|-------|
 | Cloudflare account | Done | Rob | Connected to GitHub |
-| Supabase (dev + prod projects) | Done ⚠️ | Rob | Pro tier not yet confirmed; ⚠️ 2026-06-12: `attytraining-dev/prod` not found in Rob's Supabase org — likely under Max's account, confirm ownership |
+| Supabase (dev + prod projects) | Done ⚠️ | Rob/Max | Dev project `ndmzvtuywcufvkxtkjhg` ownership CONFIRMED under Max's Supabase account (2026-06-12). ⚠️ Open: decide whether the prod project should live under Rob's account + Pro tier before launch |
 | Resend account | Done | Rob | Sending domain config not yet verified |
 | GitHub repo (`rtraversi/bsbr-attytraining`) | Done | Max | — |
 | Node.js | Done | Max | ⚠️ Installed v24; spec calls for v22 LTS |
