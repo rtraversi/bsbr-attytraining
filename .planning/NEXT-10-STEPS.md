@@ -181,10 +181,15 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
 
 **Owner:** Max + Rob | **Status:** Not started
 
-- [ ] Verify the Next.js Worker URL (`*.workers.dev`) is reachable and returns the app
-- [ ] Verify the cert Worker URL is reachable and accepts a POST with the correct secret
-- [ ] Basic happy-path wiring: Stripe test-mode checkout → firm provisioning webhook → admin invite email → employee login → (stub) pass → cert Worker POST → 200
-- [ ] Both owners confirm the loop works end-to-end in test mode before Phase 0 planning begins
+This validates the plumbing **before any features are written** — nothing here depends on app features existing yet:
+
+- [ ] `pnpm dev` runs locally, pages load, no console errors
+- [ ] `pnpm run preview` serves the app in workerd locally with `.dev.vars` loaded
+- [ ] Supabase Auth creates a test user; session cookie works (middleware refresh confirmed)
+- [ ] DB queries succeed against the dev project (check in Supabase table editor)
+- [ ] The Next.js Worker URL (`*.workers.dev`) is reachable and returns the app
+- [ ] The cert Worker URL is reachable via `curl` and returns 200 with the correct `X-Webhook-Secret` (401 without)
+- [ ] Stripe CLI can forward a test event to `localhost:3000/api/webhooks/stripe` (`stripe listen --forward-to localhost:3000/api/webhooks/stripe`)
 
 ---
 
