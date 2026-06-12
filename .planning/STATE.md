@@ -1,6 +1,6 @@
 # STATE — AI Compliance Training Platform
 
-**Last updated:** 2026-05-19 (post-roadmap)
+**Last updated:** 2026-06-12 (adapter re-locked to @opennextjs/cloudflare)
 
 ---
 
@@ -33,8 +33,8 @@
 | Node.js | Done | Max | ⚠️ Installed v24; spec calls for v22 LTS |
 | pnpm | Done | Max | — |
 | Wrangler CLI | Done | Max | — |
-| Supabase CLI | In Progress | Max | — |
-| Stripe account | Not started | Rob | — |
+| Supabase CLI | Done | Max | — |
+| Stripe account | Done | Rob | — |
 | Stripe CLI | Not started | Rob | — |
 
 ### Phase 0 Requirements Status (FND-01..07, AUDIT-01..03)
@@ -72,17 +72,17 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 
 ### Locked Decisions (carried from PROJECT.md + research)
 
-- **Stack (rescoped 2026-06-11):** Next.js 15.5 LTS (App Router, **Edge Runtime throughout**) on **Cloudflare Pages** (`@cloudflare/next-on-pages`), Supabase (Auth/Postgres/Storage) Pro tier, Cloudflare Stream, Stripe (`2025-09-30.acacia`), **CF Workers** for all automation, Resend (called directly via REST API from CF Workers). No n8n. No VPS. No Netlify for this product.
-- **Stripe webhook lands in a CF Pages Route Handler (Edge Runtime).** Raw body via `await req.text()`, HMAC verified with Stripe SDK v17 (Edge-compatible), idempotency table `processed_stripe_events(event_id PK)`, transactional Postgres write, fire-and-forget POST to CF Worker cert endpoint for async work.
+- **Stack (adapter re-locked 2026-06-12):** Next.js 15.5 LTS (App Router, Node.js runtime via `nodejs_compat`) on **Cloudflare Workers** via `@opennextjs/cloudflare` (OpenNext adapter; supersedes the 2026-06-11 choice of `@cloudflare/next-on-pages`, which is deprecated — re-locked after doc verification), Supabase (Auth/Postgres/Storage) Pro tier, Cloudflare Stream, Stripe (`2025-09-30.acacia`), CF Workers for all automation, Resend (REST from CF Workers). No n8n. No VPS. No Netlify.
+- **Stripe webhook lands in a Next.js Route Handler running in the Worker (Node runtime).** Raw body via `await req.text()`; HMAC via Stripe SDK v17 — `constructEventAsync` recommended but `constructEvent` works (Node crypto available under nodejs_compat). Idempotency table `processed_stripe_events(event_id PK)`, transactional Postgres write, fire-and-forget POST to the cert Worker for async work.
 - **PDF generation lives in a CF Worker** using `pdf-lib` (pure JS, no headless browser, no VPS). Triggered by Supabase Database Webhook → authenticated POST to the Worker.
-- **JWT signing for Cloudflare Stream:** use `jose` library (Edge-compatible), NOT `jsonwebtoken` (Node.js only).
+- **JWT signing for Cloudflare Stream:** use `jose` library (web-standard JWT library; works in plain CF Workers (cert Worker) and the Next.js Worker alike), NOT `jsonwebtoken` (heavier, Node-only assumptions, unnecessary).
 - **Quiz layer is custom React** (~150–200 lines) over Cloudflare Stream native player. Not H5P. Not Articulate Rise. Fallback to H5P Path A only if custom quiz exceeds ~5 days of work.
 - **Data model:** single `firm_members(firm_id, user_id, role)` table; `role ∈ {firm_admin, employee}`. `employees` may be exposed as a VIEW for UI clarity.
 - **Cert downloads:** routed through `/api/certificates/[id]/url` (auth-checked) → 60-second Supabase signed URL. No raw storage URLs in emails.
 - **Cloudflare Stream:** signed playback URLs minted server-side on every page load (4–8h TTL); Allowed Origins locked to production domain.
 - **Auth:** magic-link invite + password on first visit; password + magic-link backup for repeat logins.
 - **Environments:** two Supabase projects (`attytraining-dev`, `attytraining-prod`). Free-tier 2-project cap forces this.
-- **Note:** `research/STACK.md` was written for the original Netlify + n8n stack. The CF Pages + CF Workers architecture supersedes any Netlify/n8n guidance in that file.
+- **Note:** `research/STACK.md` was written for the original Netlify + n8n stack. The CF Workers architecture supersedes any Netlify/n8n guidance in that file.
 
 ### Open Decisions (from research/SUMMARY.md "Decisions Needed Before Phase 1")
 

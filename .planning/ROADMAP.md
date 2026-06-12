@@ -21,7 +21,7 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
 
 ## Phases
 
-- [ ] **Phase 0: Foundations** — Privacy/TOS/DPA published, RLS-enforced schema with cross-tenant isolation test, audit log, sending domain, Supabase Pro
+- [ ] **Phase 0: Foundations** — CF Workers scaffold, privacy/TOS/DPA published, RLS-enforced schema with cross-tenant isolation test, audit log, sending domain, Supabase Pro
 - [ ] **Phase 1: Hello-cert end-to-end stub** — Paid Stripe checkout → admin invite → employee invite → "Mark Pass" button → trivial PDF cert emailed and downloadable
 - [ ] **Phase 2: Real video + custom React quiz** — Cloudflare Stream signed playback, custom React quiz overlay, identity attestation, server-trusted scoring (replaces "Mark Pass" stub)
 - [ ] **Phase 3: Firm admin dashboard** — Single-table employee status view, CSV upload, reminders, seat reassignment, audit-log CSV export, firm-level attestation PDF
@@ -33,12 +33,12 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
 ## Phase Details
 
 ### Phase 0: Foundations
-**Goal:** CF Pages scaffold, Supabase schema + RLS, privacy docs, and sending domain are in place — the platform can be safely built on top.
+**Goal:** CF Workers scaffold, Supabase schema + RLS, privacy docs, and sending domain are in place — the platform can be safely built on top.
 **Mode:** mvp
 **Depends on:** Nothing (first phase)
 **Requirements:** FND-01, FND-02, FND-03, FND-04, FND-05, FND-06, FND-07, AUDIT-01, AUDIT-02, AUDIT-03
 **Success Criteria** (what must be TRUE):
-  1. `pnpm dev` runs locally and `pnpm run deploy` deploys a "Hello World" CF Pages app — Next.js 15.5, Edge Runtime, `@cloudflare/next-on-pages`, `wrangler.toml` configured, Supabase dev env wired, `middleware.ts` session refresh running.
+  1. `pnpm dev` runs locally and `pnpm run deploy` (`opennextjs-cloudflare build && deploy`) deploys a "Hello World" app to **Cloudflare Workers** — Next.js 15.5 (Node.js runtime via `nodejs_compat`), `@opennextjs/cloudflare`, `wrangler.jsonc` + `open-next.config.ts` configured, Supabase dev env wired, `middleware.ts` session refresh running.
   2. Migration `0001_initial_schema.sql` runs cleanly against the dev Supabase project and creates all tables (`firms`, `firm_members`, `enrollments`, `quiz_attempts`, `certificates`, `training_events`, `processed_stripe_events`, `cert_generation_queue`) with RLS enabled and `firm_id` indexed on every tenant-scoped table (FND-02, FND-07).
   3. A developer can run the CI cross-tenant isolation test locally: as a user of `firm_a`, every query against any tenant-scoped table returns zero rows from `firm_b` (FND-03).
   4. The marketing site footer links to live Privacy Policy, Terms of Service, and Data Processing Addendum pages — each reachable on the production domain (FND-01, AUDIT-03).

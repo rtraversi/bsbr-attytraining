@@ -10,7 +10,7 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 
 ### Constraints
 
-- **Tech stack — frontend/hosting:** Next.js 15.5 (App Router, Edge Runtime throughout) on Cloudflare Pages via `@cloudflare/next-on-pages` — CF, not Netlify
+- **Tech stack — frontend/hosting:** Next.js 15.5 (App Router, Node.js runtime via `nodejs_compat`) on **Cloudflare Workers** via `@opennextjs/cloudflare` (OpenNext adapter) — CF, not Netlify
 - **Tech stack — backend:** Supabase (Auth + Postgres + Storage) — single integrated provider for auth, DB, and certificate PDF storage
 - **Tech stack — video:** Cloudflare Stream (paid add-on required) — for signed-URL streaming and bandwidth economics
 - **Tech stack — payments:** Stripe — standard for self-serve SaaS checkout; supports tiered pricing + webhooks
@@ -33,11 +33,11 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| **Next.js** | **15.5.x** (App Router) | Frontend, SSR, API routes (marketing site + firm dashboard + employee training UI) | Current LTS on Cloudflare Pages. v16 ships major breaks (sync APIs removed, Turbopack default, React Compiler stable) — for a greenfield tiny SaaS, lock to 15.5 LTS until 16.x has 2–3 patch releases; revisit at first phase boundary. App Router is mandatory: Server Components let the dashboard fetch firm/employee data without an extra API layer, and route handlers replace the old `pages/api` for Stripe webhooks. **Edge Runtime throughout** — `@cloudflare/next-on-pages` requires `export const runtime = 'edge'` on all dynamic routes. |
+| **Next.js** | **15.5.x** (App Router) | Frontend, SSR, API routes (marketing site + firm dashboard + employee training UI) | Current LTS on Cloudflare Workers. v16 ships major breaks (sync APIs removed, Turbopack default, React Compiler stable) — for a greenfield tiny SaaS, lock to 15.5 LTS until 16.x has 2–3 patch releases; revisit at first phase boundary. App Router is mandatory: Server Components let the dashboard fetch firm/employee data without an extra API layer, and route handlers replace the old `pages/api` for Stripe webhooks. Node.js runtime via `nodejs_compat` — do NOT add `export const runtime = 'edge'` anywhere. |
 | **React** | **18.3.x** | UI runtime | Pairs with Next.js 15.5; React 19 features (use(), Actions) are available but optional — don't adopt until needed. |
 | **TypeScript** | **5.6.x** | Type safety | Non-negotiable for a billing/compliance product. Stripe + Supabase both ship first-class types. |
 | **Tailwind CSS** | **4.1.x** | Styling | Fastest path to applying Built Smart by Rob brand colors to a marketing-plus-dashboard product. v4 ships CSS-first config (`@theme` directive) and is dramatically faster — use it. |
-| **Cloudflare Pages + Workers** | Pages + `@cloudflare/next-on-pages` | Hosting + serverless via `@cloudflare/next-on-pages`; CF Workers for all automation (cert gen, email, scheduled jobs) | No 26-second timeout concern — Workers have a generous CPU budget (50 ms free, 30 s paid). Cert PDF generation fits in a Worker because `pdf-lib` needs no headless browser. CF Pages preview deployments give staging-vs-prod environments (preview env vars → dev Supabase + Stripe test mode; production env vars → prod Supabase + Stripe live). **⚠️ Verify before scaffold:** Cloudflare now recommends `@opennextjs/cloudflare` (Workers-based) for new Next.js apps; `@cloudflare/next-on-pages` is in maintenance mode and Edge-Runtime-only. Verify the adapter choice against current CF docs before Max scaffolds — switching is free now (no code yet), costly later. This does NOT change the locked decision; it is a one-time pre-scaffold verification flag. |
+| **Cloudflare Workers** | `@opennextjs/cloudflare` (OpenNext adapter) | Hosting + serverless via `@opennextjs/cloudflare`; CF Workers for all automation (cert gen, email, scheduled jobs) | No 26-second timeout concern — Workers have a generous CPU budget (50 ms free, 30 s paid). Cert PDF generation fits in a Worker because `pdf-lib` needs no headless browser. Workers Builds + preview URLs for staging-vs-prod environments. **Required config:** `wrangler.jsonc` with `main: ".open-next/worker.js"`, `assets: { directory: ".open-next/assets", binding: "ASSETS" }`, `compatibility_flags: ["nodejs_compat"]`, `compatibility_date` >= 2024-09-23, `preview_urls: true`; `open-next.config.ts` at project root: `import { defineCloudflareConfig } from "@opennextjs/cloudflare"; export default defineCloudflareConfig();`. **Scripts:** `"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview"`, `"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"`, `"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"`. **Local dev:** `next dev` for daily work; `pnpm run preview` runs in workerd — use before deploys/integration tests. **Staging:** Workers Builds connects GitHub repo; enable non-production branch builds + `preview_urls` — each branch gets a stable `<branch>-<worker>.<subdomain>.workers.dev` alias. Unlike Pages, Workers does NOT natively support different bindings/env-vars per preview vs production build — use Wrangler Environments (`[env.staging]`) for env-specific bindings. Do NOT add `export const runtime = 'edge'` anywhere. |
 | **Supabase** | **JS client `supabase-js` v2.49+** with **`@supabase/ssr` v0.6+** | Auth + Postgres + Storage | Single integrated provider. RLS handles firm-vs-employee tenancy at DB level. Storage signs cert URLs natively. Stay on free tier during dev; **upgrade to Pro ($25/mo) before launch** — free-tier 500MB RAM + project-pause-after-7-days is incompatible with paid customers. |
 | **Postgres** | **15** (Supabase managed) | Source of truth | Schema: `firms`, `firm_members`, `seats`, `enrollments`, `quiz_attempts`, `certificates`. JWT custom claims (`firm_id`, `role`) drive RLS. |
 | **Cloudflare Stream** | (current) | Video hosting, signed URLs, HLS delivery | Paid add-on. Pricing: $5 per 1,000 min stored, $1 per 1,000 min delivered. Ingress + encoding free. Pro/Business CF plan includes 100 min storage + 10,000 min delivery monthly. For one 30-min course × thousands of plays: delivery cost dominates. At 30 min × 100 employees × 5 firms/mo = 15,000 min/mo = ~$15/mo — well within tolerance. |
@@ -53,7 +53,7 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 | `@supabase/ssr` | `^0.6.0` | Cookie-based SSR auth for Next.js App Router | Required for App Router. Replaces deprecated `@supabase/auth-helpers-nextjs` — do not use auth-helpers. |
 | `stripe` (Node) | `^17.0.0` | Stripe API SDK | Webhook signature verification, Checkout Session creation, Customer Portal session creation. |
 | `@stripe/stripe-js` | `^5.0.0` | Stripe browser SDK | Loads Stripe.js on the client when redirecting to Checkout. |
-| `jose` | `^5.0.0` | Edge-compatible JWT signing and verification | Use for Cloudflare Stream signed-URL JWTs. **Do NOT use `jsonwebtoken`** — it depends on Node.js `crypto` which is unavailable on the CF Workers edge runtime. `jose` works everywhere (browser, Workers, Node). |
+| `jose` | `^5.0.0` | Web-standard JWT signing and verification | Use for Cloudflare Stream signed-URL JWTs. **Do NOT use `jsonwebtoken`** — heavier, Node-only assumptions, unnecessary even under nodejs_compat. `jose` works everywhere (browser, Workers, Node). |
 | `hls.js` | `^1.5.0` | HLS playback in browsers that don't support it natively (Chrome, Firefox, Edge) | Only needed if a custom player replaces the CF Stream native `<iframe>`. Not needed when using the CF Stream iframe embed. |
 | `zod` | `^3.23.0` | Runtime schema validation | Validate Stripe webhook payloads, user-submitted firm metadata. (No H5P xAPI events — there is no H5P layer.) |
 | `react-email` + `@react-email/render` | `^3.0.0` / `^1.0.0` | Type-safe transactional email templates | Render to HTML server-side; the resulting HTML string is passed to a CF Worker that calls the Resend REST API directly. |
@@ -68,8 +68,8 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 | `eslint` + `eslint-config-next` | Linting | Next.js 15.5 still ships `next lint`; v16 deprecates it in favor of running eslint directly — start with eslint directly to avoid migration later. |
 | `prettier` | Formatting | Standard. Single config at repo root. |
 | **Supabase CLI** | Local DB, migrations, type generation | `supabase gen types typescript --linked > types/supabase.ts`. Run on every schema change. Crucial — never hand-write types for the DB. |
-| **Wrangler CLI** | Local dev + deploy for CF Pages/Workers | `wrangler pages dev` for local Next.js dev; `wrangler deploy` to push Workers; secrets set via `wrangler secret put <KEY>` or the CF dashboard. Never commit secrets to source. |
-| `dotenv-cli` | Env management | `.env.local` for Next.js local dev. `STRIPE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CLOUDFLARE_STREAM_SIGNING_KEY_ID`, `CLOUDFLARE_STREAM_SIGNING_KEY_PEM` are stored as CF Pages/Workers environment variables (encrypted) — not exposed to the client. |
+| **Wrangler CLI** | Local workerd preview + deploy for CF Workers | `pnpm run preview` (via `opennextjs-cloudflare preview`) to run the app in workerd locally; `opennextjs-cloudflare deploy` to ship; secrets via `wrangler secret put <KEY>` or the Worker's Settings in the CF dashboard. Never commit secrets to source. |
+| `dotenv-cli` | Env management | `.env.local` for `next dev`; `.dev.vars` for workerd preview. `STRIPE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CLOUDFLARE_STREAM_SIGNING_KEY_ID`, `CLOUDFLARE_STREAM_SIGNING_KEY_PEM` are stored as the Worker's environment variables/secrets (encrypted at rest) — set via `wrangler secret put` or the Worker's Settings in the CF dashboard; never in source code. |
 | **Stripe CLI** | Local webhook testing | `stripe listen --forward-to localhost:3000/api/webhooks/stripe` — non-negotiable for webhook dev. |
 | Playwright | E2E tests | Test the critical revenue path: Stripe Checkout → firm provisioning → invite → quiz pass → cert email. One smoke test for this is more valuable than 100 unit tests. |
 
@@ -89,14 +89,18 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 
 ## Integration Patterns (the load-bearing details)
 
-### 1. Next.js 15 on Cloudflare Pages — routing & rendering split
+### 1. Next.js 15 on Cloudflare Workers (OpenNext adapter) — routing & rendering
 
 - **App Router only.** No Pages Router. The Stripe webhook handler is a Route Handler at `app/api/webhooks/stripe/route.ts`.
 - **Rendering strategy by surface:**
 - **Next.js 15 caching gotcha:** `fetch` is no longer cached by default. Don't rely on the old default. Set explicit `cache: 'force-cache'` only for static marketing content; everything authenticated stays uncached.
-- **Edge Runtime throughout:** `@cloudflare/next-on-pages` requires `export const runtime = 'edge'` on dynamic routes. Cert PDF generation runs in a separate CF Worker (using `pdf-lib`, pure JS, no headless browser) — the Route Handler fires and forgets a POST to that Worker after Stripe webhook processing.
-- **CF Pages adapter advisory:** Stay on `@cloudflare/next-on-pages` per the locked decision, but verify against current CF docs before scaffolding — `@opennextjs/cloudflare` (Workers-based) is now the CF-recommended adapter; `@cloudflare/next-on-pages` is maintenance mode / Edge-Runtime-only. Switching is free now, costly once code exists.
-- **Preview deployments:** CF Pages preview deployments replace branch deploys. Preview environment (its own env vars) → dev Supabase + Stripe test mode; production environment → prod Supabase + Stripe live.
+- **Node.js runtime (not Edge):** `@opennextjs/cloudflare` uses Node.js runtime via `nodejs_compat`. Do NOT add `export const runtime = 'edge'` anywhere — it is unsupported and unnecessary with this adapter.
+- **Required config files:**
+  - `wrangler.jsonc`: `main: ".open-next/worker.js"`, `assets: { directory: ".open-next/assets", binding: "ASSETS" }`, `compatibility_flags: ["nodejs_compat"]`, `compatibility_date` >= 2024-09-23, `preview_urls: true`
+  - `open-next.config.ts` at project root: `import { defineCloudflareConfig } from "@opennextjs/cloudflare"; export default defineCloudflareConfig();`
+- **Scripts:** `"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview"`, `"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"`, `"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"`.
+- **Local dev:** Use `next dev` (Node-based, best DX) for daily work. Use `pnpm run preview` to run in workerd before deploys and integration tests — it matches production.
+- **Staging + preview URLs:** Workers Builds connects the GitHub repo and builds/deploys on push. Enable non-production branch builds + `preview_urls: true` → each branch gets a stable `<branch>-<worker>.<subdomain>.workers.dev` alias plus per-commit preview URLs posted to PRs. Unlike Pages, Workers does NOT natively support different bindings/env-vars per preview vs production build — use Wrangler Environments (`[env.staging]`) with an appropriate Workers Build config for env-specific bindings/secrets.
 
 ### 2. Supabase — Auth, RLS, Storage
 
@@ -129,9 +133,9 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 - `prod_pro`: "Compliance Training — 16+ Seats" → Prices: `price_pro_first_$499`, `price_pro_renewal_$299`
 - Use **Stripe Checkout (hosted)**, mode `subscription`. Don't build a card form.
 - After payment, Stripe redirects to `/onboarding?session_id={CHECKOUT_SESSION_ID}` where the app waits for the webhook to provision the firm.
-- Route: `app/api/webhooks/stripe/route.ts` (Edge Runtime — `export const runtime = 'edge'`).
+- Route: `app/api/webhooks/stripe/route.ts` (runs in the Worker, Node runtime — do NOT add `export const runtime = 'edge'`).
 - **Must read the raw request body** for signature verification: use `await req.text()` (not `req.json()`).
-- **Use `stripe.webhooks.constructEventAsync`** (Web Crypto API — edge-compatible), NOT the sync `stripe.webhooks.constructEvent` which requires Node.js `crypto`. The async variant works on CF Workers/Pages Edge Runtime.
+- **`constructEvent` works** (Node crypto is available under nodejs_compat); `constructEventAsync` also works and is a fine choice. Both are valid — either is acceptable.
 - **Idempotency:** insert into `processed_stripe_events(event_id PK)` before processing; skip duplicate events.
 - Critical events to subscribe to:
 - Configure once in the Stripe Dashboard: enable subscription cancellation, payment method updates, invoice history. Disable plan upgrades unless you want to handle mid-cycle proration logic (recommend: disable, link to a "contact us" page for upgrades initially).
@@ -168,7 +172,7 @@ The quiz layer is a **custom React component (~150–200 lines)** rendered below
 
 | Recommended | Alternative | When to Use Alternative |
 |-------------|-------------|-------------------------|
-| Next.js on Cloudflare Pages (`@cloudflare/next-on-pages`) | Next.js on Vercel / `@opennextjs/cloudflare` | Vercel if Cloudflare Pages ships broken on a specific Next.js feature; `@opennextjs/cloudflare` (Workers-based) if CF officially deprecates `@cloudflare/next-on-pages` — see adapter advisory in the Core Technologies table. Verify before scaffolding. |
+| Next.js on Cloudflare Workers (`@opennextjs/cloudflare`) | Next.js on Vercel | Vercel only if CF Workers ship broken on a specific Next.js feature you need. |
 | Supabase | Auth0 + Neon + S3 | Multi-region compliance requirements, >100k users, or need for SOC2-certified auth provider. None apply at this scale. |
 | Cloudflare Stream | Mux | Mux has superior analytics and slightly better API ergonomics, but at higher cost. Cloudflare is fine for this volume. |
 | Cloudflare Stream | YouTube unlisted | Free, but: no DRM, no signed URLs, ads risk, brand dilution, no analytics. Unacceptable for paid product. |
@@ -186,13 +190,15 @@ The quiz layer is a **custom React component (~150–200 lines)** rendered below
 | Supabase `getSession()` for authorization | Returns unverified data from cookies — can be spoofed in some scenarios | `supabase.auth.getClaims()` (validates JWT) for any "can this user do X" check |
 | `user_metadata` for `firm_id` or `role` | The user can edit their own `user_metadata` via the client SDK — instant privilege escalation | `app_metadata` (read-only from the client; set by service-role admin calls) |
 | Next.js Pages Router | App Router is the path forward; mixing both for a greenfield project creates support drag | App Router exclusively |
-| Next.js 16.x on Cloudflare Pages (today) | Cloudflare's Next.js runtime trails Vercel on new releases; 16.x stability on CF Pages is unverified | Next.js 15.5 LTS until 16.x has been on CF Pages production for 2–3 patch cycles |
+| `@cloudflare/next-on-pages` | Deprecated — CF officially deprecated this adapter; `@opennextjs/cloudflare` is the official Next.js-on-Cloudflare path | `@opennextjs/cloudflare` on Cloudflare Workers |
+| `export const runtime = 'edge'` with `@opennextjs/cloudflare` | Unsupported and unnecessary — the OpenNext adapter uses the Node.js runtime via `nodejs_compat`; adding edge exports will break the build | Omit entirely; Node runtime is the default |
+| Next.js 16.x on Cloudflare Workers (today) | Cloudflare Workers Next.js runtime support may trail on new releases; verify 16.x against current CF docs before adopting | Next.js 15.5 LTS until 16.x has been verified on CF Workers production for 2–3 patch cycles |
 | `next lint` (legacy wrapper) | Deprecated in 15.5, removed in 16 | Run `eslint` directly with `eslint-config-next` |
 | `fetch()` default caching in Next.js 15 | Changed behavior from Next.js 14 — was cached, now is not. Easy to assume old behavior. | Explicit `cache: 'force-cache'` or `next: { revalidate: N }` per request |
-| `jsonwebtoken` for Cloudflare Stream signed URLs | Node.js-only — unavailable on CF Workers/Pages Edge Runtime | `jose` (edge-compatible, works on Workers, browsers, and Node) |
+| `jsonwebtoken` for Cloudflare Stream signed URLs | Heavier, Node-only assumptions, unnecessary — may load under nodejs_compat but not needed | `jose` (web-standard, works in plain CF Workers and the Next.js Worker alike) |
 | PDF generation requiring a headless browser (Puppeteer/Chrome) on edge | No headless Chrome on CF Workers edge | `pdf-lib` (pure JS) in a CF Worker — no native deps, runs without a browser |
 | Stripe per-seat `quantity` for tier pricing | Tiers here are bands (5, 15, 16+), not strict per-seat — using `quantity` invites accidental proration math | Three distinct Prices, seat cap as subscription metadata |
-| Storing `STRIPE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` in client code | Total compromise — these keys can do anything on your account | CF Pages/Workers environment variables (encrypted at rest); set via `wrangler secret put` or CF dashboard; never in source code |
+| Storing `STRIPE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` in client code | Total compromise — these keys can do anything on your account | Worker environment variables/secrets (encrypted at rest); set via `wrangler secret put` or the Worker's CF dashboard Settings; never in source code |
 | Free-tier Supabase in production | Pauses after 7 days inactivity, 500 MB RAM, no point-in-time recovery | Pro tier ($25/mo) before launch |
 | Old Supabase API keys for new projects | Will be retired end of 2026 | New `sb_publishable_*` + `sb_secret_*` key format |
 
@@ -215,17 +221,17 @@ The quiz layer is a **custom React component (~150–200 lines)** rendered below
 | `next@15.5` | `eslint-config-next@15.5` | Pin to the same minor. |
 | `@supabase/ssr@^0.6` | `@supabase/supabase-js@^2.49` | Always upgrade both together; the SSR package depends on supabase-js types. |
 | `@supabase/ssr@^0.6` | `next@15.5` App Router | Requires `cookies()` from `next/headers` — App Router only. Will not work with Pages Router. |
-| `stripe@17` (Node/Edge) | Stripe API version `2025-09-30.acacia` | SDK ships with a default API version pinned; pass `apiVersion` explicitly to lock it. On Edge Runtime, use `stripe.webhooks.constructEventAsync` (Web Crypto), NOT the sync `constructEvent` (Node crypto). |
-| `@cloudflare/next-on-pages` | `next@15.5` | Requires Edge Runtime on all dynamic routes (`export const runtime = 'edge'`). Maintenance mode — verify adapter choice against current CF docs before scaffolding; `@opennextjs/cloudflare` is CF's current recommendation. |
-| `jose` | CF Workers / Edge Runtime / Node | Edge-compatible JWT library; no native deps. Use in place of `jsonwebtoken` everywhere in this stack. |
-| `pdf-lib@^1.17` | CF Workers / Edge Runtime | Pure JS, no native deps — runs in a CF Worker without headless Chrome. |
+| `stripe@17` (Node) | Stripe API version `2025-09-30.acacia` | SDK ships with a default API version pinned; pass `apiVersion` explicitly to lock it. Both `constructEvent` (sync, Node crypto) and `constructEventAsync` (Web Crypto) work under nodejs_compat — either is acceptable. |
+| `@opennextjs/cloudflare` | `next@15.5` | nodejs_compat; `compatibility_date` >= 2024-09-23; no `export const runtime = 'edge'` exports anywhere. `wrangler@4.21+` for preview URL aliases. |
+| `jose` | CF Workers / Node | Web-standard JWT library; no native deps. Use in place of `jsonwebtoken` everywhere in this stack. |
+| `pdf-lib@^1.17` | CF Workers (Node runtime) | Pure JS, no native deps — runs in a CF Worker without headless Chrome. |
 | `tailwindcss@^4` | PostCSS via `@tailwindcss/postcss` plugin | v4 dropped the v3 plugin format. Migration is real but small. |
 
 ## Confidence Assessment
 
 | Component | Confidence | Reason |
 |-----------|------------|--------|
-| Next.js 15.5 on Cloudflare Pages | MEDIUM-HIGH | Well-established stack; `@cloudflare/next-on-pages` adapter advisory is the one open verification — confirm adapter choice against current CF docs before scaffolding. |
+| Next.js 15.5 on Cloudflare Workers (OpenNext adapter) | HIGH | Cloudflare-official adapter, verified against current docs 2026-06-12. |
 | Supabase Auth + RLS pattern | HIGH | Standard multi-tenant pattern documented by Supabase itself; pattern matches firm/employee model exactly. |
 | Cloudflare Stream signed URLs | HIGH | Direct match to product needs (signed video access tied to enrollment); pricing verified for our volume. |
 | Custom React quiz | HIGH | Small surface (~150–200 LOC), no vendor lock, direct Supabase score reporting via Server Action. Fallback (H5P Path A) is documented if needed. |
@@ -238,9 +244,12 @@ The quiz layer is a **custom React component (~150–200 lines)** rendered below
 
 - [Next.js 15 Upgrade Guide](https://nextjs.org/docs/app/guides/upgrading/version-15) — HIGH
 - [Next.js 16 Upgrade Guide](https://nextjs.org/docs/app/guides/upgrading/version-16) — HIGH (informs the "stay on 15.5" recommendation)
-- [Cloudflare Pages — Next.js deployment guide](https://developers.cloudflare.com/pages/framework-guides/nextjs/) — HIGH
-- [`@cloudflare/next-on-pages` GitHub](https://github.com/cloudflare/next-on-pages) — HIGH (adapter docs + maintenance-mode status)
-- [`@opennextjs/cloudflare` GitHub](https://github.com/opennextjs/opennextjs-cloudflare) — HIGH (CF-recommended Workers-based adapter — see adapter advisory)
+- [Next.js on Cloudflare Workers — official guide](https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/) — HIGH
+- [OpenNext Cloudflare adapter docs](https://opennext.js.org/cloudflare) — HIGH
+- [Migrate from CF Pages to CF Workers](https://developers.cloudflare.com/workers/static-assets/migration-guides/migrate-from-pages/) — HIGH (Pages→Workers, preview env guidance)
+- [CF Workers non-production branch builds](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/) — HIGH
+- [CF Workers preview URLs](https://developers.cloudflare.com/workers/configuration/previews/) — HIGH
+- [`@cloudflare/next-on-pages` GitHub (deprecation notice)](https://github.com/cloudflare/next-on-pages) — HIGH
 - [Cloudflare Workers — Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/) — HIGH
 - [Supabase SSR for Next.js — official](https://supabase.com/docs/guides/auth/server-side/nextjs) — HIGH
 - [Creating a Supabase client for SSR](https://supabase.com/docs/guides/auth/server-side/creating-a-client) — HIGH
@@ -252,7 +261,7 @@ The quiz layer is a **custom React component (~150–200 lines)** rendered below
 - [Cloudflare Stream Pricing](https://developers.cloudflare.com/stream/pricing/) — HIGH
 - [Cloudflare Stream — Use your own player](https://developers.cloudflare.com/stream/viewing-videos/using-own-player/) — HIGH
 - [Stripe Webhooks — quickstart](https://docs.stripe.com/webhooks/quickstart?lang=node) — HIGH
-- [Stripe `constructEventAsync` (edge-compatible)](https://docs.stripe.com/webhooks/signature-verification?lang=node#edge-runtimes) — HIGH (use this, not sync `constructEvent`, on CF Workers/Pages Edge)
+- [Stripe webhook signature verification](https://docs.stripe.com/webhooks/signature-verification?lang=node) — HIGH (both `constructEvent` and `constructEventAsync` work under nodejs_compat)
 - [Stripe Customer Portal — configure](https://docs.stripe.com/customer-management/configure-portal) — HIGH
 - [Stripe pricing models — tiered/per-seat/flat](https://docs.stripe.com/products-prices/pricing-models) — HIGH
 - [Resend vs Postmark 2026 comparison](https://www.pkgpulse.com/blog/resend-vs-nodemailer-vs-postmark-email-nodejs-2026) — MEDIUM

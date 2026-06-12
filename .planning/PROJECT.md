@@ -61,9 +61,9 @@ An attorney can pay, invite their staff, see them complete the training, and pro
 
 ## Constraints
 
-- **Tech stack — frontend/hosting:** Next.js 15.5 (App Router, Edge Runtime throughout) on **Cloudflare Pages** via `@cloudflare/next-on-pages` — all portals and SaaS apps live on CF, not Netlify
+- **Tech stack — frontend/hosting:** Next.js 15.5 (App Router, Node.js runtime via `nodejs_compat`) on **Cloudflare Workers** via `@opennextjs/cloudflare` — all portals and SaaS apps live on CF, not Netlify
 - **Tech stack — backend:** Supabase (Auth + Postgres + Storage) — single integrated provider for auth, DB, and certificate PDF storage
-- **Tech stack — API / automation:** **Cloudflare Workers** — all serverless functions, cert generation, email sending, and scheduled jobs run as CF Workers or CF Pages Functions; no n8n, no VPS
+- **Tech stack — API / automation:** **Cloudflare Workers** — all serverless functions, cert generation, email sending, and scheduled jobs run as CF Workers or CF Workers Cron Triggers; no n8n, no VPS
 - **Tech stack — video:** Cloudflare Stream (paid add-on required) — for signed-URL streaming and bandwidth economics
 - **Tech stack — payments:** Stripe — standard for self-serve SaaS checkout; supports tiered pricing + webhooks
 - **Tech stack — interactive video/quiz:** Custom React quiz component (~150–200 lines) over Cloudflare Stream native player — no H5P, no Articulate Rise
@@ -78,7 +78,8 @@ An attorney can pay, invite their staff, see them complete the training, and pro
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Next.js on Cloudflare Pages | All portals and SaaS apps are moving to CF Pages + Workers; Netlify is websites only | — Decided 2026-06-11 |
+| Next.js on Cloudflare Workers (OpenNext adapter) | All portals and SaaS apps are moving to CF Workers; Netlify is websites only | — Decided 2026-06-11 |
+| Adapter: `@opennextjs/cloudflare` over deprecated `@cloudflare/next-on-pages` | Cloudflare deprecated next-on-pages; OpenNext on Workers is the official Node-runtime path | — Decided 2026-06-12 |
 | Supabase for auth + DB + storage | One integrated provider reduces moving parts; certs need durable storage anyway | — Pending |
 | Cloudflare Stream for video hosting | Signed URLs + bandwidth economics vs. self-hosting; willing to enable paid add-on | — Pending |
 | CF Workers as the only automation runtime | No VPS to manage, no n8n to maintain; CF Workers handle cert gen (pdf-lib), email (Resend REST), and scheduled reminders (CF Cron) | — Decided 2026-06-11 |
@@ -107,4 +108,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-19 after initialization*
+*Last updated: 2026-05-19 after initialization; adapter re-locked to @opennextjs/cloudflare 2026-06-12*
