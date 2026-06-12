@@ -53,8 +53,8 @@ REQ-IDs use `CATEGORY-NN` format. Each requirement is user-centric, specific, an
 
 ### Certificate Generation (CERT)
 
-- [ ] **CERT-01**: When a `quiz_attempts` row is inserted with `passed = true`, a Supabase Database Webhook triggers an n8n workflow that generates the certificate PDF
-- [ ] **CERT-02**: The cert generation workflow renders an HTML template to PDF via Puppeteer in n8n (not Netlify Functions, not Supabase Edge Functions)
+- [ ] **CERT-01**: When a `quiz_attempts` row is inserted with `passed = true`, a Supabase Database Webhook fires an authenticated HTTP POST to a dedicated CF Worker endpoint that handles all cert generation
+- [ ] **CERT-02**: The CF Worker cert endpoint generates the certificate PDF using `pdf-lib` (pure JS, no headless browser), writes the PDF bytes to Supabase Storage, and continues the pipeline
 - [ ] **CERT-03**: The generated PDF is uploaded to a private Supabase Storage bucket pathed `{firm_id}/{firm_member_id}.pdf`
 - [ ] **CERT-04**: The PDF contains: recipient name, course name, course version, issue date, expiry date (issue + 365 days), score, issuing firm name, unique cert ID in the format `BSBR-{YYYY}-{4 alphanumeric}-{4 alphanumeric}`, the ABA Model Rule 5.3 Framework reference, and the strict disclaimer (FND-06)
 - [ ] **CERT-05**: A `certificates` row is inserted recording the cert ID, recipient `firm_members.id`, issue date, expiry date, course version, score, and storage path
@@ -77,12 +77,12 @@ REQ-IDs use `CATEGORY-NN` format. Each requirement is user-centric, specific, an
 
 ### Automation & Reminders (AUTO)
 
-- [ ] **AUTO-01**: The n8n self-hosted instance at `n8n.katychavezlaw.com` runs the cert-generation workflow and all email-sending workflows; no other automation runtime (Make/Zapier) is used
-- [ ] **AUTO-02**: A `cert_generation_queue` table acts as a dead-letter queue — Next.js writes "needs cert" rows; n8n drains them on a 5-minute schedule; failed rows retry with exponential backoff and surface to operator alert after 3 failures
-- [ ] **AUTO-03**: n8n cron workflows send expiry-reminder emails at 90, 30, and 7 days before each cert's `expires_at`
-- [ ] **AUTO-04**: An UptimeRobot (or equivalent) external health check pings the n8n webhook health endpoint every 5 minutes and SMS-alerts the operator on failure
-- [ ] **AUTO-05**: Every public n8n webhook URL requires a shared-secret header (`X-Webhook-Secret`) verified at the first node; missing or wrong secret returns 401
-- [ ] **AUTO-06**: A daily n8n backup job exports the n8n Postgres database and persistent volume to off-VPS storage; `N8N_ENCRYPTION_KEY` is stored in the operator's password manager separately
+- [ ] **AUTO-01**: A CF Worker endpoint (`POST /workers/cert-generate`) handles all cert generation and email sending; it is triggered by a Supabase Database Webhook on `quiz_attempts.passed = true`; no n8n, no VPS, no external automation runtime
+- [ ] **AUTO-02**: A `cert_generation_queue` table acts as a dead-letter queue — the CF Worker writes "needs cert" rows on failure; a CF Workers Cron Trigger (every 5 minutes) re-processes failed rows with exponential backoff; rows that fail 3 times alert the operator via Resend email
+- [ ] **AUTO-03**: A CF Workers Cron Trigger sends expiry-reminder emails (via Resend REST API) at 90, 30, and 7 days before each cert's `expires_at`
+- [ ] **AUTO-04**: An UptimeRobot (or equivalent) external health check pings a CF Worker health endpoint (`GET /workers/health`) every 5 minutes and SMS-alerts the operator on failure
+- [ ] **AUTO-05**: The Supabase Database Webhook POST to the CF Worker cert endpoint requires a shared-secret header (`X-Webhook-Secret`) checked at the top of the Worker; missing or wrong secret returns 401
+- [ ] **AUTO-06**: All CF Worker secrets (`SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `STRIPE_WEBHOOK_SECRET`, `CERT_WEBHOOK_SECRET`, `CF_STREAM_KEY_PEM`) are documented in the operator's password manager; Supabase PITR (point-in-time recovery) is verified enabled on the prod project before launch
 
 ### Audit & Privacy (AUDIT)
 
@@ -126,7 +126,7 @@ REQ-IDs use `CATEGORY-NN` format. Each requirement is user-centric, specific, an
 - SSO / SAML / SCIM
 - In-product NPS / sentiment surveys
 - Free trial — the cert *is* the product
-- Make.com / Zapier — n8n self-hosted is the only automation runtime
+- Make.com / Zapier / n8n / any external automation platform — CF Workers is the only automation runtime
 - Public certificate verification page (third-party cert ID lookup)
 - CLE credit accreditation — different product motion
 - Free tier of the product

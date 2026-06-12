@@ -33,16 +33,18 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
 ## Phase Details
 
 ### Phase 0: Foundations
-**Goal:** Privacy, schema, RLS, and operational guardrails are in place — the platform can be safely built on top.
+**Goal:** CF Pages scaffold, Supabase schema + RLS, privacy docs, and sending domain are in place — the platform can be safely built on top.
 **Mode:** mvp
 **Depends on:** Nothing (first phase)
 **Requirements:** FND-01, FND-02, FND-03, FND-04, FND-05, FND-06, FND-07, AUDIT-01, AUDIT-02, AUDIT-03
 **Success Criteria** (what must be TRUE):
-  1. The marketing site footer links to live Privacy Policy, Terms of Service, and Data Processing Addendum pages — each reachable on the production domain (FND-01, AUDIT-03).
-  2. A developer can run the CI cross-tenant isolation test locally and in CI: as a user of `firm_a`, every query against any tenant-scoped table returns zero rows from `firm_b` (FND-02, FND-03, FND-07).
-  3. A test email sent from `noreply@builtsmartbyrob.com` lands in Gmail, Outlook, and Yahoo inboxes (not spam) with SPF, DKIM, and DMARC all passing (FND-04).
-  4. The production Supabase project is on the Pro tier ($25/mo) and the operator has documented evidence (billing screenshot + project tier in dashboard) before any Stripe live-mode connection is attempted (FND-05).
-  5. A row inserted into `training_events` cannot be updated or deleted from any non-service-role context, and the standard disclaimer footer is present on every public surface (FND-06, AUDIT-01, AUDIT-02).
+  1. `pnpm dev` runs locally and `pnpm run deploy` deploys a "Hello World" CF Pages app — Next.js 15.5, Edge Runtime, `@cloudflare/next-on-pages`, `wrangler.toml` configured, Supabase dev env wired, `middleware.ts` session refresh running.
+  2. Migration `0001_initial_schema.sql` runs cleanly against the dev Supabase project and creates all tables (`firms`, `firm_members`, `enrollments`, `quiz_attempts`, `certificates`, `training_events`, `processed_stripe_events`, `cert_generation_queue`) with RLS enabled and `firm_id` indexed on every tenant-scoped table (FND-02, FND-07).
+  3. A developer can run the CI cross-tenant isolation test locally: as a user of `firm_a`, every query against any tenant-scoped table returns zero rows from `firm_b` (FND-03).
+  4. The marketing site footer links to live Privacy Policy, Terms of Service, and Data Processing Addendum pages — each reachable on the production domain (FND-01, AUDIT-03).
+  5. A test email sent from `noreply@builtsmartbyrob.com` via Resend lands in Gmail, Outlook, and Yahoo inboxes (not spam) with SPF, DKIM, and DMARC all passing (FND-04).
+  6. The production Supabase project is on the Pro tier ($25/mo) and documented before any Stripe live-mode connection is attempted (FND-05).
+  7. A row inserted into `training_events` cannot be updated or deleted from any non-service-role context, and the standard disclaimer footer is present on every public surface (FND-06, AUDIT-01, AUDIT-02).
 **Plans:** TBD
 **UI hint:** no
 
@@ -57,8 +59,8 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
   1. A buyer can complete Stripe Checkout for any of the three tiers (Basic $199 / Standard $349 / Pro $499) with Stripe Tax applied, the refund-policy text visible at checkout, and the firm + admin `firm_members` row provisioned in a single Postgres transaction (PAY-01, PAY-02, PAY-04, PAY-06, PAY-07).
   2. Re-sending the same `checkout.session.completed` event from the Stripe dashboard produces no duplicate firm, no duplicate seat allocation, and no duplicate invite email (PAY-03).
   3. The firm admin receives a magic-link email from `noreply@builtsmartbyrob.com`, sets a password on first visit, can log in / log out / use "forgot password," can invite an employee by name + email, and can resend any pending invite with one click (AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05).
-  4. An employee on the "Mark Pass" stub page can trigger a `quiz_attempts.passed=true` insert; within ~5 minutes a PDF certificate (containing recipient name, course name + version, issue date, expiry date = +365 days, score, firm name, unique `BSBR-YYYY-XXXX-XXXX` ID, Rule 5.3 framework reference, and the strict disclaimer) is uploaded to `{firm_id}/{firm_member_id}.pdf` in Supabase Storage, a `certificates` row is inserted, and the cert is emailed to the employee via Resend through n8n (CERT-01, CERT-02, CERT-03, CERT-04, CERT-05, CERT-06).
-  5. If the n8n VPS is offline when a pass occurs, the `cert_generation_queue` row persists and is drained on the next n8n 5-minute schedule — no cert is silently lost (AUTO-01, AUTO-02).
+  4. An employee on the "Mark Pass" stub page can trigger a `quiz_attempts.passed=true` insert; the Supabase DB Webhook fires to the CF Worker cert endpoint; within ~2 minutes a PDF certificate (containing recipient name, course name + version, issue date, expiry date = +365 days, score, firm name, unique `BSBR-YYYY-XXXX-XXXX` ID, Rule 5.3 framework reference, and the strict disclaimer) is uploaded to Supabase Storage, a `certificates` row is inserted, and the cert is emailed to the employee via Resend (CERT-01, CERT-02, CERT-03, CERT-04, CERT-05, CERT-06).
+  5. If the CF Worker cert endpoint fails (e.g. Supabase Storage timeout), the `cert_generation_queue` row persists and is picked up by the CF Cron drain within 5 minutes — no cert is silently lost (AUTO-01, AUTO-02).
   6. Both the firm admin and the cert owner can re-download any certificate from the dashboard via `/api/certificates/[id]/url`, which authenticates the caller and returns a 60-second signed Supabase Storage URL; the expiry-tracking column (`expires_at`) is populated and queryable (CERT-07, CERT-08, CERT-09, PAY-05).
 **Plans:** TBD
 **UI hint:** yes
@@ -98,16 +100,16 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
 ---
 
 ### Phase 4: Automation hardening
-**Goal:** Replace the trivial Phase 1 cert template with the real branded template, harden the n8n automation backbone against silent failure, and wire the expiry-reminder cadence — production-grade operational guardrails before exposing the platform to real customers.
+**Goal:** Replace the trivial Phase 1 cert template with the real branded template, harden the CF Worker automation against silent failure, and wire the expiry-reminder cadence — production-grade operational guardrails before exposing the platform to real customers.
 **Mode:** mvp
 **Depends on:** Phase 3
 **Requirements:** AUTO-03, AUTO-04, AUTO-05, AUTO-06
 **Success Criteria** (what must be TRUE):
-  1. n8n cron workflows emit expiry-reminder emails to firm admins and employees at 90, 30, and 7 days before each cert's `expires_at` (AUTO-03).
-  2. UptimeRobot (or equivalent) external health check pings the n8n webhook health endpoint every 5 minutes; if n8n is down for >5 minutes the operator receives an SMS alert (AUTO-04).
-  3. Every public n8n webhook URL requires an `X-Webhook-Secret` header verified at the first node; a request with a missing or wrong secret returns 401 (AUTO-05).
-  4. A daily n8n backup job successfully exports n8n's Postgres database and persistent volume to off-VPS storage; the `N8N_ENCRYPTION_KEY` is recorded separately in the operator's password manager; a restore-from-backup test has been performed once against a staging environment (AUTO-06).
-  5. The branded cert PDF template (typography, BSBR logo, layout, disclaimer block) replaces the trivial Phase 1 template, and every previously-issued test cert is regenerated to the new template — visual review passes on screen and print.
+  1. A CF Workers Cron Trigger fires daily and emits expiry-reminder emails (via Resend REST API) to firm admins and employees at 90, 30, and 7 days before each cert's `expires_at` (AUTO-03).
+  2. UptimeRobot (or equivalent) external health check pings the CF Worker health endpoint (`GET /workers/health`) every 5 minutes; operator receives SMS alert if the endpoint is down >5 minutes (AUTO-04).
+  3. The Supabase DB Webhook POST to the CF Worker requires `X-Webhook-Secret` verified at the top of the handler; missing or wrong secret returns 401 (AUTO-05).
+  4. All CF Worker secrets are recorded in the operator's password manager; Supabase PITR is confirmed enabled on the prod project; a restore test has been performed against the dev Supabase project (AUTO-06).
+  5. The branded cert PDF template (BSBR logo as embedded base64, typography, layout, disclaimer block) replaces the trivial Phase 1 template via `pdf-lib` — visual review passes on screen and print.
 **Plans:** TBD
 **UI hint:** no
 

@@ -61,12 +61,12 @@ An attorney can pay, invite their staff, see them complete the training, and pro
 
 ## Constraints
 
-- **Tech stack — frontend/hosting:** Next.js on Netlify PRO — chosen for ISR/server functions on a tier we already pay for
+- **Tech stack — frontend/hosting:** Next.js 15.5 (App Router, Edge Runtime throughout) on **Cloudflare Pages** via `@cloudflare/next-on-pages` — all portals and SaaS apps live on CF, not Netlify
 - **Tech stack — backend:** Supabase (Auth + Postgres + Storage) — single integrated provider for auth, DB, and certificate PDF storage
+- **Tech stack — API / automation:** **Cloudflare Workers** — all serverless functions, cert generation, email sending, and scheduled jobs run as CF Workers or CF Pages Functions; no n8n, no VPS
 - **Tech stack — video:** Cloudflare Stream (paid add-on required) — for signed-URL streaming and bandwidth economics
 - **Tech stack — payments:** Stripe — standard for self-serve SaaS checkout; supports tiered pricing + webhooks
-- **Tech stack — automation:** n8n self-hosted (`n8n.katychavezlaw.com`) — FIRST CHOICE for every automation, before considering Make or Zapier
-- **Tech stack — interactive video/quiz:** H5P or Articulate Rise — open-source preferred (H5P) if integration with Cloudflare Stream is workable
+- **Tech stack — interactive video/quiz:** Custom React quiz component (~150–200 lines) over Cloudflare Stream native player — no H5P, no Articulate Rise
 - **Pricing constraint:** $199 / 5 seats, $349 / 6–15 seats, $499 / 16+ seats — annual; renewal ~60% of original
 - **Target market constraint:** Solo and small firms (1–15 staff) — UX, marketing, and pricing tiers reflect this; product is self-serve only
 - **Compliance framing:** ABA Model Rule 5.3 — generic national framing; no state-specific accreditation claims in v1
@@ -78,10 +78,10 @@ An attorney can pay, invite their staff, see them complete the training, and pro
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Next.js on Netlify PRO | Operator already has Netlify PRO; Next.js is the strongest fit for that tier | — Pending |
+| Next.js on Cloudflare Pages | All portals and SaaS apps are moving to CF Pages + Workers; Netlify is websites only | — Decided 2026-06-11 |
 | Supabase for auth + DB + storage | One integrated provider reduces moving parts; certs need durable storage anyway | — Pending |
 | Cloudflare Stream for video hosting | Signed URLs + bandwidth economics vs. self-hosting; willing to enable paid add-on | — Pending |
-| n8n self-hosted as the only automation runtime | VPS already running n8n; avoids Make/Zapier per-task pricing and vendor sprawl | — Pending |
+| CF Workers as the only automation runtime | No VPS to manage, no n8n to maintain; CF Workers handle cert gen (pdf-lib), email (Resend REST), and scheduled reminders (CF Cron) | — Decided 2026-06-11 |
 | Score-gate with unlimited retakes (no attempt cap) | Maximizes completion rate; cert is the outcome customers paid for, not a hurdle | — Pending |
 | 12-month certificate validity with annual recertification | Drives renewal revenue (~60% repeat) and aligns with annual compliance review cadence | — Pending |
 | ABA Model Rule 5.3 generic, national scope (no state variants in v1) | Single course → single content production track → fastest path to launch | — Pending |
