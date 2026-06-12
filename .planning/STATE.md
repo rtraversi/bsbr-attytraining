@@ -84,6 +84,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 - **Auth:** magic-link invite + password on first visit; password + magic-link backup for repeat logins.
 - **Environments:** two Supabase projects (`attytraining-dev`, `attytraining-prod`). Free-tier 2-project cap forces this.
 - **Note:** `research/STACK.md` was written for the original Netlify + n8n stack. The CF Workers architecture supersedes any Netlify/n8n guidance in that file.
+- **Pricing — flat annual (2026-06-12, Rob):** $199 / $349 / $499 annual per tier, the SAME price on renewal — NO renewal discount. Supersedes the prior "renewal ~60% of original" model ($119/$209/$299). Rationale: the training requires substantial research and updating year over year, so renewal years cost as much to produce as year one. Consequence: no first-year/renewal price-swap logic — the Stripe subscription renews at the same Price ID and the Customer Portal handles renewals natively. One annual Price per tier (3 prices total). Test-mode objects created 2026-06-12: products `prod_UgyZjCbV9uJdzX` / `prod_UgyZ7rqNgXZYao` / `prod_UgyZ30zgvigsd6`; prices `price_1ThachCzT2268ei9HlR1YivD` ($199, `basic_annual`) / `price_1ThaciCzT2268ei9tooaKk8j` ($349, `standard_annual`) / `price_1ThaciCzT2268ei9MRI94R1i` ($499, `pro_annual`); `tax_code=txcd_20060058`, `tax_behavior=exclusive`. Live-mode objects pending Stripe Tax.
 
 ### Open Decisions (from research/SUMMARY.md "Decisions Needed Before Phase 1")
 
@@ -91,8 +92,8 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 - [ ] Sending domain transactional email config (`noreply@builtsmartbyrob.com` + SPF/DKIM/DMARC)
 - [ ] Quiz pass threshold (recommend 80%) hardcoded into `courses.pass_threshold`
 - [ ] Question pool size + per-attempt count (recommend ~24–32 pool / 8–10 per attempt)
-- [ ] Stripe Price IDs (3 Products × 2 Prices = 6 Price IDs) confirmed
-- [ ] Stripe Tax enabled + home-state sales-tax registration completed
+- [x] Stripe Price IDs confirmed — 3 Products × 1 annual Price = 3 Price IDs, created in TEST mode 2026-06-12 (flat annual pricing). Live-mode recreation pending Stripe Tax.
+- [ ] Stripe Tax enabled + home-state sales-tax registration completed — IN PROGRESS: `tax_code` (`txcd_20060058`) + `tax_behavior` (`exclusive`) set on all test-mode objects; still missing head_office address (BSBR Holdings LLC) to activate Stripe Tax; state registrations + CPA consult still open.
 - [ ] External uptime monitor for CF Worker health endpoint picked (UptimeRobot vs BetterStack)
 - [ ] Articulate 360 trial outcome (Rob, 30-day trial) — lock Rise-hybrid course format or fall back to custom React interactive blocks / H5P; rewrite COURSE-01..05 + ROADMAP Phase 2 criteria 1–2 once decided
 - [ ] CPA consult on SaaS sales tax (~$300–$500)
