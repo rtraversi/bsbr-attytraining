@@ -1,6 +1,6 @@
 # STATE — AI Compliance Training Platform
 
-**Last updated:** 2026-06-12 (Stripe CLI done — all infrastructure prerequisites complete)
+**Last updated:** 2026-06-12 (Stripe test-mode products/prices created; flat annual pricing locked)
 
 ---
 
@@ -114,6 +114,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 | 260612-efr | Re-lock hosting adapter to @opennextjs/cloudflare on Workers; add NEXT-10-STEPS.md for Max | 2026-06-12 | 728fab3 | [260612-efr-switch-locked-adapter-decision-to-openne](./quick/260612-efr-switch-locked-adapter-decision-to-openne/) |
 | 260612-kqe | Mark Stripe CLI install + login done in NEXT-10-STEPS.md | 2026-06-12 | 583dc57 | [260612-kqe-mark-stripe-cli-install-login-done-in-ne](./quick/260612-kqe-mark-stripe-cli-install-login-done-in-ne/) |
 | 260612-ky5 | Record Max's progress report (steps 4–7) in NEXT-10-STEPS.md as unverified + Verification Gaps section | 2026-06-12 | 98289da | [260612-ky5-record-max-s-progress-report-in-next-10-](./quick/260612-ky5-record-max-s-progress-report-in-next-10-/) |
+| 260612-lg8 | Create Stripe test-mode products/prices (flat annual pricing) + propagate pricing change through docs | 2026-06-12 | d612d53 | [260612-lg8-record-stripe-products-prices-created-fl](./quick/260612-lg8-record-stripe-products-prices-created-fl/) |
 
 ### Decisions to Log
 
@@ -123,7 +124,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 
 ## Session Continuity
 
-- **Last action:** Completed quick task 260612-ky5 (2026-06-12) — recorded Max's progress report (Steps 4–6 done, 7 partial, 3 pending) in NEXT-10-STEPS.md as unverified, with a Verification Gaps section: no app code pushed to GitHub yet, attytraining-dev/prod Supabase projects not in Rob's org (ownership unconfirmed), CF deploy unverifiable, and Step 7 logically blocked on Step 3 (adapter).
+- **Last action:** Completed quick task 260612-lg8 (2026-06-12) — created Stripe TEST-mode products + prices via CLI under flat annual pricing (Rob's decision: no renewal discount; supersedes ~60% renewal model) and propagated the change through PROJECT/REQUIREMENTS/ROADMAP/CLAUDE/STATE. Remaining Stripe items: head_office address → activate Stripe Tax, state registration, recreate objects in live mode before launch, hand Price IDs to Max.
 - **Next action:** `/gsd:plan-phase 0` to decompose Phase 0 (Foundations) into executable plans.
 - **Branch:** none (git branching_strategy = `none` per config)
 - **Files of record:**
