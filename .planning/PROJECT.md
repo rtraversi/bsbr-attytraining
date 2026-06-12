@@ -20,7 +20,7 @@ An attorney can pay, invite their staff, see them complete the training, and pro
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Stripe checkout creates a paid firm account with the correct seat tier
+- [ ] Stripe checkout creates a paid firm account with the purchased number of seats (per-seat volume pricing)
 - [ ] Firm admin can invite employees up to their purchased seat count
 - [ ] Employees receive an invitation, set credentials, and log in
 - [ ] Employees play a Cloudflare Stream video with embedded interactive quizzes (H5P or Articulate Rise)
@@ -67,7 +67,7 @@ An attorney can pay, invite their staff, see them complete the training, and pro
 - **Tech stack — video:** Cloudflare Stream (paid add-on required) — for signed-URL streaming and bandwidth economics
 - **Tech stack — payments:** Stripe — standard for self-serve SaaS checkout; supports tiered pricing + webhooks
 - **Tech stack — interactive video/quiz:** Custom React quiz component (~150–200 lines) over Cloudflare Stream native player — no H5P, no Articulate Rise
-- **Pricing constraint:** $199 / 5 seats, $349 / 6–15 seats, $499 / 16+ seats — annual; flat price on renewal (no renewal discount).
+- **Pricing constraint:** $35/user/yr for 1–9 users, $32/user/yr for 10–24 users, $28/user/yr for 25+ users — billed annually per enrolled user; volume bands (all seats billed at the band rate the firm's headcount lands in); FLAT on renewal — no renewal discount (course substantially updated each year).
 - **Target market constraint:** Solo and small firms (1–15 staff) — UX, marketing, and pricing tiers reflect this; product is self-serve only
 - **Compliance framing:** ABA Model Rule 5.3 — generic national framing; no state-specific accreditation claims in v1
 - **Operator burden:** Self-run platform — operator (Rob) should not be in the loop for normal customer flows (purchase, invite, certify, renew); all of that is automated end-to-end
@@ -86,7 +86,7 @@ An attorney can pay, invite their staff, see them complete the training, and pro
 | Score-gate with unlimited retakes (no attempt cap) | Maximizes completion rate; cert is the outcome customers paid for, not a hurdle | — Pending |
 | 12-month certificate validity with annual recertification | Drives renewal revenue (flat annual price; renewal costs as much to produce as year one) and aligns with annual compliance review cadence | — Pending — renewal pricing decided flat 2026-06-12 |
 | ABA Model Rule 5.3 generic, national scope (no state variants in v1) | Single course → single content production track → fastest path to launch | — Pending |
-| Solo/small firms (1–15 staff), self-serve only | Pricing tiers fit; no sales motion; one-page checkout → onboarding | — Pending |
+| Solo/small firms (1–15 staff), self-serve only | Per-seat volume pricing fits self-serve; no sales motion; one-page checkout → onboarding | — Pending |
 | Curriculum produced in parallel, not gating platform build | Platform can scaffold with placeholder content; final video drops in before launch | — Pending |
 | Built Smart by Rob branding (existing brand assets) | BSBR brand exists with logo and colors; apply to this product rather than create new identity | — Pending |
 

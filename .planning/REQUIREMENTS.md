@@ -29,10 +29,10 @@ REQ-IDs use `CATEGORY-NN` format. Each requirement is user-centric, specific, an
 
 ### Checkout & Provisioning (PAY)
 
-- [ ] **PAY-01**: A buyer can complete Stripe Checkout for one of three fixed tiers — Basic (≤5 seats / $199), Standard (6–15 seats / $349), Pro (16+ seats / $499) — billed annually
+- [ ] **PAY-01**: A buyer can complete Stripe Checkout choosing a seat QUANTITY (min 1); pricing is per-seat volume — $35/user/yr (1–9 seats), $32/user/yr (10–24 seats), $28/user/yr (25+ seats), all seats billed at the band rate the headcount lands in — billed annually. Stripe computes the band rate via a single volume-tiered Price (`tiers_mode=volume`).
 - [ ] **PAY-02**: Stripe webhooks are received by a Next.js Route Handler that verifies the HMAC signature on the raw body and rejects unsigned requests
 - [ ] **PAY-03**: Webhook handling is idempotent — the same Stripe event ID processed twice produces no duplicate firm, seat allocation, or invite
-- [ ] **PAY-04**: On `checkout.session.completed`, the system creates the firm record, allocates seats per tier, creates the firm-admin `firm_members` row, and triggers the AUTH-01 magic-link invite — all in a single Postgres transaction
+- [ ] **PAY-04**: On `checkout.session.completed`, the system creates the firm record, allocates seats equal to the purchased Checkout quantity, creates the firm-admin `firm_members` row, and triggers the AUTH-01 magic-link invite — all in a single Postgres transaction
 - [ ] **PAY-05**: A firm admin can click "Manage billing" from the dashboard and be redirected to the Stripe Customer Portal (managed by Stripe — payment method, invoices, cancellation)
 - [ ] **PAY-06**: Stripe Tax is enabled on the Stripe account and applied to every Checkout session before the account is switched to live mode
 - [ ] **PAY-07**: The checkout page displays a refund policy: *"Refunds available within 14 days of purchase AND only if no certificate has yet been issued. Once any certificate is issued, the purchase is non-refundable."* The refund-eligibility check enforces both conditions
@@ -96,7 +96,7 @@ REQ-IDs use `CATEGORY-NN` format. Each requirement is user-centric, specific, an
 
 - [ ] **RENEW-01**: 30 days before a firm's annual cycle ends, all firm admins receive an email summarizing their staff's cert status and a one-click "Renew now" link
 - [ ] **RENEW-02**: Renewal emails repeat at 14 days and 3 days pre-renewal if the firm has not yet renewed
-- [ ] **RENEW-03**: Renewal reuses the SAME annual Stripe Price ID as the original purchase (flat annual pricing — no renewal discount); the renewal Checkout / Stripe subscription renewal charges the same price as year one ($199/$349/$499 per tier). There is exactly one Price per tier — no separate discounted price for renewals.
+- [ ] **RENEW-03**: Renewal reuses the SAME single volume-tiered Stripe Price ID (`price_1ThbLNCzT2268ei9nkadS8kD`, lookup_key `per_seat_annual`) and the firm's current seat quantity (flat annual pricing — no renewal discount); the renewal charges the same per-seat band rate as year one. There is exactly one Price — no separate discounted renewal price.
 - [ ] **RENEW-04**: After a successful renewal, all currently-active employees from the prior cycle are automatically re-enrolled and notified; departed employees are NOT re-enrolled
 - [ ] **RENEW-05**: When a cert's `expires_at` passes, its status flips to "expired" in the dashboard; the employee retains read access to past cert PDFs for the 7-year retention window but cannot generate a new cert without re-enrollment
 - [ ] **RENEW-06**: A 30-day grace period applies after `expires_at` during which a firm can renew at the renewal price without losing continuity of supervision documentation; after grace, the renewal is treated as a fresh purchase
