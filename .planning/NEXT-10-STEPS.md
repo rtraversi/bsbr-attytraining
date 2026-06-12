@@ -79,7 +79,7 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
 
 ### Step 4: Env vars — Not started
 
-**Owner:** Max | **Status:** Not started
+**Owner:** Max | **Status:** Done (per Max's report 2026-06-12 — unverified, code not yet pushed)
 
 - [ ] Create `.env.local` for `next dev` (used by the Node-based local dev server):
   ```
@@ -102,7 +102,7 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
 
 ### Step 5: DB schema — Not started
 
-**Owner:** Max | **Status:** Not started
+**Owner:** Max | **Status:** Done (per Max's report 2026-06-12 — unverified; NOTE: attytraining-dev/prod projects are not in Rob's Supabase org — confirm which account owns them)
 
 - [ ] Create migration `0001_initial_schema.sql` with these 8 tables:
   - `firms` — firm account, tier, seat count, stripe_customer_id
@@ -122,7 +122,7 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
 
 ### Step 6: Supabase Auth wiring — Not started
 
-**Owner:** Max | **Status:** Not started
+**Owner:** Max | **Status:** Done (per Max's report 2026-06-12 — unverified, code not yet pushed)
 
 - [ ] Install SSR package: `pnpm add @supabase/ssr @supabase/supabase-js`
 - [ ] Create `lib/supabase/client.ts` exporting `createBrowserClient()` (Client Components only)
@@ -136,7 +136,7 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
 
 ### Step 7: First deploy to Cloudflare Workers — Not started
 
-**Owner:** Max | **Status:** Not started
+**Owner:** Max | **Status:** Partially done / Blocked on Step 3 (per Max's report 2026-06-12 — unverified) — scaffold not pushed to GitHub; Workers deploy requires the OpenNext adapter from Step 3
 
 - [ ] Push the scaffold to GitHub (branch: `main`)
 - [ ] Connect repo in Cloudflare Workers Builds: Workers dashboard → Create → Connect to Git → select `rtraversi/bsbr-attytraining`
@@ -213,3 +213,22 @@ The original "First 10 Steps" spreadsheet was written when the adapter decision 
    - Stripe account → **Done** (Rob)
    - Supabase CLI → **Done** (Max)
    - Stripe CLI → **Done** (Rob, 2026-06-12)
+
+---
+
+## Verification Gaps — Max's 2026-06-12 progress report (recorded by Rob's Claude)
+
+Max reported Steps 1–7 complete except Step 3. Rob's Claude attempted to verify on 2026-06-12 and could NOT confirm the Step 4–7 work. Statuses above are marked "unverified" until these gaps close.
+
+**Findings:**
+
+- GitHub repo `rtraversi/bsbr-attytraining` (origin/main) contains NO app code — only CLAUDE.md, skills-lock.json, and .planning/. No scaffold, no migrations, no lib/supabase, no middleware.ts pushed. No other branches exist on the remote.
+- Rob's Supabase org contains NO `attytraining-dev` or `attytraining-prod` projects — presumably created under Max's own Supabase account. Ownership/billing is an open question (confirm which account owns them).
+- Cloudflare API auth check failed, so the Worker deploy could not be verified.
+- Logical inconsistency: Step 7 (first deploy) cannot be fully complete without Step 3 — the OpenNext adapter is required to deploy Next.js to Workers — and Step 7's first checkbox ("Push the scaffold to GitHub") is demonstrably not done.
+
+**Action items for Max (before claiming Step 7 done):**
+
+- Push the scaffold + all Step 4–6 code to GitHub `main` so it can be verified.
+- Confirm which Supabase account owns `attytraining-dev` / `attytraining-prod` (ownership + billing).
+- Finish Step 3 (OpenNext adapter swap) before claiming Step 7 (Workers deploy depends on it).
