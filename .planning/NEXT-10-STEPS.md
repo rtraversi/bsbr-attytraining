@@ -17,9 +17,9 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
 
 ---
 
-### Step 2: Local dev tools — In Progress
+### Step 2: Local dev tools — Done
 
-**Owner:** Max (Stripe CLI: Rob) | **Status:** In Progress
+**Owner:** Max (Stripe CLI: Rob) | **Status:** Done
 
 - [x] Node.js — installed; **NOTE: Max has v24; spec calls for v22 LTS. Recommend pinning v22 via nvm-windows:**
   - Install nvm-windows from https://github.com/coreybutler/nvm-windows
@@ -30,7 +30,7 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
   - Verify: `wrangler --version` (should be >= 4.21)
   - Upgrade if needed: `pnpm add -g wrangler@latest`
 - [x] Supabase CLI — installed (Max, Done)
-- [ ] Stripe CLI — **Owner: Rob, Not started**
+- [x] Stripe CLI — **Done (Rob, 2026-06-12)** — v1.42.11 via winget (`Stripe.StripeCli`); `stripe login` authenticated to the "Built Smart by Rob" account (acct_1TYqL3CzT2268ei9); CLI session keys valid until 2026-09-10
   - Install: https://docs.stripe.com/stripe-cli
   - Verify: `stripe --version`
   - Auth: `stripe login`
@@ -212,4 +212,4 @@ The original "First 10 Steps" spreadsheet was written when the adapter decision 
 3. **Statuses refreshed from spreadsheet (2026-06-12):**
    - Stripe account → **Done** (Rob)
    - Supabase CLI → **Done** (Max)
-   - Stripe CLI remains **Not started** (Rob)
+   - Stripe CLI → **Done** (Rob, 2026-06-12)
