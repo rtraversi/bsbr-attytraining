@@ -1,6 +1,6 @@
 # STATE — AI Compliance Training Platform
 
-**Last updated:** 2026-06-12 (adapter re-locked to @opennextjs/cloudflare)
+**Last updated:** 2026-06-12 (Stripe CLI done — all infrastructure prerequisites complete)
 
 ---
 
@@ -35,11 +35,11 @@
 | Wrangler CLI | Done | Max | — |
 | Supabase CLI | Done | Max | — |
 | Stripe account | Done | Rob | — |
-| Stripe CLI | Not started | Rob | — |
+| Stripe CLI | Done | Rob | v1.42.11 via winget; logged in 2026-06-12, CLI session valid to 2026-09-10 |
 
 ### Phase 0 Requirements Status (FND-01..07, AUDIT-01..03)
 
-All 10 Phase 0 requirements are **not yet started** — none require accounts alone; they require running code, migrations, and live pages. All account/CLI prerequisites are now Done except Stripe CLI (Rob) — Phase 0 work can begin (see `.planning/NEXT-10-STEPS.md`).
+All 10 Phase 0 requirements are **not yet started** — none require accounts alone; they require running code, migrations, and live pages. All account/CLI prerequisites are now **Done** (Stripe CLI completed 2026-06-12) — Phase 0 work can begin (see `.planning/NEXT-10-STEPS.md`).
 
 ⚠️ **Branding note:** FND-04 references `builtsmartbyrob.com` as the sending domain. Domain decision has moved to `aistaffcompliance.com` — sending domain config should target `noreply@aistaffcompliance.com`.
 
@@ -111,6 +111,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 |---|-------------|------|--------|-----------|
 | 260612-dzf | Propagate CF Pages + Workers stack pivot through CLAUDE.md, research docs, and STATE.md | 2026-06-12 | a31e15d | [260612-dzf-propagate-cf-pages-workers-stack-pivot-t](./quick/260612-dzf-propagate-cf-pages-workers-stack-pivot-t/) |
 | 260612-efr | Re-lock hosting adapter to @opennextjs/cloudflare on Workers; add NEXT-10-STEPS.md for Max | 2026-06-12 | 728fab3 | [260612-efr-switch-locked-adapter-decision-to-openne](./quick/260612-efr-switch-locked-adapter-decision-to-openne/) |
+| 260612-kqe | Mark Stripe CLI install + login done in NEXT-10-STEPS.md | 2026-06-12 | 583dc57 | [260612-kqe-mark-stripe-cli-install-login-done-in-ne](./quick/260612-kqe-mark-stripe-cli-install-login-done-in-ne/) |
 
 ### Decisions to Log
 
@@ -120,7 +121,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 
 ## Session Continuity
 
-- **Last action:** Completed quick task 260612-efr (2026-06-12) — re-locked the hosting adapter to `@opennextjs/cloudflare` on Cloudflare Workers (next-on-pages is deprecated), updated all docs, and created `.planning/NEXT-10-STEPS.md` for Max's onboarding.
+- **Last action:** Completed quick task 260612-kqe (2026-06-12) — Stripe CLI installed (v1.42.11) and authenticated on Rob's machine; NEXT-10-STEPS.md Step 2 now fully Done. All pre-Phase-0 infrastructure prerequisites are complete.
 - **Next action:** `/gsd:plan-phase 0` to decompose Phase 0 (Foundations) into executable plans.
 - **Branch:** none (git branching_strategy = `none` per config)
 - **Files of record:**
