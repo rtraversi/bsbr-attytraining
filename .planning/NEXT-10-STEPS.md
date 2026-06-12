@@ -148,20 +148,30 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
 
 ---
 
-### Step 8: Stripe products and prices — Not started
+### Step 8: Stripe products and prices — Done (test mode) — live mode pending Stripe Tax
 
-**Owner:** Rob | **Status:** Not started
+**Owner:** Rob | **Status:** Done (test mode) — live mode pending Stripe Tax
 
-- [ ] Create 3 Products in Stripe dashboard:
-  - `prod_basic` — "Compliance Training — Up to 5 Seats"
-  - `prod_standard` — "Compliance Training — 6–15 Seats"
-  - `prod_pro` — "Compliance Training — 16+ Seats"
-- [ ] Create 2 Prices per product (first-year + renewal at ~60%):
-  - Basic: $199 first / $119 renewal
-  - Standard: $349 first / $209 renewal
-  - Pro: $499 first / $299 renewal
-- [ ] Record all 6 Price IDs and add to `.env.local` + the Worker's env (via `wrangler secret put` — **not** a CF Pages env dashboard)
-- [ ] Enable Stripe Tax from day one — before any live-mode connection
+> **Pricing model (locked 2026-06-12, Rob):** Flat annual pricing — NO renewal discount. One annual Price per tier ($199/$349/$499), same price on renewal. No first-year/renewal price-swap logic; the Stripe subscription renews at the same Price ID; Customer Portal handles renewals natively. This supersedes the prior "renewal ~60% of original" model everywhere it appeared.
+
+**Completed — test mode [x]:**
+
+- [x] 3 Products created with tier + seat_cap metadata:
+  - `prod_UgyZjCbV9uJdzX` — "Compliance Training — Up to 5 Seats" — metadata: `tier=basic`, `seat_cap=5`
+  - `prod_UgyZ7rqNgXZYao` — "Compliance Training — 6–15 Seats" — metadata: `tier=standard`, `seat_cap=15`
+  - `prod_UgyZ30zgvigsd6` — "Compliance Training — 16+ Seats" — metadata: `tier=pro`, `seat_cap=9999`
+- [x] 1 annual Price per product (flat — same price on renewal; 3 prices total, one per tier):
+  - `basic_annual` → `price_1ThachCzT2268ei9HlR1YivD` — $199/yr (prod_UgyZjCbV9uJdzX)
+  - `standard_annual` → `price_1ThaciCzT2268ei9tooaKk8j` — $349/yr (prod_UgyZ7rqNgXZYao)
+  - `pro_annual` → `price_1ThaciCzT2268ei9MRI94R1i` — $499/yr (prod_UgyZ30zgvigsd6)
+- [x] `tax_code` `txcd_20060058` ("Training Services - Self-study Web-based") set on all 3 products; `tax_behavior=exclusive` set on all 3 prices
+
+**Remaining — live mode [ ]:**
+
+- [ ] Rob: provide BSBR Holdings LLC head_office address (Stripe dashboard → Settings → Tax, or via API) to activate Stripe Tax — currently PENDING; this is blocking the live-mode connection
+- [ ] Rob: complete home-state sales-tax registration (+ CPA consult on multi-state SaaS sales tax) before switching to live mode
+- [ ] Recreate all 3 products + 3 prices in LIVE mode before launch — only after Stripe Tax is enabled; the lookup_keys (`basic_annual`, `standard_annual`, `pro_annual`) make this scriptable
+- [ ] Give the 3 test-mode Price IDs to Max for `.env.local` + the Worker's env (via `wrangler secret put` — **not** a CF Pages env dashboard)
 
 ---
 
