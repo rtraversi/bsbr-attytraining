@@ -1,6 +1,6 @@
 # STATE — AI Compliance Training Platform
 
-**Last updated:** 2026-06-12 (per-seat volume pricing locked; supersedes both prior same-day models)
+**Last updated:** 2026-06-12 (code migrated to correct repo + verified; Monday smoke-test runbook ready)
 
 ---
 
@@ -117,6 +117,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 | 260612-ky5 | Record Max's progress report (steps 4–7) in NEXT-10-STEPS.md as unverified + Verification Gaps section | 2026-06-12 | 98289da | [260612-ky5-record-max-s-progress-report-in-next-10-](./quick/260612-ky5-record-max-s-progress-report-in-next-10-/) |
 | 260612-lg8 | Create Stripe test-mode products/prices (flat annual pricing) + propagate pricing change through docs | 2026-06-12 | d612d53 | [260612-lg8-record-stripe-products-prices-created-fl](./quick/260612-lg8-record-stripe-products-prices-created-fl/) |
 | 260612-mdv | Switch to per-seat volume pricing ($35/$32/$28 from aistaffcompliance.com); redo Stripe objects; propagate through docs | 2026-06-12 | 27d799f | [260612-mdv-switch-pricing-model-to-per-seat-volume-](./quick/260612-mdv-switch-pricing-model-to-per-seat-volume-/) |
+| 260612-pg6 | Verify Max's code post-migration, record step statuses, add Monday smoke-test runbook | 2026-06-12 | 08f080d | [260612-pg6-record-verified-step-statuses-post-code-](./quick/260612-pg6-record-verified-step-statuses-post-code-/) |
 
 ### Decisions to Log
 
@@ -126,7 +127,8 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 
 ## Session Continuity
 
-- **Last action:** Completed quick task 260612-mdv (2026-06-12) — switched the pricing model to per-seat volume tiers ($35/$32/$28 per user/yr by band, flat on renewal; source: aistaffcompliance.com marketing site), archived the 3-tier test-mode Stripe objects, created the single product + volume-tiered Price, and propagated the model through CLAUDE/PROJECT/REQUIREMENTS/ROADMAP/STATE/NEXT-10-STEPS. Remaining Stripe items: head_office address → activate Stripe Tax, state registration, live-mode recreation, hand Price ID to Max.
+- **Last action:** Completed quick task 260612-pg6 (2026-06-12) — migrated Max's app code to the correct repo (efc3214, secret-free squash; aistaffcompliance reset to marketing-only + private; leaked dev Supabase key rotated by Max), verified Steps 3/5/9 (adapter config, schema+RLS+types, cert-worker stub), found Step 6 auth wiring NOT done (0-byte stubs — Max's top priority), and wrote the Monday Smoke-Test Runbook into NEXT-10-STEPS.md.
+- **Next action (Monday):** pre-flight per the runbook (Max: clone reset via `git reset --hard`, Step 6 auth wiring, migration 0002 for training_events + cert_generation_queue, rotated key into .dev.vars, Workers Builds repo check; Rob: collaborator invite), then run the 7-check smoke test.
 - **Next action:** `/gsd:plan-phase 0` to decompose Phase 0 (Foundations) into executable plans.
 - **Branch:** none (git branching_strategy = `none` per config)
 - **Files of record:**
