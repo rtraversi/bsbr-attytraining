@@ -326,6 +326,11 @@ This project is built by two people (Rob and Max) on different machines, so the 
   so the other person can pull it.
 - **Load:** at the start of every session, FIRST run `git pull` to fetch the other person's latest
   handoff/work (if the working tree has uncommitted changes, skip the pull, say so, and read the local
-  copy instead). Then read `session_handoff.md` at the repo root and surface a 2–3 sentence recap:
-  what was last worked on, by whom, and the next steps. Do this once per session, not every turn.
+  copy instead). Then:
+  1. Read `session_handoff.md` at the repo root for the high-level index and step status.
+  2. Read **every file** in `.planning/sessions/` (sorted by filename, oldest first) so you have the
+     full history of what was built, decided, and left open — not just the most recent session.
+  3. Surface a concise recap to the user: who worked on what, across all sessions, and the clear next step.
+  Do this once per session, not every turn. Rob and Max may each be unaware of what the other did, so
+  the full session history is the only reliable source of truth.
 - This file is the cross-person sync point — it complements (does not replace) GSD's `.planning/` state.
