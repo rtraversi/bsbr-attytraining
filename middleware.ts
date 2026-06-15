@@ -20,6 +20,14 @@ export async function middleware(request: NextRequest) {
           )
         },
       },
+      // @supabase/realtime-js v2.108+ explicitly detects Cloudflare Workers
+      // (via WebSocketPair being defined) and throws from WebSocketFactory
+      // .getWebSocketConstructor() when no transport is provided. Middleware
+      // never uses Realtime — providing globalThis.WebSocket as the transport
+      // bypasses the factory check entirely.
+      realtime: {
+        transport: globalThis.WebSocket,
+      },
     }
   )
 
