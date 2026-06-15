@@ -1,75 +1,79 @@
 # Session Handoff
 
-**Date:** 2026-06-12
-**Who:** Rob
+**Date:** 2026-06-15
+**Who:** Max
 
 ---
 
 ## What Was Done
 
-- Installed Stripe CLI (v1.42.11 via winget), logged in to Built Smart by Rob Stripe account; CLI session valid to 2026-09-10
-- Discovered and fixed **repo mix-up incident**: Max had pushed the Next.js app code to `rtraversi/aistaffcompliance` (the marketing site repo), which also caused `.open-next/cloudflare/next-env.mjs` (snapshots `.env.local`) to leak the Supabase dev service-role key to a public repo. Resolution: made aistaffcompliance repo private, Max rotated the leaked key, clean squash-migrated app code to correct repo `rtraversi/bsbr-attytraining` as commit efc3214, force-pushed aistaffcompliance back to marketing-site-only history
-- **Verified Max's code post-migration:**
-  - Step 3 (OpenNext adapter config — `wrangler.jsonc`, `open-next.config.ts`): ✅ VERIFIED correct spec shape
-  - Step 4 (env vars): ✅ Done on Max's machine; `.gitignore` verified; leak incident noted
-  - Step 5 (DB schema): ✅ Substantially verified — `0001_initial_schema.sql` (296 lines, 8 tables, RLS, 12 indexes), types generated against live dev DB `ndmzvtuywcufvkxtkjhg`; **⚠️ MISSING** `training_events` and `cert_generation_queue` tables → need migration 0002
-  - Step 6 (Supabase Auth wiring): ❌ **NOT DONE** — `middleware.ts`, `lib/supabase/client.ts`, `lib/supabase/server.ts` are all 0-byte stubs
-  - Step 7 (first deploy): ❓ Unverified — predates repo fix
-  - Step 9 (cert Worker stub): ✅ Code verified — correct X-Webhook-Secret validation, proper error handling
-- **Pricing model finalized (per-seat volume):** $35/user/yr (1–9), $32/user/yr (10–24), $28/user/yr (25+); flat on renewal, no discount. Source: `aistaffcompliance.com` marketing site HTML. All docs updated (CLAUDE.md, REQUIREMENTS.md, ROADMAP.md, PROJECT.md, STATE.md)
-- **Created Stripe test-mode objects:** ONE product `prod_UgzKT3NrGNAvDA` + ONE volume-tiered Price `price_1ThbLNCzT2268ei9nkadS8kD` (`per_seat_annual`, `billing_scheme=tiered`, `tiers_mode=volume`, `tax_behavior=exclusive`, `tax_code=txcd_20060058`). Old 3-product objects archived. Live-mode creation deferred pending Stripe Tax activation.
-- **Updated `.planning/NEXT-10-STEPS.md`:** recorded verified statuses for Steps 3–9, added Monday Smoke-Test Runbook (7 checks)
-- **Updated `.planning/STATE.md`:** all pricing/Stripe/repo-incident context locked
+### RLS Isolation Test — PASSED (10/10)
+
+The cross-tenant RLS isolation test (`tests/rls-isolation.test.ts`) was run against the live staging Supabase DB for the first time.
+
+- **Migration 0002 status:** Already applied. `supabase migration list` confirms both 0001 and 0002 are in sync (Local and Remote).
+- **Test result:** 10/10 passing in ~6s. All isolation assertions and positive controls passed.
+- **`pnpm test` fix:** Vitest 4.x does not auto-load `.env.local`. Fixed by installing `dotenv-cli ^11.0.0` as a devDependency and updating the `test` / `test:watch` scripts to `dotenv -e .env.local -- vitest run` / `dotenv -e .env.local -- vitest`.
+
+Committed in: `cf51982 test: fix pnpm test — add dotenv-cli for .env.local loading in vitest`
+
+---
+
+## Current Step Status (NEXT-10-STEPS.md)
+
+| Step | Status |
+|------|--------|
+| 1 Accounts | ✅ Done |
+| 2 Dev tools | ✅ Done |
+| 3 OpenNext scaffold | ✅ Done |
+| 4 Env vars | ✅ Done (Max's machine) |
+| 5 DB schema | ✅ **Now Complete** — migration 0002 applied, RLS isolation test passing |
+| 6 Auth wiring | ✅ Done (session 2) — client.ts, server.ts, middleware.ts implemented with CF Workers compat fix |
+| 7 First deploy | ⬜ Unverified — need to confirm Workers Builds is on `rtraversi/bsbr-attytraining` |
+| 8 Stripe objects | ✅ Test mode done; live mode blocked on Rob adding BSBR Holdings LLC address in Stripe Tax |
+| 9 Cert Worker stub | ✅ Code done; deploy + webhook wiring unverified |
+| 10 Smoke test | ⬜ Not started — 3/7 checks may be ready; Rob-side checks (6, 7) pending |
 
 ---
 
 ## Status
 
 **Working:**
-- All infrastructure accounts provisioned (Cloudflare, Supabase, Stripe, Resend, GitHub)
-- Correct repo `rtraversi/bsbr-attytraining` has clean app code (no leaked secrets)
-- DB schema migration `0001` is solid with RLS and indexes
-- Cert worker stub is properly secured
-- Stripe test-mode per-seat volume pricing is live in test mode
+- All infrastructure accounts provisioned
+- DB schema: migrations 0001 + 0002 applied and verified against staging
+- RLS cross-tenant isolation: confirmed passing in integration test
+- Auth wiring: implemented with CF Workers compatibility fix
+- `pnpm test` works cleanly — runs against live staging DB, 10/10 green
 
-**Needs work before Monday smoke test:**
-- Max must reset local clone: `git remote set-url origin https://github.com/rtraversi/bsbr-attytraining.git && git fetch origin && git checkout main && git reset --hard origin/main && pnpm install` ← **must use reset --hard**, not git pull
-- Max: implement Step 6 auth wiring (all three 0-byte stubs — see Next Steps below)
-- Max: update `.dev.vars` and `.env.local` with the ROTATED Supabase service-role key
-- Max: add migration `0002` for `training_events` and `cert_generation_queue` tables
-- Rob: send Max collaborator invite to `rtraversi/bsbr-attytraining`
-- Rob: add BSBR Holdings LLC head-office address in Stripe Tax to activate Stripe Tax
+**What still needs to happen before Step 10 smoke test is complete:**
 
----
-
-## Next Steps
-
-**Rob (before Monday):**
-1. Send Max collaborator invite to `rtraversi/bsbr-attytraining` on GitHub
-2. Add BSBR Holdings LLC head-office address in Stripe Dashboard → Settings → Tax (required to activate Stripe Tax; blocked creating live-mode prices)
-3. Once Stripe Tax active: recreate the per-seat volume Price in **live mode** and share the live Price ID with Max
-
-**Max (TOP PRIORITY before smoke test):**
-1. Reset local clone to clean state (use `git reset --hard origin/main`, not git pull)
-2. Update `.dev.vars` and `.env.local` with the **rotated** Supabase dev service-role key
-3. **Implement `lib/supabase/client.ts`** — export `createBrowserClient()` using `@supabase/ssr`
-4. **Implement `lib/supabase/server.ts`** — export `createServerClient()` using `cookies()` from `next/headers`
-5. **Implement `middleware.ts`** — token refresh on every request (mandatory; sessions expire without it). Use `getClaims()` not `getSession()` for auth decisions
-6. **Add migration `0002`** with `training_events` table (audit log) and `cert_generation_queue` (cert dead-letter queue); push + regenerate `types/supabase.ts`
-7. Verify Workers Builds is connected to `rtraversi/bsbr-attytraining` (not the old aistaffcompliance repo)
-8. Rename `package.json` `"name"` from `"aistaffcompliance"` to `"bsbr-attytraining"` (cosmetic)
-
-**Monday (Rob + Max together):**
-- Run the 7-check smoke test per runbook in `.planning/NEXT-10-STEPS.md` Step 10
+1. **Max (local):** Run smoke-test checks 1–4 manually:
+   - Check 1: `pnpm dev` — pages load, no console errors
+   - Check 2: `pnpm run preview` — workerd local preview with `.dev.vars` loaded
+   - Check 3: Create a Supabase Auth test user; verify session persists across navigation (middleware refresh)
+   - Check 4: Verify DB queries visible in Supabase table editor after check 3
+2. **Max:** Confirm Workers Builds is connected to `rtraversi/bsbr-attytraining` (Step 7); provide `*.workers.dev` URL to Rob
+3. **Rob:** Check 6 — `curl` cert Worker endpoint with/without `X-Webhook-Secret`
+4. **Rob:** Check 7 — `stripe listen --forward-to localhost:3000/api/webhooks/stripe` pipe test
 
 ---
 
-## Open Questions
+## Next Steps (in order)
 
-- Should the Supabase **prod** project live under Rob's account or Max's? Currently only the dev project is confirmed (under Max's account). Pro tier ($25/mo) required before launch.
-- Reconcile marketing pricing bands (extends to 25+ users) vs. target-market framing in docs (describes 1–15 staff) — positioning vs. pricing-band mismatch
+1. Run smoke-test checks 1–4 locally (`pnpm dev` → workerd preview → auth session → DB queries)
+2. Confirm Workers Builds repo connection + Step 7 deploy; get `*.workers.dev` URL
+3. Rob: complete checks 6 and 7 (cert Worker curl + Stripe CLI pipe)
+4. Once all 7 checks pass: move to `/gsd:plan-phase 0` to formally decompose Phase 0 into executable tasks
+5. Rob: Add BSBR Holdings LLC address in Stripe Tax to unblock live-mode Price creation
+
+---
+
+## Open Questions (unchanged)
+
+- Should the Supabase **prod** project live under Rob's account or Max's?
+- Reconcile marketing pricing bands (extends to 25+ users) vs. target-market framing in docs (1–15 staff)
 - Stripe Tax: state registrations + CPA consult (~$300–$500) still open
-- Articulate 360 trial outcome — Rob validating Rise hybrid course format (30-day trial); if disappointing, fall back to custom React interactive blocks or H5P
+- Articulate 360 trial outcome — Rob validating Rise hybrid course format; fallback = custom React interactive blocks or H5P
 - Resend sending domain config (`noreply@aistaffcompliance.com` — SPF/DKIM/DMARC) not yet verified
 - Reviewing attorney (~$500–$1,500) for cert + landing + TOS review not yet engaged
 
