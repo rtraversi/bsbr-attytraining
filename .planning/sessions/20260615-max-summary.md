@@ -13,6 +13,25 @@
 
 ## What Was Accomplished
 
+### Session 2 (2026-06-15) — Desktop learning session
+
+**Files explained (plain English walkthroughs):**
+- `middleware.ts` — "the bouncer" that runs on every request, refreshes auth session, contains CF Workers WebSocket compat fix
+- `lib/supabase/client.ts` — "the special cable" that connects browser-side code to Supabase; uses anon key (safe to expose); returns a typed client via `createBrowserClient<Database>`
+
+**Concepts Max now understands:**
+- `lib/` = shared toolbox folder
+- `import` = borrowing a tool from someone else's toolbox
+- `export function` = building your own tool and putting it on the shared shelf for others to use
+- `<Database>` TypeScript generic = telling Supabase the shape of your tables so mistakes get caught before runtime
+- Anon key is safe in the browser because RLS enforces what data comes through
+- `middleware.ts` = bouncer at the door; `client.ts` = the phone/cable used to talk to Supabase
+
+**Next up:**
+- `lib/supabase/server.ts` — same idea as client.ts but server side, with one important difference
+
+---
+
 ### Session 1 (2026-06-14/15)
 All work is in repo: `https://github.com/rtraversi/bsbr-attytraining`
 App folder is at the repo root (not in a subfolder).
