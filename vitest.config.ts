@@ -9,8 +9,8 @@ export default defineConfig({
     hookTimeout: 45_000,
     // Run each test file in its own worker so auth state can't bleed between suites.
     isolate: true,
-    // Vitest loads .env.local automatically (same resolution order as Vite).
-    // No explicit envFile needed; NEXT_PUBLIC_* vars are available as-is in process.env.
+    // .env.local is loaded by the test scripts via `node --env-file=.env.local`
+    // (package.json "test" / "test:watch" scripts) — no extra setup file needed.
   },
   resolve: {
     alias: {
