@@ -1,28 +1,40 @@
 # Session Handoff
 
-**Date:** 2026-06-15 (Session 3)
+**Date:** 2026-06-15 (Sessions 1–4, all Max)
 **Who:** Max
 
 ---
 
-## What Was Done
+## How to Get Fully Caught Up (for Claude or Rob)
 
-### Codebase walkthrough (learning session)
+Session summaries live in `.planning/sessions/`. Read them in order:
 
-Max walked through the core files with Claude to build a solid mental model before Phase 1 UI work begins:
+| File | What it covers |
+|------|---------------|
+| `20260615-max-summary.md` | Session 1 — initial scaffold, CF Workers setup, env vars |
+| `20260615-max-summary-2.md` | Session 2 — auth wiring, migration 0002, RLS isolation test, CF 500 fix |
+| `20260615-max-summary-3.md` | Session 3 — codebase walkthrough, verification pass, package.json fix |
+| `20260615-max-summary-4.md` | Session 4 — Max's personal terminal workflow + pdfedit tool (not project work) |
 
-- `middleware.ts` — reviewed (the bouncer; refreshes auth session on every request)
-- `lib/supabase/client.ts` — reviewed (browser-to-Supabase connection via anon key)
-- `lib/supabase/server.ts` — reviewed (server-side connection; reads session from cookies via `next/headers`)
-- `supabase/migrations/0001_initial_schema.sql` — reviewed all 8 tables, RLS policies, triggers
-- `supabase/migrations/0002_audit_and_queue.sql` — confirmed applied (tables visible in Supabase dashboard)
+If you only have time for one: read **Session 3** for project state, **Session 2** for the deepest technical context.
 
-### Verified / fixed
+---
 
-- **`package.json` name** — corrected from `"aistaffcompliance"` to `"bsbr-attytraining"` (cosmetic, no functional impact)
-- **Cert worker secrets** — `WEBHOOK_SECRET` confirmed set in Cloudflare dashboard; `SUPABASE_SERVICE_ROLE_KEY` confirmed set via CLI
-- **Migration 0002** — confirmed applied to staging (tables present in Supabase dashboard)
-- **`RESEND_API_KEY`** — not yet set, but email step in cert worker is a TODO stub anyway; not blocking
+## What Was Done Today (Max, all four sessions)
+
+### Project work (Sessions 1–3)
+- Scaffolded the full Next.js + Cloudflare Workers + Supabase project
+- Implemented auth wiring: `lib/supabase/client.ts`, `lib/supabase/server.ts`, `middleware.ts`
+- Applied migrations 0001 (8 tables, RLS, triggers) and 0002 (audit log + cert queue)
+- Fixed a CF Workers 500 error caused by Supabase realtime WebSocket detection
+- Built and ran a 10/10 cross-tenant RLS isolation test
+- Verified Worker secrets (`WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`) are set in CF dashboard
+- Fixed `package.json` name from `"aistaffcompliance"` to `"bsbr-attytraining"`
+- Walked through all core files to build a mental model before Phase 1 UI work
+
+### Personal tooling (Session 4 — not project work)
+- Max upgraded his terminal (Starship, fzf, zoxide, zsh-autosuggestions, etc.)
+- Built `pdfedit` — a personal PDF CLI tool on Max's machine (not in the repo)
 
 ---
 
@@ -43,17 +55,17 @@ Max walked through the core files with Claude to build a solid mental model befo
 
 ---
 
-## Next Steps
+## Next Steps (in order)
 
-1. Run smoke-test checks locally: `pnpm dev` → `pnpm run preview` → Supabase auth test user → DB queries
+1. Run smoke test locally: `pnpm dev` → `pnpm run preview` → Supabase auth test user → DB queries
 2. Confirm Workers Builds is connected to `rtraversi/bsbr-attytraining`; get `*.workers.dev` URL
 3. Rob: curl cert Worker with/without `X-Webhook-Secret` to confirm 200/401
 4. Rob: `stripe listen --forward-to localhost:3000/api/webhooks/stripe` pipe test
-5. Once smoke test passes — sync with Rob on what to build first (dashboard UI)
+5. Once smoke test passes — sync with Rob on Phase 1 dashboard UI
 
 ---
 
-## Open Questions (unchanged)
+## Open Questions
 
 - Should Supabase prod project live under Rob's account or Max's?
 - Stripe Tax: state registrations + CPA consult still open (Rob)
