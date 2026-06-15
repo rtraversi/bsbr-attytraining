@@ -39,6 +39,67 @@ export type Database = {
   }
   public: {
     Tables: {
+      cert_generation_queue: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          enrollment_id: string
+          firm_id: string
+          id: string
+          last_error: string | null
+          next_retry_at: string
+          quiz_attempt_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          enrollment_id: string
+          firm_id: string
+          id?: string
+          last_error?: string | null
+          next_retry_at?: string
+          quiz_attempt_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          enrollment_id?: string
+          firm_id?: string
+          id?: string
+          last_error?: string | null
+          next_retry_at?: string
+          quiz_attempt_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cert_generation_queue_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cert_generation_queue_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cert_generation_queue_quiz_attempt_id_fkey"
+            columns: ["quiz_attempt_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_attempts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       certificates: {
         Row: {
           certificate_number: string
@@ -333,6 +394,54 @@ export type Database = {
             columns: ["firm_id"]
             isOneToOne: true
             referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_events: {
+        Row: {
+          event_timestamp: string
+          event_type: string
+          firm_id: string
+          firm_member_id: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_agent: string | null
+        }
+        Insert: {
+          event_timestamp?: string
+          event_type: string
+          firm_id: string
+          firm_member_id: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+        }
+        Update: {
+          event_timestamp?: string
+          event_type?: string
+          firm_id?: string
+          firm_member_id?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_events_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_events_firm_member_id_fkey"
+            columns: ["firm_member_id"]
+            isOneToOne: false
+            referencedRelation: "firm_members"
             referencedColumns: ["id"]
           },
         ]
