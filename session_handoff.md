@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Dates:** 2026-06-15 (Sessions 1–4, Max) · 2026-06-16 (Session 4, Rob)
+**Dates:** 2026-06-15 (Sessions 1–4, Max) · 2026-06-16 (Session 4, Rob) · 2026-06-16 (Sessions 5–6, Max)
 **Who:** Max + Rob
 
 ---
@@ -14,86 +14,69 @@ Session summaries live in `.planning/sessions/`. Read them in order:
 | `20260615-max-summary.md` | Session 1 — initial scaffold, CF Workers setup, env vars |
 | `20260615-max-summary-2.md` | Session 2 — auth wiring, migration 0002, RLS isolation test, CF 500 fix |
 | `20260615-max-summary-3.md` | Session 3 — codebase walkthrough, verification pass, package.json fix |
+| `20260616-max-summary.md` | Session 5 — Stitch design brief locked, scrabble hero built, Phase 1 plan written, Bea SVGs |
+| `20260616-max-summary-2.md` | Session 6 — Stitch landing page implemented, Stripe checkout + webhook handler built |
 
-If you only have time for one: read **Session 3** for project state, **Session 2** for the deepest technical context.
+If you only have time for one: read **Session 6** for current code state.
 
 ---
 
 ## What Was Done
 
-### Project work (Max, Sessions 1–3, 2026-06-15)
-- Scaffolded the full Next.js + Cloudflare Workers + Supabase project
-- Implemented auth wiring: `lib/supabase/client.ts`, `lib/supabase/server.ts`, `middleware.ts`
-- Applied migrations 0001 (8 tables, RLS, triggers) and 0002 (audit log + cert queue)
-- Fixed a CF Workers 500 error caused by Supabase realtime WebSocket detection
-- Built and ran a 10/10 cross-tenant RLS isolation test
-- Verified Worker secrets (`WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`) are set in CF dashboard
-- Fixed `package.json` name from `"aistaffcompliance"` to `"bsbr-attytraining"`
-- Walked through all core files to build a mental model before Phase 1 UI work
+### Infrastructure (Max, Sessions 1–3, 2026-06-15)
+- Scaffolded Next.js + Cloudflare Workers + Supabase project
+- Auth wiring: `lib/supabase/client.ts`, `lib/supabase/server.ts`, `middleware.ts`
+- Applied migrations 0001 + 0002 (8 tables, RLS, triggers, audit log, cert queue)
+- Fixed CF Workers 500 error (Supabase realtime WebSocket detection)
+- 10/10 cross-tenant RLS isolation test passed
+- Worker secrets set in CF dashboard
 
 ### Email / DNS setup (Rob, 2026-06-16)
+- `info@aistaffcompliance.com` alias on Zoho, delivers to Rob's inbox
+- Cloudflare DNS fully configured: Zoho MX/DKIM/SPF, Resend DKIM/verification/bounce MX, DMARC (p=none)
+- Resend sending domain verified ✅
 
-- **Zoho Workspace** — upgraded and configured; `aistaffcompliance.com` added as a second domain
-- **`info@aistaffcompliance.com`** — created as an alias on Rob's existing Zoho account (no extra license needed); delivers to Rob's inbox
-- **DNS records fully configured in Cloudflare** for `aistaffcompliance.com`:
-  - Zoho MX records (3) ✅
-  - Zoho DKIM + verification TXT ✅
-  - Resend DKIM (`resend._domainkey`) ✅
-  - Resend domain verification TXT ✅
-  - Resend bounce MX on `send` subdomain ✅
-  - SPF (root domain): `v=spf1 include:zoho.com include:amazonses.com ~all` ✅
-  - SPF (`send` subdomain): `v=spf1 include:amazonses.com ~all` ✅
-  - DMARC: `p=none` monitor mode ✅
-- **Resend sending domain** — verified ✅ (was listed as open question — now closed)
+### Domain architecture (Rob, 2026-06-16)
+- `aistaffcompliance.com` → Netlify (marketing site, stays there)
+- Training app → Cloudflare Workers, subdomain `training.aistaffcompliance.com` at launch
+- Dev/test uses `*.workers.dev` URL
 
-### Domain / hosting architecture clarified (Rob, 2026-06-16)
-
-- `aistaffcompliance.com` and `www` currently point to **Netlify** (`aistaffcompliance.netlify.app`) — the marketing site lives there and stays there
-- The training app (this repo) will be deployed to **Cloudflare Workers** on a **subdomain** — not the root domain
-- During development and testing, use the `*.workers.dev` URL — no DNS changes needed until launch
-- At launch: add a CF Workers route for `training.aistaffcompliance.com` in Cloudflare; Netlify/root domain is untouched
-
-### Other status updates (Rob, 2026-06-16)
-
-- **GitHub access** — Max confirmed as collaborator on `rtraversi/bsbr-attytraining` ✅
-- **Reviewing attorney** — Katy is handling this; no outside engagement needed
-- **Stripe Tax** — Rob to add BSBR Holdings LLC address in Stripe dashboard (still pending)
+### Landing page + Stripe backend (Max, Sessions 5–6, 2026-06-16)
+- Full Stitch design implemented: `hero-section.tsx` (Lora tiles, word cycling, shader bg, Framer Motion), `shader-bg.tsx` (WebGL), `features-section.tsx` (glass cards, bento, footer)
+- Fixed DM Sans font (circular CSS var bug)
+- `app/api/checkout/route.ts` — Stripe Checkout endpoint (confirmed working)
+- `lib/supabase/admin.ts` — service role client
+- `app/api/webhooks/stripe/route.ts` — full webhook handler (TypeScript fixed for dahlia API breaking changes; needs `pnpm tsc --noEmit` confirm + `STRIPE_WEBHOOK_SECRET` env var)
 
 ---
 
-## Current Step Status (NEXT-10-STEPS.md)
+## Current Phase 1 Task Status
 
-| Step | Status |
+| Task | Status |
 |------|--------|
-| 1 Accounts | ✅ Done |
-| 2 Dev tools | ✅ Done |
-| 3 OpenNext scaffold | ✅ Done |
-| 4 Env vars | ✅ Done (Max's machine) |
-| 5 DB schema | ✅ Done — 0001 + 0002 applied, RLS isolation test 10/10 |
-| 6 Auth wiring | ✅ Done — client.ts, server.ts, middleware.ts implemented |
-| 7 First deploy | ⬜ Unverified — confirm Workers Builds is on `rtraversi/bsbr-attytraining`; get `*.workers.dev` URL |
-| 8 Stripe objects | ✅ Test mode done; live mode blocked on Rob adding BSBR Holdings LLC address in Stripe Tax |
-| 9 Cert Worker stub | ✅ Code done + secrets set; deploy + webhook wiring unverified |
-| 10 Smoke test | ⬜ Not started |
+| Task 1 — Landing page | ✅ Done (Stitch design; needs browser review) |
+| Task 2 — Stripe checkout endpoint | ✅ Done + confirmed working |
+| Task 3 — Stripe webhook handler | 🟡 Code done; needs `pnpm tsc --noEmit` + `STRIPE_WEBHOOK_SECRET` to test |
+| Task 4 — Onboarding page | ⬜ Not started |
+| Task 5 — Auth flows | ⬜ Not started |
+| Task 6 — Employee invite flow | ⬜ Not started |
+| Task 7 — Mark-pass stub page | ⬜ Not started |
 
 ---
 
-## Next Steps for Max (next session)
+## Immediate Next Steps for Max
 
-1. **Install Stripe CLI + get Stripe access** — Rob is inviting Max as a team member (Developer role) in the Stripe dashboard; once accepted, run `winget install Stripe.StripeCli` then `stripe login`. Required for smoke test check 7.
-2. **Confirm Workers Builds** is connected to `rtraversi/bsbr-attytraining` (not old repo); get `*.workers.dev` URL and share with Rob
-3. **Deploy cert Worker** — `cd workers/cert-worker && wrangler deploy`; confirm secrets survived deploy
-4. **Wire Supabase Database Webhook** on `quiz_attempts` INSERT → POST to cert Worker URL with `X-Webhook-Secret` header
-5. **Run full smoke test** (Step 10) — Max can now run all 7 checks solo:
-   - Checks 1–5: `pnpm dev`, `pnpm run preview`, Supabase auth, DB queries, `*.workers.dev` URL
-   - Check 6: `curl` cert Worker with/without `X-Webhook-Secret` → 200 / 401
-   - Check 7: `stripe listen --forward-to localhost:3000/api/webhooks/stripe` then `stripe trigger payment_intent.created` — expect a 404 back (route doesn't exist yet); that's the passing result
-6. Once smoke test passes — begin **Phase 1 UI** starting with `app/page.tsx` (landing/pricing page)
+1. Run `pnpm tsc --noEmit` — expect zero errors in webhook handler
+2. Add `STRIPE_WEBHOOK_SECRET` to `.env.local`:
+   - Run `stripe listen --forward-to localhost:3000/api/webhooks/stripe`
+   - Copy the `whsec_...` value it prints, add to `.env.local`
+3. Begin **Task 4 — Onboarding page** (`app/onboarding/page.tsx`):
+   - Page reads `?session_id=` from URL, polls until firm is provisioned (webhook may be slightly delayed)
+   - Lets admin set firm name + triggers magic link to set password
+4. **Task 5** → **Task 6** → **Task 7** in order
 
 ## Next Steps for Rob (pending)
-
-- Add BSBR Holdings LLC address in Stripe dashboard → Settings → Tax (unblocks live-mode objects)
-- CPA consult on SaaS sales tax (~$300–$500)
+- Add BSBR Holdings LLC address in Stripe Tax → unblocks live-mode objects
 
 ---
 
@@ -101,10 +84,10 @@ If you only have time for one: read **Session 3** for project state, **Session 2
 
 - Should Supabase prod project live under Rob's account or Max's?
 - Stripe Tax: state registrations + CPA consult still open (Rob)
-- `RESEND_API_KEY` needs to be set on cert Worker before email delivery is implemented
-- ~~What subdomain will the training app live on?~~ — **`training.aistaffcompliance.com`** ✅ (locked 2026-06-16, Rob)
-- ~~Reviewing attorney~~ — Katy handling this ✅
-- ~~Resend sending domain~~ — fully verified ✅
+- `RESEND_API_KEY` needs to be set on cert Worker before email delivery
+- ~~Subdomain~~ — `training.aistaffcompliance.com` ✅
+- ~~Reviewing attorney~~ — Katy handling ✅
+- ~~Resend sending domain~~ — verified ✅
 - ~~GitHub collaborator access for Max~~ — done ✅
 
 ---
@@ -112,9 +95,9 @@ If you only have time for one: read **Session 3** for project state, **Session 2
 ## Key Reference IDs
 
 - **Supabase dev project:** `ndmzvtuywcufvkxtkjhg` (under Max's account)
-- **Stripe test-mode Price ID:** `price_1ThbLNCzT2268ei9nkadS8kD` (lookup key: `per_seat_annual`)
-- **Stripe test-mode Product ID:** `prod_UgzKT3NrGNAvDA`
+- **Stripe Price ID:** `price_1ThbLNCzT2268ei9nkadS8kD` (lookup key: `per_seat_annual`)
+- **Stripe Product ID:** `prod_UgzKT3NrGNAvDA`
+- **Stripe API version in code:** `2026-05-27.dahlia`
 - **GitHub repo:** `rtraversi/bsbr-attytraining`
-- **Marketing site:** `aistaffcompliance.com` → Netlify (`aistaffcompliance.netlify.app`) — stays on Netlify
-- **Training app (dev/test):** `*.workers.dev` URL (TBD — Max to provide after Step 7)
+- **Marketing site:** `aistaffcompliance.com` → Netlify (stays there)
 - **Training app (launch):** `training.aistaffcompliance.com` → Cloudflare Workers
