@@ -56,11 +56,15 @@
 
 ## Next Steps for Max (next session)
 
-1. **Confirm Workers Builds** is connected to `rtraversi/bsbr-attytraining` (not old repo); get `*.workers.dev` URL and share with Rob
-2. **Deploy cert Worker** — `cd workers/cert-worker && wrangler deploy`; confirm secrets survived deploy
-3. **Wire Supabase Database Webhook** on `quiz_attempts` INSERT → POST to cert Worker URL with `X-Webhook-Secret` header
-4. **Run smoke test** (Step 10) — work through all 7 checks; Rob will do checks 6 (curl cert Worker) and 7 (stripe listen) on his machine
-5. Once smoke test passes — **`/gsd:plan-phase 0`** to kick off Phase 0 planning
+1. **Install Stripe CLI + get Stripe access** — Rob is inviting Max as a team member (Developer role) in the Stripe dashboard; once accepted, run `winget install Stripe.StripeCli` then `stripe login`. Required for smoke test check 7.
+2. **Confirm Workers Builds** is connected to `rtraversi/bsbr-attytraining` (not old repo); get `*.workers.dev` URL and share with Rob
+3. **Deploy cert Worker** — `cd workers/cert-worker && wrangler deploy`; confirm secrets survived deploy
+4. **Wire Supabase Database Webhook** on `quiz_attempts` INSERT → POST to cert Worker URL with `X-Webhook-Secret` header
+5. **Run full smoke test** (Step 10) — Max can now run all 7 checks solo:
+   - Checks 1–5: `pnpm dev`, `pnpm run preview`, Supabase auth, DB queries, `*.workers.dev` URL
+   - Check 6: `curl` cert Worker with/without `X-Webhook-Secret` → 200 / 401
+   - Check 7: `stripe listen --forward-to localhost:3000/api/webhooks/stripe` then `stripe trigger payment_intent.created` — expect a 404 back (route doesn't exist yet); that's the passing result
+6. Once smoke test passes — **`/gsd:plan-phase 0`** to kick off Phase 0 planning
 
 ## Next Steps for Rob (pending)
 
