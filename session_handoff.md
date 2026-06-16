@@ -91,11 +91,33 @@ If you only have time for one: read **Session 7** for current code state.
 
 ---
 
+## Design Decision — Firm Admin Model (locked 2026-06-16, Rob)
+
+**Decision: Option B — firm account is management-only; purchaser decides if they're also a trainee.**
+
+The current model (admin = free, separate from seats) does not fit the real use case. In practice the person signing up is most likely an office manager or staff member who also needs to complete the training — not a free admin-only account.
+
+**New model:**
+- The person who purchases creates the firm account and gets dashboard/management access
+- They are NOT automatically a trainee — they choose during onboarding
+- Onboarding adds a checkbox: *"I also need to complete this training"* — if checked, they are added to the trainee list and consume one seat
+- Seats purchased = number of trainees (may or may not include the purchaser)
+- `used_seats` count = enrolled trainees only; the firm account holder doesn't count unless they enrolled themselves
+
+**What this means for Max:**
+- The current `firm_admin` as a free non-seat account needs to be reworked
+- Onboarding flow needs the opt-in checkbox before the invite list
+- `used_seats` logic needs to reflect this
+- ⚠️ **Do not build further on the current admin model until this is synced with Rob**
+
+**Future idea (not now):** A separate shorter course aimed at attorneys themselves (understanding Rule 5.3 supervisory obligations) — different audience, different product, post-launch consideration.
+
+---
+
 ## Open Questions
 
 - Should Supabase prod project live under Rob's account or Max's?
 - Stripe Tax: state registrations + CPA consult still open (Rob)
-- Should admin count against `used_seats`? (currently: no)
 - `RESEND_API_KEY` — key is in RMT Portal; Max to retrieve and run `wrangler secret put RESEND_API_KEY` (assigned, next session)
 - Landing page at `app/page.tsx` — keep as training subdomain entry point or simplify to redirect?
 
