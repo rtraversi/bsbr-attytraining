@@ -1,0 +1,374 @@
+PHASE 1 IMPLEMENTATION PLAN
+AI Compliance Training Platform — Built Smart by Rob
+Created: 2026-06-16
+
+================================================================================
+
+PHASE 1 GOAL
+Operator can pay in Stripe test mode, receive an admin magic-link, invite an
+employee, click a "Mark Pass" button, and receive a real (if plain) PDF
+certificate via email — the riskiest integration path validated end-to-end.
+
+================================================================================
+
+TASK 1 — App Landing / Pricing Page
+File: app/page.tsx
+
+What: Replace the Next.js boilerplate with the real app entry page. This is
+what an attorney sees at training.aistaffcompliance.com. No login required.
+
+Content:
+  - BSBR brand header ("Built Smart by Rob")
+  - 2-sentence value prop: "Certify your staff on AI use under ABA Model Rule
+    5.3. One annual fee, instant certificates."
+  - Pricing table:
+      $35/user/yr (1–9 users)
+      $32/user/yr (10–24 users)
+      $28/user/yr (25+ users)
+      All seats billed at the band rate the firm's headcount lands in.
+  - Seat quantity input (number field, min=1)
+  - "Get Started" button → calls /api/checkout (Task 2) → redirects to Stripe
+  - Simple footer with Privacy Policy, Terms links (placeholders for now)
+
+Tech notes:
+  - Server Component is fine for the page shell
+  - "Get Started" form is a Client Component (handles quantity input + submit)
+  - Tailwind for styling
+
+================================================================================
+
+TASK 2 — Stripe Checkout Route Handler
+File: app/api/checkout/route.ts
+
+What: POST endpoint that creates a Stripe Checkout Session and returns the
+redirect URL.
+
+Logic:
+  1. Parse quantity (seats) from request body; validate it is >= 1
+  2. Create Checkout Session via Stripe SDK:
+       mode: 'subscription'
+       line_items: [{ price: 'price_1ThbLNCzT2268ei9nkadS8kD', quantity }]
+       adjustable_quantity: { enabled: true, minimum: 1 }
+       success_url: '/onboarding?session_id={CHECKOUT_SESSION_ID}'
+       cancel_url: '/'
+       tax_id_collection: { enabled: true }
+  3. Return { url: session.url }
+
+Env needed: STRIPE_SECRET_KEY (already in .env.local)
+
+================================================================================
+
+TASK 3 — Stripe Webhook Handler
+File: app/api/webhooks/stripe/route.ts
+
+What: Handles Stripe's checkout.session.completed event — this is where a
+paid firm gets created in the database.
+
+Logic:
+  1. await req.text() for raw body; verify signature with
+     stripe.webhooks.constructEventAsync()
+  2. Only handle checkout.session.completed; return 200 for all others
+  3. Check processed_stripe_events — if event already there, return 200
+     (idempotent)
+  4. In a single Postgres transaction (via service-role client):
+       - Insert into firms: { name: 'Pending', stripe_customer_id,
+         stripe_subscription_id, seats: quantity, status: 'active' }
+       - Insert into firm_members: { firm_id, user_id: null,
+         email: admin_email, role: 'firm_admin', status: 'invited' }
+       - Insert into processed_stripe_events: { event_id }
+  5. Fire a fire-and-forget POST to /api/send-welcome-email (Task 4b)
+     passing { email, firm_id } — do not await it inline
+
+Env needed: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SUPABASE_SERVICE_ROLE_KEY
+
+Requirements covered: PAY-01, PAY-02, PAY-03, PAY-04, PAY-06, PAY-07
+
+================================================================================
+
+TASK 4 — Post-Checkout Onboarding Page
+File: app/onboarding/page.tsx
+
+What: The page attorneys land on after Stripe Checkout succeeds. Reads
+?session_id= from query params.
+
+Content:
+  - "Payment successful!" header
+  - Explanation: "We're setting up your account. Check your email — you'll
+    receive a magic link from noreply@aistaffcompliance.com to set your
+    password."
+  - Polling logic: every 3 seconds check /api/onboarding/status?session_id=
+    — once the firm_members row exists, show "You're set up! Click the link
+    in your email."
+  - If the firm is already set up (user refreshed), redirect to /dashboard
+
+Note: The magic-link email is sent by Task 4b. This page just reassures the
+user during the async webhook delay.
+
+================================================================================
+
+TASK 4B — Welcome / Magic-Link Email Sender
+File: app/api/send-welcome-email/route.ts
+
+What: Called fire-and-forget from the webhook handler. Sends the magic-link
+invite to the firm admin.
+
+Logic:
+  1. Use Supabase Auth admin API:
+     auth.admin.generateLink({ type: 'magiclink', email })
+     → get the magic link URL
+  2. Call Resend REST API (POST https://api.resend.com/emails) with:
+       From: noreply@aistaffcompliance.com
+       To: admin email
+       Subject: "Set up your AI Compliance Training account"
+       Body: plain welcome message + magic link button
+  3. Return 200
+
+Env needed: RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY
+
+================================================================================
+
+TASK 5 — Auth Callback Handler
+File: app/auth/confirm/route.ts
+
+What: Handles Supabase's magic-link redirect (the ?token_hash=&type= URL
+that Supabase emails).
+
+Logic:
+  1. Parse token_hash and type from query params
+  2. Call supabase.auth.verifyOtp({ token_hash, type }) to exchange the token
+     for a session
+  3. Set firm_id and role into app_metadata via service-role
+     auth.admin.updateUserById() — reads from firm_members table by email
+  4. If type is 'invite', redirect to /accept-invite
+     Otherwise redirect to /dashboard on success, / on error
+
+Note: This is the standard Supabase SSR auth callback pattern — @supabase/ssr
+docs show this exactly.
+
+Requirements covered: AUTH-01, AUTH-02
+
+================================================================================
+
+TASK 6 — Login Page
+File: app/login/page.tsx
+
+What: Email + password form for returning firm admins.
+"Forgot password?" sends a new magic link.
+
+Logic:
+  - Login form → calls supabase.auth.signInWithPassword() on client
+  - On success → redirect to /dashboard
+  - "Forgot password" link → supabase.auth.signInWithOtp({ email })
+    → success message shown
+
+Client Component, approx 50 lines.
+
+Requirements covered: AUTH-03
+
+================================================================================
+
+TASK 7 — Firm Admin Dashboard
+Files:
+  app/dashboard/page.tsx        (Server Component)
+  app/dashboard/invite-form.tsx (Client Component)
+
+What: The main screen for the attorney. Protected route — redirect to /login
+if no session.
+
+Content:
+  - Header: firm name, logged-in admin email, "Log out" button
+  - Employee table columns:
+      Name | Email | Status | Actions
+    Status values: invited / in progress / passed / expired
+    Rows from firm_members WHERE firm_id = current_firm_id AND role = 'employee'
+  - "Invite Employee" button → inline form (name + email) → Server Action that:
+      1. Calls supabase auth.admin.inviteUserByEmail({ email,
+         data: { firm_id, role: 'employee' } })
+      2. Inserts firm_members row { firm_id, email, role: 'employee',
+         status: 'invited' }
+      3. Records training_events row { event_type: 'invite_sent', ... }
+  - "Resend invite" button for any row where status = 'invited' (same action)
+  - Seat count display: "X of Y seats used"
+
+Auth guard: createServerClient() in the Server Component →
+supabase.auth.getClaims() → if no firm_id in claims, redirect to /login.
+
+Requirements covered: AUTH-04, AUTH-05, DASH-01 (partial), PAY-05
+
+================================================================================
+
+TASK 8 — Employee Invite Acceptance + Password Setup
+File: app/accept-invite/page.tsx
+
+What: Page employees land on from the invite email. Supabase sends an invite
+email automatically via inviteUserByEmail with a confirm URL.
+
+Logic:
+  1. Supabase invite links use ?token_hash=&type=invite — the Task 5 callback
+     route handles this and redirects here
+  2. After verifyOtp, user is logged in but has no password — show a
+     "Set your password" form
+  3. Password form → supabase.auth.updateUser({ password })
+     → redirect to /training
+
+Requirements covered: AUTH-02
+
+================================================================================
+
+TASK 9 — Employee Training / "Mark Pass" Stub
+Files:
+  app/training/page.tsx          (training stub page)
+  app/training/complete/page.tsx (confirmation page)
+
+What: The page employees land on after setting their password. For Phase 1
+this is a stub — no real video, just a "Mark as Completed" button. The real
+video + custom React quiz replace this in Phase 2.
+
+Content:
+  - "AI Staff Compliance Training — ABA Model Rule 5.3" header
+  - Placeholder course description text
+  - "Mark as Completed" button (Phase 1 stub)
+
+Server Action triggered by the button:
+  1. Insert enrollments row { firm_id, user_id, course_id: 1,
+     status: 'completed' } (upsert)
+  2. Insert quiz_attempts row { enrollment_id, user_id, firm_id,
+     passed: true, score: 100 }
+     — this triggers the Supabase DB Webhook → cert Worker
+  3. Insert training_events row { event_type: 'quiz_passed', ... }
+  4. Redirect to /training/complete
+
+app/training/complete/page.tsx:
+  "Your certificate is being generated. You'll receive it by email within
+  a few minutes."
+
+Requirements covered: CERT-01 (trigger), COURSE-10 (partial)
+
+================================================================================
+
+TASK 10 — Cert Worker: Full PDF Generation
+File: workers/cert-worker/src/index.ts
+
+What: Fill in the 3 TODO stubs in the existing cert worker. Triggered by
+Supabase DB Webhook on quiz_attempts INSERT where passed = true.
+
+Steps inside the Worker:
+  1. Fetch employee name + firm name from Supabase (service-role)
+  2. Generate cert ID: BSBR-{year}-{XXXX}-{XXXX}
+     (sequential — uses DB sequence already defined in 0001_initial_schema.sql)
+  3. Build PDF with pdf-lib:
+       - Recipient name
+       - Course name + version
+       - Issue date
+       - Expiry date (issue date + 365 days)
+       - Score
+       - Firm name
+       - Cert ID
+       - "ABA Model Rule 5.3" reference
+       - Disclaimer block
+     Note: plain layout for Phase 1 — branded template with logo is Phase 4
+  4. Upload PDF bytes to Supabase Storage (private bucket "certificates"):
+       Path: firms/{firm_id}/employees/{user_id}/{enrollment_id}.pdf
+  5. Insert certificates row { user_id, enrollment_id, firm_id, storage_path,
+     cert_number, issued_at, expires_at }
+  6. Call Resend REST API to email the employee:
+       Subject: "Your AI Compliance Training Certificate"
+       Body: "Your certificate has been issued. Download it here: [link]"
+       Link points to /api/certificates/{cert_id}/url (Task 11) —
+       NOT a raw storage URL
+
+Error handling: On any failure, upsert a cert_generation_queue row with
+status: 'failed' and the error message — the Cron drain (Task 12) retries.
+
+Requirements covered: CERT-01, CERT-02, CERT-03, CERT-04, CERT-05, CERT-06
+
+================================================================================
+
+TASK 11 — Certificate Download URL Route
+File: app/api/certificates/[id]/url/route.ts
+
+What: Auth-checked endpoint that returns a 60-second signed Supabase Storage
+URL. Both the cert owner and any firm admin for that firm can call this.
+
+Logic:
+  1. Verify caller is authenticated (supabase.auth.getClaims())
+  2. Fetch the certificates row by id
+  3. Verify caller is the cert owner OR a firm admin for that firm
+  4. Call supabase.storage.from('certificates')
+       .createSignedUrl(storage_path, 60)
+  5. Return { url }
+
+Requirements covered: CERT-07, CERT-08, CERT-09
+
+================================================================================
+
+TASK 12 — Cert Generation Queue Drain (CF Cron)
+File: workers/cert-worker/src/index.ts (add a cron handler)
+
+What: CF Workers Cron Trigger running every 5 minutes. Retries any certs
+that failed during Task 10.
+
+Logic:
+  1. Query cert_generation_queue WHERE status IN ('pending', 'failed')
+     AND next_retry_at <= now() LIMIT 10
+  2. For each row: re-run the cert generation logic (same as Task 10)
+  3. On success: update status = 'completed'
+  4. On failure: increment attempt_count, set next_retry_at with
+     exponential backoff, cap at 5 attempts then status = 'dead'
+
+wrangler.toml addition:
+  [triggers]
+  crons = ["*/5 * * * *"]
+
+Requirements covered: AUTO-01, AUTO-02
+
+================================================================================
+
+BUILD ORDER SUMMARY
+
+  #   | Task                              | File(s)                                     | Unblocks
+  ----|-----------------------------------|---------------------------------------------|----------
+  1   | Landing / pricing page            | app/page.tsx                                | 2, 6
+  2   | Stripe checkout route             | app/api/checkout/route.ts                   | 3
+  3   | Stripe webhook handler            | app/api/webhooks/stripe/route.ts            | 4, 4b
+  4   | Onboarding page                   | app/onboarding/page.tsx                     | —
+  4b  | Welcome email sender              | app/api/send-welcome-email/route.ts         | 5
+  5   | Auth callback handler             | app/auth/confirm/route.ts                   | 6, 8
+  6   | Login page                        | app/login/page.tsx                          | 7
+  7   | Firm admin dashboard              | app/dashboard/page.tsx + invite-form.tsx    | 8, 9
+  8   | Employee invite acceptance        | app/accept-invite/page.tsx                  | 9
+  9   | "Mark Pass" stub training page    | app/training/page.tsx + complete/page.tsx   | 10
+  10  | Cert Worker PDF generation        | workers/cert-worker/src/index.ts            | 11, 12
+  11  | Cert download URL route           | app/api/certificates/[id]/url/route.ts      | —
+  12  | Cert queue cron drain             | workers/cert-worker/src/index.ts (cron)     | —
+
+================================================================================
+
+REQUIREMENTS COVERAGE (Phase 1)
+
+  AUTH: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05
+  PAY:  PAY-01, PAY-02, PAY-03, PAY-04, PAY-05, PAY-06, PAY-07
+  CERT: CERT-01, CERT-02, CERT-03, CERT-04, CERT-05, CERT-06,
+        CERT-07, CERT-08, CERT-09
+  AUTO: AUTO-01, AUTO-02
+
+  Total: 23 requirements (all Phase 1 requirements)
+
+================================================================================
+
+KEY IDs AND SECRETS NEEDED
+
+  Stripe test-mode Price ID : price_1ThbLNCzT2268ei9nkadS8kD
+                              (lookup key: per_seat_annual)
+  Stripe test-mode Product  : prod_UgzKT3NrGNAvDA
+  Supabase dev project      : ndmzvtuywcufvkxtkjhg
+
+  Env vars required across tasks:
+    STRIPE_SECRET_KEY
+    STRIPE_WEBHOOK_SECRET
+    SUPABASE_SERVICE_ROLE_KEY
+    NEXT_PUBLIC_SUPABASE_URL
+    NEXT_PUBLIC_SUPABASE_ANON_KEY
+    RESEND_API_KEY  (needed for Task 4b + Task 10 emails)
+
+================================================================================
