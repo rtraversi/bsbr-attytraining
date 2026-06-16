@@ -1,19 +1,25 @@
-import ScrabbleHero from "@/app/_components/scrabble-hero";
+import { HeroSection } from "@/app/_components/hero-section";
+import { FeaturesSection } from "@/app/_components/features-section";
+import CheckoutForm from "@/app/_components/checkout-form";
 
 export default function HomePage() {
   return (
-    <main style={{ background: "var(--brand-bg)" }}>
-      {/* Section 1 — Scrabble tile hero */}
-      <ScrabbleHero />
+    <main>
+      <HeroSection />
+      <FeaturesSection />
 
-      {/* Sections 2–4 — placeholders, built after section 1 is approved */}
-      <div
-        id="how-it-works"
-        className="h-screen flex items-center justify-center font-dm-sans text-sm text-[#1A1A1A]/25 tracking-widest uppercase"
-        style={{ background: "var(--brand-bg)" }}
-      >
-        Section 2 — Feature showcase (coming soon)
-      </div>
+      {/* Pricing / checkout — temporary placement until the full pricing section is designed */}
+      <section id="pricing" className="bg-white py-24 px-6 md:px-[80px]">
+        <div className="max-w-[480px] mx-auto text-center">
+          <h2 className="font-dm-sans text-3xl font-bold text-[#1b1c1c] mb-2">
+            Get your team certified
+          </h2>
+          <p className="font-dm-sans text-base text-[#544439] mb-10">
+            One annual fee. All staff certified. Certificates ready in under an hour.
+          </p>
+          <CheckoutForm />
+        </div>
+      </section>
     </main>
   );
 }

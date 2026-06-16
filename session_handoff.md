@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Dates:** 2026-06-15 (Sessions 1–4, Max) · 2026-06-16 (Session 4, Rob) · 2026-06-16 (Sessions 5–6, Max)
+**Dates:** 2026-06-15 (Sessions 1–4, Max) · 2026-06-16 (Session 4, Rob) · 2026-06-16 (Sessions 5–7, Max)
 **Who:** Max + Rob
 
 ---
@@ -16,8 +16,9 @@ Session summaries live in `.planning/sessions/`. Read them in order:
 | `20260615-max-summary-3.md` | Session 3 — codebase walkthrough, verification pass, package.json fix |
 | `20260616-max-summary.md` | Session 5 — Stitch design brief locked, scrabble hero built, Phase 1 plan written, Bea SVGs |
 | `20260616-max-summary-2.md` | Session 6 — Stitch landing page implemented, Stripe checkout + webhook handler built |
+| `20260616-max-summary-3.md` | Session 7 — Tasks 4–7 complete: onboarding, auth flows, invite, mark-pass stub |
 
-If you only have time for one: read **Session 6** for current code state.
+If you only have time for one: read **Session 7** for current code state.
 
 ---
 
@@ -36,47 +37,56 @@ If you only have time for one: read **Session 6** for current code state.
 - Cloudflare DNS fully configured: Zoho MX/DKIM/SPF, Resend DKIM/verification/bounce MX, DMARC (p=none)
 - Resend sending domain verified ✅
 
-### Domain architecture (Rob, 2026-06-16)
-- `aistaffcompliance.com` → Netlify (marketing site, stays there)
-- Training app → Cloudflare Workers, subdomain `training.aistaffcompliance.com` at launch
-- Dev/test uses `*.workers.dev` URL
+### Architecture confirmed (Rob, 2026-06-16)
+- `aistaffcompliance.com` → Netlify (main marketing site — stays there permanently)
+- Training app → Cloudflare Workers at `training.aistaffcompliance.com`
+- Netlify site links into the CF training app — does NOT move to CF
 
 ### Landing page + Stripe backend (Max, Sessions 5–6, 2026-06-16)
-- Full Stitch design implemented: `hero-section.tsx` (Lora tiles, word cycling, shader bg, Framer Motion), `shader-bg.tsx` (WebGL), `features-section.tsx` (glass cards, bento, footer)
-- Fixed DM Sans font (circular CSS var bug)
-- `app/api/checkout/route.ts` — Stripe Checkout endpoint (confirmed working)
+- Full Stitch design: `hero-section.tsx` (Lora scrabble tiles, word cycling, shader bg, Framer Motion), `shader-bg.tsx` (WebGL), `features-section.tsx` (glass cards, bento, footer)
+- `app/api/checkout/route.ts` — Stripe Checkout endpoint ✅
 - `lib/supabase/admin.ts` — service role client
-- `app/api/webhooks/stripe/route.ts` — full webhook handler (TypeScript fixed for dahlia API breaking changes; needs `pnpm tsc --noEmit` confirm + `STRIPE_WEBHOOK_SECRET` env var)
+- `app/api/webhooks/stripe/route.ts` — full webhook handler
+
+### Auth + full app flow (Max, Session 7, 2026-06-16)
+- **Onboarding:** `/onboarding` polls for firm provisioning, collects firm name, generates magic link
+- **Auth flows:** `/login`, `/forgot-password`, `/update-password`, `/auth/callback`, `/auth/confirm`, `/api/auth/logout`, middleware route protection
+- **Employee invite:** `/api/invite`, `/dashboard` (admin + employee views), member table, seat tracking
+- **Mark pass stub:** `/dashboard/training`, `/api/training/mark-pass` — exercises full pipeline: course → enrollment → quiz_attempt → cert_generation_queue
 
 ---
 
-## Current Phase 1 Task Status
+## Current Task Status
 
 | Task | Status |
 |------|--------|
-| Task 1 — Landing page | ✅ Done (Stitch design; needs browser review) |
-| Task 2 — Stripe checkout endpoint | ✅ Done + confirmed working |
-| Task 3 — Stripe webhook handler | 🟡 Code done; needs `pnpm tsc --noEmit` + `STRIPE_WEBHOOK_SECRET` to test |
-| Task 4 — Onboarding page | ⬜ Not started |
-| Task 5 — Auth flows | ⬜ Not started |
-| Task 6 — Employee invite flow | ⬜ Not started |
-| Task 7 — Mark-pass stub page | ⬜ Not started |
+| Task 1 — Landing page | ✅ Done |
+| Task 2 — Stripe checkout endpoint | ✅ Done |
+| Task 3 — Stripe webhook handler | ✅ Done |
+| Task 4 — Onboarding page | ✅ Done |
+| Task 5 — Auth flows | ✅ Done |
+| Task 6 — Employee invite flow | ✅ Done |
+| Task 7 — Mark pass stub | ✅ Done |
+| Task 8 — Resend email wiring | ⬜ Not started |
+| Task 9 — Cert generation Worker | ⬜ Not started |
+| Task 10 — Real video + quiz component | ⬜ Not started |
 
 ---
 
-## Immediate Next Steps for Max
+## Immediate Next Steps
 
-1. Run `pnpm tsc --noEmit` — expect zero errors in webhook handler
-2. Add `STRIPE_WEBHOOK_SECRET` to `.env.local`:
-   - Run `stripe listen --forward-to localhost:3000/api/webhooks/stripe`
-   - Copy the `whsec_...` value it prints, add to `.env.local`
-3. Begin **Task 4 — Onboarding page** (`app/onboarding/page.tsx`):
-   - Page reads `?session_id=` from URL, polls until firm is provisioned (webhook may be slightly delayed)
-   - Lets admin set firm name + triggers magic link to set password
-4. **Task 5** → **Task 6** → **Task 7** in order
+### For Rob (can do now)
+- `pnpm dev` → open `http://localhost:3000` to review landing page
+- Add BSBR Holdings LLC address in Stripe Tax → unblocks live-mode Stripe objects
+- Decide: should the attorney-admin count as a seat? (currently they don't)
 
-## Next Steps for Rob (pending)
-- Add BSBR Holdings LLC address in Stripe Tax → unblocks live-mode objects
+### For next dev session
+1. **Resend email wiring** — three TODO spots in code:
+   - `app/api/onboarding/complete/route.ts` — admin magic link
+   - `app/api/invite/route.ts` — employee invite link
+   - Cert delivery email (when cert Worker is built)
+2. **Cert generation Worker** — CF Worker that processes `cert_generation_queue`, generates PDF via `pdf-lib`, uploads to Supabase Storage `certificates/firms/{firm_id}/employees/{user_id}/{enrollment_id}.pdf`, inserts into `certificates`
+3. **Real CF Stream video** — upload video, update `courses.cloudflare_stream_video_id` in Supabase
 
 ---
 
@@ -84,11 +94,9 @@ If you only have time for one: read **Session 6** for current code state.
 
 - Should Supabase prod project live under Rob's account or Max's?
 - Stripe Tax: state registrations + CPA consult still open (Rob)
+- Should admin count against `used_seats`? (currently: no)
 - `RESEND_API_KEY` needs to be set on cert Worker before email delivery
-- ~~Subdomain~~ — `training.aistaffcompliance.com` ✅
-- ~~Reviewing attorney~~ — Katy handling ✅
-- ~~Resend sending domain~~ — verified ✅
-- ~~GitHub collaborator access for Max~~ — done ✅
+- Landing page at `app/page.tsx` — keep as training subdomain entry point or simplify to redirect?
 
 ---
 
