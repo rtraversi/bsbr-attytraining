@@ -1,11 +1,23 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { Fraunces, DM_Sans } from "next/font/google";
 import "./globals.css";
-import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+  axes: ["opsz"],
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  display: "swap",
+  axes: ["opsz"],
+});
 
 export const metadata: Metadata = {
   title: "AI Staff Compliance Training — Built Smart by Rob",
@@ -19,12 +31,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)}>
-      <body
-        className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
+    <html
+      lang="en"
+      className={cn(
+        GeistSans.variable,
+        GeistMono.variable,
+        fraunces.variable,
+        dmSans.variable
+      )}
+    >
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
