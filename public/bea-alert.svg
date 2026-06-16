@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 235" width="200" height="235">
+  <title>Bea — alert</title>
+
+  <!-- Tail (behind body, right side) -->
+  <path d="M 134,147 Q 160,132 154,113" stroke="#8B4513" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+  <!-- Left ear (behind head, flops down-left) -->
+  <polygon points="64,80 36,62 48,108" fill="#8B4513"/>
+
+  <!-- Right ear (behind head, flops down-right) -->
+  <polygon points="136,80 164,62 152,108" fill="#8B4513"/>
+
+  <!-- Body (brown trapezoid — wide top, narrower base) -->
+  <polygon points="50,112 150,112 133,194 67,194" fill="#8B4513"/>
+
+  <!-- Suit chest (white rectangle on body) -->
+  <rect x="81" y="120" width="38" height="46" fill="#FFFFFF"/>
+
+  <!-- Tie (accent triangle on suit) -->
+  <polygon points="100,123 93,143 107,143" fill="#C8783A"/>
+
+  <!-- Head (tan diamond — rotated square) -->
+  <polygon points="100,44 136,80 100,116 64,80" fill="#F5DEB3"/>
+
+  <!-- Eyes -->
+  <circle cx="88" cy="72" r="4" fill="#1A1A1A"/>
+  <circle cx="112" cy="72" r="4" fill="#1A1A1A"/>
+
+  <!-- Nose -->
+  <ellipse cx="100" cy="97" rx="5" ry="4" fill="#5C2A0A"/>
+
+  <!-- Legs (four rectangles, sharp edges) -->
+  <rect x="69" y="193" width="12" height="26" fill="#8B4513"/>
+  <rect x="85" y="193" width="12" height="26" fill="#8B4513"/>
+  <rect x="103" y="193" width="12" height="26" fill="#8B4513"/>
+  <rect x="119" y="193" width="12" height="26" fill="#8B4513"/>
+</svg>
