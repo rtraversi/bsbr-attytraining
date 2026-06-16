@@ -81,12 +81,13 @@ If you only have time for one: read **Session 7** for current code state.
 - Decide: should the attorney-admin count as a seat? (currently they don't)
 
 ### For next dev session
-1. **Resend email wiring** — three TODO spots in code:
+1. **Set `RESEND_API_KEY` secret** — key is in the **RMT Portal**; retrieve it and run `wrangler secret put RESEND_API_KEY` in `workers/cert-worker/`. Do this first — tasks 2 and 3 both depend on it.
+2. **Resend email wiring** — three TODO spots in code:
    - `app/api/onboarding/complete/route.ts` — admin magic link
    - `app/api/invite/route.ts` — employee invite link
    - Cert delivery email (when cert Worker is built)
-2. **Cert generation Worker** — CF Worker that processes `cert_generation_queue`, generates PDF via `pdf-lib`, uploads to Supabase Storage `certificates/firms/{firm_id}/employees/{user_id}/{enrollment_id}.pdf`, inserts into `certificates`
-3. **Real CF Stream video** — upload video, update `courses.cloudflare_stream_video_id` in Supabase
+3. **Cert generation Worker** — CF Worker that processes `cert_generation_queue`, generates PDF via `pdf-lib`, uploads to Supabase Storage `certificates/firms/{firm_id}/employees/{user_id}/{enrollment_id}.pdf`, inserts into `certificates`
+4. **Real CF Stream video** — upload video, update `courses.cloudflare_stream_video_id` in Supabase
 
 ---
 
@@ -95,7 +96,7 @@ If you only have time for one: read **Session 7** for current code state.
 - Should Supabase prod project live under Rob's account or Max's?
 - Stripe Tax: state registrations + CPA consult still open (Rob)
 - Should admin count against `used_seats`? (currently: no)
-- `RESEND_API_KEY` needs to be set on cert Worker before email delivery
+- `RESEND_API_KEY` — key is in RMT Portal; Max to retrieve and run `wrangler secret put RESEND_API_KEY` (assigned, next session)
 - Landing page at `app/page.tsx` — keep as training subdomain entry point or simplify to redirect?
 
 ---
