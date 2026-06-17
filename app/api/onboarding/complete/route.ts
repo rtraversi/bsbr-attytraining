@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { render } from '@react-email/render'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sendEmail } from '@/lib/resend'
+import { AdminMagicLinkEmail } from '@/emails/admin-magic-link'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-05-27.dahlia',
@@ -68,9 +71,19 @@ export async function POST(req: NextRequest) {
 
   const actionLink = linkData?.properties?.action_link
 
-  // TODO: send actionLink via Resend (wired in email task)
   if (process.env.NODE_ENV === 'development') {
     console.log('[dev] Magic link for', email, '→', actionLink)
+  } else {
+    try {
+      const html = await render(AdminMagicLinkEmail({ firmName, actionLink: actionLink ?? '' }))
+      await sendEmail({
+        to: email,
+        subject: 'Your AI Staff Compliance account is ready',
+        html,
+      })
+    } catch (err) {
+      console.error('[onboarding/complete] sendEmail error:', err)
+    }
   }
 
   return NextResponse.json({

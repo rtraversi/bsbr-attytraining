@@ -1,7 +1,7 @@
 # Session Handoff
 
-**Dates:** 2026-06-15 (Sessions 1–4, Max) · 2026-06-16 (Session 4, Rob) · 2026-06-16 (Sessions 5–7, Max)
-**Who:** Max + Rob
+**Date:** 2026-06-17
+**Who:** Max (Sessions 8 + 9)
 
 ---
 
@@ -17,8 +17,10 @@ Session summaries live in `.planning/sessions/`. Read them in order:
 | `20260616-max-summary.md` | Session 5 — Stitch design brief locked, scrabble hero built, Phase 1 plan written, Bea SVGs |
 | `20260616-max-summary-2.md` | Session 6 — Stitch landing page implemented, Stripe checkout + webhook handler built |
 | `20260616-max-summary-3.md` | Session 7 — Tasks 4–7 complete: onboarding, auth flows, invite, mark-pass stub |
+| `20260617-max-summary.md` | Session 8 (Desktop) — smoke tests passed, Stripe account sorted, new Price ID, e2e test in progress |
+| `20260617-max-summary-2.md` | Session 9 (Terminal) — Tasks 8–9 complete, 3 bugs fixed, workerd debugging, e2e unblocked |
 
-If you only have time for one: read **Session 7** for current code state.
+If you only have time for two: read **Sessions 8 + 9** for current state.
 
 ---
 
@@ -27,10 +29,9 @@ If you only have time for one: read **Session 7** for current code state.
 ### Infrastructure (Max, Sessions 1–3, 2026-06-15)
 - Scaffolded Next.js + Cloudflare Workers + Supabase project
 - Auth wiring: `lib/supabase/client.ts`, `lib/supabase/server.ts`, `middleware.ts`
-- Applied migrations 0001 + 0002 (8 tables, RLS, triggers, audit log, cert queue)
+- Applied migrations 0001 + 0002 (8 tables + cert queue, RLS, triggers, audit log)
 - Fixed CF Workers 500 error (Supabase realtime WebSocket detection)
 - 10/10 cross-tenant RLS isolation test passed
-- Worker secrets set in CF dashboard
 
 ### Email / DNS setup (Rob, 2026-06-16)
 - `info@aistaffcompliance.com` alias on Zoho, delivers to Rob's inbox
@@ -40,19 +41,26 @@ If you only have time for one: read **Session 7** for current code state.
 ### Architecture confirmed (Rob, 2026-06-16)
 - `aistaffcompliance.com` → Netlify (main marketing site — stays there permanently)
 - Training app → Cloudflare Workers at `training.aistaffcompliance.com`
-- Netlify site links into the CF training app — does NOT move to CF
 
 ### Landing page + Stripe backend (Max, Sessions 5–6, 2026-06-16)
-- Full Stitch design: `hero-section.tsx` (Lora scrabble tiles, word cycling, shader bg, Framer Motion), `shader-bg.tsx` (WebGL), `features-section.tsx` (glass cards, bento, footer)
-- `app/api/checkout/route.ts` — Stripe Checkout endpoint ✅
-- `lib/supabase/admin.ts` — service role client
-- `app/api/webhooks/stripe/route.ts` — full webhook handler
+- Full Stitch design: hero, shader bg, features/bento, footer
+- `app/api/checkout/route.ts` — Stripe Checkout endpoint (lazy Stripe init, null guard on session.url)
+- `app/api/webhooks/stripe/route.ts` — full webhook handler (lazy Stripe init)
 
 ### Auth + full app flow (Max, Session 7, 2026-06-16)
-- **Onboarding:** `/onboarding` polls for firm provisioning, collects firm name, generates magic link
-- **Auth flows:** `/login`, `/forgot-password`, `/update-password`, `/auth/callback`, `/auth/confirm`, `/api/auth/logout`, middleware route protection
-- **Employee invite:** `/api/invite`, `/dashboard` (admin + employee views), member table, seat tracking
-- **Mark pass stub:** `/dashboard/training`, `/api/training/mark-pass` — exercises full pipeline: course → enrollment → quiz_attempt → cert_generation_queue
+- Onboarding, auth flows, employee invite, mark-pass stub
+
+### Smoke tests + Stripe account (Max, Session 8 Desktop, 2026-06-17)
+- All 7 smoke test checks green including Stripe CLI pipe test
+- Stripe account sorted: use **AI Staff Compliance & Training** sandbox key
+- New Price ID and Product ID created in correct account (see Key Reference IDs below)
+- E2E test started, in progress at session end
+
+### Resend + Cert Worker + Bug fixes (Max, Session 9 Terminal, 2026-06-17)
+- **Task 8:** `lib/resend.ts`, `emails/admin-magic-link.tsx`, `emails/employee-invite.tsx`, `emails/cert-delivery.tsx` — wired into onboarding/complete and invite routes
+- **Task 9:** `lib/cert-pdf.ts` (pdf-lib PDF generation), `app/api/certs/generate/route.ts` (Supabase webhook handler, full pipeline)
+- **Bug fixes:** enrollment status 'passed' (was 'completed', violated DB constraint), employee activation on password set (`/api/auth/activate`), cert download button with signed URL
+- **Workerd fixes:** middleware excludes /api/*, lazy Stripe init (`getStripe()`), Price ID updated
 
 ---
 
@@ -67,45 +75,58 @@ If you only have time for one: read **Session 7** for current code state.
 | Task 5 — Auth flows | ✅ Done |
 | Task 6 — Employee invite flow | ✅ Done |
 | Task 7 — Mark pass stub | ✅ Done |
-| Task 8 — Resend email wiring | ⬜ Not started |
-| Task 9 — Cert generation Worker | ⬜ Not started |
-| Task 10 — Real video + quiz component | ⬜ Not started |
+| Task 8 — Resend email wiring | ✅ Done |
+| Task 9 — Cert generation Worker | ✅ Done |
+| Task 10 — Real video + quiz component | ⬜ Blocked (Rob's content decision) |
 
 ---
 
 ## Immediate Next Steps
 
-### For Rob (can do now)
-- `pnpm dev` → open `http://localhost:3000` to review landing page
-- Add BSBR Holdings LLC address in Stripe Tax → unblocks live-mode Stripe objects
-- Decide: should the attorney-admin count as a seat? (currently they don't)
+### Before e2e test can complete
+1. **Create `certificates` Supabase Storage bucket** — Dashboard → Storage → New bucket → name: `certificates`, private
+2. **Create Supabase Database Webhook** — Dashboard → Database → Webhooks → Create:
+   - Table: `cert_generation_queue` / Event: `INSERT`
+   - URL: `https://<preview-url>/api/certs/generate`
+   - Header: `x-webhook-secret: <CERT_WEBHOOK_SECRET value>`
+   - Note: preview URL changes each session — update this each time
 
-### For next dev session
-1. **Resend email wiring** — three TODO spots in code:
-   - `app/api/onboarding/complete/route.ts` — admin magic link
-   - `app/api/invite/route.ts` — employee invite link
-   - Cert delivery email (when cert Worker is built)
-2. **Cert generation Worker** — CF Worker that processes `cert_generation_queue`, generates PDF via `pdf-lib`, uploads to Supabase Storage `certificates/firms/{firm_id}/employees/{user_id}/{enrollment_id}.pdf`, inserts into `certificates`
-3. **Real CF Stream video** — upload video, update `courses.cloudflare_stream_video_id` in Supabase
+### For Rob
+- Review Phase 1 completion
+- Decision needed: real video upload to CF Stream (unblocks Task 10)
+- `pdf-lib` → ilovepdf API swap before launch (Rob has account, confirmed Session 8)
+- Bea mascot integration — design locked, deferred
 
----
-
-## Open Questions
-
+### Open questions
 - Should Supabase prod project live under Rob's account or Max's?
 - Stripe Tax: state registrations + CPA consult still open (Rob)
-- Should admin count against `used_seats`? (currently: no)
-- `RESEND_API_KEY` needs to be set on cert Worker before email delivery
-- Landing page at `app/page.tsx` — keep as training subdomain entry point or simplify to redirect?
 
 ---
 
 ## Key Reference IDs
 
 - **Supabase dev project:** `ndmzvtuywcufvkxtkjhg` (under Max's account)
-- **Stripe Price ID:** `price_1ThbLNCzT2268ei9nkadS8kD` (lookup key: `per_seat_annual`)
-- **Stripe Product ID:** `prod_UgzKT3NrGNAvDA`
+- **Stripe account to use:** AI Staff Compliance & Training (sandbox)
+- **Stripe Price ID:** `price_1TjNHc6ZCSojEKRrKs79ToJ0` (lookup key: `per_seat_annual`, volume-tiered $35/$32/$28)
+- **Stripe Product ID:** `prod_UiovBHrxJSDVpf`
 - **Stripe API version in code:** `2026-05-27.dahlia`
 - **GitHub repo:** `rtraversi/bsbr-attytraining`
 - **Marketing site:** `aistaffcompliance.com` → Netlify (stays there)
 - **Training app (launch):** `training.aistaffcompliance.com` → Cloudflare Workers
+
+---
+
+## Environment Variables (both `.env.local` AND `.dev.vars`)
+
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+STRIPE_SECRET_KEY=           ← sandbox sk_test_... from AI Staff Compliance & Training account
+STRIPE_WEBHOOK_SECRET=       ← from running: stripe listen --forward-to localhost:3000/api/webhooks/stripe
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+RESEND_API_KEY=
+CERT_WEBHOOK_SECRET=
+```
+
+Cloudflare Stream keys intentionally empty — no video yet.

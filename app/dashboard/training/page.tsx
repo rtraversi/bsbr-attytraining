@@ -45,7 +45,7 @@ export default async function TrainingPage() {
     .eq('course_id', course.id)
     .maybeSingle()
 
-  if (!enrollment || enrollment.status !== 'completed') {
+  if (!enrollment || enrollment.status !== 'passed') {
     return (
       <TrainingClient
         phase="not_started"
@@ -57,11 +57,15 @@ export default async function TrainingPage() {
   // Check for issued certificate
   const { data: cert } = await admin
     .from('certificates')
-    .select('certificate_number, issued_at, expires_at')
+    .select('certificate_number, issued_at, expires_at, storage_path')
     .eq('enrollment_id', enrollment.id)
     .maybeSingle()
 
   if (cert) {
+    const { data: signedUrlData } = await admin.storage
+      .from('certificates')
+      .createSignedUrl(cert.storage_path, 60 * 60 * 24 * 7)
+
     return (
       <TrainingClient
         phase="certified"
@@ -69,6 +73,7 @@ export default async function TrainingPage() {
         certNumber={cert.certificate_number}
         issuedAt={cert.issued_at}
         expiresAt={cert.expires_at}
+        certUrl={signedUrlData?.signedUrl ?? ''}
       />
     )
   }

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { render } from '@react-email/render'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sendEmail } from '@/lib/resend'
+import { EmployeeInviteEmail } from '@/emails/employee-invite'
 
 export async function POST(req: NextRequest) {
   // Verify caller is an authenticated admin
@@ -46,6 +49,9 @@ export async function POST(req: NextRequest) {
       { status: 409 }
     )
   }
+
+  const { data: firm } = await admin.from('firms').select('name').eq('id', firmId).single()
+  const firmName = firm?.name ?? 'Your firm'
 
   // Create auth user — fails if email already registered anywhere
   const { data: newUser, error: createError } = await admin.auth.admin.createUser({
@@ -102,9 +108,19 @@ export async function POST(req: NextRequest) {
 
   const actionLink = linkData?.properties?.action_link
 
-  // TODO: send actionLink via Resend (wired in email task)
   if (process.env.NODE_ENV === 'development') {
     console.log('[dev] Employee invite link for', email, '→', actionLink)
+  } else {
+    try {
+      const html = await render(EmployeeInviteEmail({ firmName, actionLink: actionLink ?? '' }))
+      await sendEmail({
+        to: email,
+        subject: `${firmName} has invited you to complete AI compliance training`,
+        html,
+      })
+    } catch (err) {
+      console.error('[invite] sendEmail error:', err)
+    }
   }
 
   return NextResponse.json({

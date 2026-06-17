@@ -14,9 +14,10 @@ interface Props {
   certNumber?: string
   issuedAt?: string
   expiresAt?: string
+  certUrl?: string
 }
 
-export function TrainingClient({ phase: initialPhase, courseTitle, certNumber, issuedAt, expiresAt }: Props) {
+export function TrainingClient({ phase: initialPhase, courseTitle, certNumber, issuedAt, expiresAt, certUrl }: Props) {
   const router = useRouter()
   const [phase, setPhase] = useState(initialPhase)
   const [loading, setLoading] = useState(false)
@@ -117,10 +118,18 @@ export function TrainingClient({ phase: initialPhase, courseTitle, certNumber, i
                 {issuedAt ? new Date(issuedAt).toLocaleDateString() : '—'} &nbsp;·&nbsp; Expires{' '}
                 {expiresAt ? new Date(expiresAt).toLocaleDateString() : '—'}
               </p>
-              {/* Download link goes here once cert Worker writes the PDF to Supabase Storage */}
-              <p className="text-xs text-zinc-600">
-                PDF download available once certificate Worker is deployed.
-              </p>
+              {certUrl ? (
+                <a
+                  href={certUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 px-4 py-2 text-xs font-semibold text-zinc-950 transition-colors"
+                >
+                  Download Certificate (PDF)
+                </a>
+              ) : (
+                <p className="text-xs text-zinc-600">Certificate PDF is being finalized.</p>
+              )}
             </div>
           </div>
         </div>

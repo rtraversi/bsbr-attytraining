@@ -35,6 +35,9 @@ export function UpdatePasswordForm() {
       return
     }
 
+    // Activate the firm_members row — non-fatal if it fails (admin can see invited status)
+    await fetch('/api/auth/activate', { method: 'POST' }).catch(() => {})
+
     router.push('/dashboard')
     router.refresh()
   }

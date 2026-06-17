@@ -67,7 +67,7 @@ export function FeaturesSection() {
                   Designed for the Modern Law Firm.
                 </h2>
                 <p className="font-dm-sans text-lg text-[#544439] max-w-xl leading-relaxed">
-                  We understand that compliance isn't just about rules; it's about culture. Built Smart
+                  We understand that compliance isn&apos;t just about rules; it&apos;s about culture. Built Smart
                   by Rob bridges the gap between complex legal mandates and practical daily operations.
                 </p>
               </div>

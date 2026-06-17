@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-05-27.dahlia',
-})
+let _stripe: Stripe | null = null
+function getStripe(): Stripe {
+  if (!_stripe) {
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2026-05-27.dahlia',
+    })
+  }
+  return _stripe
+}
 
 function deriveTier(seats: number): 'basic' | 'standard' | 'pro' {
   if (seats >= 25) return 'pro'
@@ -37,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   let event: Stripe.Event
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
+    event = getStripe().webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
   } catch {
     return NextResponse.json({ error: 'Signature verification failed' }, { status: 400 })
   }
@@ -87,7 +93,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const email = session.customer_details?.email
   if (!email) throw new Error('No customer email on session')
 
-  const sub = await stripe.subscriptions.retrieve(session.subscription as string, {
+  const sub = await getStripe().subscriptions.retrieve(session.subscription as string, {
     expand: ['items.data'],
   })
   const seats = sub.items.data[0]?.quantity ?? 1

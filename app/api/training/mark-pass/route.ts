@@ -103,10 +103,10 @@ export async function POST() {
     return NextResponse.json({ error: 'Failed to record attempt' }, { status: 500 })
   }
 
-  // Mark enrollment complete
+  // Mark enrollment complete — 'passed' matches the schema check constraint
   await admin
     .from('enrollments')
-    .update({ status: 'completed', completed_at: new Date().toISOString() })
+    .update({ status: 'passed', completed_at: new Date().toISOString() })
     .eq('id', enrollment.id)
 
   // Enqueue cert generation — the cert Worker processes this when it's built

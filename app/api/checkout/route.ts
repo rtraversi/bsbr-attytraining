@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-05-27.dahlia",
-});
+let _stripe: Stripe | null = null
+function getStripe(): Stripe {
+  if (!_stripe) {
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: "2026-05-27.dahlia",
+    })
+  }
+  return _stripe
+}
 
-const PRICE_ID = "price_1ThbLNCzT2268ei9nkadS8kD";
+const PRICE_ID = "price_1TjNHc6ZCSojEKRrKs79ToJ0";
 
 export async function POST(req: NextRequest) {
   let seats: number;
@@ -21,7 +27,7 @@ export async function POST(req: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   try {
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       mode: "subscription",
       line_items: [
         {
@@ -36,6 +42,10 @@ export async function POST(req: NextRequest) {
       automatic_tax: { enabled: true },
       tax_id_collection: { enabled: true },
     });
+
+    if (!session.url) {
+      return NextResponse.json({ error: "Stripe did not return a checkout URL" }, { status: 500 });
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
