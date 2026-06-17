@@ -33,7 +33,23 @@ export async function middleware(request: NextRequest) {
 
   // Refreshes the session token on every request. Must not have any logic
   // between createServerClient and getUser() — doing so risks session bugs.
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const path = request.nextUrl.pathname
+
+  // Protected routes — redirect unauthenticated users to login
+  const isProtected = path.startsWith('/dashboard') || path.startsWith('/update-password')
+  if (isProtected && !user) {
+    const loginUrl = new URL('/login', request.url)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Auth pages — redirect already-authenticated users to dashboard
+  const isAuthPage = path === '/login' || path === '/forgot-password'
+  if (isAuthPage && user) {
+    const dashboardUrl = new URL('/dashboard', request.url)
+    return NextResponse.redirect(dashboardUrl)
+  }
 
   return response
 }
