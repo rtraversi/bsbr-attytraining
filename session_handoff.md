@@ -1,66 +1,24 @@
 # Session Handoff
 
-**Date:** 2026-06-17
-**Who:** Max (Sessions 8 + 9)
+**Dates:** 2026-06-15 (Sessions 1–4, Max) · 2026-06-16 (Session 4, Rob) · 2026-06-16 (Sessions 5–7, Max) · 2026-06-17 (Sessions 8–9, Max)
+**Who:** Max + Rob
 
 ---
 
-## How to Get Fully Caught Up (for Claude or Rob)
+## Phase 1 — COMPLETE ✅
 
-Session summaries live in `.planning/sessions/`. Read them in order:
-
-| File | What it covers |
-|------|---------------|
-| `20260615-max-summary.md` | Session 1 — initial scaffold, CF Workers setup, env vars |
-| `20260615-max-summary-2.md` | Session 2 — auth wiring, migration 0002, RLS isolation test, CF 500 fix |
-| `20260615-max-summary-3.md` | Session 3 — codebase walkthrough, verification pass, package.json fix |
-| `20260616-max-summary.md` | Session 5 — Stitch design brief locked, scrabble hero built, Phase 1 plan written, Bea SVGs |
-| `20260616-max-summary-2.md` | Session 6 — Stitch landing page implemented, Stripe checkout + webhook handler built |
-| `20260616-max-summary-3.md` | Session 7 — Tasks 4–7 complete: onboarding, auth flows, invite, mark-pass stub |
-| `20260617-max-summary.md` | Session 8 (Desktop) — smoke tests passed, Stripe account sorted, new Price ID, e2e test in progress |
-| `20260617-max-summary-2.md` | Session 9 (Terminal) — Tasks 8–9 complete, 3 bugs fixed, workerd debugging, e2e unblocked |
-
-If you only have time for two: read **Sessions 8 + 9** for current state.
+All 9 tasks built and end-to-end test passed on 2026-06-17.
 
 ---
 
 ## What Was Done
 
-### Infrastructure (Max, Sessions 1–3, 2026-06-15)
-- Scaffolded Next.js + Cloudflare Workers + Supabase project
-- Auth wiring: `lib/supabase/client.ts`, `lib/supabase/server.ts`, `middleware.ts`
-- Applied migrations 0001 + 0002 (8 tables + cert queue, RLS, triggers, audit log)
-- Fixed CF Workers 500 error (Supabase realtime WebSocket detection)
-- 10/10 cross-tenant RLS isolation test passed
+See `.planning/sessions/` for full detail. Quick summary:
 
-### Email / DNS setup (Rob, 2026-06-16)
-- `info@aistaffcompliance.com` alias on Zoho, delivers to Rob's inbox
-- Cloudflare DNS fully configured: Zoho MX/DKIM/SPF, Resend DKIM/verification/bounce MX, DMARC (p=none)
-- Resend sending domain verified ✅
-
-### Architecture confirmed (Rob, 2026-06-16)
-- `aistaffcompliance.com` → Netlify (main marketing site — stays there permanently)
-- Training app → Cloudflare Workers at `training.aistaffcompliance.com`
-
-### Landing page + Stripe backend (Max, Sessions 5–6, 2026-06-16)
-- Full Stitch design: hero, shader bg, features/bento, footer
-- `app/api/checkout/route.ts` — Stripe Checkout endpoint (lazy Stripe init, null guard on session.url)
-- `app/api/webhooks/stripe/route.ts` — full webhook handler (lazy Stripe init)
-
-### Auth + full app flow (Max, Session 7, 2026-06-16)
-- Onboarding, auth flows, employee invite, mark-pass stub
-
-### Smoke tests + Stripe account (Max, Session 8 Desktop, 2026-06-17)
-- All 7 smoke test checks green including Stripe CLI pipe test
-- Stripe account sorted: use **AI Staff Compliance & Training** sandbox key
-- New Price ID and Product ID created in correct account (see Key Reference IDs below)
-- E2E test started, in progress at session end
-
-### Resend + Cert Worker + Bug fixes (Max, Session 9 Terminal, 2026-06-17)
-- **Task 8:** `lib/resend.ts`, `emails/admin-magic-link.tsx`, `emails/employee-invite.tsx`, `emails/cert-delivery.tsx` — wired into onboarding/complete and invite routes
-- **Task 9:** `lib/cert-pdf.ts` (pdf-lib PDF generation), `app/api/certs/generate/route.ts` (Supabase webhook handler, full pipeline)
-- **Bug fixes:** enrollment status 'passed' (was 'completed', violated DB constraint), employee activation on password set (`/api/auth/activate`), cert download button with signed URL
-- **Workerd fixes:** middleware excludes /api/*, lazy Stripe init (`getStripe()`), Price ID updated
+- **Sessions 1–3 (2026-06-15):** Scaffold, auth wiring, DB migrations, CF Workers setup
+- **Session 4 (2026-06-16, Rob):** DNS/email setup, architecture confirmed
+- **Sessions 5–7 (2026-06-16):** Landing page, Stripe checkout + webhook, onboarding, auth flows, invite, mark-pass stub, Resend email wiring, cert generation Worker
+- **Sessions 8–9 (2026-06-17):** Fixed Stripe CLI account mismatch, fixed magic link auth route bug, completed full end-to-end test
 
 ---
 
@@ -77,83 +35,48 @@ If you only have time for two: read **Sessions 8 + 9** for current state.
 | Task 7 — Mark pass stub | ✅ Done |
 | Task 8 — Resend email wiring | ✅ Done |
 | Task 9 — Cert generation Worker | ✅ Done |
-| Task 10 — Real video + quiz component | ⬜ Blocked (Rob's content decision) |
+| End-to-end test | ✅ PASSED |
+| **Deploy to CF Workers** | ⬜ Next session |
 
 ---
 
-## Immediate Next Steps
+## Immediate Next Steps (Rob + Max, 2026-06-18 morning)
 
-### Before e2e test can complete
-1. **Create `certificates` Supabase Storage bucket** — Dashboard → Storage → New bucket → name: `certificates`, private
-2. **Create Supabase Database Webhook** — Dashboard → Database → Webhooks → Create:
-   - Table: `cert_generation_queue` / Event: `INSERT`
-   - URL: `https://<preview-url>/api/certs/generate`
-   - Header: `x-webhook-secret: <CERT_WEBHOOK_SECRET value>`
-   - Note: preview URL changes each session — update this each time
-
-### For Rob
-- Review Phase 1 completion
-- Decision needed: real video upload to CF Stream (unblocks Task 10)
-- `pdf-lib` → ilovepdf API swap before launch (Rob has account, confirmed Session 8)
-- Bea mascot integration — design locked, deferred
-- Sync with Max on admin model redesign before next code session (see Design Decision below)
+1. Follow `.planning/DEPLOY-CHECKLIST.md` step by step
+2. Rob reviews secret values before Max runs `wrangler secret put`
+3. Deploy → verify live URL works → run end-to-end test on deployed URL
+4. Decide: `*.workers.dev` as staging, or set up `training.aistaffcompliance.com` now?
 
 ---
 
-## Design Decision — Firm Admin Model (locked 2026-06-16, Rob)
+## Critical Stripe Reference
 
-**Decision: Option B — firm account is management-only; purchaser decides if they're also a trainee.**
-
-The current model (admin = free, separate from seats) does not fit the real use case. In practice the person signing up is most likely an office manager or staff member who also needs to complete the training — not a free admin-only account.
-
-**New model:**
-- The person who purchases creates the firm account and gets dashboard/management access
-- They are NOT automatically a trainee — they choose during onboarding
-- Onboarding adds a checkbox: *"I also need to complete this training"* — if checked, they are added to the trainee list and consume one seat
-- Seats purchased = number of trainees (may or may not include the purchaser)
-- `used_seats` count = enrolled trainees only; the firm account holder doesn't count unless they enrolled themselves
-
-**What this means for Max:**
-- The current `firm_admin` as a free non-seat account needs to be reworked
-- Onboarding flow needs the opt-in checkbox before the invite list
-- `used_seats` logic needs to reflect this
-- ⚠️ **Do not build further on the current admin model until this is synced with Rob**
-
-**Future idea (not now):** A separate shorter course aimed at attorneys themselves (understanding Rule 5.3 supervisory obligations) — different audience, different product, post-launch consideration.
-
----
-
-### Open questions
-- Should Supabase prod project live under Rob's account or Max's?
-- Stripe Tax: state registrations + CPA consult still open (Rob)
-- Landing page at `app/page.tsx` — keep as training subdomain entry point or simplify to redirect?
+| Item | Value |
+|------|-------|
+| Correct Stripe account | AI Staff Compliance & Training |
+| Sandbox account ID | `acct_1ThDpr6ZCSojEKRr` |
+| Sandbox secret key prefix | `sk_test_51ThDpr...` |
+| Price ID in code | `price_1TjNHc6ZCSojEKRrKs79ToJ0` |
+| stripe listen (local dev only) | `stripe listen --api-key sk_test_51ThDpr... --forward-to localhost:3000/api/webhooks/stripe` |
+| STRIPE_WEBHOOK_SECRET (local) | Changes every stripe listen restart — copy new whsec_ to .env.local |
+| STRIPE_WEBHOOK_SECRET (deployed) | Permanent — comes from Stripe Dashboard webhook endpoint (see DEPLOY-CHECKLIST Step 3) |
 
 ---
 
 ## Key Reference IDs
 
 - **Supabase dev project:** `ndmzvtuywcufvkxtkjhg` (under Max's account)
-- **Stripe account to use:** AI Staff Compliance & Training (sandbox)
-- **Stripe Price ID:** `price_1TjNHc6ZCSojEKRrKs79ToJ0` (lookup key: `per_seat_annual`, volume-tiered $35/$32/$28)
+- **Stripe Price ID:** `price_1TjNHc6ZCSojEKRrKs79ToJ0`
 - **Stripe Product ID:** `prod_UiovBHrxJSDVpf`
-- **Stripe API version in code:** `2026-05-27.dahlia`
 - **GitHub repo:** `rtraversi/bsbr-attytraining`
 - **Marketing site:** `aistaffcompliance.com` → Netlify (stays there)
-- **Training app (launch):** `training.aistaffcompliance.com` → Cloudflare Workers
+- **Training app (target):** `training.aistaffcompliance.com` → Cloudflare Workers
 
 ---
 
-## Environment Variables (both `.env.local` AND `.dev.vars`)
+## Open Questions
 
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-STRIPE_SECRET_KEY=           ← sandbox sk_test_... from AI Staff Compliance & Training account
-STRIPE_WEBHOOK_SECRET=       ← from running: stripe listen --forward-to localhost:3000/api/webhooks/stripe
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-RESEND_API_KEY=
-CERT_WEBHOOK_SECRET=
-```
-
-Cloudflare Stream keys intentionally empty — no video yet.
+- Supabase prod project — Max's account or Rob's? Needs Pro tier before launch
+- `pdf-lib` → ilovepdf API swap (before launch, Rob has account)
+- Bea the Legal Beagle — design locked, integration deferred
+- Custom domain `training.aistaffcompliance.com` — set up now or after deploy verified?

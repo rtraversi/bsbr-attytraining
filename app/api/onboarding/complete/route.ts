@@ -13,10 +13,12 @@ export async function POST(req: NextRequest) {
   let sessionId: string
   let firmName: string
 
+  let enrollSelf: boolean
   try {
-    const body = (await req.json()) as { session_id?: unknown; firm_name?: unknown }
+    const body = (await req.json()) as { session_id?: unknown; firm_name?: unknown; enroll_self?: unknown }
     sessionId = typeof body.session_id === 'string' ? body.session_id : ''
     firmName = typeof body.firm_name === 'string' ? body.firm_name.trim() : ''
+    enrollSelf = body.enroll_self === true
   } catch {
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
   }
@@ -56,6 +58,63 @@ export async function POST(req: NextRequest) {
     .eq('firm_id', firm.id)
     .eq('role', 'admin')
 
+  if (enrollSelf) {
+    // Get or create the stub course
+    let { data: course } = await supabase
+      .from('courses')
+      .select('id')
+      .limit(1)
+      .maybeSingle()
+
+    if (!course) {
+      const { data: newCourse } = await supabase
+        .from('courses')
+        .insert({
+          title: 'AI Staff Compliance Training — Annual Certification',
+          description: 'Certify your staff on proper AI use under ABA Model Rule 5.3.',
+          cloudflare_stream_video_id: 'stub-not-yet-uploaded',
+          pass_threshold: 80,
+          is_published: true,
+        })
+        .select('id')
+        .single()
+      course = newCourse
+    }
+
+    if (course) {
+      // Idempotent — skip if enrollment already exists
+      const { data: existing } = await supabase
+        .from('enrollments')
+        .select('id')
+        .eq('user_id', firm.owner_id)
+        .eq('course_id', course.id)
+        .maybeSingle()
+
+      if (!existing) {
+        await supabase.from('enrollments').insert({
+          user_id: firm.owner_id,
+          course_id: course.id,
+          firm_id: firm.id,
+          status: 'not_started',
+        })
+
+        // Consume one seat
+        const { data: seat } = await supabase
+          .from('seats')
+          .select('used_seats')
+          .eq('firm_id', firm.id)
+          .single()
+
+        if (seat) {
+          await supabase
+            .from('seats')
+            .update({ used_seats: seat.used_seats + 1 })
+            .eq('firm_id', firm.id)
+        }
+      }
+    }
+  }
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
   const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
@@ -69,7 +128,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to generate login link' }, { status: 500 })
   }
 
-  const actionLink = linkData?.properties?.action_link
+  const hashedToken = linkData?.properties?.hashed_token
+  const actionLink = hashedToken
+    ? `${appUrl}/auth/confirm?token_hash=${hashedToken}&type=magiclink&next=/dashboard`
+    : linkData?.properties?.action_link
 
   if (process.env.NODE_ENV === 'development') {
     console.log('[dev] Magic link for', email, '→', actionLink)

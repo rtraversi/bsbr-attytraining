@@ -21,6 +21,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
   const [email, setEmail] = useState('')
   const [seats, setSeats] = useState(1)
   const [firmName, setFirmName] = useState('')
+  const [enrollSelf, setEnrollSelf] = useState(false)
   const [devLink, setDevLink] = useState<string | undefined>()
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -69,7 +70,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
       const res = await fetch('/api/onboarding/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, firm_name: firmName }),
+        body: JSON.stringify({ session_id: sessionId, firm_name: firmName, enroll_self: enrollSelf }),
       })
       if (!res.ok) {
         const body = (await res.json()) as { error?: string }
@@ -151,6 +152,20 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
             "
           />
         </div>
+
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={enrollSelf}
+            onChange={(e) => setEnrollSelf(e.target.checked)}
+            disabled={phase === 'submitting'}
+            className="mt-0.5 h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-teal-500 focus:ring-teal-500 focus:ring-offset-zinc-900"
+          />
+          <span className="text-sm text-zinc-300">
+            I am also taking this training{' '}
+            <span className="text-zinc-500">(uses 1 of your {seats} {seats === 1 ? 'seat' : 'seats'})</span>
+          </span>
+        </label>
 
         <button
           type="submit"

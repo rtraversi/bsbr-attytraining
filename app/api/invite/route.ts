@@ -106,7 +106,10 @@ export async function POST(req: NextRequest) {
     console.error('[invite] generateLink error:', linkError)
   }
 
-  const actionLink = linkData?.properties?.action_link
+  const hashedToken = linkData?.properties?.hashed_token
+  const actionLink = hashedToken
+    ? `${appUrl}/auth/confirm?token_hash=${hashedToken}&type=magiclink&next=/update-password`
+    : linkData?.properties?.action_link
 
   if (process.env.NODE_ENV === 'development') {
     console.log('[dev] Employee invite link for', email, '→', actionLink)
