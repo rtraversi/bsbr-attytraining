@@ -39,14 +39,14 @@ REQ-IDs use `CATEGORY-NN` format. Each requirement is user-centric, specific, an
 
 ### Course Delivery & Quiz (COURSE)
 
-> 📝 **Course-format pivot (2026-06-12, pending trial validation):** Course content is moving from a single 20–30 min video to **interactive Articulate Rise 360 content** (hosted web export: flip cards, scenarios, click-to-reveal, *ungraded* knowledge checks) followed by the **custom React certification quiz** as the certifiable layer. Rob is validating Rise via the 30-day Articulate 360 trial before the $1,449/yr commit. COURSE-06..11 (quiz, attestation, server-side scoring) are unaffected. COURSE-01..05 (video player) will be rewritten once the trial decision locks — Cloudflare Stream likely shrinks to short clips embedded within the interactive content.
+> ✅ **Course format locked (2026-06-18, Rob):** Course content is **Articulate Rise 360 interactive web export** (flip cards, scenarios, click-to-reveal, ungraded knowledge checks) authored by Rob + Katy (attorney). Hosted as static assets on Cloudflare R2 or Articulate's hosting; embedded via `<iframe>` on the training page. Rise is the learning layer only — it reports no scores to the app. The custom React certification quiz (COURSE-06..11) is the certifiable layer. Cloudflare Stream is NOT required at launch; defer unless video clips are needed within Rise.
 
-- [ ] **COURSE-01**: An enrolled employee can view a single course page that loads a Cloudflare Stream video via a signed playback URL minted server-side on page load (4–8h TTL)
-- [ ] **COURSE-02**: The Cloudflare Stream signed playback configuration locks Allowed Origins to the production domain
-- [ ] **COURSE-03**: The video player displays closed captions (provided by Cloudflare Stream)
-- [ ] **COURSE-04**: The video player persists playback position every 30 seconds; on re-entry, the employee resumes from the last persisted position
-- [ ] **COURSE-05**: The video player shows a visible progress indicator (percentage watched)
-- [ ] **COURSE-06**: After watching the video, the employee takes a multiple-choice quiz drawn from a randomized question pool (per-attempt count is a subset of the pool, ≥3× pool/attempt ratio)
+- [ ] **COURSE-01**: An enrolled employee navigating to the training page sees the Articulate Rise 360 interactive course embedded via `<iframe>`; the training page itself is server-side enrollment-gated (unenrolled users are redirected); the Rise content URL points to the hosted web export (CF R2 or Articulate hosting)
+- [ ] **COURSE-02**: The Rise content is served over HTTPS from its hosting origin; the training page iframe `sandbox` attribute is set to allow scripts and same-origin (minimum required for Rise to function); no authentication is required on the Rise content itself — access control lives at the training page level
+- [ ] **COURSE-03**: The Rise 360 course is authored to be accessible (WCAG 2.1 AA); any video clips embedded within Rise include captions
+- [ ] **COURSE-04**: Articulate Rise 360's web export handles its own internal progress state via browser localStorage; employees who return to the training page continue from their last position within the Rise content without any server-side persistence required
+- [ ] **COURSE-05**: A "Begin Certification Quiz" button is revealed on the training page only after the employee clicks an explicit "I have completed the training" confirmation — this is the gate between the Rise learning content and the certifiable quiz; the quiz is not accessible without this step
+- [ ] **COURSE-06**: After confirming training completion, the employee takes a multiple-choice quiz drawn from a randomized question pool (per-attempt count is a subset of the pool, ≥3× pool/attempt ratio)
 - [ ] **COURSE-07**: The quiz presents one question at a time, with no back button — once the employee advances, the prior answer is locked
 - [ ] **COURSE-08**: On quiz submit, the employee must check an identity attestation checkbox stating they personally completed the training; the attestation timestamp, IP address, and user-agent are recorded in `training_events`
 - [ ] **COURSE-09**: The pass/fail decision is computed server-side in `/api/quiz/attempt` against `courses.pass_threshold` (default 80%); the client's score is never trusted

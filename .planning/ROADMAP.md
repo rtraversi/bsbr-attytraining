@@ -23,7 +23,7 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
 
 - [ ] **Phase 0: Foundations** — CF Workers scaffold, privacy/TOS/DPA published, RLS-enforced schema with cross-tenant isolation test, audit log, sending domain, Supabase Pro
 - [ ] **Phase 1: Hello-cert end-to-end stub** — Paid Stripe checkout → admin invite → employee invite → "Mark Pass" button → trivial PDF cert emailed and downloadable
-- [ ] **Phase 2: Real video + custom React quiz** — Cloudflare Stream signed playback, custom React quiz overlay, identity attestation, server-trusted scoring (replaces "Mark Pass" stub)
+- [ ] **Phase 2: Articulate Rise 360 content + custom React certification quiz** — Rise 360 interactive web export embedded via iframe (learning layer), custom React quiz with server-side scoring and identity attestation (certifiable layer), replaces "Mark Pass" stub
 - [ ] **Phase 3: Firm admin dashboard** — Single-table employee status view, CSV upload, reminders, seat reassignment, audit-log CSV export, firm-level attestation PDF
 - [ ] **Phase 4: Automation hardening** — Real branded cert template, expiry-reminder cron (CF Workers Cron Trigger), UptimeRobot alerts, Supabase PITR verified, shared-secret header on the Supabase→Worker webhook
 - [ ] **Phase 5: Renewal flow + launch polish** — Stripe renewal at the same flat annual price, 30/14/3-day reminder cadence, 30-day grace period, marketing landing final copy, iPad Safari + Chromebook QA, attorney-reviewed launch
@@ -67,17 +67,17 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
 
 ---
 
-### Phase 2: Real video + custom React quiz
-**Goal:** Employees watch a real Cloudflare Stream video and take a real custom React quiz with identity attestation — the "Mark Pass" stub from Phase 1 is replaced by a real, server-trusted pass/fail loop.
+### Phase 2: Articulate Rise 360 content + custom React certification quiz
+**Goal:** Employees work through a real Articulate Rise 360 interactive training module and then take the custom React certification quiz with identity attestation — the "Mark Pass" stub from Phase 1 is replaced by a real, server-trusted pass/fail loop.
 
-> 📝 **Course-format pivot (2026-06-12, pending trial validation):** content delivery is moving to interactive Articulate Rise 360 content (hosted web export with ungraded knowledge checks) + the custom React certification quiz as the certifiable layer. Success criteria 1–2 (video player) will be rewritten when the trial decision locks; criteria 3–5 (quiz/attestation/scoring) are unaffected. See REQUIREMENTS.md COURSE-section note and STATE.md Open Decisions.
+> ✅ **Course format locked (2026-06-18, Rob):** Articulate Rise 360 interactive web export is the learning layer (authored by Rob + Katy, attorney). Hosted on CF R2 or Articulate's hosting, embedded via iframe. Rise reports no scores — all certifiable events live in the custom React quiz. Cloudflare Stream is NOT required at launch.
 **Mode:** mvp
 **Depends on:** Phase 1
 **Requirements:** COURSE-01, COURSE-02, COURSE-03, COURSE-04, COURSE-05, COURSE-06, COURSE-07, COURSE-08, COURSE-09, COURSE-10, COURSE-11
 **Success Criteria** (what must be TRUE):
-  1. An enrolled employee navigating to the course page sees the Cloudflare Stream video play via a signed playback URL freshly minted server-side on page load (4–8h TTL); the video is restricted to the production domain via Allowed Origins; closed captions are available (COURSE-01, COURSE-02, COURSE-03).
-  2. The video player persists playback position every 30 seconds; an employee who closes the tab and returns later resumes from their last persisted position, with a visible percentage-watched progress indicator (COURSE-04, COURSE-05).
-  3. After completing the video, the employee takes a multiple-choice quiz drawn from a randomized question pool (pool ≥ 3× per-attempt count), one question at a time, with no back button — each answered question is locked before the next appears (COURSE-06, COURSE-07).
+  1. An enrolled employee navigating to the training page sees the Articulate Rise 360 interactive course embedded via iframe; the training page is enrollment-gated server-side; the Rise content loads from its hosting origin (CF R2 or Articulate hosting) over HTTPS; the content is WCAG 2.1 AA accessible (COURSE-01, COURSE-02, COURSE-03).
+  2. An employee who leaves and returns to the training page resumes from their last position within the Rise content (Rise handles this internally via localStorage); a "Begin Certification Quiz" button is not accessible until the employee explicitly confirms they have completed the training (COURSE-04, COURSE-05).
+  3. After confirming training completion, the employee takes a multiple-choice quiz drawn from a randomized question pool (pool ≥ 3× per-attempt count), one question at a time, with no back button — each answered question is locked before the next appears (COURSE-06, COURSE-07).
   4. At quiz submit, the employee must check an identity-attestation checkbox; the attestation timestamp, IP, and user-agent are recorded in `training_events`, and the pass/fail decision is computed server-side in `/api/quiz/attempt` against `courses.pass_threshold` — a forged client-side score is rejected (COURSE-08, COURSE-09).
   5. A failed employee can retake the quiz with a fresh randomized subset every attempt (unlimited retakes); on pass, the employee sees an immediate "Congratulations — your certificate is being generated" confirmation and receives the cert email within 5 minutes (COURSE-10, COURSE-11).
 **Plans:** TBD

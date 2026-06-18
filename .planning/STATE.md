@@ -77,7 +77,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 - **PDF generation lives in a CF Worker** using `pdf-lib` (pure JS, no headless browser, no VPS). Triggered by Supabase Database Webhook → authenticated POST to the Worker.
 - **JWT signing for Cloudflare Stream:** use `jose` library (web-standard JWT library; works in plain CF Workers (cert Worker) and the Next.js Worker alike), NOT `jsonwebtoken` (heavier, Node-only assumptions, unnecessary).
 - **Certification quiz is custom React** (~150–200 lines): server-side scoring, identity attestation, audit logging — this is the certifiable layer and does not change regardless of content format.
-- **Course content format (2026-06-12, pending trial validation):** moving from a single 20–30 min video to **interactive Articulate Rise 360 content** (hosted web export: flip cards, scenario interactions, click-to-reveal, *ungraded* knowledge checks) ahead of the custom React certification quiz. Rise's web export cannot report scores to the app — acceptable because all certifiable events live in the custom quiz. Rob validates via the 30-day Articulate 360 trial before committing $1,449/yr. Fallbacks if the trial disappoints: custom React interactive blocks, then H5P (Dialog Cards / Branching Scenario).
+- **Course content format (2026-06-18, Rob — LOCKED):** **Articulate Rise 360 interactive web export** is the learning layer — flip cards, scenarios, click-to-reveal, ungraded knowledge checks — authored by Rob + Katy (attorney co-author). Hosted on CF R2 or Articulate's hosting; embedded via iframe on the training page. Rise reports no scores to the app — acceptable because all certifiable events live in the custom React certification quiz. Cloudflare Stream is NOT required at launch; defer unless video clips are needed within Rise. No fallback — this decision is locked.
 - **Data model:** single `firm_members(firm_id, user_id, role)` table; `role ∈ {firm_admin, employee}`. `employees` may be exposed as a VIEW for UI clarity.
 - **Cert downloads:** routed through `/api/certificates/[id]/url` (auth-checked) → 60-second Supabase signed URL. No raw storage URLs in emails.
 - **Cloudflare Stream:** signed playback URLs minted server-side on every page load (4–8h TTL); Allowed Origins locked to production domain.
@@ -96,7 +96,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 - [ ] Reconcile marketing pricing bands (extend to 25+ users) vs. target-market framing (docs describe 1–15 staff) — positioning vs. pricing-band mismatch to resolve at some point.
 - [ ] Stripe Tax enabled + home-state sales-tax registration completed — IN PROGRESS: `tax_code` (`txcd_20060058`) + `tax_behavior` (`exclusive`) set on all test-mode objects; still missing head_office address (BSBR Holdings LLC) to activate Stripe Tax; state registrations + CPA consult still open.
 - [ ] External uptime monitor for CF Worker health endpoint picked (UptimeRobot vs BetterStack)
-- [ ] Articulate 360 trial outcome (Rob, 30-day trial) — lock Rise-hybrid course format or fall back to custom React interactive blocks / H5P; rewrite COURSE-01..05 + ROADMAP Phase 2 criteria 1–2 once decided
+- [x] Articulate 360 trial outcome — LOCKED 2026-06-18 (Rob). Rise 360 is the course content format. COURSE-01..05 and ROADMAP Phase 2 rewritten accordingly.
 - [ ] CPA consult on SaaS sales tax (~$300–$500)
 
 ### Todos (carried)

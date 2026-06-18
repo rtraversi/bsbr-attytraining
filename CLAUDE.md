@@ -4,7 +4,7 @@
 
 **AI Compliance Training Platform**
 
-A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay a one-time annual fee to certify their staff on proper AI usage under ABA Model Rule 5.3 (Vendor Supervision / attorney ethics compliance). Staff complete a 20–30 minute video course with embedded quizzes, pass with a score-gate (unlimited retakes), and receive a downloadable PDF certificate. Attorneys get a dashboard to audit staff completion, scores, and certificate status, and to issue reminders or reprints. The product is published under the **Built Smart by Rob** brand.
+A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay a one-time annual fee to certify their staff on proper AI usage under ABA Model Rule 5.3 (Vendor Supervision / attorney ethics compliance). Staff work through an interactive Articulate Rise 360 training module (flip cards, scenarios, click-to-reveal, knowledge checks — authored by Rob + Katy, an attorney), then pass a custom React certification quiz with a score-gate (unlimited retakes), and receive a downloadable PDF certificate. Attorneys get a dashboard to audit staff completion, scores, and certificate status, and to issue reminders or reprints. The product is published under the **Built Smart by Rob** brand.
 
 **Core Value:** An attorney can pay, invite their staff, see them complete the training, and produce certificates that demonstrate Rule 5.3 supervision compliance — without operator intervention.
 
@@ -12,10 +12,10 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 
 - **Tech stack — frontend/hosting:** Next.js 15.5 (App Router, Node.js runtime via `nodejs_compat`) on **Cloudflare Workers** via `@opennextjs/cloudflare` (OpenNext adapter) — CF, not Netlify
 - **Tech stack — backend:** Supabase (Auth + Postgres + Storage) — single integrated provider for auth, DB, and certificate PDF storage
-- **Tech stack — video:** Cloudflare Stream (paid add-on required) — for signed-URL streaming and bandwidth economics
+- **Tech stack — course content:** Articulate Rise 360 interactive web export (flip cards, scenarios, click-to-reveal, ungraded knowledge checks) authored by Rob + Katy; hosted as static assets (Cloudflare R2 or Articulate's hosting), embedded via iframe in the employee training page. Rise content is the **learning layer only** — it reports no scores to the app. Cloudflare Stream MAY be used for short video clips embedded within Rise, but is NOT the primary delivery mechanism and is NOT required at launch.
+- **Tech stack — certification quiz:** Custom React component (~150–200 lines) rendered after the Rise content iframe. This is the **certifiable layer** — server-side scoring, identity attestation, results written to Supabase. No score reporting from Rise. No H5P. No SCORM LRS.
 - **Tech stack — payments:** Stripe — standard for self-serve SaaS checkout; supports tiered pricing + webhooks
 - **Tech stack — API/automation:** Cloudflare Workers for all serverless functions, cert generation, email, and scheduled jobs; no n8n, no VPS
-- **Tech stack — interactive video/quiz:** Custom React quiz component (~150–200 lines) over the Cloudflare Stream native player — no H5P, no Articulate Rise
 - **Pricing constraint:** $35/user/yr for 1–9 users, $32/user/yr for 10–24 users, $28/user/yr for 25+ users — billed annually per enrolled user; volume bands (all seats billed at the band rate the firm's headcount lands in); FLAT on renewal — no renewal discount (course substantially updated each year).
 - **Target market constraint:** Solo and small firms (1–15 staff) — UX, marketing, and pricing tiers reflect this; product is self-serve only
 - **Compliance framing:** ABA Model Rule 5.3 — generic national framing; no state-specific accreditation claims in v1
@@ -40,10 +40,11 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 | **Cloudflare Workers** | `@opennextjs/cloudflare` (OpenNext adapter) | Hosting + serverless via `@opennextjs/cloudflare`; CF Workers for all automation (cert gen, email, scheduled jobs) | No 26-second timeout concern — Workers have a generous CPU budget (50 ms free, 30 s paid). Cert PDF generation fits in a Worker because `pdf-lib` needs no headless browser. Workers Builds + preview URLs for staging-vs-prod environments. **Required config:** `wrangler.jsonc` with `main: ".open-next/worker.js"`, `assets: { directory: ".open-next/assets", binding: "ASSETS" }`, `compatibility_flags: ["nodejs_compat"]`, `compatibility_date` >= 2024-09-23, `preview_urls: true`; `open-next.config.ts` at project root: `import { defineCloudflareConfig } from "@opennextjs/cloudflare"; export default defineCloudflareConfig();`. **Scripts:** `"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview"`, `"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"`, `"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"`. **Local dev:** `next dev` for daily work; `pnpm run preview` runs in workerd — use before deploys/integration tests. **Staging:** Workers Builds connects GitHub repo; enable non-production branch builds + `preview_urls` — each branch gets a stable `<branch>-<worker>.<subdomain>.workers.dev` alias. Unlike Pages, Workers does NOT natively support different bindings/env-vars per preview vs production build — use Wrangler Environments (`[env.staging]`) for env-specific bindings. Do NOT add `export const runtime = 'edge'` anywhere. |
 | **Supabase** | **JS client `supabase-js` v2.49+** with **`@supabase/ssr` v0.6+** | Auth + Postgres + Storage | Single integrated provider. RLS handles firm-vs-employee tenancy at DB level. Storage signs cert URLs natively. Stay on free tier during dev; **upgrade to Pro ($25/mo) before launch** — free-tier 500MB RAM + project-pause-after-7-days is incompatible with paid customers. |
 | **Postgres** | **15** (Supabase managed) | Source of truth | Schema: `firms`, `firm_members`, `seats`, `enrollments`, `quiz_attempts`, `certificates`. JWT custom claims (`firm_id`, `role`) drive RLS. |
-| **Cloudflare Stream** | (current) | Video hosting, signed URLs, HLS delivery | Paid add-on. Pricing: $5 per 1,000 min stored, $1 per 1,000 min delivered. Ingress + encoding free. Pro/Business CF plan includes 100 min storage + 10,000 min delivery monthly. For one 30-min course × thousands of plays: delivery cost dominates. At 30 min × 100 employees × 5 firms/mo = 15,000 min/mo = ~$15/mo — well within tolerance. |
+| **Articulate Rise 360** | (current, via Articulate 360 subscription) | Interactive course content — the learning layer | **LOCKED 2026-06-18 (Rob).** Rise 360 replaced Cloudflare Stream as the primary content delivery. Rob authors interactive modules (flip cards, scenarios, click-to-reveal, ungraded knowledge checks) with Katy (attorney co-author). Export as a Rise web package → host on CF R2 or Articulate's hosting → embed via iframe on the training page. Rise reports no scores to the app; all certifiable events live in the custom React quiz. Cloudflare Stream is NOT required at launch — defer unless short video clips are needed within Rise content. |
+| **Cloudflare Stream** | (current) | Optional: short video clips embedded within Rise content | NOT the primary delivery mechanism. Defer entirely unless Rob decides to embed video clips within the Rise course. If used, signed URLs still apply (same pattern as before). Do NOT build a CF Stream integration path unless explicitly decided. |
 | **Stripe** | **Node SDK `stripe` v17.x**, API version `2025-09-30.acacia` (latest) | Checkout, subscriptions, webhooks, customer portal | Standard SaaS billing. ONE Product + ONE volume-tiered Price (`tiers_mode=volume`); Checkout `quantity` = seats; Stripe auto-computes the per-seat band rate. Customer Portal handles renewals — no custom UI needed. |
 | **Cloudflare Workers** (automation) | Workers runtime | All automation: cert PDF generation, email (Resend REST API), renewal reminders, reprint links | Triggered by Supabase Database Webhooks (authenticated POST to a Worker endpoint), app-initiated `fetch()` POST from route handlers (fire-and-forget), or CF Workers Cron Triggers (scheduled jobs). No VPS, no n8n. Secrets managed via `wrangler secret put` or the CF dashboard. |
-| **Custom React quiz** | ~150–200 LOC React component | Interactive quiz layer over the Cloudflare Stream native player | postMessage events from the CF Stream player gate quiz reveal at ~95% watched. Score submit → Server Action / Route Handler → `quiz_attempts` insert. No H5P. No Articulate Rise. H5P Path A (CF iframe + H5P Question Set below) is the documented fallback ONLY if the custom quiz exceeds ~5 days of work. |
+| **Custom React quiz** | ~150–200 LOC React component | Certification quiz — the certifiable layer, rendered after the Rise content iframe | Employee completes the Rise interactive content, then sees the quiz. Quiz reveal is gated by an explicit "I have completed the training" confirmation step (no postMessage dependency on CF Stream). Score submit → Server Action / Route Handler → `quiz_attempts` insert. Server-side scoring only — client score is never trusted. No H5P. No SCORM LRS. No xAPI. |
 
 ### Supporting Libraries
 
@@ -121,10 +122,22 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 - Free projects pause after 7 days inactivity. Fine for dev, fatal for prod.
 - **Action:** upgrade to Pro ($25/mo) before going live. Budget item.
 
-### 3. Cloudflare Stream — signed URLs & embedding
+### 3. Articulate Rise 360 — course content integration (LOCKED 2026-06-18)
 
-- **Path A (chosen):** Don't use H5P Interactive Video. Instead, embed the Cloudflare Stream iframe in the page, and place H5P **Question Set** / **Single Choice Set** content blocks below or alongside it. Use the Stream player's `postMessage` events to drive UI logic (e.g., reveal the quiz when video reaches 95%). Simpler, no custom H5P plugin, full Cloudflare Stream features (DRM-lite via signed URLs, analytics).
-- **Path B:** Use H5P with a direct MP4 URL from the Cloudflare Stream Downloads API. This gives you timestamp-locked interactions in-video but: (a) signed MP4 URLs are awkward (one URL per download enable, separate API), (b) you lose adaptive bitrate streaming, (c) bandwidth costs may go up. **Avoid.**
+The interactive learning content is built in **Articulate Rise 360** by Rob + Katy (attorney co-author). This is the learning layer only — it does NOT report scores to the app.
+
+**How it integrates:**
+1. Rob authors the Rise 360 course (flip cards, scenarios, click-to-reveal, knowledge checks — all ungraded)
+2. Export from Rise as a **web package** (zip of HTML/JS/CSS)
+3. Host the unpacked assets on **Cloudflare R2** as a public or signed static site, OR use Articulate's own hosting (`rise.articulate.com`) — decision deferred until Phase 2 planning
+4. The employee training page embeds the Rise content in an `<iframe>` — access to the training page itself is gated by enrollment check (server-side)
+5. After the Rise iframe, the **custom React certification quiz** is shown — gated by an explicit employee confirmation ("I have completed the training")
+6. Rise reports nothing to the app. All certifiable events (quiz score, identity attestation, timestamp, IP, user-agent) live in the custom quiz layer only
+
+**Do NOT build:**
+- xAPI / SCORM / LRS integration — not needed; the custom quiz is the certifiable layer
+- Any CF Stream video player integration — defer Cloudflare Stream entirely unless Rob decides to embed video clips within Rise
+- H5P anything — not in scope
 
 ### 4. Stripe — per-seat volume pricing, webhooks, portal
 
@@ -155,19 +168,19 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 - Shared-secret header (`X-Webhook-Secret`) validated in each Worker inbound from Supabase; rotate via `wrangler secret put`.
 - Workers are stateless — no persistent process, no SQLite, no n8n workflow database.
 
-### 6. Custom React quiz — the decision
+### 6. Custom React quiz — the certifiable layer
 
-The quiz layer is a **custom React component (~150–200 lines)** rendered below the Cloudflare Stream native `<iframe>` player. No H5P. No Articulate Rise.
+The quiz is a **custom React component (~150–200 lines)** rendered on the training page **after** the Articulate Rise 360 iframe. It is the only certifiable layer — Rise content is ungraded and reports nothing to the app.
 
 **How it works:**
-- The CF Stream player emits `postMessage` events to the parent page (progress percentage, play/pause, ended).
-- The quiz component listens for the progress event; quiz reveal is gated at ~95% watched.
-- On submission, the score is sent to a Server Action or Route Handler, which inserts into `quiz_attempts`.
-- Pass threshold (recommend 80%) is stored in `courses.pass_threshold`; unlimited retakes allowed.
+- Employee completes the Rise interactive content (self-paced, ungraded)
+- Employee clicks "I have completed the training" confirmation — this gates quiz reveal (no postMessage dependency)
+- Quiz presents randomized multiple-choice questions one at a time, no back button, answers locked on advance
+- On submit: identity attestation checkbox required; score computed server-side in `/api/quiz/attempt` against `courses.pass_threshold` (default 80%)
+- Pass → `quiz_attempts` row inserted with `passed=true` → Supabase DB webhook → cert generation Worker
+- Fail → unlimited retakes, fresh randomized question subset each time
 
-**Fallback:** H5P Path A (CF Stream iframe + H5P Question Set block below it) is the documented fallback ONLY if the custom quiz implementation exceeds ~5 days of work. In that case, use the H5P standalone rendering library (MIT licensed) with the H5P Question Set content type; do NOT use H5P Interactive Video (no native CF Stream adapter).
-
-**Why custom React over H5P for v1:** The quiz is ~5 multiple-choice questions — ~150 LOC of React beats an entire H5P toolchain. No xAPI LRS needed. Score reporting is direct to Supabase, not through an event dispatcher. Simpler product, fewer moving parts.
+**No fallback to H5P.** No xAPI. No SCORM. No CF Stream postMessage events. The quiz is already built (Phase 1 stub) — Phase 2 replaces the "Mark Pass" button with this real quiz component.
 
 ## Alternatives Considered
 
