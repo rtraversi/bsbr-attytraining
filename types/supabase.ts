@@ -366,6 +366,50 @@ export type Database = {
           },
         ]
       }
+      quiz_questions: {
+        Row: {
+          answers: Json
+          correct_index: number
+          course_id: string
+          created_at: string
+          explanation: string | null
+          id: string
+          is_active: boolean
+          question_text: string
+          section_tag: string | null
+        }
+        Insert: {
+          answers: Json
+          correct_index: number
+          course_id: string
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          is_active?: boolean
+          question_text: string
+          section_tag?: string | null
+        }
+        Update: {
+          answers?: Json
+          correct_index?: number
+          course_id?: string
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          is_active?: boolean
+          question_text?: string
+          section_tag?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seats: {
         Row: {
           firm_id: string

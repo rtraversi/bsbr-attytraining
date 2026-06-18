@@ -140,6 +140,7 @@ export async function POST(req: NextRequest) {
     ? `${appUrl}/auth/confirm?token_hash=${hashedToken}&type=magiclink&next=/dashboard`
     : linkData?.properties?.action_link
 
+  let emailFailed = false
   if (process.env.NODE_ENV === 'development') {
     console.log('[dev] Magic link for', email, '→', actionLink)
   } else {
@@ -152,12 +153,14 @@ export async function POST(req: NextRequest) {
       })
     } catch (err) {
       console.error('[onboarding/complete] sendEmail error:', err)
+      emailFailed = true
     }
   }
 
   return NextResponse.json({
     success: true,
-    // TODO: remove devLink before launch — exposed for e2e testing only
-    devLink: actionLink,
+    // Exposed when email fails (e.g. Resend not yet configured) so testing doesn't block.
+    // Disappears automatically once Resend is verified and emails deliver successfully.
+    devLink: (process.env.NODE_ENV === 'development' || emailFailed) ? actionLink : undefined,
   })
 }

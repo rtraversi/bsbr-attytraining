@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { QuizComponent, type QuizQuestion } from './quiz-component'
 
 type TrainingPhase =
   | 'not_started'
@@ -11,17 +12,27 @@ type TrainingPhase =
 interface Props {
   phase: TrainingPhase
   courseTitle: string
+  courseId: string | null
+  questions: QuizQuestion[]
   certNumber?: string
   issuedAt?: string
   expiresAt?: string
   certUrl?: string
 }
 
-export function TrainingClient({ phase: initialPhase, courseTitle, certNumber, issuedAt, expiresAt, certUrl }: Props) {
+export function TrainingClient({
+  phase: initialPhase,
+  courseTitle,
+  courseId,
+  questions,
+  certNumber,
+  issuedAt,
+  expiresAt,
+  certUrl,
+}: Props) {
   const router = useRouter()
   const [phase, setPhase] = useState(initialPhase)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [trainingConfirmed, setTrainingConfirmed] = useState(false)
 
   // Sync phase when server re-renders with new data (e.g. cert_pending → certified)
   useEffect(() => { setPhase(initialPhase) }, [initialPhase])
@@ -32,23 +43,6 @@ export function TrainingClient({ phase: initialPhase, courseTitle, certNumber, i
     const id = setInterval(() => router.refresh(), 3000)
     return () => clearInterval(id)
   }, [phase, router])
-
-  const handleMarkPass = async () => {
-    setLoading(true)
-    setError('')
-
-    const res = await fetch('/api/training/mark-pass', { method: 'POST' })
-    const data = (await res.json()) as { error?: string }
-
-    if (!res.ok) {
-      setError(data.error ?? 'Something went wrong.')
-      setLoading(false)
-      return
-    }
-
-    setPhase('cert_pending')
-    setLoading(false)
-  }
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
@@ -63,40 +57,55 @@ export function TrainingClient({ phase: initialPhase, courseTitle, certNumber, i
         </h1>
       </div>
 
-      {/* Video placeholder */}
+      {/* Rise 360 iframe placeholder — replaced with real iframe in Phase 2 */}
       <div className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-900 aspect-video flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center mx-auto mb-3">
             <PlayIcon />
           </div>
-          <p className="text-sm text-zinc-500">Video coming soon</p>
-          <p className="text-xs text-zinc-600 mt-1">Cloudflare Stream video will appear here</p>
+          <p className="text-sm text-zinc-500">Course content coming soon</p>
+          <p className="text-xs text-zinc-600 mt-1">Articulate Rise 360 course will appear here</p>
         </div>
       </div>
 
       {/* State-based content */}
       {phase === 'not_started' && (
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-          <h2 className="text-sm font-medium text-zinc-200 mb-1">Ready to certify?</h2>
-          <p className="text-sm text-zinc-500 mb-5">
-            Watch the full training video, then complete the quiz to earn your certificate.
-          </p>
+        <>
+          {!trainingConfirmed ? (
+            /* Gate: confirm training completion before revealing quiz */
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+              <h2 className="text-sm font-medium text-zinc-200 mb-1">Completed the training?</h2>
+              <p className="text-sm text-zinc-500 mb-5">
+                Once you have reviewed all course content above, confirm below to unlock the certification quiz.
+              </p>
+              <button
+                onClick={() => setTrainingConfirmed(true)}
+                className="rounded-lg bg-zinc-700 hover:bg-zinc-600 active:bg-zinc-800 px-5 py-2.5 text-sm font-semibold text-white transition-colors"
+              >
+                I Have Completed the Training — Begin Quiz
+              </button>
+            </div>
+          ) : (
+            /* Quiz area */
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+              <h2 className="text-sm font-medium text-zinc-200 mb-1">Certification Quiz</h2>
+              <p className="text-sm text-zinc-500 mb-5">
+                Answer all questions, then attest your identity to submit. You need 80% or higher to pass.
+                Unlimited retakes — a fresh question set each attempt.
+              </p>
 
-          {error && (
-            <p className="text-sm text-red-400 mb-4">{error}</p>
+              {courseId ? (
+                <QuizComponent
+                  questions={questions}
+                  courseId={courseId}
+                  onPass={() => setPhase('cert_pending')}
+                />
+              ) : (
+                <p className="text-sm text-zinc-500">Course not yet initialized.</p>
+              )}
+            </div>
           )}
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleMarkPass}
-              disabled={loading}
-              className="rounded-lg bg-teal-500 hover:bg-teal-400 active:bg-teal-600 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Recording…' : 'Mark as complete (stub)'}
-            </button>
-            <p className="text-xs text-zinc-600">Bypasses video + quiz for testing</p>
-          </div>
-        </div>
+        </>
       )}
 
       {phase === 'cert_pending' && (
@@ -108,7 +117,6 @@ export function TrainingClient({ phase: initialPhase, courseTitle, certNumber, i
             <p className="text-sm font-medium text-white mb-1">Training complete — certificate generating</p>
             <p className="text-sm text-zinc-400">
               Your compliance certificate is being generated. This usually takes less than a minute.
-              Refresh the page to check.
             </p>
           </div>
         </div>

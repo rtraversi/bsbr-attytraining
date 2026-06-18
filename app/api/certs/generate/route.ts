@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     ])
 
     const firmName      = firmResult.data?.name   ?? 'Unknown Firm'
-    const courseTitle   = courseResult.data?.title ?? 'AI Staff Compliance Training — Annual Certification'
+    const courseTitle   = courseResult.data?.title ?? 'Responsible Use of AI within the Legal Industry'
     const employeeEmail = authResult.data?.user?.email ?? 'Unknown'
 
     // ── Certificate number — DB sequence guarantees global uniqueness ────────────
