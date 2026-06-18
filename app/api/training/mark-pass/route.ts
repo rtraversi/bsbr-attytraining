@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -109,17 +110,37 @@ export async function POST() {
     .update({ status: 'passed', completed_at: new Date().toISOString() })
     .eq('id', enrollment.id)
 
-  // Enqueue cert generation — the cert Worker processes this when it's built
-  const { error: queueErr } = await admin.from('cert_generation_queue').insert({
+  // Enqueue cert generation
+  const { data: queueRow, error: queueErr } = await admin.from('cert_generation_queue').insert({
     enrollment_id: enrollment.id,
     firm_id: firmId,
     quiz_attempt_id: attempt.id,
     status: 'pending',
-  })
+  }).select('id').single()
 
   if (queueErr) {
     console.error('[mark-pass] cert_generation_queue insert failed:', queueErr)
-    // Don't fail the whole request — the attempt is recorded, cert can be re-queued
+  }
+
+  // Trigger cert generation after response is sent — bypasses unreliable Supabase webhook
+  if (queueRow) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+    const secret = process.env.CERT_WEBHOOK_SECRET ?? ''
+    after(async () => {
+      try {
+        await fetch(`${appUrl}/api/certs/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-webhook-secret': secret },
+          body: JSON.stringify({
+            type: 'INSERT',
+            table: 'cert_generation_queue',
+            record: { id: queueRow.id, firm_id: firmId, enrollment_id: enrollment.id, quiz_attempt_id: attempt.id, status: 'pending', attempt_count: 0 },
+          }),
+        })
+      } catch (err) {
+        console.error('[mark-pass] cert trigger failed:', err)
+      }
+    })
   }
 
   return NextResponse.json({ success: true })

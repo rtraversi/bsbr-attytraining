@@ -1,13 +1,15 @@
 # Session Handoff
 
-**Dates:** 2026-06-15 (Sessions 1–4, Max) · 2026-06-16 (Session 4, Rob) · 2026-06-16 (Sessions 5–7, Max) · 2026-06-17 (Sessions 8–9, Max) · 2026-06-18 (Session 10, Max)
+**Dates:** 2026-06-15 (Sessions 1–4, Max) · 2026-06-16 (Sessions 5–7, Max) · 2026-06-17 (Sessions 8–9, Max) · 2026-06-18 (Sessions 10–11, Max)
 **Who:** Max + Rob
 
 ---
 
-## Phase 1 — DEPLOYED ✅ (e2e test in progress)
+## Phase 1 — COMPLETE ✅ (e2e test passed)
 
-All 10 tasks built and deployed to CF Workers. E2E test is mid-run — one redeploy needed to unblock it.
+All 10 tasks built, deployed, and end-to-end verified on the live CF Workers URL. The full pipeline works:
+
+**Stripe checkout → firm provisioned → admin magic link → dashboard → invite employee → employee sets password → mark pass → cert auto-generated → download button appears automatically**
 
 ---
 
@@ -17,15 +19,22 @@ All 10 tasks built and deployed to CF Workers. E2E test is mid-run — one redep
 
 ---
 
-## IMMEDIATE ACTION REQUIRED (before anything else)
+## IMMEDIATE ACTIONS REQUIRED (before any real customers)
 
-```bash
-pnpm run deploy
+### 1. Rob: Verify Resend domain
+Every email (magic links, invites, cert delivery) is failing silently:
 ```
+Resend 403: aistaffcompliance.com domain is not verified
+```
+Go to **resend.com/domains** → Add `aistaffcompliance.com` → Add the DNS records.
 
-This deploys the fix for `app/api/onboarding/status/route.ts` (module-level Stripe init bug — same class as the checkout hang fix). Without this deploy, the onboarding page spins forever.
+### 2. Remove devLink from production (quick code fix)
+Two routes expose magic links directly in the API response (added for e2e testing):
+- `app/api/onboarding/complete/route.ts` — change `devLink: actionLink` back to:
+  `devLink: process.env.NODE_ENV === 'development' ? actionLink : undefined`
+- `app/api/invite/route.ts` — same change
 
-After deploy: run a fresh Stripe checkout with a new test email to resume e2e test.
+Then `pnpm run deploy`.
 
 ---
 
@@ -41,55 +50,49 @@ After deploy: run a fresh Stripe checkout with a new test email to resume e2e te
 | Task 6 — Employee invite flow | ✅ Done |
 | Task 7 — Mark pass stub | ✅ Done |
 | Task 8 — Resend email wiring | ✅ Done |
-| Task 9 — Cert generation Worker | ✅ Done |
-| Task 10 — Cert download endpoint + cron drain | ✅ Done |
-| **Phase 1 Deploy** | ✅ Deployed (1 more deploy needed) |
-| **E2E test on live URL** | ⬜ In progress |
+| Task 9 — Cert generation | ✅ Done |
+| Task 10 — Cert download + cron drain | ✅ Done |
+| **Phase 1 e2e test on live URL** | ✅ PASSED |
 
 ---
 
-## Critical Fix Applied This Session — Read This
+## Important Architecture Decisions Made This Session
 
-**Root cause of all hanging routes:** The Stripe Node SDK uses Node's `https` module for API calls. Under CF Workers `nodejs_compat`, this polyfill hangs on outbound connections — request received, no response ever sent.
+### Cert generation — no longer uses Supabase webhook
+The Supabase DB webhook never reliably delivered to CF Workers (pg_net issue). **Fix:** `mark-pass` now uses Next.js `after()` to call `/api/certs/generate` directly after returning its response. This is now the primary cert trigger. Supabase webhook stays as backup.
 
-**Fix:** `httpClient: Stripe.createFetchHttpClient()` inside every `getStripe()` lazy getter.
-
-**Applied to all 4 routes:**
-- `app/api/checkout/route.ts` ✅ deployed
-- `app/api/webhooks/stripe/route.ts` ✅ deployed
-- `app/api/onboarding/complete/route.ts` ✅ deployed
-- `app/api/onboarding/status/route.ts` ✅ written, **needs deploy**
-
-**If any new Stripe route is added:** always include `httpClient: Stripe.createFetchHttpClient()` in the `getStripe()` lazy getter. Never initialize Stripe at module scope.
+### Training page auto-polls
+After mark-pass, training page polls `router.refresh()` every 3 seconds until cert appears. No manual refresh needed.
 
 ---
 
-## After E2E Passes — Next Steps
+## Phase 2 — What's Next
 
-1. Deploy cert-worker (cron drain) — from `workers/cert-worker/` directory:
-   - Fill in `APP_URL` in `wrangler.toml` with the workers.dev URL
-   - `wrangler secret put CERT_WEBHOOK_SECRET` (same value as on main Worker)
-   - `wrangler deploy`
-2. Decide: keep `*.workers.dev` as staging URL or set up `training.aistaffcompliance.com` now?
-3. Phase 2: Rise 360 iframe + custom React quiz (blocked on Rob's Rise export)
-4. Phase 3: Full admin dashboard (DASH-01 through DASH-09)
+**Blocked on Rob:** Articulate Rise 360 course export (Rob + Katy authoring)
+
+When ready:
+1. Host Rise web package on CF R2 or Articulate hosting
+2. Replace video placeholder with Rise iframe on training page
+3. Add "I have completed the training" confirmation gate before quiz
+4. Build custom React certification quiz (~150–200 LOC) with server-side scoring
+5. Remove "Mark as complete (stub)" button
 
 ---
 
 ## Key Reference IDs
 
 - **Deployed URL:** `https://bsbr-attytraining.aistaffcompliance.workers.dev`
-- **Supabase dev project:** `ndmzvtuywcufvkxtkjhg` (under Max's account)
+- **Supabase dev project:** `ndmzvtuywcufvkxtkjhg` (Max's account)
 - **Stripe Price ID:** `price_1TjNHc6ZCSojEKRrKs79ToJ0`
 - **Stripe sandbox account:** AI Staff Compliance & Training (`acct_1ThDpr6ZCSojEKRr`)
 - **GitHub repo:** `rtraversi/bsbr-attytraining`
-- **NEXT_PUBLIC_APP_URL** — set as a wrangler VAR (not secret). Do NOT run `wrangler secret put NEXT_PUBLIC_APP_URL` — will get error 10053.
+- **NEXT_PUBLIC_APP_URL** — wrangler VAR (not secret). Do NOT `wrangler secret put` it.
 
 ---
 
 ## Open Questions
 
 - Supabase prod project — Max's account or Rob's? Needs Pro tier before launch
-- `pdf-lib` → ilovepdf API swap (before launch, Rob has account)
-- Custom domain `training.aistaffcompliance.com` — set up now or after e2e verified?
-- Cert-worker deploy timing — right after e2e, or wait for Phase 2?
+- Custom domain `training.aistaffcompliance.com` — now or after Phase 2?
+- cert-worker cron drain deploy — less urgent now that `after()` is primary trigger
+- `pdf-lib` → ilovepdf API swap — before launch, Rob has account

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 type TrainingPhase =
@@ -23,6 +23,16 @@ export function TrainingClient({ phase: initialPhase, courseTitle, certNumber, i
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // Sync phase when server re-renders with new data (e.g. cert_pending → certified)
+  useEffect(() => { setPhase(initialPhase) }, [initialPhase])
+
+  // Auto-poll while cert is generating
+  useEffect(() => {
+    if (phase !== 'cert_pending') return
+    const id = setInterval(() => router.refresh(), 3000)
+    return () => clearInterval(id)
+  }, [phase, router])
+
   const handleMarkPass = async () => {
     setLoading(true)
     setError('')
@@ -38,7 +48,6 @@ export function TrainingClient({ phase: initialPhase, courseTitle, certNumber, i
 
     setPhase('cert_pending')
     setLoading(false)
-    router.refresh()
   }
 
   return (

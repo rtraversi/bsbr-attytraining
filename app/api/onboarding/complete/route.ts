@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    // Expose in dev so we can test without email delivery
-    devLink: process.env.NODE_ENV === 'development' ? actionLink : undefined,
+    // TODO: remove devLink before launch — exposed for e2e testing only
+    devLink: actionLink,
   })
 }
