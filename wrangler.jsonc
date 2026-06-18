@@ -4,5 +4,8 @@
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "compatibility_flags": ["nodejs_compat"],
   "compatibility_date": "2026-06-12",
-  "preview_urls": true
+  "preview_urls": true,
+  "vars": {
+    "NEXT_PUBLIC_APP_URL": "https://bsbr-attytraining.aistaffcompliance.workers.dev"
+  }
 }
