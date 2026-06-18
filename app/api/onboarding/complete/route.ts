@@ -5,9 +5,16 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/resend'
 import { AdminMagicLinkEmail } from '@/emails/admin-magic-link'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-05-27.dahlia',
-})
+let _stripe: Stripe | null = null
+function getStripe(): Stripe {
+  if (!_stripe) {
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2026-05-27.dahlia',
+      httpClient: Stripe.createFetchHttpClient(),
+    })
+  }
+  return _stripe
+}
 
 export async function POST(req: NextRequest) {
   let sessionId: string
@@ -31,7 +38,7 @@ export async function POST(req: NextRequest) {
   let email: string
 
   try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId)
+    const session = await getStripe().checkout.sessions.retrieve(sessionId)
     customerId = session.customer as string
     email = session.customer_details?.email ?? ''
   } catch {

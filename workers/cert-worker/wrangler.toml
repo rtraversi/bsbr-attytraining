@@ -3,14 +3,19 @@ main            = "src/index.ts"
 compatibility_date  = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
+[triggers]
+crons = ["*/5 * * * *"]
+
 [vars]
 # Non-secret config — override per environment below
 SUPABASE_URL = ""   # fill in before first deploy
+APP_URL = ""        # fill in with deployed *.workers.dev URL before first deploy
 
 # Secrets (never commit values — set with `wrangler secret put <KEY>`):
 #   WEBHOOK_SECRET              — shared secret validated in X-Webhook-Secret header
 #   SUPABASE_SERVICE_ROLE_KEY   — Supabase service-role key (bypasses RLS)
 #   RESEND_API_KEY              — Resend transactional email key
+#   CERT_WEBHOOK_SECRET         — shared secret for the Next.js /api/certs/drain endpoint
 
 # ---------------------------------------------------------------------------
 # Staging environment
@@ -22,3 +27,4 @@ name = "bsbr-cert-worker-staging"
 
 [env.staging.vars]
 SUPABASE_URL = ""   # staging Supabase project URL
+APP_URL = ""        # staging Next.js app URL

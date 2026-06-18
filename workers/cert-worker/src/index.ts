@@ -15,14 +15,14 @@
  */
 
 export interface Env {
-  // Set via `wrangler secret put WEBHOOK_SECRET`
   WEBHOOK_SECRET: string;
-  // Set via `wrangler secret put SUPABASE_SERVICE_ROLE_KEY`
   SUPABASE_SERVICE_ROLE_KEY: string;
-  // Set as a plain var in wrangler.toml [vars] or via `wrangler secret put`
   SUPABASE_URL: string;
-  // Set via `wrangler secret put RESEND_API_KEY`
   RESEND_API_KEY: string;
+  // Shared secret for the Next.js drain endpoint — set via `wrangler secret put CERT_WEBHOOK_SECRET`
+  CERT_WEBHOOK_SECRET: string;
+  // Deployed Next.js app URL — set in [vars] in wrangler.toml
+  APP_URL: string;
 }
 
 /** Shape of the Supabase Database Webhook payload for quiz_attempts INSERT */
@@ -44,6 +44,18 @@ interface SupabaseWebhookPayload {
 }
 
 export default {
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(
+      fetch(`${env.APP_URL}/api/certs/drain`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-webhook-secret': env.CERT_WEBHOOK_SECRET,
+        },
+      })
+    )
+  },
+
   async fetch(request: Request, env: Env): Promise<Response> {
     // Only accept POST
     if (request.method !== "POST") {

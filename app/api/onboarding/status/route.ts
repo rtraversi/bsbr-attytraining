@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-05-27.dahlia',
-})
+let _stripe: Stripe | null = null
+function getStripe(): Stripe {
+  if (!_stripe) {
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2026-05-27.dahlia',
+      httpClient: Stripe.createFetchHttpClient(),
+    })
+  }
+  return _stripe
+}
 
 export async function GET(req: NextRequest) {
   const sessionId = req.nextUrl.searchParams.get('session_id')
@@ -17,7 +24,7 @@ export async function GET(req: NextRequest) {
   let seats: number
 
   try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+    const session = await getStripe().checkout.sessions.retrieve(sessionId, {
       expand: ['subscription.items.data'],
     })
 
