@@ -90,6 +90,20 @@ An attorney can pay, invite their staff, see them complete the training, and pro
 | Curriculum produced in parallel, not gating platform build | Platform can scaffold with placeholder content; final video drops in before launch | — Pending |
 | Built Smart by Rob branding (existing brand assets) | BSBR brand exists with logo and colors; apply to this product rather than create new identity | — Pending |
 
+## Launch Timeline
+
+**Set 2026-06-19 (Rob)**
+
+| Date | Milestone |
+|------|-----------|
+| Jun 20–22 | Katy works on developing course content |
+| Jul 1 | Backend + frontend 100% complete; training content partially complete |
+| Jul 10 | Everything 100% complete — content, backend, frontend, all flows |
+| Week of Jul 13 | Full end-to-end testing with ≥6 real testers; all discovered bugs fixed before go-live |
+| Jul 20 | **Go live** |
+
+---
+
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.

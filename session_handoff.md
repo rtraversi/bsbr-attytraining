@@ -58,6 +58,18 @@
 
 ---
 
+## Launch Timeline (set 2026-06-19, Rob)
+
+| Date | Milestone |
+|------|-----------|
+| Jun 20–22 | Katy develops course content |
+| Jul 1 | Backend + frontend 100% complete; content partially complete |
+| Jul 10 | Everything 100% complete |
+| Week of Jul 13 | Full e2e testing with ≥6 testers; all bugs fixed |
+| Jul 20 | **Go live** |
+
+---
+
 ## Immediate Next Steps (Max, 2026-06-19 morning)
 
 1. **Fix Resend API key** — get new key from rmt portal, run:
