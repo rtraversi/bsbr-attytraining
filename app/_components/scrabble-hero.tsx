@@ -48,11 +48,11 @@ function Tile({ letter, delay }: { letter: string; delay: number }) {
       }}
     >
       {/* Letter */}
-      <span className="font-fraunces font-bold leading-none text-[#1A1A1A] text-base sm:text-[26px] lg:text-[30px]">
+      <span className="font-gyrotrope font-bold leading-none text-[#1A1A1A] text-base sm:text-[26px] lg:text-[30px]">
         {letter}
       </span>
       {/* Point value */}
-      <span className="absolute bottom-[2px] right-[3px] sm:bottom-[3px] sm:right-[4px] font-dm-sans font-semibold leading-none text-[#1A1A1A]/55 text-[7px] sm:text-[9px]">
+      <span className="absolute bottom-[2px] right-[3px] sm:bottom-[3px] sm:right-[4px] font-host-grotesk font-semibold leading-none text-[#1A1A1A]/55 text-[7px] sm:text-[9px]">
         {POINTS[letter]}
       </span>
     </div>
@@ -136,12 +136,12 @@ export default function ScrabbleHero() {
 
         {/* ── Nav ── */}
         <nav className="relative z-10 flex items-center justify-between px-6 sm:px-10 h-14 shrink-0">
-          <span className="font-fraunces font-bold text-[#1A1A1A] text-lg tracking-tight">
+          <span className="font-gyrotrope font-bold text-[#1A1A1A] text-lg tracking-tight">
             Built Smart by Rob
           </span>
           <a
             href="/login"
-            className="font-dm-sans text-sm text-[#1A1A1A]/50 hover:text-[#1A1A1A] transition-colors duration-150"
+            className="font-host-grotesk text-sm text-[#1A1A1A]/50 hover:text-[#1A1A1A] transition-colors duration-150"
           >
             Sign in
           </a>
@@ -151,7 +151,7 @@ export default function ScrabbleHero() {
         <div className="relative flex flex-1 flex-col items-center justify-center px-4 gap-7 sm:gap-8">
 
           {/* Eyebrow */}
-          <p className="font-dm-sans text-[11px] sm:text-xs tracking-[0.20em] uppercase font-semibold text-[#C8783A]">
+          <p className="font-host-grotesk text-[11px] sm:text-xs tracking-[0.20em] uppercase font-semibold text-[#C8783A]">
             ABA Model Rule 5.3 Compliance
           </p>
 
@@ -180,7 +180,7 @@ export default function ScrabbleHero() {
           </div>
 
           {/* Subheadline */}
-          <p className="font-dm-sans text-[15px] sm:text-[17px] text-[#1A1A1A]/58 text-center max-w-[340px] sm:max-w-md leading-relaxed">
+          <p className="font-host-grotesk text-[15px] sm:text-[17px] text-[#1A1A1A]/58 text-center max-w-[340px] sm:max-w-md leading-relaxed">
             Staff complete training in 30 minutes.
             <br className="hidden sm:block" />
             Automatic PDF certificates. No operator involvement.
@@ -198,7 +198,7 @@ export default function ScrabbleHero() {
 
         {/* ── Scroll indicator ── */}
         <div className="relative shrink-0 flex flex-col items-center gap-2 pb-7 opacity-25">
-          <span className="font-dm-sans text-[10px] tracking-[0.22em] uppercase text-[#1A1A1A]">
+          <span className="font-host-grotesk text-[10px] tracking-[0.22em] uppercase text-[#1A1A1A]">
             Scroll
           </span>
           <div

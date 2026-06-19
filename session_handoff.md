@@ -1,43 +1,54 @@
 # Session Handoff
 
-**Date:** 2026-06-18
-**Who:** Max (dev, 3 sessions) + Rob (PM, planning/decisions)
+**Date:** 2026-06-19 (Friday)
+**Who:** Max (Phase 3 dashboard sprint — full day)
 
 ---
 
-## What Was Done Today
+## Rob's Context (pushed 2026-06-19 — read before anything else)
 
-### Max (3 coding sessions)
+- **Launch timeline:** Jul 20 go-live; Jul 1 code-complete; Jul 10 content-complete; Jul 13 testing week (≥6 testers)
+- **Stripe live mode on hold:** LLC + EIN in progress; brand name may change — do NOT create live Stripe objects until both are confirmed
+- Full timeline in `.planning/PROJECT.md` → Launch Timeline section
 
-**Session 1 — Phase 1 deploy to CF Workers**
-- Fixed critical CF Workers bug: Stripe SDK was using Node's `https` polyfill which hangs silently; added `httpClient: Stripe.createFetchHttpClient()` to all 4 Stripe routes
-- Set all Worker secrets via `wrangler secret put` (8 secrets confirmed)
-- Deployed live: `https://bsbr-attytraining.aistaffcompliance.workers.dev`
-- Built Task 10: cert download URL endpoint, cron drain for failed cert retries, cert-worker scheduled handler
+---
 
-**Session 2 — Phase 1 e2e on live URL: PASSED ✅**
-- All 8 steps passed on the deployed CF Workers URL
-- Bypassed unreliable Supabase pg_net webhook: `mark-pass` now uses Next.js `after()` to trigger cert generation directly (more reliable; Supabase webhook stays as fallback)
-- Training page auto-polls every 3s after mark-pass and transitions automatically when cert is ready
+## Previous Session Context (from 2026-06-18 — preserved for Rob)
 
-**Session 3 — Phase 2 quiz loop: COMPLETE ✅**
-- `quiz_questions` table + migration 0003 (8 placeholder seeds tagged `PLACEHOLDER:*`)
-- `/api/quiz/attempt` — server-side scoring, training_events audit, cert trigger on pass
-- `QuizComponent` (~175 LOC) — one question at a time, no back button, attestation gate, pass/fail result
-- Training page rewritten: "Mark Pass" stub removed, replaced by Rise confirmation gate → quiz flow
-- BSBR logo embedded in cert PDF; course title: "Responsible Use of AI within the Legal Industry"
-- Fixed: quiz score was float (87.5%), DB schema is int — now uses `Math.round(score)`
-- `devLink` now returns on Resend error so magic links show on screen during testing
+Phase 1 and Phase 2 were deployed and passing e2e before today's session.
 
-### Rob (planning decisions)
-- Locked Articulate Rise 360 as course content format — pushed updated CLAUDE.md, REQUIREMENTS.md, ROADMAP.md, STATE.md
-- Decided: stay on Stripe
-- Target: Phases 2–4 done by July 1; Phase 5 (public launch) ~July 7–10
-- Katy (attorney) co-authoring training content; she covers attorney review sign-off
-- Rob designing the logo; Max presenting 3–5 site designs for review
-- Rob started Articulate 360 trial today
-- **Created new Resend API key — stored in rmt portal for Max to update tomorrow**
-- Confirmed: Resend domain `aistaffcompliance.com` is verified (was verified 3 days ago — the 403 is a bad API key, not a domain issue)
+- Phase 1 deploy: Stripe httpClient fix, 8 Worker secrets set, live deploy passing
+- Phase 2 quiz loop: server-side scoring, QuizComponent, training_events audit, cert trigger
+- Quiz score float→int fix (`Math.round`), BSBR logo in cert PDF
+
+---
+
+## What Max Built Today (2026-06-19)
+
+All Phase 3 features built. **Not yet deployed** — run deploy steps below on Monday.
+
+### Prep fixes (done at session start)
+- **"Try Again" quiz reset bug** — `attemptKey` counter + `key` prop forces QuizComponent remount on retake
+- **Removed `devLink`** from `onboarding/complete` and `invite` routes — Resend confirmed working
+- **Font swap** — replaced Google Fonts with local Gyrotrope + Host Grotesk (`public/fonts/`, `--font-gyrotrope`, `--font-host-grotesk`)
+
+### Dashboard tasks built
+| Task | What | Key files |
+|------|------|-----------|
+| DASH-01 | Employee table: training status (not_started/in_progress/passed/expired), score, completion date, cert download | `app/dashboard/page.tsx`, `_components/team-table.tsx`, `_components/cert-download-button.tsx` |
+| DASH-03 | Bulk CSV invite — client-side parse, seat check, sequential invite loop, summary (`8 invited, 2 skipped…`) | `_components/csv-upload-form.tsx`, `app/api/invite/bulk/route.ts` |
+| DASH-04 | Remind button per incomplete row — sends training-reminder email | `team-table.tsx`, `app/api/invite/remind/route.ts`, `emails/training-reminder.tsx` |
+| DASH-05 | Seat reassignment — ReassignModal, soft-sets old member to `status='reassigned'`, creates new auth user + invite | `_components/reassign-modal.tsx`, `app/api/firm/member/reassign/route.ts` |
+| DASH-07 | Firm attestation PDF — GET `/api/firm/attestation` builds single-page pdf-lib PDF of active certs; plain `<a>` download | `app/api/firm/attestation/route.ts` |
+| DASH-08 | Rule 5.3 collapsible explainer (`<details>/<summary>`) below team table | `app/dashboard/page.tsx` |
+| DASH-09 | Delete / PII redaction — `status='deleted'` on firm_members row, auth email → `deleted-{uuid}@redacted.invalid` | `app/api/firm/member/delete/route.ts` |
+| AUTO-03 | Expiry cron (90/30/7 day buckets) + inactivity cron (per-firm `reminder_days`), both in cert-worker daily 9am UTC | `workers/cert-worker/src/index.ts`, `wrangler.toml`, `app/api/firm/settings/route.ts`, `_components/reminder-settings.tsx` |
+
+### Migration 0004
+`supabase/migrations/0004_reminder_settings.sql`:
+- Adds `reminder_days integer DEFAULT 7` to `firms`
+- Expands `training_events.event_type` CHECK → adds `expiry_reminder_sent`, `inactivity_reminder_sent`
+- Fixes `firm_members.status` CHECK → adds `deleted`, `reassigned` (retroactive for DASH-09 / DASH-05)
 
 ---
 
@@ -45,70 +56,51 @@
 
 | Item | Status |
 |------|--------|
-| Phase 1 — Hello-cert e2e stub | ✅ Complete + deployed |
-| Phase 2 — Quiz loop (server-side scoring, attestation) | ✅ Complete + deployed |
-| Phase 2 — Rise iframe | ⬜ Blocked on Rob's Rise web export |
-| Phase 2 — Real question pool | ⬜ Blocked on Rob seeding 24–32 questions |
-| Resend emails | ❌ 403 — new API key in rmt portal, Max to update |
-| Supabase migration 0003 | ⬜ Needs `supabase db push` |
-| "Try Again" quiz reset bug | ⚠️ Known — fix described below |
-| devLink in production | ⚠️ Must remove before real customers |
-| Custom domain `training.aistaffcompliance.com` | ⬜ Not set up yet |
-| cert-worker cron drain (standalone Worker) | ⬜ Not deployed (less urgent) |
+| Phase 1 — Hello-cert e2e | ✅ Complete + deployed |
+| Phase 2 — Quiz loop | ✅ Complete + deployed |
+| Phase 3 — Dashboard (DASH-01, 03, 04, 05, 07, 08, 09) | ✅ Built — needs deploy |
+| AUTO-03 — Reminder crons | ✅ Built — cert-worker needs deploy |
+| Migration 0003 (quiz_questions) | ⬜ `supabase db push` not run yet |
+| Migration 0004 (reminder_days + CHECK fixes) | ⬜ `supabase db push` not run yet |
+| Phase 3 remaining (DASH-02, DASH-06, DASH-10) | ⬜ Not built yet |
+| Rise 360 iframe | ⬜ Blocked on Rob's web export |
+| Real question pool (24–32 Qs) | ⬜ Blocked on Rob seeding DB |
+| Custom domain `training.aistaffcompliance.com` | ⬜ Not set up |
+| Stripe live mode | ⬜ On hold — LLC + EIN + brand name pending |
 
 ---
 
-## Launch Timeline (set 2026-06-19, Rob)
+## Monday Deploy Steps (must run in order)
 
-| Date | Milestone |
-|------|-----------|
-| Jun 20–22 | Katy develops course content |
-| Jul 1 | Backend + frontend 100% complete; content partially complete |
-| Jul 10 | Everything 100% complete |
-| Week of Jul 13 | Full e2e testing with ≥6 testers; all bugs fixed |
-| Jul 20 | **Go live** |
+```bash
+# 1. Apply both pending migrations + regen types
+supabase db push
+supabase gen types typescript --linked > types/supabase.ts
 
----
+# 2. Deploy main Next.js app
+pnpm run deploy
 
-## Immediate Next Steps (Max, 2026-06-19 morning)
-
-1. **Fix Resend API key** — get new key from rmt portal, run:
-   ```
-   wrangler secret put RESEND_API_KEY
-   ```
-   No redeploy needed. This unblocks all email flows (magic links, invites, cert delivery).
-
-2. **Apply migration 0003** — from project root:
-   ```
-   supabase db push
-   supabase gen types typescript --linked > types/supabase.ts
-   ```
-
-3. **Fix "Try Again" quiz reset bug** — `router.refresh()` doesn't reset QuizComponent client state. In `training-client.tsx` add an `attemptKey` counter and pass as `key` prop to force remount:
-   ```tsx
-   const [attemptKey, setAttemptKey] = useState(0)
-   <QuizComponent
-     key={attemptKey}
-     questions={questions}
-     courseId={courseId}
-     onPass={() => setPhase('cert_pending')}
-     onRetry={() => { setAttemptKey(k => k + 1); router.refresh() }}
-   />
-   ```
-   In `quiz-component.tsx` replace the Try Again `router.refresh()` with `onRetry?.()` (add `onRetry?: () => void` to Props).
-
-4. **Run a fresh e2e test** — confirm emails now deliver end-to-end.
-
-5. **Remove `devLink` from production** — once emails confirmed working, remove from `app/api/onboarding/complete/route.ts` and `app/api/invite/route.ts`.
+# 3. Deploy cert-worker (picks up new cron + reminder logic)
+cd workers/cert-worker
+wrangler deploy
+cd ../..
+```
 
 ---
 
-## Blocked on Rob (no action needed from Max yet)
+## Remaining Phase 3 Tasks (not built yet)
 
-- Articulate Rise 360 web export — replaces iframe placeholder in `training-client.tsx`
-- Real question pool (24–32 questions) — replaces `PLACEHOLDER:*` seeds in DB
-- Logo design
-- Site design review — Max presenting 3–5 options
+- **DASH-02** — Seat usage bar / seat-cap warning in dashboard header
+- **DASH-06** — Export audit log as CSV (`GET /api/firm/audit-log/export`, streams `training_events` as CSV)
+- **DASH-10** — Expiry / renewal banner for the firm admin (surface when any cert expires within 90 days)
+
+---
+
+## Blocked on Rob
+
+- Articulate Rise 360 web export → replaces iframe placeholder in `training-client.tsx`
+- Real question pool (24–32 Qs) → replaces `PLACEHOLDER:*` seeds in DB
+- LLC + EIN + brand name confirmation → unblocks Stripe live mode
 
 ---
 
@@ -118,10 +110,9 @@
 |------|-------|
 | Deployed URL | `https://bsbr-attytraining.aistaffcompliance.workers.dev` |
 | Stripe sandbox account | AI Staff Compliance & Training (`acct_1ThDpr6ZCSojEKRr`) |
-| Stripe Price ID | `price_1TjNHc6ZCSojEKRrKs79ToJ0` |
+| Stripe Product ID | `prod_UgzKT3NrGNAvDA` |
+| Stripe Price ID | `price_1TjNHc6ZCSojEKRrKs79ToJ0` (lookup: `per_seat_annual`) |
 | Supabase dev project | `ndmzvtuywcufvkxtkjhg` (Max's account) |
 | GitHub repo | `rtraversi/bsbr-attytraining` |
-| NEXT_PUBLIC_APP_URL | Set as wrangler VAR (not secret) — do NOT `wrangler secret put` it (error 10053) |
-| Resend domain | `aistaffcompliance.com` — verified ✅ (3 days ago) |
+| NEXT_PUBLIC_APP_URL | Wrangler VAR (not secret) — do NOT `wrangler secret put` it (error 10053) |
 | Resend from address | `AI Staff Compliance <info@aistaffcompliance.com>` |
-| New Resend API key | In rmt portal — Max to update via `wrangler secret put RESEND_API_KEY` |

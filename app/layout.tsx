@@ -1,29 +1,23 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Fraunces, DM_Sans, Lora } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
+const gyrotrope = localFont({
+  src: "../public/fonts/GyrotropeVF.ttf",
+  variable: "--font-gyrotrope",
   display: "swap",
-  axes: ["opsz"],
 });
 
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  variable: "--font-dm-sans",
+const hostGrotesk = localFont({
+  src: [
+    { path: "../public/fonts/HostGrotesk[wght].ttf", style: "normal" },
+    { path: "../public/fonts/HostGrotesk-Italic[wght].ttf", style: "italic" },
+  ],
+  variable: "--font-host-grotesk",
   display: "swap",
-  axes: ["opsz"],
-});
-
-const lora = Lora({
-  subsets: ["latin"],
-  variable: "--font-lora",
-  display: "swap",
-  weight: ["700"],
 });
 
 export const metadata: Metadata = {
@@ -43,9 +37,8 @@ export default function RootLayout({
       className={cn(
         GeistSans.variable,
         GeistMono.variable,
-        fraunces.variable,
-        dmSans.variable,
-        lora.variable
+        gyrotrope.variable,
+        hostGrotesk.variable
       )}
     >
       <body className="antialiased">{children}</body>

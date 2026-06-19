@@ -13,9 +13,10 @@ interface Props {
   questions: QuizQuestion[]
   courseId: string
   onPass: () => void
+  onRetry?: () => void
 }
 
-export function QuizComponent({ questions, courseId, onPass }: Props) {
+export function QuizComponent({ questions, courseId, onPass, onRetry }: Props) {
   const router = useRouter()
   const [qIndex, setQIndex] = useState(0)
   const [selected, setSelected] = useState<number | null>(null)
@@ -187,7 +188,7 @@ export function QuizComponent({ questions, courseId, onPass }: Props) {
         You need {result?.passThreshold ?? 80}% to pass. Take your time reviewing the material and try again.
       </p>
       <button
-        onClick={() => router.refresh()}
+        onClick={() => onRetry ? onRetry() : router.refresh()}
         className="rounded-lg bg-zinc-700 hover:bg-zinc-600 active:bg-zinc-800 px-5 py-2.5 text-sm font-semibold text-white transition-colors"
       >
         Try Again

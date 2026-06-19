@@ -4,7 +4,9 @@ compatibility_date  = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
 [triggers]
-crons = ["*/5 * * * *"]
+# */5 * * * * — cert generation queue drain (every 5 min)
+# 0 9 * * *   — daily expiry + inactivity reminders at 9am UTC
+crons = ["*/5 * * * *", "0 9 * * *"]
 
 [vars]
 # Non-secret config — override per environment below

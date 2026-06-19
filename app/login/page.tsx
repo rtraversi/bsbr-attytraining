@@ -20,7 +20,7 @@ export default async function LoginPage({
           </p>
           <h1
             className="text-2xl text-white"
-            style={{ fontFamily: 'var(--font-fraunces)' }}
+            style={{ fontFamily: 'var(--font-gyrotrope)' }}
           >
             Sign in
           </h1>

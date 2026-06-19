@@ -111,27 +111,16 @@ export async function POST(req: NextRequest) {
     ? `${appUrl}/auth/confirm?token_hash=${hashedToken}&type=magiclink&next=/update-password`
     : linkData?.properties?.action_link
 
-  let emailFailed = false
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[dev] Employee invite link for', email, '→', actionLink)
-  } else {
-    try {
-      const html = await render(EmployeeInviteEmail({ firmName, actionLink: actionLink ?? '' }))
-      await sendEmail({
-        to: email,
-        subject: `${firmName} has invited you to complete AI compliance training`,
-        html,
-      })
-    } catch (err) {
-      console.error('[invite] sendEmail error:', err)
-      emailFailed = true
-    }
+  try {
+    const html = await render(EmployeeInviteEmail({ firmName, actionLink: actionLink ?? '' }))
+    await sendEmail({
+      to: email,
+      subject: `${firmName} has invited you to complete AI compliance training`,
+      html,
+    })
+  } catch (err) {
+    console.error('[invite] sendEmail error:', err)
   }
 
-  return NextResponse.json({
-    success: true,
-    // Exposed when email fails (e.g. Resend not yet configured) so testing doesn't block.
-    // Disappears automatically once Resend is verified and emails deliver successfully.
-    devLink: (process.env.NODE_ENV === 'development' || emailFailed) ? actionLink : undefined,
-  })
+  return NextResponse.json({ success: true })
 }

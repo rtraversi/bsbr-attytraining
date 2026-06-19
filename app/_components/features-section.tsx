@@ -38,10 +38,10 @@ export function FeaturesSection() {
                 <div className="w-12 h-12 rounded-lg bg-[#ffdcc6] flex items-center justify-center text-[#8e4a0d] mb-6">
                   <Icon size={22} strokeWidth={1.75} />
                 </div>
-                <h3 className="font-dm-sans text-2xl font-medium text-[#1b1c1c] mb-2">
+                <h3 className="font-host-grotesk text-2xl font-medium text-[#1b1c1c] mb-2">
                   {title}
                 </h3>
-                <p className="font-dm-sans text-base text-[#544439] leading-relaxed">
+                <p className="font-host-grotesk text-base text-[#544439] leading-relaxed">
                   {description}
                 </p>
               </div>
@@ -60,13 +60,13 @@ export function FeaturesSection() {
               {/* Subtle warm overlay for depth */}
               <div className="absolute inset-0 bg-white/30" />
               <div className="relative z-10">
-                <span className="font-dm-sans text-xs font-bold uppercase tracking-[0.08em] text-[#8e4a0d] mb-2 block">
+                <span className="font-host-grotesk text-xs font-bold uppercase tracking-[0.08em] text-[#8e4a0d] mb-2 block">
                   Our Methodology
                 </span>
-                <h2 className="font-dm-sans text-4xl md:text-5xl font-bold leading-tight text-[#1b1c1c] max-w-lg mb-4">
+                <h2 className="font-host-grotesk text-4xl md:text-5xl font-bold leading-tight text-[#1b1c1c] max-w-lg mb-4">
                   Designed for the Modern Law Firm.
                 </h2>
-                <p className="font-dm-sans text-lg text-[#544439] max-w-xl leading-relaxed">
+                <p className="font-host-grotesk text-lg text-[#544439] max-w-xl leading-relaxed">
                   We understand that compliance isn&apos;t just about rules; it&apos;s about culture. Built Smart
                   by Rob bridges the gap between complex legal mandates and practical daily operations.
                 </p>
@@ -76,12 +76,12 @@ export function FeaturesSection() {
             {/* 100% stat card — 4 columns */}
             <div className="md:col-span-4 bg-[#ffdcc6] rounded-2xl p-10 flex flex-col justify-center glass-card">
               <div className="mb-6">
-                <div className="font-dm-sans text-6xl font-bold text-[#1b1c1c] mb-2">100%</div>
-                <div className="font-dm-sans text-xs font-bold uppercase tracking-[0.08em] text-[#1b1c1c]/80">
+                <div className="font-host-grotesk text-6xl font-bold text-[#1b1c1c] mb-2">100%</div>
+                <div className="font-host-grotesk text-xs font-bold uppercase tracking-[0.08em] text-[#1b1c1c]/80">
                   Audit Success Rate
                 </div>
               </div>
-              <p className="font-dm-sans text-base text-[#1b1c1c]/80 leading-relaxed">
+              <p className="font-host-grotesk text-base text-[#1b1c1c]/80 leading-relaxed">
                 Our clients have consistently passed professional responsibility audits with our
                 training documentation as their primary compliance proof.
               </p>
@@ -93,30 +93,30 @@ export function FeaturesSection() {
       {/* Footer */}
       <footer className="bg-white border-t border-[#d9c2b4]">
         <div className="max-w-[1280px] mx-auto px-6 md:px-[80px] py-12 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="font-dm-sans text-xl font-bold text-[#1b1c1c]">
+          <div className="font-host-grotesk text-xl font-bold text-[#1b1c1c]">
             Built Smart by Rob
           </div>
           <div className="flex gap-6">
             <a
               href="#"
-              className="font-dm-sans text-xs font-bold uppercase tracking-[0.06em] text-[#474746] underline hover:text-[#8e4a0d] transition-colors"
+              className="font-host-grotesk text-xs font-bold uppercase tracking-[0.06em] text-[#474746] underline hover:text-[#8e4a0d] transition-colors"
             >
               Privacy Policy
             </a>
             <a
               href="#"
-              className="font-dm-sans text-xs font-bold uppercase tracking-[0.06em] text-[#474746] underline hover:text-[#8e4a0d] transition-colors"
+              className="font-host-grotesk text-xs font-bold uppercase tracking-[0.06em] text-[#474746] underline hover:text-[#8e4a0d] transition-colors"
             >
               Terms of Service
             </a>
             <a
               href="#"
-              className="font-dm-sans text-xs font-bold uppercase tracking-[0.06em] text-[#474746] underline hover:text-[#8e4a0d] transition-colors"
+              className="font-host-grotesk text-xs font-bold uppercase tracking-[0.06em] text-[#474746] underline hover:text-[#8e4a0d] transition-colors"
             >
               Contact
             </a>
           </div>
-          <p className="font-dm-sans text-xs text-[#474746]/60">
+          <p className="font-host-grotesk text-xs text-[#474746]/60">
             © 2026 Built Smart by Rob. Legal Compliance Training.
           </p>
         </div>

@@ -272,6 +272,7 @@ export type Database = {
           max_seats: number
           name: string
           owner_id: string
+          reminder_days: number
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -284,6 +285,7 @@ export type Database = {
           max_seats: number
           name: string
           owner_id: string
+          reminder_days?: number
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -296,6 +298,7 @@ export type Database = {
           max_seats?: number
           name?: string
           owner_id?: string
+          reminder_days?: number
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null

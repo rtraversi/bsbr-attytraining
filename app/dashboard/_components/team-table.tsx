@@ -1,0 +1,219 @@
+'use client'
+
+import { useState } from 'react'
+import { CertDownloadButton } from './cert-download-button'
+import { ReassignModal } from './reassign-modal'
+
+export type TrainingStatus = 'not_started' | 'in_progress' | 'passed' | 'expired'
+
+export interface MemberDetail {
+  id: string
+  user_id: string
+  role: string
+  status: string
+  email: string
+  name: string
+  trainingStatus: TrainingStatus
+  score: number | null
+  completedAt: string | null
+  certId: string | null
+}
+
+type RemindState = 'idle' | 'loading' | 'sent' | 'error'
+
+export function TeamTable({ memberDetails }: { memberDetails: MemberDetail[] }) {
+  const [remindStates, setRemindStates] = useState<Record<string, RemindState>>({})
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
+  const [reassignedIds, setReassignedIds] = useState<Set<string>>(new Set())
+  const [reassignTarget, setReassignTarget] = useState<MemberDetail | null>(null)
+
+  async function handleRemind(userId: string) {
+    setRemindStates(s => ({ ...s, [userId]: 'loading' }))
+    try {
+      const res = await fetch('/api/invite/remind', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      })
+      setRemindStates(s => ({ ...s, [userId]: res.ok ? 'sent' : 'error' }))
+    } catch {
+      setRemindStates(s => ({ ...s, [userId]: 'error' }))
+    }
+  }
+
+  async function handleDelete(memberId: string, displayName: string) {
+    const confirmed = window.confirm(
+      `Are you sure? This will permanently remove ${displayName}'s personal information. Their certificate record will be preserved.`
+    )
+    if (!confirmed) return
+
+    setDeletingIds(s => new Set(s).add(memberId))
+    try {
+      const res = await fetch('/api/firm/member/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId }),
+      })
+      if (res.ok) {
+        setDeletedIds(s => new Set(s).add(memberId))
+      } else {
+        const data = (await res.json()) as { error?: string }
+        window.alert(data.error ?? 'Failed to delete member. Please try again.')
+      }
+    } catch {
+      window.alert('Network error. Please try again.')
+    } finally {
+      setDeletingIds(s => { const next = new Set(s); next.delete(memberId); return next })
+    }
+  }
+
+  function handleReassignSuccess(memberId: string) {
+    setReassignedIds(s => new Set(s).add(memberId))
+    setReassignTarget(null)
+  }
+
+  const visible = memberDetails.filter(m => !deletedIds.has(m.id))
+
+  return (
+    <>
+      <ReassignModal
+        member={reassignTarget}
+        onClose={() => setReassignTarget(null)}
+        onSuccess={handleReassignSuccess}
+      />
+
+      <div className="rounded-2xl border border-zinc-800 overflow-hidden overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-zinc-800 bg-zinc-900/50">
+              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Name</th>
+              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Email</th>
+              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Training Status</th>
+              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Score</th>
+              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Completion Date</th>
+              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Certificate</th>
+              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Action</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-800">
+            {visible.map((m) => {
+              // Reassigned rows show a one-line confirmation instead of normal cells
+              if (reassignedIds.has(m.id)) {
+                return (
+                  <tr key={m.id} className="bg-zinc-900">
+                    <td colSpan={7} className="px-4 py-3 text-xs text-zinc-500 italic">
+                      Reassigned — invite sent to new employee
+                    </td>
+                  </tr>
+                )
+              }
+
+              const remindState = remindStates[m.user_id] ?? 'idle'
+              const canRemind = m.trainingStatus === 'not_started' || m.trainingStatus === 'in_progress'
+              const canReassign = m.trainingStatus !== 'passed'
+              const isDeleting = deletingIds.has(m.id)
+
+              return (
+                <tr key={m.id} className="bg-zinc-900 hover:bg-zinc-800/50 transition-colors">
+                  <td className="px-4 py-3 text-zinc-200 whitespace-nowrap">{m.name}</td>
+                  <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">{m.email}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <TrainingStatusBadge status={m.trainingStatus} />
+                  </td>
+                  <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">
+                    {m.score !== null ? `${Math.round(m.score)}%` : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">
+                    {m.completedAt
+                      ? new Date(m.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                      : '—'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {m.certId
+                      ? <CertDownloadButton certId={m.certId} />
+                      : <span className="text-zinc-600">—</span>}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      {/* Remind — incomplete rows only */}
+                      {canRemind && (
+                        remindState === 'idle' ? (
+                          <button
+                            onClick={() => handleRemind(m.user_id)}
+                            className="text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 rounded px-2.5 py-1 transition-colors"
+                          >
+                            Remind
+                          </button>
+                        ) : remindState === 'loading' ? (
+                          <span className="text-xs text-zinc-500">Sending…</span>
+                        ) : remindState === 'sent' ? (
+                          <span className="text-xs text-teal-400">Sent ✓</span>
+                        ) : (
+                          <button
+                            onClick={() => handleRemind(m.user_id)}
+                            className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                          >
+                            Failed — try again
+                          </button>
+                        )
+                      )}
+
+                      {/* Reassign — all non-passed rows */}
+                      {canReassign && (
+                        <button
+                          onClick={() => setReassignTarget(m)}
+                          className="text-xs text-zinc-400 hover:text-indigo-300 border border-zinc-700 hover:border-indigo-600/50 rounded px-2.5 py-1 transition-colors"
+                        >
+                          Reassign
+                        </button>
+                      )}
+
+                      {/* Delete — all rows */}
+                      <button
+                        onClick={() => handleDelete(m.id, m.name)}
+                        disabled={isDeleting}
+                        className="text-xs text-red-900 hover:text-red-400 border border-red-900/40 hover:border-red-500/40 rounded px-2.5 py-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {isDeleting ? '…' : 'Delete'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+            {visible.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-4 py-6 text-center text-sm text-zinc-600">
+                  {memberDetails.length === 0
+                    ? 'No team members yet. Invite your first employee above.'
+                    : 'All members have been removed.'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )
+}
+
+function TrainingStatusBadge({ status }: { status: TrainingStatus }) {
+  const styles: Record<TrainingStatus, string> = {
+    not_started: 'bg-zinc-700/50 text-zinc-400',
+    in_progress:  'bg-yellow-500/15 text-yellow-400',
+    passed:       'bg-teal-500/15 text-teal-400',
+    expired:      'bg-red-500/15 text-red-400',
+  }
+  const labels: Record<TrainingStatus, string> = {
+    not_started: 'Not started',
+    in_progress:  'In progress',
+    passed:       'Passed',
+    expired:      'Expired',
+  }
+  return (
+    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${styles[status]}`}>
+      {labels[status]}
+    </span>
+  )
+}

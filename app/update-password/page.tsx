@@ -14,7 +14,7 @@ export default function UpdatePasswordPage() {
           </p>
           <h1
             className="text-2xl text-white"
-            style={{ fontFamily: 'var(--font-fraunces)' }}
+            style={{ fontFamily: 'var(--font-gyrotrope)' }}
           >
             Set your password
           </h1>

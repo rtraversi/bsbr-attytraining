@@ -125,7 +125,7 @@
     @apply bg-background text-foreground;
   }
   html {
-    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    font-family: var(--font-host-grotesk), system-ui, sans-serif;
   }
 }
 
@@ -138,14 +138,11 @@
 }
 
 @layer utilities {
-  .font-fraunces {
-    font-family: var(--font-fraunces), Georgia, serif;
+  .font-gyrotrope {
+    font-family: var(--font-gyrotrope), Georgia, serif;
   }
-  .font-dm-sans {
-    font-family: var(--font-dm-sans), system-ui, sans-serif;
-  }
-  .font-lora {
-    font-family: var(--font-lora), Georgia, serif;
+  .font-host-grotesk {
+    font-family: var(--font-host-grotesk), system-ui, sans-serif;
   }
 }
 

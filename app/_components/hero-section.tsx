@@ -31,7 +31,7 @@ function Tile({ letter, delay = 0 }: { letter: string; delay?: number }) {
       whileHover={{ y: -8, scale: 1.05, boxShadow: '0 12px 24px rgba(0,0,0,0.1), inset 0 -2px 0 0 rgba(0,0,0,0.1)' }}
       className="relative w-16 h-16 md:w-24 md:h-24 bg-[#FDFCF0] border border-[#E5E1D8] rounded-md flex items-center justify-center tile-shadow select-none cursor-default"
     >
-      <span className="font-lora text-3xl md:text-5xl font-bold text-[#1b1c1c]">
+      <span className="font-gyrotrope text-3xl md:text-5xl font-bold text-[#1b1c1c]">
         {letter}
       </span>
       <span className="absolute bottom-1.5 right-2 text-[10px] md:text-[13px] font-bold text-[#1b1c1c]/40">
@@ -106,7 +106,7 @@ export function HeroSection() {
       {/* Fixed nav */}
       <header className="fixed top-0 left-0 right-0 z-50">
         <nav className="max-w-[1280px] mx-auto px-6 md:px-[80px] py-5 flex justify-between items-center">
-          <div className="font-dm-sans text-lg font-bold text-[#1b1c1c] tracking-tight">
+          <div className="font-host-grotesk text-lg font-bold text-[#1b1c1c] tracking-tight">
             Staff Compliance
           </div>
           <div className="hidden md:flex items-center gap-4">
@@ -185,7 +185,7 @@ export function HeroSection() {
             </div>
 
             {/* Tagline */}
-            <p className="font-dm-sans text-lg md:text-xl text-[#544439] max-w-xl leading-relaxed mb-8">
+            <p className="font-host-grotesk text-lg md:text-xl text-[#544439] max-w-xl leading-relaxed mb-8">
               Complete staff training in 30 minutes.
               <br />
               <span className="text-[#1b1c1c] font-bold">
@@ -196,7 +196,7 @@ export function HeroSection() {
             {/* Physical CTA button */}
             <a
               href="#how-it-works"
-              className="physical-button group inline-flex items-center gap-2 px-10 py-4 bg-[#C8783A] text-white font-bold font-dm-sans rounded-full text-base relative overflow-hidden"
+              className="physical-button group inline-flex items-center gap-2 px-10 py-4 bg-[#C8783A] text-white font-bold font-host-grotesk rounded-full text-base relative overflow-hidden"
             >
               <span className="relative z-10">How it works</span>
               <span className="relative z-10 transition-transform duration-150 group-hover:translate-x-1">
@@ -207,7 +207,7 @@ export function HeroSection() {
 
             {/* Scroll indicator */}
             <div className="mt-14 flex flex-col items-center gap-2 opacity-40">
-              <span className="font-dm-sans text-[11px] font-bold uppercase tracking-[0.08em] text-[#1b1c1c]">
+              <span className="font-host-grotesk text-[11px] font-bold uppercase tracking-[0.08em] text-[#1b1c1c]">
                 Scroll
               </span>
               <div className="w-px h-12 bg-[#1b1c1c]" />

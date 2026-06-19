@@ -33,6 +33,7 @@ export function TrainingClient({
   const router = useRouter()
   const [phase, setPhase] = useState(initialPhase)
   const [trainingConfirmed, setTrainingConfirmed] = useState(false)
+  const [attemptKey, setAttemptKey] = useState(0)
 
   // Sync phase when server re-renders with new data (e.g. cert_pending → certified)
   useEffect(() => { setPhase(initialPhase) }, [initialPhase])
@@ -51,7 +52,7 @@ export function TrainingClient({
         <p className="text-xs uppercase tracking-widest text-zinc-500 mb-2">Your training</p>
         <h1
           className="text-2xl text-white"
-          style={{ fontFamily: 'var(--font-fraunces)' }}
+          style={{ fontFamily: 'var(--font-gyrotrope)' }}
         >
           {courseTitle}
         </h1>
@@ -96,9 +97,11 @@ export function TrainingClient({
 
               {courseId ? (
                 <QuizComponent
+                  key={attemptKey}
                   questions={questions}
                   courseId={courseId}
                   onPass={() => setPhase('cert_pending')}
+                  onRetry={() => { setAttemptKey(k => k + 1); router.refresh() }}
                 />
               ) : (
                 <p className="text-sm text-zinc-500">Course not yet initialized.</p>

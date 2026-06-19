@@ -26,7 +26,7 @@ export default async function OnboardingPage({
           </p>
           <h1
             className="text-2xl text-white"
-            style={{ fontFamily: 'var(--font-fraunces)' }}
+            style={{ fontFamily: 'var(--font-gyrotrope)' }}
           >
             Set up your account
           </h1>
