@@ -1,54 +1,38 @@
 # Session Handoff
 
-**Date:** 2026-06-19 (Friday)
-**Who:** Max (Phase 3 dashboard sprint — full day)
+**Date:** 2026-06-23 (Monday)
+**Who:** Max (Phase 3 completion + Phase 4 + Phase 5 start)
 
 ---
 
-## Rob's Context (pushed 2026-06-19 — read before anything else)
+## Rob's Context — Read Before Anything Else
 
 - **Launch timeline:** Jul 20 go-live; Jul 1 code-complete; Jul 10 content-complete; Jul 13 testing week (≥6 testers)
 - **Stripe live mode on hold:** LLC + EIN in progress; brand name may change — do NOT create live Stripe objects until both are confirmed
-- Full timeline in `.planning/PROJECT.md` → Launch Timeline section
+- **Rob action required:** Wire UptimeRobot to `https://bsbr-attytraining.aistaffcompliance.workers.dev/api/health` (5-min ping, SMS alert on failure)
+- **Rob action required (AUTO-06):** Save all Worker secrets to password manager; confirm Supabase PITR enabled on prod project before launch
 
 ---
 
-## Previous Session Context (from 2026-06-18 — preserved for Rob)
+## What Was Fixed / Deployed Today
 
-Phase 1 and Phase 2 were deployed and passing e2e before today's session.
+### Bug fixes
+- **Supabase Auth Site URL** — was pointing to localhost:3000; changed to `https://bsbr-attytraining.aistaffcompliance.workers.dev`. Password resets and magic links now work in production.
 
-- Phase 1 deploy: Stripe httpClient fix, 8 Worker secrets set, live deploy passing
-- Phase 2 quiz loop: server-side scoring, QuizComponent, training_events audit, cert trigger
-- Quiz score float→int fix (`Math.round`), BSBR logo in cert PDF
+### Phase 3 — now fully complete
+- **DASH-06** — Audit log CSV export: `GET /api/firm/audit-log/export` streams all `training_events` for the firm as a downloadable CSV. Button added to dashboard next to "Generate firm attestation (PDF)".
 
----
+### Phase 4 — code complete
+- **Cert-worker** — properly deployed as `bsbr-cert-worker` at `https://bsbr-cert-worker.aistaffcompliance.workers.dev`. Was never live before today (previous deploy accidentally used root wrangler.jsonc). Two crons running: drain every 5 min, daily reminders at 9am UTC.
+- **Supabase webhook wired** — `quiz_attempts` INSERT → cert-worker (validates X-Webhook-Secret)
+- **Cert generation confirmed wired** — `cert-queue-generate` webhook: `cert_generation_queue` INSERT → `/api/certs/generate`. Full pipeline: PDF generation, Storage upload, certificates row insert, email to employee.
+- **AUTO-04** — `GET /api/health` live and responding `{"status":"ok","timestamp":"..."}`
+- **AUTO-05** — cert-worker returns 401 on missing/wrong X-Webhook-Secret — verified with curl
 
-## What Max Built Today (2026-06-19)
-
-All Phase 3 features built. **Not yet deployed** — run deploy steps below on Monday.
-
-### Prep fixes (done at session start)
-- **"Try Again" quiz reset bug** — `attemptKey` counter + `key` prop forces QuizComponent remount on retake
-- **Removed `devLink`** from `onboarding/complete` and `invite` routes — Resend confirmed working
-- **Font swap** — replaced Google Fonts with local Gyrotrope + Host Grotesk (`public/fonts/`, `--font-gyrotrope`, `--font-host-grotesk`)
-
-### Dashboard tasks built
-| Task | What | Key files |
-|------|------|-----------|
-| DASH-01 | Employee table: training status (not_started/in_progress/passed/expired), score, completion date, cert download | `app/dashboard/page.tsx`, `_components/team-table.tsx`, `_components/cert-download-button.tsx` |
-| DASH-03 | Bulk CSV invite — client-side parse, seat check, sequential invite loop, summary (`8 invited, 2 skipped…`) | `_components/csv-upload-form.tsx`, `app/api/invite/bulk/route.ts` |
-| DASH-04 | Remind button per incomplete row — sends training-reminder email | `team-table.tsx`, `app/api/invite/remind/route.ts`, `emails/training-reminder.tsx` |
-| DASH-05 | Seat reassignment — ReassignModal, soft-sets old member to `status='reassigned'`, creates new auth user + invite | `_components/reassign-modal.tsx`, `app/api/firm/member/reassign/route.ts` |
-| DASH-07 | Firm attestation PDF — GET `/api/firm/attestation` builds single-page pdf-lib PDF of active certs; plain `<a>` download | `app/api/firm/attestation/route.ts` |
-| DASH-08 | Rule 5.3 collapsible explainer (`<details>/<summary>`) below team table | `app/dashboard/page.tsx` |
-| DASH-09 | Delete / PII redaction — `status='deleted'` on firm_members row, auth email → `deleted-{uuid}@redacted.invalid` | `app/api/firm/member/delete/route.ts` |
-| AUTO-03 | Expiry cron (90/30/7 day buckets) + inactivity cron (per-firm `reminder_days`), both in cert-worker daily 9am UTC | `workers/cert-worker/src/index.ts`, `wrangler.toml`, `app/api/firm/settings/route.ts`, `_components/reminder-settings.tsx` |
-
-### Migration 0004
-`supabase/migrations/0004_reminder_settings.sql`:
-- Adds `reminder_days integer DEFAULT 7` to `firms`
-- Expands `training_events.event_type` CHECK → adds `expiry_reminder_sent`, `inactivity_reminder_sent`
-- Fixes `firm_members.status` CHECK → adds `deleted`, `reassigned` (retroactive for DASH-09 / DASH-05)
+### Phase 5 — RENEW-04 built (not yet deployed separately — included in today's deploy)
+- **Migration 0005** — `renewal_enrolled` added to `training_events.event_type` CHECK constraint
+- **Quiz attempt route** — enrollment lookup now orders by `created_at DESC` so renewal cycles always use the newest enrollment (prevents `maybeSingle()` error with multiple enrollments)
+- **Stripe webhook** — `handlePaymentSucceeded` extended: on `billing_reason = 'subscription_cycle'`, loops active firm members, creates new `enrollments` rows (status = `not_started`), logs `renewal_enrolled` events, fires notification emails via `after()`
 
 ---
 
@@ -58,49 +42,42 @@ All Phase 3 features built. **Not yet deployed** — run deploy steps below on M
 |------|--------|
 | Phase 1 — Hello-cert e2e | ✅ Complete + deployed |
 | Phase 2 — Quiz loop | ✅ Complete + deployed |
-| Phase 3 — Dashboard (DASH-01, 03, 04, 05, 07, 08, 09) | ✅ Built — needs deploy |
-| AUTO-03 — Reminder crons | ✅ Built — cert-worker needs deploy |
-| Migration 0003 (quiz_questions) | ⬜ `supabase db push` not run yet |
-| Migration 0004 (reminder_days + CHECK fixes) | ⬜ `supabase db push` not run yet |
-| Phase 3 remaining (DASH-02, DASH-06, DASH-10) | ⬜ Not built yet |
-| Rise 360 iframe | ⬜ Blocked on Rob's web export |
-| Real question pool (24–32 Qs) | ⬜ Blocked on Rob seeding DB |
-| Custom domain `training.aistaffcompliance.com` | ⬜ Not set up |
-| Stripe live mode | ⬜ On hold — LLC + EIN + brand name pending |
+| Phase 3 — Dashboard (DASH-01..09) | ✅ Complete + deployed |
+| Phase 4 — Automation (AUTO-03..05) | ✅ Code complete + deployed |
+| Phase 4 — AUTO-06 | ⬜ Rob's ops task |
+| Phase 5 — RENEW-03 | ✅ Done (Stripe Customer Portal handles it) |
+| Phase 5 — RENEW-04 | ✅ Built + deployed |
+| Phase 5 — RENEW-01 + RENEW-02 | ❌ Not built — next up |
+| Phase 5 — RENEW-05 | ❌ Not verified end-to-end |
+| Phase 5 — RENEW-06 | ❌ Not built |
 
 ---
 
-## Monday Deploy Steps (must run in order)
+## Next Session — Pick Up Here
 
-```bash
-# 1. Apply both pending migrations + regen types
-supabase db push
-supabase gen types typescript --linked > types/supabase.ts
+**Immediate next task: RENEW-01 + RENEW-02**
 
-# 2. Deploy main Next.js app
-pnpm run deploy
+Add renewal reminder emails to the cert-worker's daily cron (same pattern as expiry reminders already there). Query firms where `current_period_end` is 30, 14, or 3 days away. Email firm admin with cert status summary + Stripe Customer Portal link to renew. Dedup via `training_events`.
 
-# 3. Deploy cert-worker (picks up new cron + reminder logic)
-cd workers/cert-worker
-wrangler deploy
-cd ../..
-```
+Then:
+- **RENEW-05** — verify expired employee can re-take quiz after renewal re-enrollment
+- **RENEW-06** — 30-day grace period banner in dashboard + logic in Stripe webhook
 
----
-
-## Remaining Phase 3 Tasks (not built yet)
-
-- **DASH-02** — Seat usage bar / seat-cap warning in dashboard header
-- **DASH-06** — Export audit log as CSV (`GET /api/firm/audit-log/export`, streams `training_events` as CSV)
-- **DASH-10** — Expiry / renewal banner for the firm admin (surface when any cert expires within 90 days)
+**Key technical facts for next session:**
+- `firms.current_period_end` — stored in DB, updated by Stripe webhook on every renewal
+- Cert-worker deploy: ALWAYS `cd workers/cert-worker && wrangler deploy --config wrangler.toml`
+- Cert generation: quiz pass → cert_generation_queue → /api/certs/generate (NOT cert-worker fetch handler — that is a TODO stub)
+- RENEW-04 code is deployed but can only be fully tested once Stripe live mode is active
 
 ---
 
 ## Blocked on Rob
 
-- Articulate Rise 360 web export → replaces iframe placeholder in `training-client.tsx`
-- Real question pool (24–32 Qs) → replaces `PLACEHOLDER:*` seeds in DB
+- Articulate Rise 360 web export → replaces iframe placeholder in training-client.tsx
+- Real question pool (24–32 Qs) → replaces PLACEHOLDER seeds in DB
 - LLC + EIN + brand name confirmation → unblocks Stripe live mode
+- AUTO-06: secrets in password manager + Supabase PITR on prod
+- UptimeRobot: wire health endpoint
 
 ---
 
@@ -108,11 +85,11 @@ cd ../..
 
 | Item | Value |
 |------|-------|
-| Deployed URL | `https://bsbr-attytraining.aistaffcompliance.workers.dev` |
+| Main app URL | `https://bsbr-attytraining.aistaffcompliance.workers.dev` |
+| Cert-worker URL | `https://bsbr-cert-worker.aistaffcompliance.workers.dev` |
+| Health endpoint | `https://bsbr-attytraining.aistaffcompliance.workers.dev/api/health` |
 | Stripe sandbox account | AI Staff Compliance & Training (`acct_1ThDpr6ZCSojEKRr`) |
 | Stripe Product ID | `prod_UgzKT3NrGNAvDA` |
 | Stripe Price ID | `price_1TjNHc6ZCSojEKRrKs79ToJ0` (lookup: `per_seat_annual`) |
 | Supabase dev project | `ndmzvtuywcufvkxtkjhg` (Max's account) |
 | GitHub repo | `rtraversi/bsbr-attytraining` |
-| NEXT_PUBLIC_APP_URL | Wrangler VAR (not secret) — do NOT `wrangler secret put` it (error 10053) |
-| Resend from address | `AI Staff Compliance <info@aistaffcompliance.com>` |
