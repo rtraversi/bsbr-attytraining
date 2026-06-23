@@ -1,6 +1,8 @@
+import { after } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sendEmail } from '@/lib/resend'
 
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
@@ -205,14 +207,99 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 // ─── invoice.payment_succeeded — mark active on renewal ──────────────────────
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
-  // subscription_create is already handled by checkout.session.completed
   if (invoice.billing_reason === 'subscription_create') return
   const subscriptionId = getInvoiceSubscriptionId(invoice)
   if (!subscriptionId) return
   const supabase = createAdminClient()
 
-  await supabase
+  const { data: firm } = await supabase
     .from('firms')
     .update({ status: 'active' })
     .eq('stripe_subscription_id', subscriptionId)
+    .select('id, name, owner_id')
+    .single()
+
+  if (!firm) return
+
+  // Re-enroll active employees only on annual renewal cycles
+  if (invoice.billing_reason !== 'subscription_cycle') return
+
+  const { data: course } = await supabase
+    .from('courses')
+    .select('id')
+    .limit(1)
+    .single()
+
+  if (!course) return
+
+  const { data: members } = await supabase
+    .from('firm_members')
+    .select('id, user_id')
+    .eq('firm_id', firm.id)
+    .not('status', 'in', '(deleted,reassigned)')
+
+  if (!members || members.length === 0) return
+
+  for (const member of members) {
+    // Skip if they already have an active enrollment for this cycle
+    const { data: existing } = await supabase
+      .from('enrollments')
+      .select('id')
+      .eq('user_id', member.user_id)
+      .eq('course_id', course.id)
+      .eq('firm_id', firm.id)
+      .in('status', ['not_started', 'in_progress'])
+      .maybeSingle()
+
+    if (existing) continue
+
+    const { error: enrollErr } = await supabase
+      .from('enrollments')
+      .insert({
+        user_id: member.user_id,
+        course_id: course.id,
+        firm_id: firm.id,
+        status: 'not_started',
+      })
+
+    if (enrollErr) {
+      console.error(`[renewal] enrollment insert failed for ${member.user_id}:`, enrollErr)
+      continue
+    }
+
+    await supabase.from('training_events').insert({
+      firm_id: firm.id,
+      firm_member_id: member.id,
+      event_type: 'renewal_enrolled',
+      metadata: { course_id: course.id },
+    })
+  }
+
+  // Send notification emails after responding — fire and forget
+  after(async () => {
+    for (const member of members) {
+      try {
+        const { data: authUser } = await supabase.auth.admin.getUserById(member.user_id)
+        const email = authUser?.user?.email
+        if (!email || email.endsWith('@redacted.invalid')) continue
+
+        const name = (authUser?.user?.user_metadata?.full_name as string | undefined) ?? email
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+
+        await sendEmail({
+          to: email,
+          subject: `${firm.name} has renewed — complete your AI compliance training`,
+          html: `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
+<p style="font-size:14px">Hi ${name},</p>
+<p style="font-size:14px">${firm.name} has renewed its annual AI compliance training certification. You have been re-enrolled and need to complete your training to maintain your compliance record under ABA Model Rule 5.3.</p>
+<p><a href="${appUrl}/dashboard/training" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Complete training</a></p>
+<hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
+<p style="font-size:12px;color:#6b7280">AI Staff Compliance Training — Built Smart by Rob</p>
+</body></html>`,
+        })
+      } catch (err) {
+        console.error(`[renewal] notification email failed for ${member.user_id}:`, err)
+      }
+    }
+  })
 }

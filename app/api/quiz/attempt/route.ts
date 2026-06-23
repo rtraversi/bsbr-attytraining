@@ -117,6 +117,9 @@ export async function POST(req: NextRequest) {
     .select('id, status')
     .eq('user_id', userId)
     .eq('course_id', courseId)
+    .eq('firm_id', firmId)
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
 
   if (!enrollment) {

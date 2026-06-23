@@ -172,12 +172,20 @@ export default async function DashboardPage() {
           <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-widest">
             Your team
           </h2>
-          <a
-            href="/api/firm/attestation"
-            className="text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 rounded px-3 py-1.5 transition-colors"
-          >
-            Generate firm attestation (PDF)
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href="/api/firm/audit-log/export"
+              className="text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 rounded px-3 py-1.5 transition-colors"
+            >
+              Export audit log (CSV)
+            </a>
+            <a
+              href="/api/firm/attestation"
+              className="text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 rounded px-3 py-1.5 transition-colors"
+            >
+              Generate firm attestation (PDF)
+            </a>
+          </div>
         </div>
         <TeamTable memberDetails={memberDetails} />
       </div>

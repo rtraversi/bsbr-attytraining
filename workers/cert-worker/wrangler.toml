@@ -10,8 +10,8 @@ crons = ["*/5 * * * *", "0 9 * * *"]
 
 [vars]
 # Non-secret config — override per environment below
-SUPABASE_URL = ""   # fill in before first deploy
-APP_URL = ""        # fill in with deployed *.workers.dev URL before first deploy
+SUPABASE_URL = "https://ndmzvtuywcufvkxtkjhg.supabase.co"   # fill in before first deploy
+APP_URL = "https://bsbr-attytraining.aistaffcompliance.workers.dev"        # fill in with deployed *.workers.dev URL before first deploy
 
 # Secrets (never commit values — set with `wrangler secret put <KEY>`):
 #   WEBHOOK_SECRET              — shared secret validated in X-Webhook-Secret header
