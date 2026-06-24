@@ -1,7 +1,7 @@
 # Session Handoff
 
-**Date:** 2026-06-23 (Monday)
-**Who:** Max (Phase 3 completion + Phase 4 + Phase 5 start)
+**Date:** 2026-06-24 (Tuesday)
+**Who:** Max (Phase 5 — RENEW-01 + RENEW-02)
 
 ---
 
@@ -14,25 +14,31 @@
 
 ---
 
-## What Was Fixed / Deployed Today
+## What Was Done Today
 
-### Bug fixes
-- **Supabase Auth Site URL** — was pointing to localhost:3000; changed to `https://bsbr-attytraining.aistaffcompliance.workers.dev`. Password resets and magic links now work in production.
+### RENEW-01 + RENEW-02 — Renewal reminder emails (code complete, pending your deploy)
 
-### Phase 3 — now fully complete
-- **DASH-06** — Audit log CSV export: `GET /api/firm/audit-log/export` streams all `training_events` for the firm as a downloadable CSV. Button added to dashboard next to "Generate firm attestation (PDF)".
+**Migration 0006** (`supabase/migrations/0006_renewal_reminder_event_type.sql`):
+- Adds `renewal_reminder_sent` to the `training_events.event_type` CHECK constraint
 
-### Phase 4 — code complete
-- **Cert-worker** — properly deployed as `bsbr-cert-worker` at `https://bsbr-cert-worker.aistaffcompliance.workers.dev`. Was never live before today (previous deploy accidentally used root wrangler.jsonc). Two crons running: drain every 5 min, daily reminders at 9am UTC.
-- **Supabase webhook wired** — `quiz_attempts` INSERT → cert-worker (validates X-Webhook-Secret)
-- **Cert generation confirmed wired** — `cert-queue-generate` webhook: `cert_generation_queue` INSERT → `/api/certs/generate`. Full pipeline: PDF generation, Storage upload, certificates row insert, email to employee.
-- **AUTO-04** — `GET /api/health` live and responding `{"status":"ok","timestamp":"..."}`
-- **AUTO-05** — cert-worker returns 401 on missing/wrong X-Webhook-Secret — verified with curl
+**cert-worker** (`workers/cert-worker/src/index.ts`):
+- New `runRenewalReminders` function added alongside the existing daily cron jobs
+- Queries `firms` where `current_period_end` is 30, 14, or 3 days away (±1 day tolerance)
+- Emails the firm admin: cert status summary (X of Y staff certified) + button to dashboard
+- Deduplicates via `training_events` — skips if a `renewal_reminder_sent` event was already logged for this firm + bucket within the last 24h
+- Uses the owner's `firm_members` row as the FK source for the audit event
+- Wired into the `0 9 * * *` daily cron alongside expiry + inactivity reminders (all run in parallel)
 
-### Phase 5 — RENEW-04 built (not yet deployed separately — included in today's deploy)
-- **Migration 0005** — `renewal_enrolled` added to `training_events.event_type` CHECK constraint
-- **Quiz attempt route** — enrollment lookup now orders by `created_at DESC` so renewal cycles always use the newest enrollment (prevents `maybeSingle()` error with multiple enrollments)
-- **Stripe webhook** — `handlePaymentSucceeded` extended: on `billing_reason = 'subscription_cycle'`, loops active firm members, creates new `enrollments` rows (status = `not_started`), logs `renewal_enrolled` events, fires notification emails via `after()`
+**TypeScript check:** passed clean.
+
+**You need to run these two commands to deploy:**
+```bash
+# 1. Apply the migration
+supabase db push
+
+# 2. Deploy the cert-worker (ALWAYS use --config flag)
+cd workers/cert-worker && wrangler deploy --config wrangler.toml
+```
 
 ---
 
@@ -43,11 +49,11 @@
 | Phase 1 — Hello-cert e2e | ✅ Complete + deployed |
 | Phase 2 — Quiz loop | ✅ Complete + deployed |
 | Phase 3 — Dashboard (DASH-01..09) | ✅ Complete + deployed |
-| Phase 4 — Automation (AUTO-03..05) | ✅ Code complete + deployed |
+| Phase 4 — Automation (AUTO-03..05) | ✅ Complete + deployed |
 | Phase 4 — AUTO-06 | ⬜ Rob's ops task |
 | Phase 5 — RENEW-03 | ✅ Done (Stripe Customer Portal handles it) |
 | Phase 5 — RENEW-04 | ✅ Built + deployed |
-| Phase 5 — RENEW-01 + RENEW-02 | ❌ Not built — next up |
+| Phase 5 — RENEW-01 + RENEW-02 | ✅ Code complete — needs `supabase db push` + `wrangler deploy` |
 | Phase 5 — RENEW-05 | ❌ Not verified end-to-end |
 | Phase 5 — RENEW-06 | ❌ Not built |
 
@@ -55,19 +61,18 @@
 
 ## Next Session — Pick Up Here
 
-**Immediate next task: RENEW-01 + RENEW-02**
+**After you deploy today's changes (`supabase db push` + `wrangler deploy --config wrangler.toml`):**
 
-Add renewal reminder emails to the cert-worker's daily cron (same pattern as expiry reminders already there). Query firms where `current_period_end` is 30, 14, or 3 days away. Email firm admin with cert status summary + Stripe Customer Portal link to renew. Dedup via `training_events`.
+### RENEW-05 — Verify expired employee can re-take quiz after renewal re-enrollment
+- End-to-end check: simulate an employee whose cert has expired and a new `enrollments` row was created by RENEW-04 (the `billing_reason=subscription_cycle` webhook path)
+- Verify the training page shows the quiz as available (not gated by old expired enrollment)
+- Key code: `app/api/quiz/attempt/route.ts` — enrollment lookup orders by `created_at DESC` (fixed in RENEW-04 session)
 
-Then:
-- **RENEW-05** — verify expired employee can re-take quiz after renewal re-enrollment
-- **RENEW-06** — 30-day grace period banner in dashboard + logic in Stripe webhook
-
-**Key technical facts for next session:**
-- `firms.current_period_end` — stored in DB, updated by Stripe webhook on every renewal
-- Cert-worker deploy: ALWAYS `cd workers/cert-worker && wrangler deploy --config wrangler.toml`
-- Cert generation: quiz pass → cert_generation_queue → /api/certs/generate (NOT cert-worker fetch handler — that is a TODO stub)
-- RENEW-04 code is deployed but can only be fully tested once Stripe live mode is active
+### RENEW-06 — 30-day grace period banner + Stripe webhook logic
+- When `current_period_end` has passed but the firm hasn't renewed (firm status is still `active` but expired):
+  - Show a banner in the dashboard warning the admin
+  - Stripe webhook: `invoice.payment_failed` already marks firm as `payment_failed` — verify this covers the expired-but-unpaid case
+  - Employee access: block new quiz attempts for `payment_failed` firms; existing certs remain valid (immutable record)
 
 ---
 

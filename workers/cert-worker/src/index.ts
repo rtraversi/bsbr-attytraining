@@ -6,6 +6,7 @@
  * Crons:
  *   every 5 min  — drain cert_generation_queue via Next.js /api/certs/drain
  *   0 9 * * *   — expiry reminders (90/30/7 days) + inactivity reminders
+ *                  + renewal reminders (30/14/3 days before current_period_end)
  *
  * Fetch:
  *   POST /  — Supabase Database Webhook: quiz_attempts INSERT with passed=true
@@ -36,6 +37,13 @@ interface FirmRow {
   name: string
   owner_id: string
   reminder_days: number
+}
+
+interface FirmRenewalRow {
+  id: string
+  name: string
+  owner_id: string
+  current_period_end: string
 }
 
 interface MemberRow {
@@ -380,6 +388,116 @@ async function runInactivityReminders(env: Env): Promise<void> {
   }
 }
 
+// ── Renewal reminders ─────────────────────────────────────────────────────────
+
+const RENEWAL_BUCKETS = [30, 14, 3] as const
+
+function renewalReminderHtml(
+  firmName: string,
+  days: number,
+  renewalDate: string,
+  certified: number,
+  pending: number,
+  total: number,
+  appUrl: string,
+): string {
+  const statusRows = [
+    `<tr><td style="padding:6px 0;font-size:14px">Staff with valid certificate</td><td style="padding:6px 0;font-size:14px;font-weight:600;text-align:right">${certified} of ${total}</td></tr>`,
+    `<tr><td style="padding:6px 0;font-size:14px">Still need to complete training</td><td style="padding:6px 0;font-size:14px;font-weight:600;text-align:right;color:${pending > 0 ? '#b45309' : '#15803d'}">${pending}</td></tr>`,
+  ].join('')
+
+  return `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
+<p style="font-size:14px">Hi ${firmName} Admin,</p>
+<p style="font-size:14px">Your AI compliance training subscription <strong>renews in ${days} days</strong> — on ${renewalDate}. Here's a quick look at where your team stands:</p>
+<table style="width:100%;border-collapse:collapse;margin:16px 0">${statusRows}</table>
+${pending > 0 ? `<p style="font-size:14px">You have <strong>${pending} staff member${pending !== 1 ? 's' : ''}</strong> who ${pending !== 1 ? 'have' : 'has'} not yet completed this year's training. Reach out to them before your renewal date to close out your firm's Rule 5.3 compliance record.</p>` : `<p style="font-size:14px">Great news — all of your staff have completed their training for this certification period.</p>`}
+<p><a href="${appUrl}/dashboard" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">View dashboard &amp; manage subscription</a></p>
+<hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
+<p style="font-size:12px;color:#6b7280">AI Staff Compliance Training — Built Smart by Rob<br>To manage your subscription or update your billing details, click the button above and select "Manage Subscription" from your dashboard.</p>
+</body></html>`
+}
+
+async function runRenewalReminders(env: Env): Promise<void> {
+  const now = new Date()
+
+  // Single query covering all three buckets (2–31 days before renewal)
+  const floor   = addDays(now, 2).toISOString()
+  const ceiling = addDays(now, 31).toISOString()
+
+  const firms = await pgRest<FirmRenewalRow[]>(
+    env, 'GET',
+    `/firms?select=id,name,owner_id,current_period_end&status=eq.active&current_period_end=gte.${encodeURIComponent(floor)}&current_period_end=lte.${encodeURIComponent(ceiling)}`,
+  ) ?? []
+
+  if (firms.length === 0) return
+
+  for (const firm of firms) {
+    const daysRemaining = diffDays(firm.current_period_end, now)
+    const bucket = RENEWAL_BUCKETS.find(d => Math.abs(daysRemaining - d) <= 1)
+    if (!bucket) continue
+
+    try {
+      // Dedup: skip if we already sent this bucket for this firm in the last 24h
+      const cutoff24h = addDays(now, -1).toISOString()
+      const recentEvents = await pgRest<{ metadata: Record<string, unknown> | null }[]>(
+        env, 'GET',
+        `/training_events?select=metadata&firm_id=eq.${firm.id}&event_type=eq.renewal_reminder_sent&event_timestamp=gte.${encodeURIComponent(cutoff24h)}`,
+      ) ?? []
+
+      const alreadySent = recentEvents.some(e => {
+        const m = e.metadata as { days_remaining?: number } | null
+        return m?.days_remaining === bucket
+      })
+      if (alreadySent) continue
+
+      // Owner's auth record (email + name)
+      const adminUser = await authAdmin(env, firm.owner_id)
+      if (!adminUser?.email || adminUser.email.endsWith('@redacted.invalid')) continue
+
+      // Owner's firm_member_id (needed for the training_events NOT NULL FK)
+      const memberRows = await pgRest<MemberRow[]>(
+        env, 'GET',
+        `/firm_members?select=id&firm_id=eq.${firm.id}&user_id=eq.${firm.owner_id}&limit=1`,
+      ) ?? []
+      const firmMemberId = memberRows[0]?.id
+      if (!firmMemberId) continue
+
+      // Cert status summary: active certs vs total non-deactivated members
+      const [allMembers, activeCerts] = await Promise.all([
+        pgRest<{ id: string }[]>(
+          env, 'GET',
+          `/firm_members?select=id,user_id&firm_id=eq.${firm.id}&status=neq.deactivated`,
+        ),
+        pgRest<{ user_id: string }[]>(
+          env, 'GET',
+          `/certificates?select=user_id&firm_id=eq.${firm.id}&expires_at=gte.${encodeURIComponent(now.toISOString())}`,
+        ),
+      ])
+
+      const total = allMembers?.length ?? 0
+      const certifiedUserIds = new Set((activeCerts ?? []).map(c => c.user_id))
+      const certified = certifiedUserIds.size
+      const pending = Math.max(0, total - certified)
+
+      await sendEmail(
+        env,
+        adminUser.email,
+        `Your AI compliance training renews in ${bucket} days — ${certified} of ${total} staff certified`,
+        renewalReminderHtml(firm.name, bucket, fmtDate(firm.current_period_end), certified, pending, total, env.APP_URL),
+      )
+
+      await pgRest(env, 'POST', '/training_events', {
+        firm_id: firm.id,
+        firm_member_id: firmMemberId,
+        event_type: 'renewal_reminder_sent',
+        metadata: { days_remaining: bucket },
+      })
+    } catch (err) {
+      console.error(`[renewal] firm ${firm.id} bucket ${bucket}:`, err)
+    }
+  }
+}
+
 // ── Worker export ─────────────────────────────────────────────────────────────
 
 export default {
@@ -390,6 +508,7 @@ export default {
         Promise.all([
           runExpiryReminders(env).catch(err => console.error('[scheduled] expiry reminders:', err)),
           runInactivityReminders(env).catch(err => console.error('[scheduled] inactivity reminders:', err)),
+          runRenewalReminders(env).catch(err => console.error('[scheduled] renewal reminders:', err)),
         ]),
       )
     } else {
