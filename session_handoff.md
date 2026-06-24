@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Date:** 2026-06-24 (Tuesday — full day session)
+**Date:** 2026-06-25 (Wednesday)
 **Who:** Max
 
 ---
@@ -11,49 +11,63 @@
 - **Stripe live mode on hold:** LLC + EIN in progress; brand name may change — do NOT create live Stripe objects until both are confirmed
 - **Rob action required:** Wire UptimeRobot to `https://bsbr-attytraining.aistaffcompliance.workers.dev/api/health` (5-min ping, SMS alert on failure)
 - **Rob action required (AUTO-06):** Save all Worker secrets to password manager; confirm Supabase PITR enabled on prod project before launch
-- **Rob action required:** Apply migrations 0006 + 0007 to prod if not done: `supabase db push`
+- **Rob action required:** Apply migrations 0006 + 0007 + **0008** to prod: `supabase db push`
 - **Rob action required:** Deploy cert-worker with renewal reminders: `cd workers/cert-worker && wrangler deploy --config wrangler.toml`
 
 ---
 
-## What Was Done Today
+## What Was Done This Session
 
-### Phase 5 — COMPLETE
+### Track 6B-PRE — ALL 12 TASKS COMPLETE ✅
 
-#### RENEW-01 + RENEW-02 — Renewal reminder emails
-- **Migration 0006** (`supabase/migrations/0006_renewal_reminder_event_type.sql`) — adds `renewal_reminder_sent` to `training_events.event_type` CHECK constraint
-- **cert-worker** (`workers/cert-worker/src/index.ts`) — new `runRenewalReminders` function in the `0 9 * * *` daily cron
-  - Queries firms where `current_period_end` is 30/14/3 days away (±1 day)
-  - Emails the firm admin: cert status summary (X of Y staff certified) + dashboard link
-  - Deduplicates via `training_events` (renewal_reminder_sent + days_remaining, 24h window)
-  - Parallel with existing expiry + inactivity reminders
+All pre-design code tasks are now done. Here's what was built across two sessions (2026-06-24 and 2026-06-25):
 
-#### RENEW-05 — Renewal re-enrollment verified + supporting fixes
-- **Bug found and fixed:** Both `app/dashboard/training/page.tsx` and `app/api/quiz/attempt/route.ts` were ordering by `created_at` — that column does not exist on `enrollments`. Correct column is `enrolled_at`. Both fixed.
-- **Migration 0007** (`supabase/migrations/0007_drop_enrollment_unique_constraint.sql`) — dropped `enrollments_firm_id_user_id_course_id_key` unique constraint so renewal cycles can insert new enrollment rows per user
-- **cert_pending auto-poll** (`training-client.tsx`) — was already present but had no 60s cutoff; updated to 4s interval, stops after 60s
-- **Dynamic nav link** — new `NavLink` client component (`app/dashboard/_components/nav-link.tsx`) uses `usePathname()` to show "← Dashboard" on `/dashboard/training` and "My Training" everywhere else; wired into `app/dashboard/layout.tsx`
+#### 6B-PRE-10 — Legal placeholder pages + shared footer
+- `/privacy`, `/terms`, `/dpa` — structured placeholder pages, all body copy marked `[ATTORNEY TO COMPLETE]`
+- `app/_components/footer.tsx` — shared footer with legal links + FND-06 disclaimer text; wired into homepage, login, and dashboard layout
 
-#### RENEW-06 — Grace period banner + webhook logic
-- **Dashboard banner** (`app/dashboard/page.tsx`) — amber banner at 1–30 days overdue, red banner at >30 days, both with "Renew now →" linking to `/api/portal`
-- **Portal route** (`app/api/portal/route.ts`) — new `GET /api/portal` creates a Stripe Customer Portal session for the logged-in firm admin and redirects
-- **Stripe webhook** (`app/api/webhooks/stripe/route.ts`) — `handlePaymentSucceeded` refactored:
-  - Handles both `subscription_cycle` (normal renewal) and `subscription_create` (lapsed re-sub via portal)
-  - Falls back to `stripe_customer_id` lookup when new subscription ID doesn't match (lapsed firms get a new sub ID); updates `stripe_subscription_id` on the firm
-  - Computes `daysOverdue` from `firm.current_period_end` at payment time
-  - Grace path (0–30 days): skip-if-already-enrolled (same as RENEW-04)
-  - Lapsed path (>30 days): reactivates deactivated members, always re-enrolls
-  - Guards against double-processing initial purchases (`subscription_create` + `daysOverdue <= 0` → skip)
-  - Updates `current_period_end` from `invoice.lines.data[0].period.end` on every successful payment
+#### 6B-PRE-11 — FND-06 disclaimer
+- Footer carries it on every page automatically
+- Also added explicitly to training page certified phase (below download button)
+- Added to cert PDF footer (7pt centered text in `lib/cert-pdf.ts`)
 
-### Phase 6 — Planned
+#### 6B-PRE-12 — PAY-07 refund policy
+- Added below checkout button on homepage inline in `app/page.tsx`
 
-- **`.planning/PHASE-6.md`** written — full roadmap for launch polish & QA
-  - Track 6A: UI redesign (Max + Stitch, pending Rob approval)
-  - Track 6B-PRE: 12 code tasks ready to build (no design approval needed) — see document for exact files + steps
-  - Track 6B: design implementation (blocked on 6A approval)
-  - Track 6C: QA test scripts (to be written July 10–12)
-  - Rob's deliverables: Rise export, questions, LLC/EIN/brand, secrets, UptimeRobot, legal review
+#### 6B-PRE-02 — Login role context copy
+- Two lines added below "Sign in": firm admin context + staff member context
+
+#### 6B-PRE-03 — Compliance score hero metric
+- `ComplianceScore` component on admin dashboard; teal (100%), amber (50–99%), red (<50%), `—` for empty firm
+
+#### 6B-PRE-05 — Empty state for zero employees
+- `TeamTable` shows person-plus icon + guidance copy instead of empty table when `memberDetails.length === 0`
+
+#### 6B-PRE-06 — Onboarding checklist
+- 3-step dismissible checklist (Purchase → Invite → Certify)
+- Auto-dismisses with "🎉 You're compliant!" when all steps done; manual Dismiss button available
+- Migration 0008: `onboarding_dismissed boolean` column on `firms`
+- Dismiss API: `POST /api/firm/onboarding/dismiss`
+
+#### 6B-PRE-07 — Toast notifications
+- `ToastProvider` + `useToast()` hook in `toast-provider.tsx`, wired into dashboard layout
+- Toast calls on: invite sent, bulk CSV invites, reminder sent, employee deleted
+
+#### 6B-PRE-01 — Reassign modal confirmation
+- `reassign-modal.tsx` gains `'success'` phase — shows "Invite sent to [name] ([email])" in teal + Done button
+- Also fires a toast on success
+
+#### 6B-PRE-04 — Status chips with icons
+- `TrainingStatusBadge` now includes 12×12 inline SVGs: circle (not started), clock (in progress), checkmark (passed), warning triangle (expired)
+
+#### 6B-PRE-09 — Certificate download preview modal
+- `cert-preview-modal.tsx` — shows cert#, name, issued/expires, course; Download PDF fetches signed URL
+- Wired into dashboard team table (replaces raw cert link) and training page certified phase (replaces direct download)
+- Dashboard cert query now includes `certificate_number`; `MemberDetail` extended with `certNumber`, `certIssuedAt`, `certExpiresAt`
+
+#### 6B-PRE-08 — Skeleton loading states
+- `app/dashboard/loading.tsx` — animated pulse skeleton: compliance score, checklist, invite form, CSV, 4-row table
+- `app/dashboard/training/loading.tsx` — animated pulse skeleton: course header, Rise iframe area, content card
 
 ---
 
@@ -67,30 +81,22 @@
 | Phase 4 — Automation (AUTO-03..05) | ✅ Complete + deployed |
 | Phase 4 — AUTO-06 | ⬜ Rob's ops task |
 | Phase 5 — RENEW-01..06 | ✅ Complete + deployed |
-| Phase 6 — 6B-PRE code tasks | ❌ Not started — see .planning/PHASE-6.md |
+| Phase 6 — 6B-PRE (all 12 tasks) | ✅ Complete — 7 commits pushed to main |
 | Phase 6 — 6A design | ⬜ Max's task (Stitch) |
-| Phase 6 — 6B design implementation | ⏸ Blocked on design approval |
+| Phase 6 — 6B design implementation | ⏸ Blocked on design approval from Rob |
 | Phase 6 — 6C QA scripts | ⏸ Write July 10–12 |
 
 ---
 
 ## Next Session — Pick Up Here
 
-**Read `.planning/PHASE-6.md` first.** It has all 12 6B-PRE tasks with exact files and steps.
+**All 6B-PRE tasks are done.** Next steps in order:
 
-**Suggested starting order (highest launch risk first):**
-1. **6B-PRE-10** — FND-01: Privacy / ToS / DPA placeholder pages + shared footer
-2. **6B-PRE-11** — FND-06: Add missing disclaimer to homepage, training page, cert PDF
-3. **6B-PRE-12** — PAY-07: Refund policy text below checkout CTA on homepage
-4. **6B-PRE-03** — Compliance score hero metric on dashboard
-5. **6B-PRE-05** — Empty state for zero employees
-6. **6B-PRE-06** — Onboarding checklist (needs migration 0008)
-7. **6B-PRE-01** — Reassign modal confirmation (show new name/email on success)
-8. **6B-PRE-07** — Toast notifications
-9. **6B-PRE-04** — Status chips with icons
-10. **6B-PRE-02** — Login page role context copy
-11. **6B-PRE-09** — Cert download preview modal
-12. **6B-PRE-08** — Skeleton loading states (do last)
+1. **Deploy:** `pnpm run deploy` to push all 7 new commits to production
+2. **Apply migration 0008:** `supabase db push` (adds `onboarding_dismissed` column to prod firms table)
+3. **6A design:** Max presents two design proposals to Rob for approval
+4. **6B design implementation:** Begins once Rob approves a design
+5. **6C QA scripts:** Write July 10–12, before the July 13 testing week
 
 ---
 
@@ -104,7 +110,7 @@
 - Attorney review: cert template, ToS, Privacy Policy, marketing copy
 - Logo SVG trace (Max has PNG)
 - Stripe Tax enabled on live account (PAY-06)
-- `supabase db push` for migrations 0006 + 0007 (if not yet applied)
+- `supabase db push` for migrations 0006 + 0007 + 0008 (if not yet applied)
 - `cd workers/cert-worker && wrangler deploy --config wrangler.toml` (renewal reminder cron)
 
 ---
