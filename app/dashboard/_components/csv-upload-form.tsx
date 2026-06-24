@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useToast } from './toast-provider'
 
 interface ParsedRow {
   name: string
@@ -51,6 +52,7 @@ function summaryText(result: BulkResult): string {
 
 export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
   const router = useRouter()
+  const { addToast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [rows, setRows] = useState<ParsedRow[]>([])
   const [fileName, setFileName] = useState('')
@@ -98,6 +100,7 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
       setResult(data)
       setPhase('done')
       router.refresh()
+      addToast(`${data.invited} invite${data.invited !== 1 ? 's' : ''} sent`)
     } catch {
       setErrorMsg('Network error. Please try again.')
       setPhase('error')

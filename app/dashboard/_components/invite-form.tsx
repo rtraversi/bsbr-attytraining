@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useToast } from './toast-provider'
 
 interface InviteFormProps {
   seatsRemaining: number
@@ -9,6 +10,7 @@ interface InviteFormProps {
 
 export function InviteForm({ seatsRemaining }: InviteFormProps) {
   const router = useRouter()
+  const { addToast } = useToast()
   const [email, setEmail] = useState('')
   const [phase, setPhase] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -34,10 +36,12 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
       return
     }
 
+    const sentEmail = email
     setDevLink(data.devLink)
     setEmail('')
     setPhase('done')
     router.refresh() // Re-fetch server component data so member list + seat count update
+    addToast(`Invite sent to ${sentEmail}`)
   }
 
   if (seatsRemaining <= 0) {

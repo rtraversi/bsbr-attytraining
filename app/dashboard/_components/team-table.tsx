@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { CertDownloadButton } from './cert-download-button'
 import { ReassignModal } from './reassign-modal'
+import { useToast } from './toast-provider'
 
 export type TrainingStatus = 'not_started' | 'in_progress' | 'passed' | 'expired'
 
@@ -22,13 +23,14 @@ export interface MemberDetail {
 type RemindState = 'idle' | 'loading' | 'sent' | 'error'
 
 export function TeamTable({ memberDetails }: { memberDetails: MemberDetail[] }) {
+  const { addToast } = useToast()
   const [remindStates, setRemindStates] = useState<Record<string, RemindState>>({})
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
   const [reassignedIds, setReassignedIds] = useState<Set<string>>(new Set())
   const [reassignTarget, setReassignTarget] = useState<MemberDetail | null>(null)
 
-  async function handleRemind(userId: string) {
+  async function handleRemind(userId: string, displayName: string) {
     setRemindStates(s => ({ ...s, [userId]: 'loading' }))
     try {
       const res = await fetch('/api/invite/remind', {
@@ -37,6 +39,7 @@ export function TeamTable({ memberDetails }: { memberDetails: MemberDetail[] }) 
         body: JSON.stringify({ userId }),
       })
       setRemindStates(s => ({ ...s, [userId]: res.ok ? 'sent' : 'error' }))
+      if (res.ok) addToast(`Reminder sent to ${displayName}`)
     } catch {
       setRemindStates(s => ({ ...s, [userId]: 'error' }))
     }
@@ -57,6 +60,7 @@ export function TeamTable({ memberDetails }: { memberDetails: MemberDetail[] }) 
       })
       if (res.ok) {
         setDeletedIds(s => new Set(s).add(memberId))
+        addToast('Employee record deleted')
       } else {
         const data = (await res.json()) as { error?: string }
         window.alert(data.error ?? 'Failed to delete member. Please try again.')
@@ -152,7 +156,7 @@ export function TeamTable({ memberDetails }: { memberDetails: MemberDetail[] }) 
                       {canRemind && (
                         remindState === 'idle' ? (
                           <button
-                            onClick={() => handleRemind(m.user_id)}
+                            onClick={() => handleRemind(m.user_id, m.name)}
                             className="text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 rounded px-2.5 py-1 transition-colors"
                           >
                             Remind
@@ -163,7 +167,7 @@ export function TeamTable({ memberDetails }: { memberDetails: MemberDetail[] }) 
                           <span className="text-xs text-teal-400">Sent ✓</span>
                         ) : (
                           <button
-                            onClick={() => handleRemind(m.user_id)}
+                            onClick={() => handleRemind(m.user_id, m.name)}
                             className="text-xs text-red-400 hover:text-red-300 transition-colors"
                           >
                             Failed — try again

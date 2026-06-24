@@ -1,5 +1,6 @@
 import { NavLink } from './_components/nav-link'
 import { Footer } from '@/app/_components/footer'
+import { ToastProvider } from './_components/toast-provider'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -20,8 +21,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </form>
         </div>
       </nav>
-      <div className="flex-1">{children}</div>
-      <Footer />
+      <ToastProvider>
+        <div className="flex-1">{children}</div>
+        <Footer />
+      </ToastProvider>
     </div>
   )
 }
