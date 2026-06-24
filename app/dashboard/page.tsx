@@ -7,6 +7,7 @@ import { CsvUploadForm } from './_components/csv-upload-form'
 import { TeamTable, type TrainingStatus } from './_components/team-table'
 import { ReminderSettings } from './_components/reminder-settings'
 import { ComplianceScore } from './_components/compliance-score'
+import { OnboardingChecklist } from './_components/onboarding-checklist'
 
 export const metadata = {
   title: 'Dashboard — AI Staff Compliance Training',
@@ -33,7 +34,7 @@ export default async function DashboardPage() {
   const admin = createAdminClient()
 
   const [firmRes, seatsRes, membersRes] = await Promise.all([
-    admin.from('firms').select('name, max_seats, status, reminder_days, current_period_end').eq('id', firmId).single(),
+    admin.from('firms').select('name, max_seats, status, reminder_days, current_period_end, onboarding_dismissed').eq('id', firmId).single(),
     admin.from('seats').select('used_seats, max_seats').eq('firm_id', firmId).single(),
     admin
       .from('firm_members')
@@ -120,6 +121,10 @@ export default async function DashboardPage() {
   const totalCount = memberDetails.length
   const complianceScore = totalCount > 0 ? Math.round((certifiedCount / totalCount) * 100) : 0
 
+  const onboardingDismissed = firm?.onboarding_dismissed ?? false
+  const stepInvited = memberDetails.some(m => m.role === 'employee')
+  const stepCertified = memberDetails.some(m => m.trainingStatus === 'passed')
+
   const seatsUsed = seats?.used_seats ?? 0
   const seatsTotal = seats?.max_seats ?? firm?.max_seats ?? 0
   const seatsRemaining = seatsTotal - seatsUsed
@@ -196,6 +201,11 @@ export default async function DashboardPage() {
 
       {/* Compliance score hero */}
       <ComplianceScore score={complianceScore} certified={certifiedCount} total={totalCount} />
+
+      {/* Onboarding checklist — shown until dismissed or all steps complete */}
+      {!onboardingDismissed && (
+        <OnboardingChecklist stepInvited={stepInvited} stepCertified={stepCertified} />
+      )}
 
       {/* Invite section */}
       <div className="mb-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
