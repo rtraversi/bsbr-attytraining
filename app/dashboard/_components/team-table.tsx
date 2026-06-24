@@ -223,21 +223,53 @@ function PersonPlusIcon() {
 }
 
 function TrainingStatusBadge({ status }: { status: TrainingStatus }) {
-  const styles: Record<TrainingStatus, string> = {
-    not_started: 'bg-zinc-700/50 text-zinc-400',
-    in_progress:  'bg-yellow-500/15 text-yellow-400',
-    passed:       'bg-teal-500/15 text-teal-400',
-    expired:      'bg-red-500/15 text-red-400',
+  const config: Record<TrainingStatus, { pill: string; icon: React.ReactNode; label: string }> = {
+    not_started: {
+      pill: 'bg-zinc-700/50 text-zinc-400',
+      label: 'Not started',
+      icon: (
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+          <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      ),
+    },
+    in_progress: {
+      pill: 'bg-yellow-500/15 text-yellow-400',
+      label: 'In progress',
+      icon: (
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+          <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M6 3v3l2 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      ),
+    },
+    passed: {
+      pill: 'bg-teal-500/15 text-teal-400',
+      label: 'Passed',
+      icon: (
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+          <path d="M2 6.5l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+    expired: {
+      pill: 'bg-red-500/15 text-red-400',
+      label: 'Expired',
+      icon: (
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+          <path d="M6 1L11 10H1L6 1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+          <path d="M6 5v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="6" cy="8.5" r="0.5" fill="currentColor" />
+        </svg>
+      ),
+    },
   }
-  const labels: Record<TrainingStatus, string> = {
-    not_started: 'Not started',
-    in_progress:  'In progress',
-    passed:       'Passed',
-    expired:      'Expired',
-  }
+
+  const { pill, icon, label } = config[status]
   return (
-    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${styles[status]}`}>
-      {labels[status]}
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${pill}`}>
+      {icon}
+      {label}
     </span>
   )
 }
