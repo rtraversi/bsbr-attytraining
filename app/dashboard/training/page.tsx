@@ -58,6 +58,8 @@ export default async function TrainingPage() {
       .select('id, status, completed_at')
       .eq('user_id', userId)
       .eq('course_id', course.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle(),
     // Select id, question_text, answers only — correct_index stays server-side
     // quiz_questions isn't in generated types yet; re-run `supabase gen types` after db push
