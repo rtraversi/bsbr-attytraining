@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { CertDownloadButton } from './cert-download-button'
 import { ReassignModal } from './reassign-modal'
+import { CertPreviewModal } from './cert-preview-modal'
 import { useToast } from './toast-provider'
 
 export type TrainingStatus = 'not_started' | 'in_progress' | 'passed' | 'expired'
@@ -18,6 +18,9 @@ export interface MemberDetail {
   score: number | null
   completedAt: string | null
   certId: string | null
+  certNumber: string | null
+  certIssuedAt: string | null
+  certExpiresAt: string | null
 }
 
 type RemindState = 'idle' | 'loading' | 'sent' | 'error'
@@ -29,6 +32,7 @@ export function TeamTable({ memberDetails }: { memberDetails: MemberDetail[] }) 
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
   const [reassignedIds, setReassignedIds] = useState<Set<string>>(new Set())
   const [reassignTarget, setReassignTarget] = useState<MemberDetail | null>(null)
+  const [certPreview, setCertPreview] = useState<MemberDetail | null>(null)
 
   async function handleRemind(userId: string, displayName: string) {
     setRemindStates(s => ({ ...s, [userId]: 'loading' }))
@@ -98,6 +102,16 @@ export function TeamTable({ memberDetails }: { memberDetails: MemberDetail[] }) 
         onClose={() => setReassignTarget(null)}
         onSuccess={handleReassignSuccess}
       />
+      {certPreview?.certId && (
+        <CertPreviewModal
+          certId={certPreview.certId}
+          certNumber={certPreview.certNumber}
+          employeeName={certPreview.name}
+          issuedAt={certPreview.certIssuedAt}
+          expiresAt={certPreview.certExpiresAt}
+          onClose={() => setCertPreview(null)}
+        />
+      )}
 
       <div className="rounded-2xl border border-zinc-800 overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
@@ -146,9 +160,16 @@ export function TeamTable({ memberDetails }: { memberDetails: MemberDetail[] }) 
                       : '—'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    {m.certId
-                      ? <CertDownloadButton certId={m.certId} />
-                      : <span className="text-zinc-600">—</span>}
+                    {m.certId ? (
+                      <button
+                        onClick={() => setCertPreview(m)}
+                        className="text-teal-400 hover:text-teal-300 text-xs underline underline-offset-2 transition-colors"
+                      >
+                        View
+                      </button>
+                    ) : (
+                      <span className="text-zinc-600">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-2">

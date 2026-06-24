@@ -97,9 +97,11 @@ export default async function TrainingPage() {
   // Check for issued certificate
   const { data: cert } = await admin
     .from('certificates')
-    .select('certificate_number, issued_at, expires_at, storage_path')
+    .select('id, certificate_number, issued_at, expires_at, storage_path')
     .eq('enrollment_id', enrollment.id)
     .maybeSingle()
+
+  const employeeName = (user.user_metadata?.full_name as string | undefined) || user.email || ''
 
   if (cert) {
     const { data: signedUrlData } = await admin.storage
@@ -112,10 +114,12 @@ export default async function TrainingPage() {
         courseTitle={courseTitle}
         courseId={course.id}
         questions={[]}
+        certId={cert.id}
         certNumber={cert.certificate_number}
         issuedAt={cert.issued_at}
         expiresAt={cert.expires_at}
         certUrl={signedUrlData?.signedUrl ?? ''}
+        employeeName={employeeName}
       />
     )
   }

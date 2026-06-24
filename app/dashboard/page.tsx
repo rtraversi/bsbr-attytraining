@@ -61,8 +61,8 @@ export default async function DashboardPage() {
       ? admin.from('quiz_attempts').select('user_id, score, attempted_at').eq('firm_id', firmId).eq('passed', true).in('user_id', userIds).order('attempted_at', { ascending: false })
       : Promise.resolve({ data: [] as { user_id: string; score: number; attempted_at: string }[] }),
     userIds.length > 0
-      ? admin.from('certificates').select('id, user_id, expires_at, issued_at').eq('firm_id', firmId).in('user_id', userIds)
-      : Promise.resolve({ data: [] as { id: string; user_id: string; expires_at: string; issued_at: string }[] }),
+      ? admin.from('certificates').select('id, user_id, expires_at, issued_at, certificate_number').eq('firm_id', firmId).in('user_id', userIds)
+      : Promise.resolve({ data: [] as { id: string; user_id: string; expires_at: string; issued_at: string; certificate_number: string }[] }),
   ])
 
   // Index by user_id — for attempts, ordered DESC so first hit per user is the latest passing attempt
@@ -112,6 +112,9 @@ export default async function DashboardPage() {
       score: attempt?.score ?? null,
       completedAt: enrollment?.completed_at ?? null,
       certId: cert?.id ?? null,
+      certNumber: cert?.certificate_number ?? null,
+      certIssuedAt: cert?.issued_at ?? null,
+      certExpiresAt: cert?.expires_at ?? null,
     }
   })
 

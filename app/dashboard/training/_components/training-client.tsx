@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { QuizComponent, type QuizQuestion } from './quiz-component'
+import { CertPreviewModal } from '@/app/dashboard/_components/cert-preview-modal'
 
 type TrainingPhase =
   | 'not_started'
@@ -14,10 +15,12 @@ interface Props {
   courseTitle: string
   courseId: string | null
   questions: QuizQuestion[]
+  certId?: string
   certNumber?: string
   issuedAt?: string
   expiresAt?: string
   certUrl?: string
+  employeeName?: string
 }
 
 export function TrainingClient({
@@ -25,15 +28,18 @@ export function TrainingClient({
   courseTitle,
   courseId,
   questions,
+  certId,
   certNumber,
   issuedAt,
   expiresAt,
   certUrl,
+  employeeName,
 }: Props) {
   const router = useRouter()
   const [phase, setPhase] = useState(initialPhase)
   const [trainingConfirmed, setTrainingConfirmed] = useState(false)
   const [attemptKey, setAttemptKey] = useState(0)
+  const [certModalOpen, setCertModalOpen] = useState(false)
 
   // Sync phase when server re-renders with new data (e.g. cert_pending → certified)
   useEffect(() => { setPhase(initialPhase) }, [initialPhase])
@@ -127,37 +133,47 @@ export function TrainingClient({
       )}
 
       {phase === 'certified' && (
-        <div className="rounded-2xl border border-teal-500/20 bg-teal-500/5 p-6">
-          <div className="flex items-start gap-4">
-            <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center shrink-0 mt-0.5">
-              <CheckIcon />
+        <>
+          {certModalOpen && certId && (
+            <CertPreviewModal
+              certId={certId}
+              certNumber={certNumber ?? null}
+              employeeName={employeeName ?? ''}
+              issuedAt={issuedAt ?? null}
+              expiresAt={expiresAt ?? null}
+              onClose={() => setCertModalOpen(false)}
+            />
+          )}
+          <div className="rounded-2xl border border-teal-500/20 bg-teal-500/5 p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                <CheckIcon />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-white mb-1">Certified</p>
+                <p className="text-xs text-zinc-400 mb-3">
+                  Certificate #{certNumber} &nbsp;·&nbsp; Issued{' '}
+                  {issuedAt ? new Date(issuedAt).toLocaleDateString() : '—'} &nbsp;·&nbsp; Expires{' '}
+                  {expiresAt ? new Date(expiresAt).toLocaleDateString() : '—'}
+                </p>
+                {certId ? (
+                  <button
+                    onClick={() => setCertModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 px-4 py-2 text-xs font-semibold text-zinc-950 transition-colors"
+                  >
+                    Download Certificate (PDF)
+                  </button>
+                ) : (
+                  <p className="text-xs text-zinc-600">Certificate PDF is being finalized.</p>
+                )}
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white mb-1">Certified</p>
-              <p className="text-xs text-zinc-400 mb-3">
-                Certificate #{certNumber} &nbsp;·&nbsp; Issued{' '}
-                {issuedAt ? new Date(issuedAt).toLocaleDateString() : '—'} &nbsp;·&nbsp; Expires{' '}
-                {expiresAt ? new Date(expiresAt).toLocaleDateString() : '—'}
-              </p>
-              {certUrl ? (
-                <a
-                  href={certUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 px-4 py-2 text-xs font-semibold text-zinc-950 transition-colors"
-                >
-                  Download Certificate (PDF)
-                </a>
-              ) : (
-                <p className="text-xs text-zinc-600">Certificate PDF is being finalized.</p>
-              )}
-            </div>
+            <p className="mt-5 text-xs text-zinc-600 leading-relaxed border-t border-teal-500/10 pt-4">
+              This certificate documents completion of training. It is not legal advice and does not
+              constitute accreditation by the ABA or any state bar.
+            </p>
           </div>
-          <p className="mt-5 text-xs text-zinc-600 leading-relaxed border-t border-teal-500/10 pt-4">
-            This certificate documents completion of training. It is not legal advice and does not
-            constitute accreditation by the ABA or any state bar.
-          </p>
-        </div>
+        </>
       )}
     </div>
   )
