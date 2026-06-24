@@ -6,6 +6,7 @@ import { InviteForm } from './_components/invite-form'
 import { CsvUploadForm } from './_components/csv-upload-form'
 import { TeamTable, type TrainingStatus } from './_components/team-table'
 import { ReminderSettings } from './_components/reminder-settings'
+import { ComplianceScore } from './_components/compliance-score'
 
 export const metadata = {
   title: 'Dashboard — AI Staff Compliance Training',
@@ -115,6 +116,10 @@ export default async function DashboardPage() {
 
   memberDetails.sort((a, b) => STATUS_SORT[a.trainingStatus] - STATUS_SORT[b.trainingStatus])
 
+  const certifiedCount = memberDetails.filter(m => m.trainingStatus === 'passed').length
+  const totalCount = memberDetails.length
+  const complianceScore = totalCount > 0 ? Math.round((certifiedCount / totalCount) * 100) : 0
+
   const seatsUsed = seats?.used_seats ?? 0
   const seatsTotal = seats?.max_seats ?? firm?.max_seats ?? 0
   const seatsRemaining = seatsTotal - seatsUsed
@@ -177,7 +182,7 @@ export default async function DashboardPage() {
       )}
 
       {/* Firm header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1
           className="text-2xl text-white"
           style={{ fontFamily: 'var(--font-gyrotrope)' }}
@@ -188,6 +193,9 @@ export default async function DashboardPage() {
           {seatsUsed} of {seatsTotal} seats used
         </p>
       </div>
+
+      {/* Compliance score hero */}
+      <ComplianceScore score={complianceScore} certified={certifiedCount} total={totalCount} />
 
       {/* Invite section */}
       <div className="mb-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">

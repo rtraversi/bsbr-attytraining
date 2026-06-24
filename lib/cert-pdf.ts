@@ -220,5 +220,14 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
     size: 9, font: sans, color: MID_GREY,
   })
 
+  // ── Disclaimer ───────────────────────────────────────────────────────────────
+  const disclaimer = 'This certificate documents completion of training. It is not legal advice and does not constitute accreditation by the ABA or any state bar.'
+  const disclaimerW = sans.widthOfTextAtSize(disclaimer, 7)
+  page.drawText(disclaimer, {
+    x: (W - disclaimerW) / 2,
+    y: 46,
+    size: 7, font: sans, color: RULE_LINE,
+  })
+
   return doc.save()
 }

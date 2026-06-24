@@ -153,6 +153,10 @@ export function TrainingClient({
               )}
             </div>
           </div>
+          <p className="mt-5 text-xs text-zinc-600 leading-relaxed border-t border-teal-500/10 pt-4">
+            This certificate documents completion of training. It is not legal advice and does not
+            constitute accreditation by the ABA or any state bar.
+          </p>
         </div>
       )}
     </div>

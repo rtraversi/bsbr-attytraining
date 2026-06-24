@@ -1,8 +1,9 @@
 import { NavLink } from './_components/nav-link'
+import { Footer } from '@/app/_components/footer'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-zinc-950 flex flex-col">
       <nav className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
         <p className="text-xs uppercase tracking-widest text-zinc-500">
           AI Staff Compliance Training
@@ -19,7 +20,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </form>
         </div>
       </nav>
-      {children}
+      <div className="flex-1">{children}</div>
+      <Footer />
     </div>
   )
 }
