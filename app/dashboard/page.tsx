@@ -32,7 +32,7 @@ export default async function DashboardPage() {
   const admin = createAdminClient()
 
   const [firmRes, seatsRes, membersRes] = await Promise.all([
-    admin.from('firms').select('name, max_seats, status, reminder_days').eq('id', firmId).single(),
+    admin.from('firms').select('name, max_seats, status, reminder_days, current_period_end').eq('id', firmId).single(),
     admin.from('seats').select('used_seats, max_seats').eq('firm_id', firmId).single(),
     admin
       .from('firm_members')
@@ -78,6 +78,11 @@ export default async function DashboardPage() {
   )
 
   const now = new Date()
+
+  const periodEnd = firm?.current_period_end ? new Date(firm.current_period_end) : null
+  const daysOverdue = periodEnd ? Math.floor((now.getTime() - periodEnd.getTime()) / 86_400_000) : null
+  const isGracePeriod = daysOverdue !== null && daysOverdue > 0 && daysOverdue <= 30
+  const isLapsed     = daysOverdue !== null && daysOverdue > 30
 
   const memberDetails = members.map((m, i) => {
     const authUser = authUsers[i].data?.user
@@ -140,6 +145,37 @@ export default async function DashboardPage() {
   // ── Admin view ───────────────────────────────────────────────────────────────
   return (
     <main className="max-w-5xl mx-auto px-6 py-10">
+      {/* Subscription status banners */}
+      {isGracePeriod && daysOverdue !== null && (
+        <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-4 flex items-center justify-between gap-4">
+          <p className="text-sm text-amber-200">
+            Your subscription expired <strong>{daysOverdue} day{daysOverdue !== 1 ? 's' : ''} ago</strong>.
+            You have <strong>{30 - daysOverdue} day{30 - daysOverdue !== 1 ? 's' : ''}</strong> remaining
+            to renew and maintain continuity of your compliance records.
+          </p>
+          <a
+            href="/api/portal"
+            className="shrink-0 rounded-lg bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-semibold text-zinc-950 transition-colors"
+          >
+            Renew now →
+          </a>
+        </div>
+      )}
+      {isLapsed && (
+        <div className="mb-6 rounded-xl border border-red-600/30 bg-red-600/10 px-5 py-4 flex items-center justify-between gap-4">
+          <p className="text-sm text-red-300">
+            <strong>Your grace period has ended.</strong> Renewing now will start a new subscription cycle.
+            Your existing compliance records are preserved.
+          </p>
+          <a
+            href="/api/portal"
+            className="shrink-0 rounded-lg bg-red-600 hover:bg-red-500 px-4 py-2 text-xs font-semibold text-white transition-colors"
+          >
+            Renew now →
+          </a>
+        </div>
+      )}
+
       {/* Firm header */}
       <div className="mb-8">
         <h1

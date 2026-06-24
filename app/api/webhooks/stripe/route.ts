@@ -204,32 +204,73 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     .eq('stripe_subscription_id', subscriptionId)
 }
 
-// ─── invoice.payment_succeeded — mark active on renewal ──────────────────────
+// ─── invoice.payment_succeeded — mark active, handle renewal re-enrollment ────
 
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
-  if (invoice.billing_reason === 'subscription_create') return
-  const subscriptionId = getInvoiceSubscriptionId(invoice)
-  if (!subscriptionId) return
+  // Only act on renewal and re-subscription events
+  if (
+    invoice.billing_reason !== 'subscription_cycle' &&
+    invoice.billing_reason !== 'subscription_create'
+  ) return
+
   const supabase = createAdminClient()
+  const subscriptionId = getInvoiceSubscriptionId(invoice)
 
-  const { data: firm } = await supabase
-    .from('firms')
-    .update({ status: 'active' })
-    .eq('stripe_subscription_id', subscriptionId)
-    .select('id, name, owner_id')
-    .single()
+  // New period end from the invoice line item (Unix timestamp → ISO)
+  const newPeriodEndTs = invoice.lines?.data?.[0]?.period?.end
+  const newPeriodEnd = newPeriodEndTs ? new Date(newPeriodEndTs * 1000).toISOString() : null
 
+  // Resolve the firm — subscription_create on a lapsed re-subscription comes with a NEW
+  // subscription ID, so fall back to customer ID lookup when the subscription isn't found.
+  let firm: { id: string; name: string; owner_id: string; current_period_end: string | null } | null = null
+  let lookedUpByCustomer = false
+
+  if (subscriptionId) {
+    const { data } = await supabase
+      .from('firms')
+      .select('id, name, owner_id, current_period_end')
+      .eq('stripe_subscription_id', subscriptionId)
+      .maybeSingle()
+    firm = data
+  }
+
+  if (!firm && invoice.billing_reason === 'subscription_create' && invoice.customer) {
+    const customerId = typeof invoice.customer === 'string'
+      ? invoice.customer
+      : (invoice.customer as { id: string }).id
+    const { data } = await supabase
+      .from('firms')
+      .select('id, name, owner_id, current_period_end')
+      .eq('stripe_customer_id', customerId)
+      .maybeSingle()
+    firm = data
+    lookedUpByCustomer = true
+  }
+
+  // No firm found = initial checkout not yet provisioned; handled by checkout.session.completed
   if (!firm) return
 
-  // Re-enroll active employees only on annual renewal cycles
-  if (invoice.billing_reason !== 'subscription_cycle') return
+  // Always mark active + update period end (+ new subscription ID on lapsed re-sub)
+  await supabase.from('firms').update({
+    status: 'active',
+    ...(newPeriodEnd && { current_period_end: newPeriodEnd }),
+    ...(lookedUpByCustomer && subscriptionId && { stripe_subscription_id: subscriptionId }),
+  }).eq('id', firm.id)
 
-  const { data: course } = await supabase
-    .from('courses')
-    .select('id')
-    .limit(1)
-    .single()
+  // Determine how overdue the subscription was at payment time
+  const now = new Date()
+  const prevPeriodEnd = firm.current_period_end ? new Date(firm.current_period_end) : null
+  const daysOverdue = prevPeriodEnd
+    ? Math.floor((now.getTime() - prevPeriodEnd.getTime()) / 86_400_000)
+    : 0
 
+  // Initial purchase: subscription_create fired after checkout.session.completed provisioned the
+  // firm with a future current_period_end — daysOverdue <= 0, skip re-enrollment (already handled)
+  if (invoice.billing_reason === 'subscription_create' && daysOverdue <= 0) return
+
+  const isLapsed = daysOverdue > 30  // grace = 1–30 days, lapsed = >30 days
+
+  const { data: course } = await supabase.from('courses').select('id').limit(1).single()
   if (!course) return
 
   const { data: members } = await supabase
@@ -240,8 +281,17 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
 
   if (!members || members.length === 0) return
 
+  // For lapsed firms, reactivate deactivated members before re-enrolling
+  if (isLapsed) {
+    await supabase
+      .from('firm_members')
+      .update({ status: 'active' })
+      .eq('firm_id', firm.id)
+      .eq('status', 'deactivated')
+  }
+
   for (const member of members) {
-    // Skip if they already have an active enrollment for this cycle
+    // Skip if they already have an open enrollment for this cycle (handles grace + duplicate events)
     const { data: existing } = await supabase
       .from('enrollments')
       .select('id')
@@ -255,12 +305,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
 
     const { error: enrollErr } = await supabase
       .from('enrollments')
-      .insert({
-        user_id: member.user_id,
-        course_id: course.id,
-        firm_id: firm.id,
-        status: 'not_started',
-      })
+      .insert({ user_id: member.user_id, course_id: course.id, firm_id: firm.id, status: 'not_started' })
 
     if (enrollErr) {
       console.error(`[renewal] enrollment insert failed for ${member.user_id}:`, enrollErr)
@@ -271,7 +316,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       firm_id: firm.id,
       firm_member_id: member.id,
       event_type: 'renewal_enrolled',
-      metadata: { course_id: course.id },
+      metadata: { course_id: course.id, renewal_type: isLapsed ? 'lapsed' : 'grace' },
     })
   }
 
