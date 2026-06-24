@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { NavLink } from './_components/nav-link'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -8,12 +8,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           AI Staff Compliance Training
         </p>
         <div className="flex items-center gap-6">
-          <Link
-            href="/dashboard/training"
-            className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
-          >
-            My Training
-          </Link>
+          <NavLink />
           <form action="/api/auth/logout" method="POST">
             <button
               type="submit"

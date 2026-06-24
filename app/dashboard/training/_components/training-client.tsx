@@ -38,11 +38,12 @@ export function TrainingClient({
   // Sync phase when server re-renders with new data (e.g. cert_pending → certified)
   useEffect(() => { setPhase(initialPhase) }, [initialPhase])
 
-  // Auto-poll while cert is generating
+  // Auto-poll while cert is generating — stop after 60s
   useEffect(() => {
     if (phase !== 'cert_pending') return
-    const id = setInterval(() => router.refresh(), 3000)
-    return () => clearInterval(id)
+    const interval = setInterval(() => router.refresh(), 4000)
+    const timeout = setTimeout(() => clearInterval(interval), 60_000)
+    return () => { clearInterval(interval); clearTimeout(timeout) }
   }, [phase, router])
 
   return (
