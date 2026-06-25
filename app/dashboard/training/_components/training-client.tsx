@@ -32,7 +32,6 @@ export function TrainingClient({
   certNumber,
   issuedAt,
   expiresAt,
-  certUrl,
   employeeName,
 }: Props) {
   const router = useRouter()

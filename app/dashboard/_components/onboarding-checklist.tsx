@@ -31,7 +31,6 @@ export function OnboardingChecklist({ stepInvited, stepCertified }: Props) {
       const t = setTimeout(() => dismiss(), 3500)
       return () => clearTimeout(t)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allDone])
 
   async function dismiss() {

@@ -53,7 +53,7 @@ export default function TermsPage() {
 
             <Section title="6. Intellectual Property">
               <p>[ATTORNEY TO COMPLETE — describe ownership of course content, quiz questions, and
-              certificate designs. Confirm that the firm's compliance records (certificates, audit logs)
+              certificate designs. Confirm that the firm&apos;s compliance records (certificates, audit logs)
               belong to the firm. Describe any license granted to users to access the content.]</p>
             </Section>
 

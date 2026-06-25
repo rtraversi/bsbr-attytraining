@@ -29,6 +29,7 @@ export function ReassignModal({ member, onClose, onSuccess }: ReassignModalProps
       setConfirmedName('')
       setConfirmedEmail('')
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [member?.id])
 
   if (!member) return null
