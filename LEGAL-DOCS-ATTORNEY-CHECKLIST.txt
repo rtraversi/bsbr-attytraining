@@ -1,0 +1,245 @@
+ATTORNEY REVIEW CHECKLIST
+AI Staff Compliance Training — Legal Documents
+Generated: 2026-06-29
+Files: Privacy-Policy-DRAFT.docx | Terms-of-Service-DRAFT.docx
+
+All items marked [ATTORNEY TO COMPLETE] in red inside each document are
+listed here for easy tracking. Complete every item before the pages go live.
+
+============================================================
+ITEMS COMMON TO BOTH DOCUMENTS
+============================================================
+
+[ ] Last Updated date — insert the date attorney approves final version
+[ ] Entity mailing address — BSBR Holdings LLC physical address
+[ ] State of organization — state where BSBR Holdings LLC is registered
+[ ] Privacy contact email — e.g., privacy@builtsmartbyrob.com
+[ ] Legal contact email — e.g., legal@builtsmartbyrob.com
+[ ] Confirm final brand/product name — "AI Staff Compliance Training" and
+    "Built Smart by Rob" are used throughout; adjust if either changes
+[ ] Insert correct URL for Privacy Policy page — used in ToS Section 10
+    (e.g., https://aistaffcompliance.com/privacy)
+
+============================================================
+PRIVACY POLICY — SECTION BY SECTION
+============================================================
+
+Section 1 — Introduction
+[ ] Confirm entity name (BSBR Holdings LLC) and trade names are final
+    before publication
+
+Section 2 — Who We Are
+[ ] Insert state of organization
+[ ] Insert mailing address
+
+Section 3c — Technical and Usage Data
+[ ] Confirm whether you use any tracking cookies or analytics tools beyond
+    session management (e.g., Cloudflare Web Analytics, Google Analytics)
+    — if YES, add a Cookies section; if NO, state that explicitly here
+
+Section 4 — How We Use Your Information
+[ ] If any data is used to market to existing customers beyond transactional
+    emails, describe it and address opt-out rights
+
+Section 5 — Data Retention
+[ ] Specify the post-termination retention period for inactive account data
+    (e.g., "90 days after subscription ends")
+[ ] Clarify: can employees request deletion of their personal data before
+    the 7-year window? How does that interact with the firm's audit record
+    obligations?
+
+Section 6a — Sub-Processors
+[ ] Verify sub-processor list is complete and current:
+      Stripe, Supabase, Resend, Cloudflare — confirm no others added
+[ ] Obtain and review Data Processing Agreements (DPAs) from each vendor
+[ ] If any sub-processor is in the EU or processes EU-resident data, note
+    the legal transfer mechanism (Standard Contractual Clauses, etc.)
+
+Section 6b — Legal Requirements
+[ ] Draft standard disclosure language covering: court orders, government
+    process, protecting rights/property/safety of Company or users
+
+Section 6c — Business Transfers
+[ ] Draft standard M&A language: data may transfer in merger/acquisition/
+    asset sale; acquirer must honor this Policy or provide advance notice
+
+Section 7 — Security
+[ ] Confirm listed security measures are actually in place before publishing
+[ ] Add breach notification language: how users will be notified and the
+    time frame after discovery
+[ ] Optionally note whether annual security reviews are conducted
+
+Section 8 — Your Rights
+[ ] Draft user rights section covering:
+      (a) Right to access — how to request a copy of their data
+      (b) Right to correct — process for correcting inaccuracies
+      (c) Right to delete — note 7-year cert retention may override
+      (d) Data portability — whether export is offered
+[ ] If serving California residents: add CCPA disclosures and opt-out rights
+[ ] If any EU/UK residents may use the Service: add GDPR/UK GDPR rights and
+    state the lawful basis for each type of processing
+
+Section 9 — Children's Privacy
+[ ] Confirm no users under 18 are expected; add safeguards language if
+    any firm could employ staff under 18 (e.g., interns)
+
+Section 10 — Changes to This Policy
+[ ] Specify advance notice period before changes take effect
+[ ] Define what constitutes a "material" change
+
+Section 11 — Contact Us
+[ ] Insert mailing address
+[ ] Insert privacy contact email address
+
+============================================================
+TERMS OF SERVICE — SECTION BY SECTION
+============================================================
+
+Section 1 — Acceptance of Terms
+[ ] Add clickwrap acceptance language ("By clicking Accept / creating an
+    account / using the Service, you agree to these Terms...")
+[ ] Specify minimum age requirement if applicable
+
+Section 2 — Description of Service
+[ ] Review and confirm the limitation-of-scope language (not legal advice,
+    not ABA accreditation, attorneys remain solely responsible) — this is
+    your primary liability shield; do not soften it without careful review
+
+Section 3 — Account Registration
+[ ] Add any additional account terms: credential-sharing prohibition,
+    password requirements, MFA obligations
+
+Section 4a — Pricing
+[ ] Confirm $35/$32/$28 pricing tiers are final as written
+[ ] If pricing will change in future, specify advance notice period and
+    process for communicating price changes to existing subscribers
+
+Section 4b — Billing and Payment
+[ ] Add language for failed/declined charges:
+      - Grace period before access is suspended
+      - How the firm is notified
+      - Process for resolving billing disputes
+
+Section 4c — Auto-Renewal
+[ ] Specify the advance renewal notice period (30 days is standard)
+[ ] Specify the cancellation deadline and exact cancellation process
+[ ] Confirm compliance with FTC auto-renewal disclosure requirements
+[ ] Check state-specific auto-renewal laws (California, New York, and
+    others have additional requirements)
+
+Section 4d — Taxes
+[ ] Insert tax disclosure: which party is responsible for sales tax/VAT/GST
+[ ] State whether taxes are calculated and collected at checkout (Stripe Tax)
+[ ] Add instructions for tax-exempt customers to notify you
+
+Section 5 — Refund Policy
+[ ] Confirm the 14-day / no-certificate-issued rule is the intended policy
+[ ] Add the refund request process: contact email, expected response time
+[ ] Decide and document whether any pro-rated cancellation applies after
+    the 14-day window
+[ ] Confirm compliance with consumer protection laws in primary markets
+
+Section 6 — Seat Management
+[ ] Clarify mid-cycle seat addition pricing: pro-rated immediately, or
+    billed at next renewal date?
+[ ] Add policy for seat-count reduction at renewal
+
+Section 7 — The Certification Program
+[ ] Confirm 80% pass threshold disclosure is accurate
+[ ] Decide: does a certificate remain valid if the course content is
+    substantially updated mid-year? Add or disclaim this warranty.
+[ ] Confirm Rule 5.3 framing language is defensible as written
+
+Section 8 — Acceptable Use
+[ ] Add consequences for violations: account suspension, certificate
+    revocation, termination, legal action — and the process for each
+
+Section 9 — Intellectual Property
+[ ] Confirm IP ownership of training content co-authored with attorney
+    consultant (Katy) — is there a work-for-hire agreement or retained
+    rights? Document the arrangement before publishing.
+[ ] Add trademark and copyright notices as appropriate
+
+Section 10 — Privacy
+[ ] Confirm Privacy Policy URL is correct
+[ ] Determine whether law firm customers will require a separate Data
+    Processing Agreement (DPA) — likely yes for larger or more compliance-
+    conscious firms; prepare a standard DPA addendum if needed
+
+Section 11 — Disclaimer of Warranties
+[ ] Draft full disclaimer of warranties: AS IS / AS AVAILABLE, no warranty
+    of merchantability, fitness for particular purpose, non-infringement,
+    uptime, error-free operation, or jurisdiction-specific compliance
+
+Section 12 — Limitation of Liability
+[ ] Set the liability cap: typically the greater of (a) fees paid in the
+    prior 12 months or (b) $[AMOUNT] — decide the floor amount
+[ ] List excluded damage types: consequential, incidental, indirect,
+    special, exemplary, punitive
+[ ] Confirm appropriate carve-outs for fraud and gross negligence
+
+Section 13 — Indemnification
+[ ] Draft subscriber indemnification: defend, indemnify, and hold harmless
+    the Company from claims arising from subscriber's use, breach, or
+    violation of third-party rights
+
+Section 14 — Term and Termination
+[ ] Specify notice period for termination for cause (e.g., 30 days)
+[ ] Specify the data export window post-termination (e.g., 30 days to
+    request an export)
+[ ] Define the data export format
+[ ] Clarify: do issued certificates remain valid after a firm terminates
+    its subscription? (Recommend yes — these are the firm's compliance docs)
+
+Section 15 — Governing Law and Dispute Resolution
+[ ] Choose governing law: recommend state where BSBR Holdings LLC is
+    organized
+[ ] Specify venue and jurisdiction for any litigation
+[ ] DECIDE (significant): mandatory arbitration clause? Class action waiver?
+    Jury trial waiver? — Note: your customers are law firms who may
+    negotiate these provisions; discuss tradeoffs before committing
+
+Section 16 — Accessibility
+[ ] Confirm WCAG 2.1 AA commitment is accurate against the actual product
+[ ] Add reference to any Accessibility Statement or VPAT if one exists
+[ ] Note whether an accessibility audit has been or will be conducted
+
+Section 17 — Changes to These Terms
+[ ] Specify advance notice period before revised terms take effect
+[ ] Clarify subscriber options if they do not accept revised terms
+    (e.g., right to terminate before effective date with pro-rated refund)
+
+Section 18 — Contact Us
+[ ] Insert mailing address
+[ ] Insert legal contact email address
+
+============================================================
+BEFORE GOING LIVE — FINAL SIGN-OFF CHECKLIST
+============================================================
+
+[ ] Attorney has reviewed and approved both documents in full
+[ ] Attorney sign-off date recorded
+[ ] "Last Updated" date inserted in both documents
+[ ] All [ATTORNEY TO COMPLETE] placeholders removed or resolved
+[ ] Final versions saved without "DRAFT" in filename
+[ ] Pages live at correct URLs:
+      /privacy  — Privacy Policy
+      /terms    — Terms of Service
+      /dpa      — Data Processing Addendum (if prepared)
+[ ] Footer links to all three pages are working on live site
+[ ] Stripe Customer Portal configured to reference refund policy language
+[ ] Renewal/cancellation policy language matches auto-renewal disclosures
+
+============================================================
+NOTE ON DPA (DATA PROCESSING ADDENDUM)
+============================================================
+
+A separate Data Processing Addendum was planned (6B-PRE-10) but not yet
+drafted. Law firms handling client personal data under attorney-client
+privilege may require a DPA before signing up. Consider whether to:
+
+  (a) Prepare a standard DPA now for law firms that request it, OR
+  (b) Handle DPA requests manually on inquiry at launch and formalize
+      after you have a better sense of demand
+
+Either approach is defensible at v1 scale. Discuss with attorney.
