@@ -1,36 +1,24 @@
 # Session Handoff
 
-**Date:** 2026-06-29 (Sunday)
+**Date:** 2026-07-02
 **Who:** Rob
-
----
-
-## Rob's Context — Read Before Anything Else
-
-- **Launch timeline:** Jul 20 go-live; Jul 1 code-complete; Jul 10 content-complete; Jul 13 testing week (≥6 testers)
-- **Stripe live mode on hold:** LLC applied 10 days ago (15–20 day window) — expected ~5–10 more days. Do NOT create live Stripe objects until LLC + EIN + brand name confirmed.
-- **BetterStack confirmed:** Rob has a BetterStack account — use it instead of UptimeRobot. Wire to `https://bsbr-attytraining.aistaffcompliance.workers.dev/api/health`, 30-sec check interval, SMS on failure.
-- **Rob action required (AUTO-06):** Save all Worker secrets to password manager; confirm Supabase PITR enabled on prod before launch.
-- **Rob action required:** Deploy cert-worker with renewal reminders: `cd workers/cert-worker && wrangler deploy --config wrangler.toml`
 
 ---
 
 ## What Was Done This Session
 
-### Legal Documents Created (for attorney review)
+- No code changes. This was a status-check + handoff session.
+- Confirmed repo is fully up to date with `origin/main` — nothing new has landed since the 2026-06-29 commit (Privacy Policy / ToS drafts). Last actual code deploy was Max's 2026-06-25 session (6B-PRE polish batch).
+- Reviewed Track 6A status (`.planning/PHASE-6.md`): Max's full UI redesign (Stitch proposals) is still marked 🔴 Not started — no design proposals have been presented or approved yet. This is the one item on the critical path with zero visible progress.
+- Rob decided to take a stab at the homepage redesign himself rather than wait on Max's Stitch proposals.
+- Bundled the current live homepage code (everything rendering `/`) into a single reference file for Rob to shop around to design tools / other designers: `page.tsx`, `hero-section.tsx` (scrabble-tile animated hero), `shader-bg.tsx` (WebGL background), `features-section.tsx`, `footer.tsx`, `checkout-form.tsx`, relevant `globals.css` utility classes, font setup, and an extracted color palette table. File was written to the session scratchpad (not the repo) since it was for external use, not a code change.
 
-Three files added to `C:\Sites\attytraining\` (repo root):
+## Notable findings surfaced to Rob
 
-- **`Privacy-Policy-DRAFT.docx`** — Full Privacy Policy draft. 11 sections. All attorney action items in bold red `[ATTORNEY TO COMPLETE: ...]`. Pre-filled: sub-processors (Stripe, Supabase, Resend, Cloudflare), 7-year cert retention, security measures, product description.
-- **`Terms-of-Service-DRAFT.docx`** — Full Terms of Service draft. 18 sections. Pre-filled: pricing tiers ($35/$32/$28), 14-day refund policy, 80% pass threshold, 7-year cert retention, WCAG 2.1 AA accessibility commitment, limitation-of-scope language (not legal advice, not ABA accreditation).
-- **`LEGAL-DOCS-ATTORNEY-CHECKLIST.txt`** — Consolidated checklist of every open item across both documents, organized by section. Rob sends this + both Word docs to the attorney.
-
-### Key Decisions Made This Session
-
-- **Accessibility standard:** WCAG 2.1 AA (not Section 508 — that's federal gov only). Already embedded in ToS.
-- **BetterStack:** Confirmed as good as or better than UptimeRobot. Stick with it.
-- **LLC timing:** 10 days into a 15–20 day window — on track, won't block July 20 launch.
-- **Training content:** Max is building in Articulate Rise 360 now (previously listed as Rob's task).
+- **Bug:** the homepage currently renders two stacked footers — a light-theme one inside `features-section.tsx` and a dark zinc-950 one from the shared `footer.tsx` (used site-wide). Worth fixing/merging during redesign.
+- **Dead code:** `app/_components/scrabble-hero.tsx` is an earlier, unused WIP hero variant (same scrabble-tile concept, simpler — no Framer Motion, no shader). Not imported anywhere. Left in place, flagged for Rob's awareness.
+- **Style inconsistency:** `checkout-form.tsx` still uses generic Tailwind blue/gray, not the copper/cream brand palette used everywhere else on the homepage.
+- The homepage uses a distinct warm copper/cream palette (`#C8783A` accent, `#1A1A1A` ink, `#FAFAF8` bg) while the dashboard/app pages use a separate zinc-950 + teal (#14b8a6) dark theme. Unification is an open design question for whoever does the redesign.
 
 ---
 
@@ -40,37 +28,29 @@ Three files added to `C:\Sites\attytraining\` (repo root):
 |------|--------|
 | Phase 1–5 (all features) | ✅ Complete + deployed |
 | Phase 6 — 6B-PRE (12 polish tasks) | ✅ Complete + deployed |
-| Phase 6 — 6A design (Max, Stitch) | 🟡 Max working on Rise 360 content; design proposals pending |
-| Phase 6 — 6B design implementation | ⏸ Blocked on design approval from Rob |
+| Phase 6 — 6A design (Max, Stitch) | 🔴 Not started — no proposals presented yet |
+| Phase 6 — 6B design implementation | ⏸ Blocked on design approval |
 | Phase 6 — 6C QA scripts | ⏸ Write July 10–12 |
-| Privacy Policy draft | ✅ Created — awaiting attorney review |
-| Terms of Service draft | ✅ Created — awaiting attorney review |
-| Attorney checklist | ✅ Created |
+| Homepage redesign | 🟡 Rob is now taking a first pass himself — has current code bundled for reference |
+| Privacy Policy / ToS drafts | ✅ Created 2026-06-29 — awaiting attorney review |
 
 ---
 
-## Next Session — Pick Up Here
+## Next Steps
 
-1. **Send legal docs to attorney:** `Privacy-Policy-DRAFT.docx` + `Terms-of-Service-DRAFT.docx` + `LEGAL-DOCS-ATTORNEY-CHECKLIST.txt` — attorney needs lead time before July 20
-2. **Quiz question pool:** Rob/Katy need to deliver 24–32 questions before July 10 testing week — this is on the critical path
-3. **BetterStack:** Wire health monitoring endpoint when you get a moment
-4. **Max:** Present Rise 360 export + design proposals to Rob for approval → triggers 6B implementation
-5. **LLC:** Expect confirmation in ~5–10 days → immediately create Stripe live-mode objects
+1. Rob: experiment with homepage redesign using the bundled code (shop around to design tools / other designers as needed)
+2. Check in with Max directly on Rise 360 export + Stitch design proposal status — no progress visible in repo since 2026-06-25
+3. Fix the double-footer bug on the homepage whenever the redesign lands
+4. Send legal docs (Privacy Policy, ToS, attorney checklist) to attorney if not already done
+5. Quiz question pool (24–32 Qs) still needed from Rob/Katy before July 10–13 testing week
+6. LLC/EIN confirmation still pending → unblocks Stripe live mode
 
 ---
 
-## Blocked / Pending
+## Open Questions
 
-| Item | Owner | Unblocks |
-|------|-------|---------|
-| Attorney review of Privacy Policy + ToS | Rob → attorney | Legal pages going live |
-| Quiz question pool (24–32 Qs) | Rob + Katy | Testing week realism |
-| LLC + EIN confirmed | Rob (in progress) | Stripe live mode |
-| Stripe Tax on live account | Rob | PAY-06 |
-| BetterStack health monitoring | Rob | AUTO-04 |
-| AUTO-06: secrets + Supabase PITR | Rob | Pre-launch ops |
-| Design proposals | Max | 6B design implementation |
-| Rise 360 export | Max (in progress) | iframe placeholder in training-client.tsx |
+- Should the homepage's copper/cream palette and the dashboard's zinc/teal palette be unified into one design system, or intentionally kept distinct (marketing vs. app)?
+- Is Max still actively working on 6A (Stitch proposals), or has that stalled / is Rob's DIY pass superseding it?
 
 ---
 
