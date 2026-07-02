@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { Instrument_Serif } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -20,8 +21,30 @@ const hostGrotesk = localFont({
   display: "swap",
 });
 
+// Cycling italic hero word. Brief §2: Bethany Elingston is the licensed primary
+// (picked up from Font Book if present); Instrument Serif Italic is the shippable
+// free fallback. Exposed as --font-instrument-serif; the CSS stack lists Bethany
+// Elingston first so a future licensed webfont swaps in without code changes.
+const instrumentSerif = Instrument_Serif({
+  weight: "400",
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+  variable: "--font-instrument-serif",
+  display: "swap",
+});
+
+// Stack Sans Headline — the real, self-hosted OFL-1.1 variable font (brief §2).
+// Single variable file covers ExtraLight→Bold; the thinnest weight is used for the
+// "athena." wordmark, Regular/Medium for headlines and body.
+const stackSans = localFont({
+  src: "../public/fonts/StackSansHeadline-VariableFont_wght.ttf",
+  variable: "--font-headline",
+  display: "swap",
+  weight: "200 700",
+});
+
 export const metadata: Metadata = {
-  title: "AI Staff Compliance Training — Built Smart by Rob",
+  title: "Athena — AI Staff Compliance Training | Built Smart by Rob",
   description:
     "Certify your staff on proper AI use under ABA Model Rule 5.3. One annual fee, instant certificates.",
 };
@@ -38,7 +61,9 @@ export default function RootLayout({
         GeistSans.variable,
         GeistMono.variable,
         gyrotrope.variable,
-        hostGrotesk.variable
+        hostGrotesk.variable,
+        instrumentSerif.variable,
+        stackSans.variable
       )}
     >
       <body className="antialiased">{children}</body>
