@@ -27,38 +27,42 @@ function useTypewriter(words: string[], enabled: boolean) {
     if (!enabled) return;
     let timer: ReturnType<typeof setTimeout>;
 
+    // All animation state lives in these locals, not in setText updaters:
+    // React Strict Mode double-invokes updater functions in dev, so side
+    // effects inside them (advancing wordIndex, scheduling timers) fire
+    // twice and run wordIndex past the end of the array.
+    let value = "";
+    wordIndex.current = 0;
+    phase.current = "typing";
+
     function tick() {
       const current = words[wordIndex.current];
       const isLastWord = wordIndex.current === words.length - 1;
 
       if (phase.current === "typing") {
-        setText((prev) => {
-          const next = current.slice(0, prev.length + 1);
-          if (next === current) {
-            // Freeze permanently once the final word is fully typed.
-            if (isLastWord) {
-              phase.current = "done";
-            } else {
-              phase.current = "holding";
-              timer = setTimeout(tick, HOLD_MS);
-            }
+        value = current.slice(0, value.length + 1);
+        setText(value);
+        if (value === current) {
+          // Freeze permanently once the final word is fully typed.
+          if (isLastWord) {
+            phase.current = "done";
           } else {
-            timer = setTimeout(tick, TYPE_MS);
+            phase.current = "holding";
+            timer = setTimeout(tick, HOLD_MS);
           }
-          return next;
-        });
+        } else {
+          timer = setTimeout(tick, TYPE_MS);
+        }
       } else if (phase.current === "deleting") {
-        setText((prev) => {
-          const next = prev.slice(0, -1);
-          if (next.length === 0) {
-            phase.current = "typing";
-            wordIndex.current = wordIndex.current + 1;
-            timer = setTimeout(tick, TYPE_MS);
-          } else {
-            timer = setTimeout(tick, DELETE_MS);
-          }
-          return next;
-        });
+        value = value.slice(0, -1);
+        setText(value);
+        if (value.length === 0) {
+          phase.current = "typing";
+          wordIndex.current = wordIndex.current + 1;
+          timer = setTimeout(tick, TYPE_MS);
+        } else {
+          timer = setTimeout(tick, DELETE_MS);
+        }
       } else if (phase.current === "holding") {
         phase.current = "deleting";
         timer = setTimeout(tick, DELETE_MS);
