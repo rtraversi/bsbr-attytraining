@@ -1,56 +1,97 @@
 # Session Handoff
 
-**Date:** 2026-07-02
-**Who:** Rob
+**Date:** 2026-07-02 — TWO parallel sessions (Rob + Max), merged 2026-07-03
+**Who:** Rob (status check / DIY redesign prep) **and** Max (Athena dark-rebrand build)
+
+> ⚠️ **Collision notice:** On the same day, Rob decided to take a DIY pass at the homepage
+> redesign (bundling the old homepage code for external design tools) **and** Max built and
+> committed a brand-new dark "Athena" homepage + `/pricing`. Max's version is now what's on
+> `main` (not yet deployed). Rob + Max need to sync on which direction wins before deploy.
 
 ---
 
-## What Was Done This Session
+## Max's session — Athena landing page (dark rebrand) first build
 
-- No code changes. This was a status-check + handoff session.
-- Confirmed repo is fully up to date with `origin/main` — nothing new has landed since the 2026-06-29 commit (Privacy Policy / ToS drafts). Last actual code deploy was Max's 2026-06-25 session (6B-PRE polish batch).
-- Reviewed Track 6A status (`.planning/PHASE-6.md`): Max's full UI redesign (Stitch proposals) is still marked 🔴 Not started — no design proposals have been presented or approved yet. This is the one item on the critical path with zero visible progress.
-- Rob decided to take a stab at the homepage redesign himself rather than wait on Max's Stitch proposals.
-- Bundled the current live homepage code (everything rendering `/`) into a single reference file for Rob to shop around to design tools / other designers: `page.tsx`, `hero-section.tsx` (scrabble-tile animated hero), `shader-bg.tsx` (WebGL background), `features-section.tsx`, `footer.tsx`, `checkout-form.tsx`, relevant `globals.css` utility classes, font setup, and an extracted color palette table. File was written to the session scratchpad (not the repo) since it was for external use, not a code change.
+Built the new **Athena** dark-rebrand marketing pages from
+`landing page design resources/LANDING-PAGE-BRIEF.md`. Full detail in
+`.planning/sessions/20260702-max-summary.md` — read that for the file-by-file rundown.
 
-## Notable findings surfaced to Rob
+**Scope built (brief §3):** Homepage (Hero + "Under the ABA Model Rule 5.3" hook +
+Footer) and a dedicated `/pricing` page. Everything else deferred (nav → `#`).
 
-- **Bug:** the homepage currently renders two stacked footers — a light-theme one inside `features-section.tsx` and a dark zinc-950 one from the shared `footer.tsx` (used site-wide). Worth fixing/merging during redesign.
-- **Dead code:** `app/_components/scrabble-hero.tsx` is an earlier, unused WIP hero variant (same scrabble-tile concept, simpler — no Framer Motion, no shader). Not imported anywhere. Left in place, flagged for Rob's awareness.
-- **Style inconsistency:** `checkout-form.tsx` still uses generic Tailwind blue/gray, not the copper/cream brand palette used everywhere else on the homepage.
-- The homepage uses a distinct warm copper/cream palette (`#C8783A` accent, `#1A1A1A` ink, `#FAFAF8` bg) while the dashboard/app pages use a separate zinc-950 + teal (#14b8a6) dark theme. Unification is an open design question for whoever does the redesign.
+**Highlights:**
+- Pure-black hero: real `atc` logo vector + "athena." wordmark; right-aligned
+  "training / made *[word]*" with a typewriter that cycles easy→simple→**for you
+  then stops**; contained animated 2D "Closed Spiro" canvas on the left.
+- Self-hosted **Stack Sans Headline** (OFL variable font) + Instrument Serif (italic word).
+- "Under the ABA Model Rule 5.3" hook with a scroll-scrubbed (noir.io) per-word reveal
+  + drawn-in underline, dot-grid backdrop.
+- Custom Cuberto-style cursor (from `custom-cursor.svg`), snappy spring follow.
+- `/pricing`: cofounder-style seat slider → live total, wired to volume bands + existing
+  `/api/checkout`.
+- Nav pill / Sign In+Get started pills, dark footer with disclaimer.
+
+**Deleted:** `scrabble-hero.tsx`, `shader-bg.tsx` (dead). **Assets added to `public/`:**
+logo svg, cursor svg, Stack Sans font (the `landing page design resources/` source
+folder is **gitignored** — public/ copies are what the app uses).
+
+## Rob's session — status check + DIY redesign prep
+
+- No code changes. Status-check + handoff session.
+- Reviewed Track 6A status: Max's Stitch design proposals were marked 🔴 Not started
+  (superseded same-day by Max's Athena build above).
+- Rob decided to take a stab at the homepage redesign himself; bundled the (old)
+  live homepage code into a single reference file for external design tools
+  (written to scratchpad, not the repo).
+
+**Notable findings from Rob's review of the OLD homepage** (some now moot after Max's rebuild):
+- Double-footer bug (light footer in `features-section.tsx` + dark shared `footer.tsx`).
+- Dead code `scrabble-hero.tsx` (Max has since deleted it).
+- `checkout-form.tsx` uses generic Tailwind blue/gray, not brand palette.
+- Old homepage used copper/cream (`#C8783A`/`#FAFAF8`) vs. dashboard zinc/teal — unification
+  still an open design question.
 
 ---
 
-## Current Status
+## Status
 
 | Item | Status |
 |------|--------|
-| Phase 1–5 (all features) | ✅ Complete + deployed |
-| Phase 6 — 6B-PRE (12 polish tasks) | ✅ Complete + deployed |
-| Phase 6 — 6A design (Max, Stitch) | 🔴 Not started — no proposals presented yet |
-| Phase 6 — 6B design implementation | ⏸ Blocked on design approval |
-| Phase 6 — 6C QA scripts | ⏸ Write July 10–12 |
-| Homepage redesign | 🟡 Rob is now taking a first pass himself — has current code bundled for reference |
+| Athena homepage + /pricing (Max's pass) | ✅ Built, tsc + eslint clean — on `main` |
+| Browser review of final tweaks | 🟡 Do `pnpm dev` before deploy |
+| Deploy of Athena pages | ⬜ Not deployed — after review |
+| Rob's DIY redesign direction (v0 concept) | 🟡 In progress — needs reconciling with Athena |
+| Phases 1–6 (app features) | ✅ Complete + deployed (unchanged) |
 | Privacy Policy / ToS drafts | ✅ Created 2026-06-29 — awaiting attorney review |
 
 ---
 
 ## Next Steps
 
-1. Rob: experiment with homepage redesign using the bundled code (shop around to design tools / other designers as needed)
-2. Check in with Max directly on Rise 360 export + Stitch design proposal status — no progress visible in repo since 2026-06-25
-3. Fix the double-footer bug on the homepage whenever the redesign lands
-4. Send legal docs (Privacy Policy, ToS, attorney checklist) to attorney if not already done
-5. Quiz question pool (24–32 Qs) still needed from Rob/Katy before July 10–13 testing week
-6. LLC/EIN confirmation still pending → unblocks Stripe live mode
+1. **Rob + Max sync on homepage direction** — Athena (dark, Max) vs. Rob's v0 concept
+   (same idea, lighter background). Decide before deploying either.
+2. `pnpm dev` → review `/` and `/pricing`; then `pnpm run deploy` once direction is settled.
+3. Gridlines — reverted to v1 (hero bottom strip only); Max will specify treatment.
+4. Send legal docs (Privacy Policy, ToS, attorney checklist) to attorney if not already done.
+5. Quiz question pool (24–32 Qs) still needed from Rob/Katy before July 10–13 testing week.
+6. LLC/EIN confirmation still pending → unblocks Stripe live mode.
 
----
+## Notes / loose ends
 
-## Open Questions
+- Tuning dials: spiro `scale`/`speed` + amplitude-osc in `app/_components/spiro-pattern.tsx`;
+  cursor hotspot offset in `app/_components/custom-cursor.tsx`.
+- **Untracked `scripts/`** (`extract_names_from_scan.py`, `requirements-scan.txt`) —
+  unrelated to landing page, left uncommitted for Max to handle.
+- Orphaned-but-harmless: `features-section.tsx` + `checkout-form.tsx` no longer imported.
+- Bethany Elingston licensed webfont not supplied → italic cycling word ships on
+  Instrument Serif Italic (brief-sanctioned fallback).
 
-- Should the homepage's copper/cream palette and the dashboard's zinc/teal palette be unified into one design system, or intentionally kept distinct (marketing vs. app)?
-- Is Max still actively working on 6A (Stitch proposals), or has that stalled / is Rob's DIY pass superseding it?
+## Blocked (unchanged — Rob's items)
+
+- Attorney review of Privacy Policy + ToS
+- Quiz question pool (24–32 Qs) — Rob + Katy
+- LLC + EIN → Stripe live mode
+- BetterStack health monitoring wiring
 
 ---
 
@@ -59,10 +100,6 @@
 | Item | Value |
 |------|-------|
 | Main app URL | `https://bsbr-attytraining.aistaffcompliance.workers.dev` |
-| Cert-worker URL | `https://bsbr-cert-worker.aistaffcompliance.workers.dev` |
-| Health endpoint | `https://bsbr-attytraining.aistaffcompliance.workers.dev/api/health` |
-| Phase 6 plan | `.planning/PHASE-6.md` |
-| Stripe sandbox account | AI Staff Compliance & Training (`acct_1ThDpr6ZCSojEKRr`) |
-| Stripe Product ID | `prod_UgzKT3NrGNAvDA` |
-| Stripe Price ID | `price_1TjNHc6ZCSojEKRrKs79ToJ0` (lookup: `per_seat_annual`) |
+| Brief (local, gitignored) | `landing page design resources/LANDING-PAGE-BRIEF.md` |
+| Max's session detail | `.planning/sessions/20260702-max-summary.md` |
 | GitHub repo | `rtraversi/bsbr-attytraining` |
