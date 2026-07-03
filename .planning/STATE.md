@@ -119,6 +119,7 @@ All 10 Phase 0 requirements are **not yet started** — none require accounts al
 | 260612-mdv | Switch to per-seat volume pricing ($35/$32/$28 from aistaffcompliance.com); redo Stripe objects; propagate through docs | 2026-06-12 | 27d799f | [260612-mdv-switch-pricing-model-to-per-seat-volume-](./quick/260612-mdv-switch-pricing-model-to-per-seat-volume-/) |
 | 260612-pg6 | Verify Max's code post-migration, record step statuses, add Monday smoke-test runbook | 2026-06-12 | 08f080d | [260612-pg6-record-verified-step-statuses-post-code-](./quick/260612-pg6-record-verified-step-statuses-post-code-/) |
 | 260703-g7x | Mock up Rob's v0 homepage concept at /mockup (light palette, real pricing bands, wired to /api/checkout); Athena homepage untouched | 2026-07-03 | 2ac2575 | [260703-g7x-mock-up-v0-homepage-concept-as-mockup-ro](./quick/260703-g7x-mock-up-v0-homepage-concept-as-mockup-ro/) |
+| 260703-fast | Fix hero typewriter Strict Mode crash (impure setState updaters double-firing in dev) | 2026-07-03 | 31c7ade | (inline /gsd:fast — no directory) |
 
 ### Decisions to Log
 
