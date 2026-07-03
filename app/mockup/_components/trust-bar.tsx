@@ -1,3 +1,4 @@
+import { Fragment } from "react"
 import { Reveal } from "@/app/mockup/_components/reveal"
 
 const POINTS = [
@@ -10,15 +11,19 @@ const POINTS = [
 export function TrustBar() {
   return (
     <section className="border-y border-border bg-card/50">
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <Reveal className="flex flex-col items-center gap-4 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-10 sm:gap-y-3">
-          {POINTS.map((point) => (
-            <span
-              key={point}
-              className="text-sm font-medium text-muted-foreground"
-            >
-              {point}
-            </span>
+      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6">
+        <Reveal className="flex flex-col items-center gap-3 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-6 sm:gap-y-2">
+          {POINTS.map((point, i) => (
+            <Fragment key={point}>
+              {i > 0 && (
+                <span className="hidden font-mono text-xs text-primary/50 sm:inline" aria-hidden="true">
+                  §
+                </span>
+              )}
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                {point}
+              </span>
+            </Fragment>
           ))}
         </Reveal>
       </div>

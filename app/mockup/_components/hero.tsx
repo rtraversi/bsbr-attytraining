@@ -1,131 +1,147 @@
-"use client"
-
-import { Clock, ShieldCheck, ArrowRight, CheckCircle2 } from "lucide-react"
+import { ArrowRight, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { CountUp } from "@/app/mockup/_components/count-up"
 
+// Each readiness check cites the ABA Model Rule it maps to — the audit
+// ledger reads like something a lawyer would actually file.
 const CHECKS = [
-  "Confidentiality & privilege",
-  "Competence with AI tools",
-  "Supervision & disclosure",
-  "Bias, accuracy & hallucinations",
+  { rule: "1.6", label: "Confidentiality & privilege" },
+  { rule: "1.1", label: "Competence with AI tools" },
+  { rule: "5.1–5.3", label: "Supervision & disclosure" },
+  { rule: "3.3", label: "Accuracy & hallucinations" },
 ]
 
 export function Hero() {
   return (
     <section id="overview" className="relative overflow-hidden">
-      {/* subtle grid backdrop */}
+      {/* blueprint backdrop: hairline grid + intersection dots */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]"
+        className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black,transparent_72%)]"
         style={{
           backgroundImage:
-            "linear-gradient(to right, color-mix(in oklch, var(--foreground) 6%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 6%, transparent) 1px, transparent 1px)",
-          backgroundSize: "44px 44px",
+            "linear-gradient(to right, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px), radial-gradient(circle, color-mix(in oklch, var(--primary) 28%, transparent) 1.5px, transparent 1.5px)",
+          backgroundSize: "44px 44px, 44px 44px, 176px 176px",
+          backgroundPosition: "0 0, 0 0, 22px 22px",
         }}
       />
 
-      <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pb-20 pt-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-8 lg:pb-28 lg:pt-24">
+      <div className="relative mx-auto grid max-w-6xl gap-14 px-4 pb-20 pt-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-10 lg:pb-28 lg:pt-24">
         <div className="max-w-xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
-            <span className="relative flex h-2 w-2">
+          <div className="inline-flex items-center gap-2.5 border border-border bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
             </span>
-            Aligned with professional conduct rules
+            <span className="text-primary">§</span> Aligned with professional conduct rules
           </div>
 
-          <h1 className="mt-6 text-pretty text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl">
-            Responsible AI training, built for the way law firms actually work.
+          <h1 className="mk-display mt-7 text-pretty text-[2.6rem] font-semibold leading-[1.06] tracking-tight text-foreground sm:text-6xl">
+            Responsible AI training, built for the way law firms{" "}
+            <em className="mk-serif-it font-normal text-primary">actually</em> work.
           </h1>
 
-          <p className="mt-5 text-pretty text-lg leading-relaxed text-muted-foreground">
+          <p className="mt-6 max-w-md text-pretty text-lg leading-relaxed text-muted-foreground">
             A focused 30-minute session that gives every attorney and staff member a clear,
             defensible framework for using AI ethically — without slowing the practice down.
           </p>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button size="lg" className="h-11 rounded-full px-6 text-sm" asChild>
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <Button size="lg" className="group/cta h-11 rounded-md px-6 text-sm" asChild>
               <a href="#pricing">
                 Train your team
-                <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
+                <ArrowRight
+                  className="ml-1 h-4 w-4 transition-transform duration-200 group-hover/cta:translate-x-0.5"
+                  aria-hidden="true"
+                />
               </a>
             </Button>
-            <Button size="lg" variant="outline" className="h-11 rounded-full px-6 text-sm" asChild>
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-11 rounded-md px-6 text-sm hover:border-primary/40"
+              asChild
+            >
               <a href="#curriculum">See what&apos;s covered</a>
             </Button>
           </div>
 
-          <dl className="mt-10 flex flex-wrap gap-x-8 gap-y-4">
+          <dl className="mt-11 flex flex-wrap gap-x-8 gap-y-3 font-mono text-xs uppercase tracking-[0.12em] text-muted-foreground">
             <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" aria-hidden="true" />
               <dt className="sr-only">Duration</dt>
-              <dd className="text-sm font-medium text-foreground">30-minute session</dd>
+              <span className="h-px w-5 bg-primary/60" aria-hidden="true" />
+              <dd>30 min / session</dd>
             </div>
             <div className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-primary" aria-hidden="true" />
               <dt className="sr-only">Focus</dt>
-              <dd className="text-sm font-medium text-foreground">Compliance-first</dd>
+              <span className="h-px w-5 bg-primary/60" aria-hidden="true" />
+              <dd>Rule 5.3 aligned</dd>
             </div>
           </dl>
         </div>
 
-        {/* Animated compliance panel */}
-        <div className="relative">
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <div className="flex items-center justify-between border-b border-border pb-4">
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+        {/* Audit ledger — stamps each rule on load, then holds */}
+        <div className="mk-frame relative">
+          <div className="border border-border bg-card shadow-sm">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="flex h-7 w-7 items-center justify-center border border-primary/30 bg-primary/5 font-mono text-sm font-semibold text-primary"
+                  aria-hidden="true"
+                >
+                  §
                 </span>
-                <span className="text-sm font-semibold text-foreground">
+                <span className="mk-display text-sm font-semibold tracking-tight text-foreground">
                   AI Use Readiness
                 </span>
               </div>
-              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                Reviewed
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                Audit · <span className="text-primary">live</span>
               </span>
             </div>
 
-            <ul className="mt-4 space-y-3">
+            <ul className="divide-y divide-border/70">
               {CHECKS.map((check, i) => (
                 <li
-                  key={check}
-                  className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/60 px-3 py-2.5 opacity-0"
+                  key={check.label}
+                  className="flex items-center gap-3 px-5 py-3 opacity-0"
                   style={{
-                    animation: `fadeRise 0.5s ease forwards`,
-                    animationDelay: `${0.25 + i * 0.18}s`,
+                    animation: "fadeRise 0.45s ease forwards",
+                    animationDelay: `${0.3 + i * 0.28}s`,
                   }}
                 >
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                  <span className="text-sm text-foreground">{check}</span>
-                  <span className="ml-auto font-mono text-xs text-muted-foreground">OK</span>
+                  <span className="w-16 shrink-0 font-mono text-[11px] text-muted-foreground">
+                    R. {check.rule}
+                  </span>
+                  <span className="text-sm text-foreground">{check.label}</span>
+                  <span
+                    className="ml-auto inline-flex items-center gap-1 font-mono text-[11px] font-semibold uppercase tracking-wide text-primary opacity-0"
+                    style={{
+                      animation: "mkStamp 0.35s ease-out forwards",
+                      animationDelay: `${0.55 + i * 0.28}s`,
+                    }}
+                  >
+                    <Check className="h-3 w-3" aria-hidden="true" />
+                    ok
+                  </span>
                 </li>
               ))}
             </ul>
 
-            <div className="mt-5 flex items-center justify-between rounded-lg bg-primary/10 px-4 py-3 text-primary">
-              <span className="text-sm font-medium">Firm-wide compliance</span>
-              <span className="font-mono text-sm font-semibold">100%</span>
+            <div className="border-t border-border px-5 py-4">
+              <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.14em]">
+                <span className="text-muted-foreground">Firm-wide compliance</span>
+                <span className="font-semibold text-primary">
+                  <CountUp to={100} duration={1700} suffix="%" />
+                </span>
+              </div>
+              <div className="mt-2.5 h-1 w-full bg-secondary">
+                <div className="mk-fill h-full bg-primary" />
+              </div>
             </div>
           </div>
-
-          {/* decorative offset accent */}
-          <div
-            aria-hidden="true"
-            className="absolute -bottom-4 -right-4 -z-10 h-24 w-24 rounded-2xl bg-primary/10"
-          />
         </div>
       </div>
-
-      <style>{`
-        @keyframes fadeRise {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          [style*="fadeRise"] { animation: none !important; opacity: 1 !important; }
-        }
-      `}</style>
     </section>
   )
 }

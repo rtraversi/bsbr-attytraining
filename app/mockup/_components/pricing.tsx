@@ -2,8 +2,15 @@
 
 import { useState } from "react"
 import { Check, Minus, Plus, Loader2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Reveal } from "@/app/mockup/_components/reveal"
+
+const BANDS = [
+  { label: "1–9 seats", rate: 35, min: 1 },
+  { label: "10–24 seats", rate: 32, min: 10 },
+  { label: "25+ seats", rate: 28, min: 25 },
+]
 
 function perSeatRate(seats: number): number {
   if (seats >= 25) return 28
@@ -55,114 +62,152 @@ export function Pricing() {
 
   return (
     <section id="pricing" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
-      <Reveal className="mx-auto max-w-2xl text-center">
-        <p className="text-sm font-semibold uppercase tracking-wider text-primary">Pricing</p>
-        <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Simple per-seat pricing
-        </h2>
-        <p className="mt-4 text-pretty text-lg leading-relaxed text-muted-foreground">
-          One flat price per person. Add a seat for everyone who touches client work — attorneys,
-          paralegals, and staff.
-        </p>
+      <Reveal>
+        <div className="flex items-center gap-4">
+          <p className="shrink-0 font-mono text-xs uppercase tracking-[0.16em] text-primary">
+            § 03 · Pricing
+          </p>
+          <span className="h-px flex-1 bg-border" aria-hidden="true" />
+        </div>
+        <div className="mt-8 mx-auto max-w-2xl text-center">
+          <h2 className="mk-display text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            Per-seat pricing that scales with the firm
+          </h2>
+          <p className="mt-4 text-pretty text-lg leading-relaxed text-muted-foreground">
+            Volume bands, billed annually. Add a seat for everyone who touches client work —
+            attorneys, paralegals, and staff.
+          </p>
+        </div>
       </Reveal>
 
       <Reveal className="mx-auto mt-14 max-w-lg">
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          <div className="border-b border-border bg-secondary/50 px-6 py-6 text-center sm:px-8">
-            <span className="text-sm font-medium text-muted-foreground">Per seat</span>
-            <div className="mt-1 flex items-end justify-center gap-1">
-              <span className="text-5xl font-semibold tracking-tight text-foreground">
-                ${rate}
+        <div className="mk-frame relative">
+          <div className="overflow-hidden border border-border bg-card shadow-sm">
+            <div className="border-b border-border bg-secondary/50 px-6 py-6 text-center sm:px-8">
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                Per seat / year
               </span>
-              <span className="mb-1.5 text-sm text-muted-foreground">/ person</span>
-            </div>
-          </div>
-
-          <div className="px-6 py-6 sm:px-8">
-            <ul className="space-y-3">
-              {INCLUDED.map((item) => (
-                <li key={item} className="flex items-start gap-3">
-                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-                  <span className="text-sm text-foreground">{item}</span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-8">
-              <label
-                htmlFor="seats"
-                className="text-sm font-medium text-foreground"
+              <div
+                key={rate}
+                className="mt-1 flex items-end justify-center gap-1"
+                style={{ animation: "fadeRise 0.3s ease" }}
               >
-                Number of seats
-              </label>
-              <div className="mt-2 flex items-center gap-3">
-                <div className="flex items-center rounded-lg border border-border">
+                <span className="font-mono text-5xl font-semibold tracking-tight text-foreground tabular-nums">
+                  ${rate}
+                </span>
+                <span className="mb-1.5 text-sm text-muted-foreground">/ person</span>
+              </div>
+
+              {/* volume band meter — live-highlights the active band */}
+              <div className="mt-5 grid grid-cols-3 gap-1.5" role="group" aria-label="Volume pricing bands">
+                {BANDS.map((band) => (
                   <button
+                    key={band.label}
                     type="button"
-                    onClick={() => updateSeats(seats - 1)}
-                    className="flex h-11 w-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
-                    disabled={seats <= 1}
-                    aria-label="Decrease seats"
+                    onClick={() => updateSeats(band.min)}
+                    aria-pressed={rate === band.rate}
+                    className={cn(
+                      "border px-2 py-2 font-mono text-[10px] uppercase tracking-wide transition-colors duration-200",
+                      rate === band.rate
+                        ? "border-primary/50 bg-primary/5 text-primary"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground",
+                    )}
                   >
-                    <Minus className="h-4 w-4" aria-hidden="true" />
+                    <span className="block">{band.label}</span>
+                    <span className="mt-0.5 block font-semibold tabular-nums">${band.rate}</span>
                   </button>
-                  <input
-                    id="seats"
-                    type="number"
-                    min={1}
-                    max={500}
-                    value={seats}
-                    onChange={(e) => updateSeats(Number.parseInt(e.target.value, 10) || 1)}
-                    className="h-11 w-16 border-x border-border bg-transparent text-center text-base font-medium text-foreground outline-none focus:ring-2 focus:ring-ring [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => updateSeats(seats + 1)}
-                    className="flex h-11 w-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
-                    disabled={seats >= 500}
-                    aria-label="Increase seats"
-                  >
-                    <Plus className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                </div>
-                <div className="ml-auto text-right">
-                  <div className="text-xs text-muted-foreground">Total</div>
-                  <div className="text-2xl font-semibold tracking-tight text-foreground">
-                    ${total.toLocaleString()}
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
-            <Button
-              size="lg"
-              className="mt-6 h-11 w-full rounded-full text-sm"
-              onClick={handleCheckout}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden="true" />
-                  Starting checkout…
-                </>
-              ) : (
-                `Enroll ${seats} ${seats === 1 ? "seat" : "seats"}`
+            <div className="px-6 py-6 sm:px-8">
+              <ul className="space-y-3">
+                {INCLUDED.map((item) => (
+                  <li key={item} className="flex items-start gap-3">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    <span className="text-sm text-foreground">{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-8">
+                <label
+                  htmlFor="seats"
+                  className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground"
+                >
+                  Number of seats
+                </label>
+                <div className="mt-2 flex items-center gap-3">
+                  <div className="flex items-center border border-border">
+                    <button
+                      type="button"
+                      onClick={() => updateSeats(seats - 1)}
+                      className="flex h-11 w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-40"
+                      disabled={seats <= 1}
+                      aria-label="Decrease seats"
+                    >
+                      <Minus className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    <input
+                      id="seats"
+                      type="number"
+                      min={1}
+                      max={500}
+                      value={seats}
+                      onChange={(e) => updateSeats(Number.parseInt(e.target.value, 10) || 1)}
+                      className="h-11 w-16 border-x border-border bg-transparent text-center font-mono text-base font-medium text-foreground tabular-nums outline-none focus:ring-2 focus:ring-ring [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => updateSeats(seats + 1)}
+                      className="flex h-11 w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-40"
+                      disabled={seats >= 500}
+                      aria-label="Increase seats"
+                    >
+                      <Plus className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div className="ml-auto text-right">
+                    <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                      Total / yr
+                    </div>
+                    <div className="font-mono text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+                      ${total.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                size="lg"
+                className="mt-6 h-11 w-full rounded-md text-sm"
+                onClick={handleCheckout}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden="true" />
+                    Starting checkout…
+                  </>
+                ) : (
+                  `Enroll ${seats} ${seats === 1 ? "seat" : "seats"}`
+                )}
+              </Button>
+
+              {message && (
+                <p className="mt-3 text-center text-sm text-muted-foreground" role="status">
+                  {message}
+                </p>
               )}
-            </Button>
 
-            {message && (
-              <p className="mt-3 text-center text-sm text-muted-foreground" role="status">
-                {message}
+              <p className="mt-4 text-center text-xs text-muted-foreground">
+                Secure checkout via Stripe. Need a firm-wide quote?{" "}
+                <a href="#" className="font-medium text-primary hover:underline">
+                  Contact us
+                </a>
+                .
               </p>
-            )}
-
-            <p className="mt-4 text-center text-xs text-muted-foreground">
-              Secure checkout via Stripe. Need a firm-wide quote?{" "}
-              <a href="#" className="font-medium text-primary hover:underline">
-                Contact us
-              </a>
-              .
-            </p>
+            </div>
           </div>
         </div>
       </Reveal>
