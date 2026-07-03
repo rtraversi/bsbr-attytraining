@@ -2,24 +2,24 @@ import { Reveal } from "@/app/mockup/_components/reveal"
 import { CountUp } from "@/app/mockup/_components/count-up"
 
 const STATS = [
-  { value: 30, unit: "min", label: "Total time per person — no all-day seminar" },
+  { value: 30, unit: "minutes", label: "Total time per person — no all-day seminar" },
   { value: 1, unit: "standard", label: "A single, consistent policy across the whole firm" },
   { value: 0, unit: "jargon", label: "Plain guidance your staff will actually apply" },
 ]
 
 const STEPS = [
   {
-    step: "01",
+    step: "1",
     title: "Enroll your team",
-    body: "Add seats for attorneys and staff. Everyone gets access to the same 30-minute session.",
+    body: "Add seats for attorneys and staff. Everyone gets access to the same 30-minute course.",
   },
   {
-    step: "02",
+    step: "2",
     title: "Complete the training",
-    body: "Self-paced modules cover confidentiality, competence, oversight, and disclosure.",
+    body: "Self-paced lessons cover confidentiality, accuracy, workflows, and everyday judgment.",
   },
   {
-    step: "03",
+    step: "3",
     title: "Keep the record",
     body: "Completion is tracked so you have documentation for your compliance file.",
   },
@@ -27,55 +27,79 @@ const STEPS = [
 
 export function WhySection() {
   return (
-    <section id="why" className="border-y border-border bg-secondary/50">
+    <section
+      id="why"
+      className="text-[var(--mk-cream)]"
+      style={{
+        background:
+          "radial-gradient(720px circle at 90% 0%, color-mix(in oklch, var(--mk-amber) 12%, transparent), transparent 65%), linear-gradient(var(--mk-pine), var(--mk-pine-deep))",
+      }}
+    >
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
-        <Reveal>
-          <div className="flex items-center gap-4">
-            <p className="shrink-0 font-mono text-xs uppercase tracking-[0.16em] text-primary">
-              § 02 · Why it matters
-            </p>
-            <span className="h-px flex-1 bg-border" aria-hidden="true" />
-          </div>
-          <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
-            <h2 className="mk-display max-w-xl text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              Your people are already using AI. The question is whether they&apos;re doing it
-              right.
-            </h2>
-            <p className="max-w-md text-pretty leading-relaxed text-muted-foreground">
-              Ad-hoc AI use creates real exposure — confidentiality breaches, unverified output,
-              and unclear accountability. A short, shared training closes that gap fast.
-            </p>
-          </div>
+        <Reveal className="max-w-2xl">
+          <p
+            className="text-xs font-semibold uppercase tracking-[0.14em]"
+            style={{ color: "var(--mk-amber)" }}
+          >
+            Why it matters
+          </p>
+          <h2 className="mk-display mt-3 text-balance text-4xl leading-tight sm:text-5xl">
+            Your people are already using AI.{" "}
+            <em style={{ color: "var(--mk-amber)" }}>The question is whether they&apos;re doing
+            it right.</em>
+          </h2>
+          <p className="mt-4 max-w-xl text-pretty text-lg leading-relaxed text-[color-mix(in_oklch,var(--mk-cream)_75%,transparent)]">
+            Ad-hoc AI use creates real exposure — confidentiality breaches, unverified output, and
+            unclear accountability. A short, shared training closes that gap fast.
+          </p>
         </Reveal>
 
-        <div className="mt-14 grid gap-px overflow-hidden border border-border bg-border sm:grid-cols-3">
+        <div className="mt-14 grid gap-5 sm:grid-cols-3">
           {STATS.map((stat, i) => (
-            <Reveal key={stat.label} delay={i * 90} className="bg-card p-7">
-              <div className="flex items-baseline gap-2">
+            <Reveal
+              key={stat.label}
+              delay={i * 90}
+              className="rounded-2xl border border-[color-mix(in_oklch,var(--mk-cream)_14%,transparent)] bg-[color-mix(in_oklch,var(--mk-cream)_5%,transparent)] p-7"
+            >
+              <div className="flex items-baseline gap-2.5">
                 <CountUp
                   to={stat.value}
                   duration={1200 + i * 200}
-                  className="font-mono text-5xl font-semibold tracking-tight text-primary tabular-nums"
+                  className="mk-display text-6xl tabular-nums"
                 />
-                <span className="font-mono text-sm uppercase tracking-[0.12em] text-muted-foreground">
+                <span
+                  className="text-sm font-semibold uppercase tracking-wide"
+                  style={{ color: "var(--mk-amber)" }}
+                >
                   {stat.unit}
                 </span>
               </div>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{stat.label}</p>
+              <p className="mt-3 text-sm leading-relaxed text-[color-mix(in_oklch,var(--mk-cream)_70%,transparent)]">
+                {stat.label}
+              </p>
             </Reveal>
           ))}
         </div>
 
         <div className="mt-16 grid gap-10 md:grid-cols-3 md:gap-8">
           {STEPS.map((item, i) => (
-            <Reveal key={item.step} delay={i * 90} className="border-t border-border pt-5">
-              <span className="font-mono text-xs font-semibold tracking-[0.12em] text-primary">
-                {item.step} <span className="text-primary/40">/</span>
+            <Reveal key={item.step} delay={i * 90} className="flex gap-4">
+              <span
+                className="mk-display flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg"
+                style={{
+                  backgroundColor: "color-mix(in oklch, var(--mk-amber) 20%, transparent)",
+                  color: "var(--mk-amber)",
+                }}
+                aria-hidden="true"
+              >
+                {item.step}
               </span>
-              <h3 className="mk-display mt-3 text-lg font-semibold tracking-tight text-foreground">
-                {item.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+              <div>
+                <h3 className="text-lg font-semibold tracking-tight">{item.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-[color-mix(in_oklch,var(--mk-cream)_70%,transparent)]">
+                  {item.body}
+                </p>
+              </div>
             </Reveal>
           ))}
         </div>

@@ -1,57 +1,102 @@
-import { ArrowRight, Check } from "lucide-react"
+import { ArrowRight, Scale, Lock, ScanSearch, Workflow, Compass } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { CountUp } from "@/app/mockup/_components/count-up"
 
-// Each readiness check cites the ABA Model Rule it maps to — the audit
-// ledger reads like something a lawyer would actually file.
-const CHECKS = [
-  { rule: "1.6", label: "Confidentiality & privilege" },
-  { rule: "1.1", label: "Competence with AI tools" },
-  { rule: "5.1–5.3", label: "Supervision & disclosure" },
-  { rule: "3.3", label: "Accuracy & hallucinations" },
+// The five real lessons leaf by in the hero deck.
+const LESSONS = [
+  {
+    icon: Scale,
+    n: "01",
+    hue: "var(--primary)",
+    title: "Introduction to AI in Legal Practice",
+    line: "The two pillars — confidentiality and accuracy — and what Rule 5.3 expects of every role.",
+  },
+  {
+    icon: Lock,
+    n: "02",
+    hue: "var(--mk-coral)",
+    title: "Protecting Client Confidentiality",
+    line: "Why removing a name isn't enough, and the golden rules for handling client data.",
+  },
+  {
+    icon: ScanSearch,
+    n: "03",
+    hue: "var(--mk-blue)",
+    title: "Accuracy, Verification & Supervision",
+    line: "Hallucinated citations, checking every authority, and who's responsible before filing.",
+  },
+  {
+    icon: Workflow,
+    n: "04",
+    hue: "var(--mk-amber-deep)",
+    title: "Automations vs. Chatbox Use",
+    line: "The route the data takes decides compliance — safe automations vs. risky pasting.",
+  },
+  {
+    icon: Compass,
+    n: "05",
+    hue: "var(--mk-plum)",
+    title: "Applying the Rules Every Day",
+    line: "Gray areas in practice: act, ask, or escalate — and how to size up new AI tools.",
+  },
 ]
 
 export function Hero() {
   return (
     <section id="overview" className="relative overflow-hidden">
-      {/* blueprint backdrop: hairline grid + intersection dots */}
+      {/* warm atmosphere: two soft color washes */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black,transparent_72%)]"
+        className="pointer-events-none absolute inset-0"
         style={{
-          backgroundImage:
-            "linear-gradient(to right, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px), radial-gradient(circle, color-mix(in oklch, var(--primary) 28%, transparent) 1.5px, transparent 1.5px)",
-          backgroundSize: "44px 44px, 44px 44px, 176px 176px",
-          backgroundPosition: "0 0, 0 0, 22px 22px",
+          background:
+            "radial-gradient(640px circle at 88% 12%, color-mix(in oklch, var(--mk-amber) 14%, transparent), transparent 70%), radial-gradient(560px circle at 4% 92%, color-mix(in oklch, var(--primary) 10%, transparent), transparent 70%)",
         }}
       />
 
-      <div className="relative mx-auto grid max-w-6xl gap-14 px-4 pb-20 pt-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-10 lg:pb-28 lg:pt-24">
-        <div className="max-w-xl">
-          <div className="inline-flex items-center gap-2.5 border border-border bg-card px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+      <div className="relative mx-auto grid max-w-6xl gap-14 px-4 pb-20 pt-16 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-12 lg:pb-28 lg:pt-24">
+        <div className="max-w-2xl">
+          <div
+            className="inline-flex items-center gap-2.5 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground opacity-0"
+            style={{ animation: "fadeRise 0.5s ease 0.05s forwards" }}
+          >
+            <span className="relative flex h-2 w-2">
+              <span
+                className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
+                style={{ backgroundColor: "var(--mk-amber-deep)" }}
+              />
+              <span
+                className="relative inline-flex h-2 w-2 rounded-full"
+                style={{ backgroundColor: "var(--mk-amber-deep)" }}
+              />
             </span>
-            <span className="text-primary">§</span> Aligned with professional conduct rules
+            Aligned with ABA Model Rule 5.3
           </div>
 
-          <h1 className="mk-display mt-7 text-pretty text-[2.6rem] font-semibold leading-[1.06] tracking-tight text-foreground sm:text-6xl">
+          <h1
+            className="mk-display mt-7 text-pretty text-5xl leading-[1.05] text-foreground opacity-0 sm:text-[4.25rem]"
+            style={{ animation: "fadeRise 0.6s ease 0.15s forwards" }}
+          >
             Responsible AI training, built for the way law firms{" "}
-            <em className="mk-serif-it font-normal text-primary">actually</em> work.
+            <em style={{ color: "var(--mk-coral)" }}>actually</em> work.
           </h1>
 
-          <p className="mt-6 max-w-md text-pretty text-lg leading-relaxed text-muted-foreground">
-            A focused 30-minute session that gives every attorney and staff member a clear,
+          <p
+            className="mt-6 max-w-lg text-pretty text-lg leading-relaxed text-muted-foreground opacity-0"
+            style={{ animation: "fadeRise 0.6s ease 0.3s forwards" }}
+          >
+            A focused 30-minute course that gives every attorney and staff member a clear,
             defensible framework for using AI ethically — without slowing the practice down.
           </p>
 
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Button size="lg" className="group/cta h-11 rounded-md px-6 text-sm" asChild>
+          <div
+            className="mt-9 flex flex-col gap-3 opacity-0 sm:flex-row"
+            style={{ animation: "fadeRise 0.6s ease 0.45s forwards" }}
+          >
+            <Button size="lg" className="group/cta h-12 rounded-xl px-7 text-[0.95rem]" asChild>
               <a href="#pricing">
                 Train your team
                 <ArrowRight
-                  className="ml-1 h-4 w-4 transition-transform duration-200 group-hover/cta:translate-x-0.5"
+                  className="ml-1.5 h-4 w-4 transition-transform duration-200 group-hover/cta:translate-x-0.5"
                   aria-hidden="true"
                 />
               </a>
@@ -59,85 +104,100 @@ export function Hero() {
             <Button
               size="lg"
               variant="outline"
-              className="h-11 rounded-md px-6 text-sm hover:border-primary/40"
+              className="h-12 rounded-xl px-7 text-[0.95rem] hover:border-primary/40"
               asChild
             >
-              <a href="#curriculum">See what&apos;s covered</a>
+              <a href="#curriculum">See the curriculum</a>
             </Button>
           </div>
 
-          <dl className="mt-11 flex flex-wrap gap-x-8 gap-y-3 font-mono text-xs uppercase tracking-[0.12em] text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <dt className="sr-only">Duration</dt>
-              <span className="h-px w-5 bg-primary/60" aria-hidden="true" />
-              <dd>30 min / session</dd>
-            </div>
-            <div className="flex items-center gap-2">
-              <dt className="sr-only">Focus</dt>
-              <span className="h-px w-5 bg-primary/60" aria-hidden="true" />
-              <dd>Rule 5.3 aligned</dd>
-            </div>
-          </dl>
+          <p
+            className="mt-10 text-sm text-muted-foreground opacity-0"
+            style={{ animation: "fadeRise 0.6s ease 0.6s forwards" }}
+          >
+            <span className="font-semibold text-foreground">30 minutes</span> per person
+            <span className="mx-2.5" style={{ color: "var(--mk-amber-deep)" }}>§</span>
+            <span className="font-semibold text-foreground">5 lessons</span>, fully interactive
+            <span className="mx-2.5" style={{ color: "var(--mk-amber-deep)" }}>§</span>
+            certificate for the file
+          </p>
         </div>
 
-        {/* Audit ledger — stamps each rule on load, then holds */}
-        <div className="mk-frame relative">
-          <div className="border border-border bg-card shadow-sm">
-            <div className="flex items-center justify-between border-b border-border px-5 py-4">
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="flex h-7 w-7 items-center justify-center border border-primary/30 bg-primary/5 font-mono text-sm font-semibold text-primary"
-                  aria-hidden="true"
-                >
-                  §
-                </span>
-                <span className="mk-display text-sm font-semibold tracking-tight text-foreground">
-                  AI Use Readiness
-                </span>
-              </div>
-              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                Audit · <span className="text-primary">live</span>
+        {/* Lesson deck — leafs through the five real lessons */}
+        <div
+          className="relative mx-auto w-full max-w-md opacity-0 lg:mx-0"
+          style={{ animation: "fadeRise 0.7s ease 0.5s forwards" }}
+        >
+          {/* deck shadow cards */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 -rotate-3 rounded-2xl border border-border bg-card/70"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 rotate-2 rounded-2xl border border-border bg-card/80"
+          />
+
+          <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-[0_24px_60px_-30px_rgba(30,60,60,0.35)]">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <span className="text-sm font-semibold text-foreground">Inside the course</span>
+              <span
+                className="rounded-full px-3 py-1 text-xs font-semibold"
+                style={{
+                  backgroundColor: "color-mix(in oklch, var(--mk-amber) 22%, transparent)",
+                  color: "var(--mk-amber-deep)",
+                }}
+              >
+                5 lessons · 30 min
               </span>
             </div>
 
-            <ul className="divide-y divide-border/70">
-              {CHECKS.map((check, i) => (
-                <li
-                  key={check.label}
-                  className="flex items-center gap-3 px-5 py-3 opacity-0"
-                  style={{
-                    animation: "fadeRise 0.45s ease forwards",
-                    animationDelay: `${0.3 + i * 0.28}s`,
-                  }}
+            <div className="relative h-56">
+              {LESSONS.map((lesson, i) => (
+                <div
+                  key={lesson.n}
+                  className="mk-cycle-item absolute inset-0 flex flex-col justify-between p-6"
+                  style={{ animationDelay: `${i * 4}s` }}
                 >
-                  <span className="w-16 shrink-0 font-mono text-[11px] text-muted-foreground">
-                    R. {check.rule}
-                  </span>
-                  <span className="text-sm text-foreground">{check.label}</span>
-                  <span
-                    className="ml-auto inline-flex items-center gap-1 font-mono text-[11px] font-semibold uppercase tracking-wide text-primary opacity-0"
-                    style={{
-                      animation: "mkStamp 0.35s ease-out forwards",
-                      animationDelay: `${0.55 + i * 0.28}s`,
-                    }}
-                  >
-                    <Check className="h-3 w-3" aria-hidden="true" />
-                    ok
-                  </span>
-                </li>
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="flex h-10 w-10 items-center justify-center rounded-xl"
+                        style={{
+                          backgroundColor: `color-mix(in oklch, ${lesson.hue} 14%, transparent)`,
+                          color: lesson.hue,
+                        }}
+                      >
+                        <lesson.icon className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                      <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Lesson {lesson.n} of 05
+                      </span>
+                    </div>
+                    <h3 className="mk-display mt-4 text-2xl leading-snug text-foreground">
+                      {lesson.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      {lesson.line}
+                    </p>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
 
-            <div className="border-t border-border px-5 py-4">
-              <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.14em]">
-                <span className="text-muted-foreground">Firm-wide compliance</span>
-                <span className="font-semibold text-primary">
-                  <CountUp to={100} duration={1700} suffix="%" />
-                </span>
+            <div className="flex items-center justify-between border-t border-border px-6 py-4">
+              <div className="flex items-center gap-2" aria-hidden="true">
+                {LESSONS.map((lesson, i) => (
+                  <span
+                    key={lesson.n}
+                    className="mk-cycle-dot h-1.5 w-1.5 rounded-full"
+                    style={{ animationDelay: `${i * 4}s` }}
+                  />
+                ))}
               </div>
-              <div className="mt-2.5 h-1 w-full bg-secondary">
-                <div className="mk-fill h-full bg-primary" />
-              </div>
+              <span className="text-xs text-muted-foreground">
+                Scenarios, flashcards &amp; knowledge checks
+              </span>
             </div>
           </div>
         </div>

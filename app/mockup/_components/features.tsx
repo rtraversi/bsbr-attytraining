@@ -8,66 +8,67 @@ import {
 } from "lucide-react"
 import { Reveal } from "@/app/mockup/_components/reveal"
 
-// The real course: "AI Staff Compliance Certificate" — five Rise 360 lessons
-// plus a card describing the interactive format.
+// The real course, laid out as a bento grid. Each lesson owns a hue.
 const LESSONS = [
   {
     icon: Scale,
-    index: "L.01",
+    index: "Lesson 01",
+    hue: "var(--primary)",
     title: "Introduction to AI in Legal Practice",
-    body: "The two pillars — confidentiality and accuracy — where AI shows up in a firm, and what Rule 5.3 expects of attorneys and staff alike.",
+    body: "The two pillars — confidentiality and accuracy — where AI shows up in a firm, and what ABA Model Rule 5.3 expects of attorneys and staff alike.",
+    wide: true,
   },
   {
     icon: Lock,
-    index: "L.02",
+    index: "Lesson 02",
+    hue: "var(--mk-coral)",
     title: "Protecting Client Confidentiality",
     body: "Why removing a name isn't enough, how chatboxes leak client data, and the golden rules for handling confidential information.",
+    wide: false,
   },
   {
     icon: ScanSearch,
-    index: "L.03",
+    index: "Lesson 03",
+    hue: "var(--mk-blue)",
     title: "Accuracy, Verification & Supervision",
-    body: "Hallucinated citations, why every authority gets checked against a trusted source, and who is responsible before anything is filed.",
+    body: "Hallucinated citations, why every authority gets checked, and who is responsible before anything is filed.",
+    wide: false,
   },
   {
     icon: Workflow,
-    index: "L.04",
+    index: "Lesson 04",
+    hue: "var(--mk-amber-deep)",
     title: "Automations vs. Chatbox Use",
     body: "The route the data takes decides compliance — why API-driven automations are safe where pasting into a chatbox is not.",
+    wide: false,
   },
   {
     icon: Compass,
-    index: "L.05",
+    index: "Lesson 05",
+    hue: "var(--mk-plum)",
     title: "Applying the Rules Every Day",
     body: "Gray areas in practice: when staff can act independently, when to escalate, and how to size up new AI tools and vendors.",
-  },
-  {
-    icon: MousePointerClick,
-    index: "§",
-    title: "Interactive, not a lecture",
-    body: "Real scenarios — the Perfect Brief, the Uninvited AI Guest — plus flashcards, sorting exercises, and knowledge checks in every lesson.",
+    wide: false,
   },
 ]
 
 export function Features() {
   return (
     <section id="curriculum" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
-      <Reveal>
-        <div className="flex items-center gap-4">
-          <p className="shrink-0 font-mono text-xs uppercase tracking-[0.16em] text-primary">
-            § 01 · The curriculum
-          </p>
-          <span className="h-px flex-1 bg-border" aria-hidden="true" />
-        </div>
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
-          <h2 className="mk-display max-w-xl text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Five lessons. Thirty minutes. One standard.
-          </h2>
-          <p className="max-w-md text-pretty leading-relaxed text-muted-foreground">
-            The exact course your staff completes — co-authored with a practicing attorney and
-            mapped to the ethical duties that already govern your firm.
-          </p>
-        </div>
+      <Reveal className="max-w-2xl">
+        <p
+          className="text-xs font-semibold uppercase tracking-[0.14em]"
+          style={{ color: "var(--mk-amber-deep)" }}
+        >
+          The curriculum
+        </p>
+        <h2 className="mk-display mt-3 text-balance text-4xl leading-tight text-foreground sm:text-5xl">
+          Five lessons. Thirty minutes. <em style={{ color: "var(--primary)" }}>One standard.</em>
+        </h2>
+        <p className="mt-4 text-pretty text-lg leading-relaxed text-muted-foreground">
+          The exact course your staff completes — co-authored with a practicing attorney and
+          mapped to the ethical duties that already govern your firm.
+        </p>
       </Reveal>
 
       <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -75,22 +76,58 @@ export function Features() {
           <Reveal
             key={lesson.title}
             delay={(i % 3) * 90}
-            className="mk-corner group border border-border bg-card p-6 transition-colors duration-300 hover:border-primary/40"
+            className={
+              "group rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-24px_rgba(30,60,60,0.35)]" +
+              (lesson.wide ? " sm:col-span-2 lg:col-span-2" : "")
+            }
           >
             <div className="flex items-start justify-between">
-              <span className="flex h-11 w-11 items-center justify-center border border-border text-primary transition-colors duration-300 group-hover:border-primary/40 group-hover:bg-primary/5">
+              <span
+                className="flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105"
+                style={{
+                  backgroundColor: `color-mix(in oklch, ${lesson.hue} 13%, transparent)`,
+                  color: lesson.hue,
+                }}
+              >
                 <lesson.icon className="h-5 w-5" aria-hidden="true" />
               </span>
-              <span className="font-mono text-[11px] text-muted-foreground/70">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/80">
                 {lesson.index}
               </span>
             </div>
-            <h3 className="mk-display mt-5 text-lg font-semibold tracking-tight text-foreground">
+            <h3 className="mk-display mt-5 text-2xl leading-snug text-foreground">
               {lesson.title}
             </h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{lesson.body}</p>
           </Reveal>
         ))}
+
+        {/* format strip — full-width amber, finishes the bento */}
+        <Reveal
+          delay={180}
+          className="rounded-2xl bg-[color-mix(in_oklch,var(--mk-amber)_30%,var(--card))] p-6 transition-all duration-300 hover:-translate-y-0.5 sm:col-span-2 lg:col-span-3"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+              style={{
+                backgroundColor: "color-mix(in oklch, var(--mk-amber-deep) 18%, transparent)",
+                color: "var(--mk-amber-deep)",
+              }}
+            >
+              <MousePointerClick className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="mk-display text-2xl leading-snug text-foreground">
+                Interactive, <em>not</em> a lecture
+              </h3>
+              <p className="mt-1 text-sm leading-relaxed text-foreground/75">
+                Real scenarios — the Perfect Brief, the Uninvited AI Guest — plus flashcards,
+                sorting exercises, and knowledge checks in every lesson.
+              </p>
+            </div>
+          </div>
+        </Reveal>
       </div>
     </section>
   )

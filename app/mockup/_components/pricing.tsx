@@ -19,8 +19,8 @@ function perSeatRate(seats: number): number {
 }
 
 const INCLUDED = [
-  "Full 30-minute training per person",
-  "All six compliance modules",
+  "Full 30-minute course per person",
+  "All five lessons, fully interactive",
   "Completion tracking for your file",
   "Content updates as guidance evolves",
   "Firm-wide access, one standard",
@@ -61,45 +61,52 @@ export function Pricing() {
   }
 
   return (
-    <section id="pricing" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
-      <Reveal>
-        <div className="flex items-center gap-4">
-          <p className="shrink-0 font-mono text-xs uppercase tracking-[0.16em] text-primary">
-            § 03 · Pricing
+    <section id="pricing" className="relative overflow-hidden">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(560px circle at 10% 15%, color-mix(in oklch, var(--mk-coral) 8%, transparent), transparent 70%)",
+        }}
+      />
+      <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <p
+            className="text-xs font-semibold uppercase tracking-[0.14em]"
+            style={{ color: "var(--mk-amber-deep)" }}
+          >
+            Pricing
           </p>
-          <span className="h-px flex-1 bg-border" aria-hidden="true" />
-        </div>
-        <div className="mt-8 mx-auto max-w-2xl text-center">
-          <h2 className="mk-display text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Per-seat pricing that scales with the firm
+          <h2 className="mk-display mt-3 text-balance text-4xl leading-tight text-foreground sm:text-5xl">
+            Per-seat pricing that scales <em style={{ color: "var(--primary)" }}>with</em> the
+            firm
           </h2>
           <p className="mt-4 text-pretty text-lg leading-relaxed text-muted-foreground">
             Volume bands, billed annually. Add a seat for everyone who touches client work —
             attorneys, paralegals, and staff.
           </p>
-        </div>
-      </Reveal>
+        </Reveal>
 
-      <Reveal className="mx-auto mt-14 max-w-lg">
-        <div className="mk-frame relative">
-          <div className="overflow-hidden border border-border bg-card shadow-sm">
-            <div className="border-b border-border bg-secondary/50 px-6 py-6 text-center sm:px-8">
-              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                Per seat / year
-              </span>
+        <Reveal className="mx-auto mt-14 max-w-lg">
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_24px_60px_-30px_rgba(30,60,60,0.3)]">
+            <div className="border-b border-border bg-secondary/60 px-6 py-6 text-center sm:px-8">
+              <span className="text-sm font-medium text-muted-foreground">Per seat / year</span>
               <div
                 key={rate}
-                className="mt-1 flex items-end justify-center gap-1"
+                className="mt-1 flex items-end justify-center gap-1.5"
                 style={{ animation: "fadeRise 0.3s ease" }}
               >
-                <span className="font-mono text-5xl font-semibold tracking-tight text-foreground tabular-nums">
-                  ${rate}
-                </span>
-                <span className="mb-1.5 text-sm text-muted-foreground">/ person</span>
+                <span className="mk-display text-6xl text-foreground tabular-nums">${rate}</span>
+                <span className="mb-2 text-sm text-muted-foreground">/ person</span>
               </div>
 
               {/* volume band meter — live-highlights the active band */}
-              <div className="mt-5 grid grid-cols-3 gap-1.5" role="group" aria-label="Volume pricing bands">
+              <div
+                className="mt-5 grid grid-cols-3 gap-2"
+                role="group"
+                aria-label="Volume pricing bands"
+              >
                 {BANDS.map((band) => (
                   <button
                     key={band.label}
@@ -107,14 +114,16 @@ export function Pricing() {
                     onClick={() => updateSeats(band.min)}
                     aria-pressed={rate === band.rate}
                     className={cn(
-                      "border px-2 py-2 font-mono text-[10px] uppercase tracking-wide transition-colors duration-200",
+                      "rounded-xl border px-2 py-2.5 text-xs font-medium transition-all duration-200",
                       rate === band.rate
-                        ? "border-primary/50 bg-primary/5 text-primary"
+                        ? "border-transparent bg-[color-mix(in_oklch,var(--mk-amber)_28%,var(--card))] text-foreground shadow-sm"
                         : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground",
                     )}
                   >
                     <span className="block">{band.label}</span>
-                    <span className="mt-0.5 block font-semibold tabular-nums">${band.rate}</span>
+                    <span className="mt-0.5 block text-sm font-semibold tabular-nums">
+                      ${band.rate}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -124,21 +133,26 @@ export function Pricing() {
               <ul className="space-y-3">
                 {INCLUDED.map((item) => (
                   <li key={item} className="flex items-start gap-3">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    <span
+                      className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                      style={{
+                        backgroundColor: "color-mix(in oklch, var(--primary) 12%, transparent)",
+                        color: "var(--primary)",
+                      }}
+                    >
+                      <Check className="h-3 w-3" aria-hidden="true" />
+                    </span>
                     <span className="text-sm text-foreground">{item}</span>
                   </li>
                 ))}
               </ul>
 
               <div className="mt-8">
-                <label
-                  htmlFor="seats"
-                  className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground"
-                >
+                <label htmlFor="seats" className="text-sm font-medium text-foreground">
                   Number of seats
                 </label>
                 <div className="mt-2 flex items-center gap-3">
-                  <div className="flex items-center border border-border">
+                  <div className="flex items-center overflow-hidden rounded-xl border border-border">
                     <button
                       type="button"
                       onClick={() => updateSeats(seats - 1)}
@@ -155,7 +169,7 @@ export function Pricing() {
                       max={500}
                       value={seats}
                       onChange={(e) => updateSeats(Number.parseInt(e.target.value, 10) || 1)}
-                      className="h-11 w-16 border-x border-border bg-transparent text-center font-mono text-base font-medium text-foreground tabular-nums outline-none focus:ring-2 focus:ring-ring [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      className="h-11 w-16 border-x border-border bg-transparent text-center text-base font-medium text-foreground tabular-nums outline-none focus:ring-2 focus:ring-ring [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     />
                     <button
                       type="button"
@@ -168,10 +182,8 @@ export function Pricing() {
                     </button>
                   </div>
                   <div className="ml-auto text-right">
-                    <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                      Total / yr
-                    </div>
-                    <div className="font-mono text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+                    <div className="text-xs text-muted-foreground">Total / yr</div>
+                    <div className="mk-display text-3xl text-foreground tabular-nums">
                       ${total.toLocaleString()}
                     </div>
                   </div>
@@ -180,7 +192,7 @@ export function Pricing() {
 
               <Button
                 size="lg"
-                className="mt-6 h-11 w-full rounded-md text-sm"
+                className="mt-6 h-12 w-full rounded-xl text-[0.95rem]"
                 onClick={handleCheckout}
                 disabled={loading}
               >
@@ -209,8 +221,8 @@ export function Pricing() {
               </p>
             </div>
           </div>
-        </div>
-      </Reveal>
+        </Reveal>
+      </div>
     </section>
   )
 }
