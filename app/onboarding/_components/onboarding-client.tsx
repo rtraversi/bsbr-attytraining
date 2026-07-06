@@ -89,22 +89,22 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
 
   if (phase === 'polling') {
     return (
-      <div className="flex flex-col items-center gap-4 text-center">
+      <div className="flex flex-col items-center gap-4 py-4 text-center">
         <Spinner />
-        <p className="text-sm text-zinc-400">Confirming your payment&hellip;</p>
+        <p className="text-base font-extralight text-zinc-600">Confirming your payment…</p>
       </div>
     )
   }
 
   if (phase === 'timeout') {
     return (
-      <div className="text-center">
-        <p className="text-sm text-zinc-300 mb-4">
+      <div className="flex flex-col items-center gap-5 text-center">
+        <p className="text-base font-extralight text-zinc-700">
           Payment confirmed but setup is taking a moment. Please refresh the page.
         </p>
         <button
           onClick={() => window.location.reload()}
-          className="text-sm underline text-zinc-400 hover:text-white transition-colors"
+          className="rounded-xl bg-[#32C7FF] px-6 py-3 text-sm font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90"
         >
           Refresh
         </button>
@@ -116,76 +116,77 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
 
   if (phase === 'ready' || phase === 'submitting') {
     return (
-      <form onSubmit={handleSubmit} className="w-full flex flex-col gap-5">
-        <div>
-          <p className="text-sm text-zinc-400 mb-1">Account email</p>
-          <p className="text-sm font-medium text-zinc-200">{email}</p>
-        </div>
+      <div className="flex flex-col">
+        <h1 className="text-center text-3xl font-semibold text-zinc-900">Set up your account</h1>
+        <p className="mt-2.5 text-center text-base font-extralight text-[#7F7F7F]">
+          One last step before your team can start training.
+        </p>
 
-        <div>
-          <p className="text-sm text-zinc-400 mb-1">
-            Seats purchased
-          </p>
-          <p className="text-sm font-medium text-zinc-200">
-            {seats} {seats === 1 ? 'user' : 'users'}
-          </p>
-        </div>
+        <form onSubmit={handleSubmit} className="mt-8 flex w-full flex-col gap-6">
+          {/* Read-only purchase summary */}
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-zinc-500">Account email</span>
+              <span className="truncate text-sm font-medium text-zinc-900">{email}</span>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-4">
+              <span className="text-sm text-zinc-500">Seats purchased</span>
+              <span className="text-sm font-medium text-zinc-900">
+                {seats} {seats === 1 ? 'user' : 'users'}
+              </span>
+            </div>
+          </div>
 
-        <div className="border-t border-zinc-700 pt-5">
-          <label htmlFor="firm-name" className="block text-sm text-zinc-300 mb-2">
-            What&apos;s your firm name?
+          {/* Firm name */}
+          <div className="flex flex-col gap-2.5">
+            <label htmlFor="firm-name" className="text-base font-medium text-zinc-900">
+              What&apos;s your firm name?
+            </label>
+            <input
+              id="firm-name"
+              type="text"
+              required
+              maxLength={120}
+              placeholder="Smith & Associates LLC"
+              value={firmName}
+              onChange={(e) => setFirmName(e.target.value)}
+              disabled={phase === 'submitting'}
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#32C7FF] disabled:opacity-50"
+            />
+          </div>
+
+          {/* Enroll-self */}
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={enrollSelf}
+              onChange={(e) => setEnrollSelf(e.target.checked)}
+              disabled={phase === 'submitting'}
+              className="mt-0.5 h-5 w-5 shrink-0 rounded border-zinc-300 accent-[#32C7FF] focus:ring-2 focus:ring-[#32C7FF] disabled:opacity-50"
+            />
+            <span className="text-sm font-extralight text-zinc-700">
+              I am also taking this training{' '}
+              <span className="text-zinc-400">
+                (uses 1 of your {seats} {seats === 1 ? 'seat' : 'seats'})
+              </span>
+            </span>
           </label>
-          <input
-            id="firm-name"
-            type="text"
-            required
-            maxLength={120}
-            placeholder="Smith & Associates LLC"
-            value={firmName}
-            onChange={(e) => setFirmName(e.target.value)}
-            disabled={phase === 'submitting'}
-            className="
-              w-full rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2.5
-              text-sm text-white placeholder:text-zinc-500
-              focus:outline-none focus:ring-2 focus:ring-teal-500
-              disabled:opacity-50
-            "
-          />
-        </div>
 
-        <label className="flex items-start gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={enrollSelf}
-            onChange={(e) => setEnrollSelf(e.target.checked)}
-            disabled={phase === 'submitting'}
-            className="mt-0.5 h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-teal-500 focus:ring-teal-500 focus:ring-offset-zinc-900"
-          />
-          <span className="text-sm text-zinc-300">
-            I am also taking this training{' '}
-            <span className="text-zinc-500">(uses 1 of your {seats} {seats === 1 ? 'seat' : 'seats'})</span>
-          </span>
-        </label>
-
-        <button
-          type="submit"
-          disabled={phase === 'submitting' || !firmName.trim()}
-          className="
-            flex items-center justify-center gap-2 rounded-lg
-            bg-teal-500 hover:bg-teal-400 active:bg-teal-600
-            px-6 py-3 text-sm font-semibold text-zinc-950
-            transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-          "
-        >
-          {phase === 'submitting' ? (
-            <>
-              <Spinner size="sm" /> Setting up&hellip;
-            </>
-          ) : (
-            'Complete setup & get login link'
-          )}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={phase === 'submitting' || !firmName.trim()}
+            className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#32C7FF] px-6 py-4 text-lg font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {phase === 'submitting' ? (
+              <>
+                <Spinner size="sm" className="text-white" /> Setting up…
+              </>
+            ) : (
+              'Complete setup & get login link'
+            )}
+          </button>
+        </form>
+      </div>
     )
   }
 
@@ -193,11 +194,11 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
 
   if (phase === 'error') {
     return (
-      <div className="text-center">
-        <p className="text-sm text-red-400 mb-4">{errorMsg}</p>
+      <div className="flex flex-col items-center gap-5 text-center">
+        <p className="text-base text-red-600">{errorMsg}</p>
         <button
           onClick={() => setPhase('ready')}
-          className="text-sm underline text-zinc-400 hover:text-white transition-colors"
+          className="rounded-xl bg-[#32C7FF] px-6 py-3 text-sm font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90"
         >
           Try again
         </button>
@@ -209,22 +210,22 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="flex flex-col items-center gap-4 text-center">
-      <div className="w-12 h-12 rounded-full bg-teal-500/15 flex items-center justify-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#32C7FF]/10">
         <CheckIcon />
       </div>
       <div>
-        <p className="text-base font-medium text-white mb-1">You&apos;re all set.</p>
-        <p className="text-sm text-zinc-400">
-          We sent a sign-in link to <span className="text-zinc-200">{email}</span>.
+        <p className="text-xl font-semibold text-zinc-900">You&apos;re all set.</p>
+        <p className="mt-1.5 text-base font-extralight text-zinc-600">
+          We sent a sign-in link to <span className="font-medium text-zinc-900">{email}</span>.
           Click it to access your dashboard.
         </p>
       </div>
       {devLink && (
-        <div className="mt-2 w-full rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 text-left">
-          <p className="text-xs text-yellow-400 mb-1 font-mono">DEV — magic link (email not sent):</p>
+        <div className="mt-2 w-full rounded-xl border border-amber-300 bg-amber-50 p-3 text-left">
+          <p className="mb-1 font-mono text-xs text-amber-700">DEV — magic link (email not sent):</p>
           <a
             href={devLink}
-            className="text-xs text-yellow-300 break-all underline hover:text-yellow-200"
+            className="break-all text-xs text-amber-700 underline hover:text-amber-800"
           >
             {devLink}
           </a>
@@ -236,11 +237,11 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
 
 // ── Tiny helpers ─────────────────────────────────────────────────────────────
 
-function Spinner({ size = 'md' }: { size?: 'sm' | 'md' }) {
+function Spinner({ size = 'md', className = '' }: { size?: 'sm' | 'md'; className?: string }) {
   const cls = size === 'sm' ? 'w-4 h-4' : 'w-8 h-8'
   return (
     <svg
-      className={`${cls} animate-spin text-teal-400`}
+      className={`${cls} animate-spin ${className || 'text-[#32C7FF]'}`}
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -258,7 +259,7 @@ function Spinner({ size = 'md' }: { size?: 'sm' | 'md' }) {
 function CheckIcon() {
   return (
     <svg
-      className="w-6 h-6 text-teal-400"
+      className="w-7 h-7 text-[#32C7FF]"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"

@@ -1,29 +1,29 @@
 import { ForgotForm } from './_components/forgot-form'
+import { AtcLogo } from '@/app/_components/atc-logo'
 
 export const metadata = {
-  title: 'Reset password — AI Staff Compliance Training',
+  title: 'Reset password — Athena',
 }
 
 export default function ForgotPasswordPage() {
   return (
-    <main className="min-h-screen bg-zinc-950 flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <p className="text-xs uppercase tracking-widest text-zinc-500 mb-2">
-            Built Smart by Rob
-          </p>
-          <h1
-            className="text-2xl text-white"
-            style={{ fontFamily: 'var(--font-gyrotrope)' }}
-          >
-            Reset your password
-          </h1>
-          <p className="mt-2 text-sm text-zinc-400">
-            We&apos;ll email you a link to sign in and set a new one.
-          </p>
+    <main className="font-headline relative flex min-h-screen items-center justify-center px-4 py-16">
+      {/* Sign-in background treatment — static poster still (no <video>) + dark overlay */}
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: 'url(/sign-in-bg-poster.jpg)' }}
+      />
+      <div aria-hidden className="absolute inset-0 bg-black/65" />
+
+      <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-[24px] shadow-2xl">
+        {/* Dark header band — rounded top corners, sharp bottom edge */}
+        <div className="flex items-center justify-center bg-black px-8 py-10">
+          <AtcLogo style={{ fontSize: 'clamp(1.75rem, 7vw, 2.75rem)' }} />
         </div>
 
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
+        {/* White body — sharp corners */}
+        <div className="bg-white px-10 py-12 sm:px-12">
           <ForgotForm />
         </div>
       </div>

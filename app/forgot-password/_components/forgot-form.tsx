@@ -18,7 +18,7 @@ export function ForgotForm() {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin
 
     const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${appUrl}/auth/confirm?type=recovery&next=/update-password`,
+      redirectTo: `${appUrl}/auth/callback?next=/update-password`,
     })
 
     if (authError) {
@@ -32,14 +32,26 @@ export function ForgotForm() {
 
   if (phase === 'done') {
     return (
-      <div className="text-center flex flex-col gap-3">
-        <p className="text-sm text-zinc-300">
-          If <span className="text-white">{email}</span> has an account, you&apos;ll receive a
-          password reset link shortly.
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#32C7FF]/10">
+          <svg
+            className="h-7 w-7 text-[#32C7FF]"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <p className="text-base font-extralight text-zinc-600">
+          If <span className="font-medium text-zinc-900">{email}</span> has an account, you&apos;ll
+          receive a password reset link shortly.
         </p>
         <Link
           href="/login"
-          className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors underline"
+          className="text-sm font-extralight text-[#0094FF] underline underline-offset-2 transition-opacity hover:opacity-80"
         >
           Back to sign in
         </Link>
@@ -48,43 +60,50 @@ export function ForgotForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="w-full flex flex-col gap-5">
-      {error && (
-        <p className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
-          {error}
-        </p>
-      )}
+    <div className="flex flex-col">
+      <h1 className="text-center text-3xl font-semibold text-zinc-900">Reset your password</h1>
+      <p className="mt-2.5 text-center text-base font-extralight text-[#7F7F7F]">
+        We&apos;ll email you a link to sign in and set a new one.
+      </p>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="text-sm text-zinc-300">
-          Account email
-        </label>
-        <input
-          id="email"
-          type="email"
-          required
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+      <form onSubmit={handleSubmit} className="mt-8 flex w-full flex-col gap-6">
+        {error && (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3.5 text-sm text-red-600">
+            {error}
+          </p>
+        )}
+
+        <div className="flex flex-col gap-2.5">
+          <label htmlFor="email" className="text-base font-medium text-zinc-900">
+            Email address
+          </label>
+          <input
+            id="email"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={phase === 'loading'}
+            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#32C7FF] disabled:opacity-50"
+          />
+        </div>
+
+        <button
+          type="submit"
           disabled={phase === 'loading'}
-          className="rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
-        />
-      </div>
+          className="mt-1 flex w-full items-center justify-center rounded-2xl bg-[#32C7FF] px-6 py-4 text-lg font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {phase === 'loading' ? 'Sending…' : 'Send reset link'}
+        </button>
 
-      <button
-        type="submit"
-        disabled={phase === 'loading'}
-        className="flex items-center justify-center rounded-lg bg-teal-500 hover:bg-teal-400 active:bg-teal-600 px-6 py-3 text-sm font-semibold text-zinc-950 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {phase === 'loading' ? 'Sending…' : 'Send reset link'}
-      </button>
-
-      <Link
-        href="/login"
-        className="text-center text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
-      >
-        Back to sign in
-      </Link>
-    </form>
+        <Link
+          href="/login"
+          className="text-center text-sm font-extralight text-[#0094FF] underline underline-offset-2 transition-opacity hover:opacity-80"
+        >
+          Back to sign in
+        </Link>
+      </form>
+    </div>
   )
 }

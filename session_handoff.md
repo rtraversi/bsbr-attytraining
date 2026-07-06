@@ -1,105 +1,80 @@
 # Session Handoff
 
-**Date:** 2026-07-02 — TWO parallel sessions (Rob + Max), merged 2026-07-03
-**Who:** Rob (status check / DIY redesign prep) **and** Max (Athena dark-rebrand build)
-
-> ⚠️ **Collision notice:** On the same day, Rob decided to take a DIY pass at the homepage
-> redesign (bundling the old homepage code for external design tools) **and** Max built and
-> committed a brand-new dark "Athena" homepage + `/pricing`. Max's version is now what's on
-> `main` (not yet deployed). Rob + Max need to sync on which direction wins before deploy.
+**Date:** 2026-07-06
+**Who:** Max
 
 ---
 
-## Max's session — Athena landing page (dark rebrand) first build
+## What was done — Auth-adjacent pages redesigned to the Athena design system
 
-Built the new **Athena** dark-rebrand marketing pages from
-`landing page design resources/LANDING-PAGE-BRIEF.md`. Full detail in
-`.planning/sessions/20260702-max-summary.md` — read that for the file-by-file rundown.
+Rebuilt the four auth-adjacent pages to the new **Athena** design system (the same language
+as the `/login` sign-in page: Stack Sans Headline, `#32C7FF` primary button, `#0094FF` links,
+static drone-poster background + dark overlay, the `athena.` logo lockup). Removed the old
+"Built Smart by Rob" eyebrow + Gyrotrope font from all of them.
 
-**Scope built (brief §3):** Homepage (Hero + "Under the ABA Model Rule 5.3" hook +
-Footer) and a dedicated `/pricing` page. Everything else deferred (nav → `#`).
+1. **`/login`** — hard 65/35 split: left = full-page drone footage (`sign-in-bg.mp4`, plays once
+   & freezes, poster fallback on mobile/reduced-motion) with the centered `athena.` wordmark;
+   right = white form panel. Password eye-toggle, remember-me **pill checkbox** with liquid-blue
+   fill (only the pill is clickable), 30-day-vs-session cookie persistence. Translucent
+   `#00B9FF/50` footer bar confined to the right column (over the footage, so `#FFE5E5` reads).
+2. **`/update-password`** — centered card: dark rounded-top band (logo) + white body. Read-only
+   account email, dual independent eye toggles, and a **strength-reactive bot** (huh→hey at 8+
+   chars; "Strong enough." turns `#0094FF`). Button "Set & continue".
+3. **`/forgot-password`** — same centered-card shell. Editable email, "Send reset link" button,
+   `#0094FF` "Back to sign in" link, re-skinned done-state (check badge + confirmation).
+4. **`/onboarding`** — same shell; all five state-machine phases (polling / timeout / form /
+   error / done) re-skinned. **No underlying fetch/poll/submit logic changed.**
 
-**Highlights:**
-- Pure-black hero: real `atc` logo vector + "athena." wordmark; right-aligned
-  "training / made *[word]*" with a typewriter that cycles easy→simple→**for you
-  then stops**; contained animated 2D "Closed Spiro" canvas on the left.
-- Self-hosted **Stack Sans Headline** (OFL variable font) + Instrument Serif (italic word).
-- "Under the ABA Model Rule 5.3" hook with a scroll-scrubbed (noir.io) per-word reveal
-  + drawn-in underline, dot-grid backdrop.
-- Custom Cuberto-style cursor (from `custom-cursor.svg`), snappy spring follow.
-- `/pricing`: cofounder-style seat slider → live total, wired to volume bands + existing
-  `/api/checkout`.
-- Nav pill / Sign In+Get started pills, dark footer with disclaimer.
+Supporting: `AtcLogo` is now font-size-driven so it scales fluidly with the viewport (homepage
+nav unchanged). `lib/supabase/client.ts` `createClient(rememberMe?)` sets cookie `maxAge`.
+New assets added to `public/`: `sign-in-bg.mp4` (1080p, 12.6 MiB — under the CF 25 MiB asset
+cap), `sign-in-bg-poster.jpg`, bot + password-eye SVGs.
 
-**Deleted:** `scrabble-hero.tsx`, `shader-bg.tsx` (dead). **Assets added to `public/`:**
-logo svg, cursor svg, Stack Sans font (the `landing page design resources/` source
-folder is **gitignored** — public/ copies are what the app uses).
+## Bug fixes this session
 
-## Rob's session — status check + DIY redesign prep
-
-- No code changes. Status-check + handoff session.
-- Reviewed Track 6A status: Max's Stitch design proposals were marked 🔴 Not started
-  (superseded same-day by Max's Athena build above).
-- Rob decided to take a stab at the homepage redesign himself; bundled the (old)
-  live homepage code into a single reference file for external design tools
-  (written to scratchpad, not the repo).
-
-**Notable findings from Rob's review of the OLD homepage** (some now moot after Max's rebuild):
-- Double-footer bug (light footer in `features-section.tsx` + dark shared `footer.tsx`).
-- Dead code `scrabble-hero.tsx` (Max has since deleted it).
-- `checkout-form.tsx` uses generic Tailwind blue/gray, not brand palette.
-- Old homepage used copper/cream (`#C8783A`/`#FAFAF8`) vs. dashboard zinc/teal — unification
-  still an open design question.
-
----
+1. **Test-user deletion blocked by a DB constraint** — fixed (DB-side; no code artifact in the
+   repo working tree).
+2. **Admin password-setup redirect** — `app/api/onboarding/complete/route.ts` sent admins straight
+   to `/dashboard`, so they never set a password and couldn't use the email+password login. Both
+   magic-link targets (`redirectTo` + `actionLink` fallback) now point to `/update-password`,
+   matching the employee invite flow exactly.
+3. **Forgot-password link routing** — reset email now routes through
+   `/auth/callback?next=/update-password` (the correct endpoint).
 
 ## Status
 
-| Item | Status |
-|------|--------|
-| Athena homepage + /pricing (Max's pass) | ✅ Built, tsc + eslint clean — on `main` |
-| Browser review of final tweaks | 🟡 Do `pnpm dev` before deploy |
-| Deploy of Athena pages | ⬜ Not deployed — after review |
-| Rob's DIY redesign direction (v0 concept) | 🟡 In progress — needs reconciling with Athena |
-| Phases 1–6 (app features) | ✅ Complete + deployed (unchanged) |
-| Privacy Policy / ToS drafts | ✅ Created 2026-06-29 — awaiting attorney review |
+**Deployed & working** (verified via `pnpm run deploy`). tsc + eslint clean across all changes.
 
 ---
 
-## Next Steps
+## Next steps
 
-1. **Rob + Max sync on homepage direction** — Athena (dark, Max) vs. Rob's v0 concept
-   (same idea, lighter background). Decide before deploying either.
-2. `pnpm dev` → review `/` and `/pricing`; then `pnpm run deploy` once direction is settled.
-3. Gridlines — reverted to v1 (hero bottom strip only); Max will specify treatment.
-4. Send legal docs (Privacy Policy, ToS, attorney checklist) to attorney if not already done.
-5. Quiz question pool (24–32 Qs) still needed from Rob/Katy before July 10–13 testing week.
-6. LLC/EIN confirmation still pending → unblocks Stripe live mode.
+1. **Training page rebuild** (the big one):
+   - Lesson progress checklist
+   - Duolingo / Kahoot-style quiz redesign
+   - Celebration state on passing
+   - Real `video_started` event logging
+   - Test real **Rise 360** content via an Articulate-hosted iframe link
+2. **Shared profile/account icon** in the dashboard nav.
+3. **Double-billing fix** — on a duplicate-email checkout, auto-refund + notify. Refunds handled
+   **manually by Rob** (not automated).
+4. **Admin dashboard redesign** — saved for last.
 
-## Notes / loose ends
+## Open questions (need Max's answer before building)
 
-- Tuning dials: spiro `scale`/`speed` + amplitude-osc in `app/_components/spiro-pattern.tsx`;
-  cursor hotspot offset in `app/_components/custom-cursor.tsx`.
-- **Untracked `scripts/`** (`extract_names_from_scan.py`, `requirements-scan.txt`) —
-  unrelated to landing page, left uncommitted for Max to handle.
-- Orphaned-but-harmless: `features-section.tsx` + `checkout-form.tsx` no longer imported.
-- Bethany Elingston licensed webfont not supplied → italic cycling word ships on
-  Instrument Serif Italic (brief-sanctioned fallback).
-
-## Blocked (unchanged — Rob's items)
-
-- Attorney review of Privacy Policy + ToS
-- Quiz question pool (24–32 Qs) — Rob + Katy
-- LLC + EIN → Stripe live mode
-- BetterStack health monitoring wiring
+- **Homepage direction still undecided** — the Athena build vs. Rob's two `/mockup` concepts
+  ("Warm Counsel" and "Statute & Signal").
+- **Certificate page** — does "sign your name and signature" mean literal e-signature capture,
+  or just displaying the name? And should it become its own route vs. staying part of the
+  training page's certified state?
 
 ---
 
-## Key References
+## Key references
 
 | Item | Value |
 |------|-------|
 | Main app URL | `https://bsbr-attytraining.aistaffcompliance.workers.dev` |
-| Brief (local, gitignored) | `landing page design resources/LANDING-PAGE-BRIEF.md` |
-| Max's session detail | `.planning/sessions/20260702-max-summary.md` |
+| Design system source | `/login` (Athena) — Stack Sans, `#32C7FF`/`#0094FF`/`#00B9FF`/`#FFE5E5` |
+| Session detail | `.planning/sessions/20260706-max-summary.md` |
 | GitHub repo | `rtraversi/bsbr-attytraining` |

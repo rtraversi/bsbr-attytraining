@@ -1,30 +1,44 @@
 import { UpdatePasswordForm } from './_components/update-form'
+import { AtcLogo } from '@/app/_components/atc-logo'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata = {
-  title: 'Set your password — AI Staff Compliance Training',
+  title: 'Set your password — Athena',
 }
 
-export default function UpdatePasswordPage() {
+export default async function UpdatePasswordPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const email = user?.email ?? ''
+
   return (
-    <main className="min-h-screen bg-zinc-950 flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <p className="text-xs uppercase tracking-widest text-zinc-500 mb-2">
-            Built Smart by Rob
-          </p>
-          <h1
-            className="text-2xl text-white"
-            style={{ fontFamily: 'var(--font-gyrotrope)' }}
-          >
-            Set your password
-          </h1>
-          <p className="mt-2 text-sm text-zinc-400">
-            Choose a strong password to secure your account.
-          </p>
+    <main className="font-headline relative flex min-h-screen items-center justify-center px-4 py-16">
+      {/* Sign-in background treatment — static poster still (no <video>) + dark overlay */}
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: 'url(/sign-in-bg-poster.jpg)' }}
+      />
+      <div aria-hidden className="absolute inset-0 bg-black/65" />
+
+      <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-[24px] shadow-2xl">
+        {/* Dark header band — rounded top corners, sharp bottom edge */}
+        <div className="flex items-center justify-center bg-black px-8 py-10">
+          <AtcLogo style={{ fontSize: 'clamp(1.75rem, 7vw, 2.75rem)' }} />
         </div>
 
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-          <UpdatePasswordForm />
+        {/* White form body — sharp corners */}
+        <div className="bg-white px-10 py-12 sm:px-12">
+          <h1 className="text-center text-4xl font-semibold text-zinc-900">Set your password</h1>
+          <p className="mt-2.5 text-center text-base font-extralight text-[#7F7F7F]">
+            Choose a strong password to secure your account.
+          </p>
+
+          <div className="mt-9">
+            <UpdatePasswordForm email={email} />
+          </div>
         </div>
       </div>
     </main>

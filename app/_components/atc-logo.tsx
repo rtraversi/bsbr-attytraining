@@ -40,11 +40,24 @@ function AtcMark({ className }: { className?: string }) {
   );
 }
 
-export function AtcLogo({ className = "" }: { className?: string }) {
+export function AtcLogo({
+  className = "",
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  // The whole lockup is sized by font-size so it scales as one unit: the
+  // wordmark inherits it and the mark is em-based. Defaults to 1.5rem (≈ the
+  // old text-2xl) so existing callers render unchanged; pass a fluid font-size
+  // (e.g. clamp(…vw…)) via `style` to make it scale with the viewport.
   return (
-    <div className={`flex items-center gap-2.5 text-white ${className}`}>
-      <AtcMark className="h-8 w-8" />
-      <span className="font-headline text-2xl font-extralight lowercase tracking-tight leading-none">
+    <div
+      className={`flex items-center gap-[0.42em] text-white ${className}`}
+      style={{ fontSize: "1.5rem", ...style }}
+    >
+      <AtcMark className="h-[1.35em] w-[1.35em]" />
+      <span className="font-headline font-extralight lowercase tracking-tight leading-none">
         athena.
       </span>
     </div>

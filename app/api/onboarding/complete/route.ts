@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
   const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
     type: 'magiclink',
     email,
-    options: { redirectTo: `${appUrl}/auth/callback?next=/dashboard` },
+    options: { redirectTo: `${appUrl}/auth/callback?next=/update-password` },
   })
 
   if (linkError) {
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
 
   const hashedToken = linkData?.properties?.hashed_token
   const actionLink = hashedToken
-    ? `${appUrl}/auth/confirm?token_hash=${hashedToken}&type=magiclink&next=/dashboard`
+    ? `${appUrl}/auth/confirm?token_hash=${hashedToken}&type=magiclink&next=/update-password`
     : linkData?.properties?.action_link
 
   try {
