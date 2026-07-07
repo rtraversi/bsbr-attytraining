@@ -15,6 +15,7 @@ interface Props {
   courseTitle: string
   courseId: string | null
   questions: QuizQuestion[]
+  riseUrl?: string | null
   certId?: string
   certNumber?: string
   issuedAt?: string
@@ -28,6 +29,7 @@ export function TrainingClient({
   courseTitle,
   courseId,
   questions,
+  riseUrl,
   certId,
   certNumber,
   issuedAt,
@@ -64,14 +66,36 @@ export function TrainingClient({
         </h1>
       </div>
 
-      {/* Rise 360 iframe placeholder — replaced with real iframe in Phase 2 */}
-      <div className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-900 aspect-video flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center mx-auto mb-3">
+      {/* Rise 360 course — opens in a new tab (Articulate Quick Share can't be framed) */}
+      <div className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
             <PlayIcon />
           </div>
-          <p className="text-sm text-zinc-500">Course content coming soon</p>
-          <p className="text-xs text-zinc-600 mt-1">Articulate Rise 360 course will appear here</p>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-medium text-zinc-200 mb-1">{courseTitle}</h2>
+            <p className="text-sm text-zinc-500">
+              The interactive course opens in a new tab. Work through all the lessons, then return
+              here to complete your certification.
+            </p>
+          </div>
+        </div>
+        <div className="mt-5">
+          {riseUrl ? (
+            <a
+              href={riseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg bg-teal-500 hover:bg-teal-400 active:bg-teal-600 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition-colors"
+            >
+              Launch Training
+              <ExternalIcon />
+            </a>
+          ) : (
+            <span className="inline-flex items-center rounded-lg bg-zinc-800 px-5 py-2.5 text-sm font-semibold text-zinc-600 cursor-not-allowed">
+              Course content not yet available
+            </span>
+          )}
         </div>
       </div>
 
@@ -182,6 +206,14 @@ function PlayIcon() {
   return (
     <svg className="w-5 h-5 text-zinc-500 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
       <path d="M8 5v14l11-7z" />
+    </svg>
+  )
+}
+
+function ExternalIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14 5h5v5m0-5l-7 7M12 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5" />
     </svg>
   )
 }

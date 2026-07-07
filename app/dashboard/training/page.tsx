@@ -31,14 +31,26 @@ export default async function TrainingPage() {
   const userId = user.id
   const admin = createAdminClient()
 
-  // Get the course
-  const { data: course } = await admin
-    .from('courses')
-    .select('id, title, pass_threshold')
-    .limit(1)
-    .maybeSingle()
+  // Get the course.
+  // rise_embed_url is added in migration 0010 and isn't in the generated types
+  // until `supabase gen types` is re-run — query untyped (same pattern as the
+  // quiz_questions select below) and re-apply a precise type.
+  type CourseRow = {
+    id: string
+    title: string
+    pass_threshold: number | null
+    rise_embed_url: string | null
+  }
+  const { data: courseRaw } = await // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any)
+      .from('courses')
+      .select('id, title, pass_threshold, rise_embed_url')
+      .limit(1)
+      .maybeSingle()
+  const course = courseRaw as CourseRow | null
 
   const courseTitle = course?.title ?? 'Responsible Use of AI within the Legal Industry'
+  const riseUrl = course?.rise_embed_url ?? null
 
   if (!course) {
     return (
@@ -47,6 +59,7 @@ export default async function TrainingPage() {
         courseTitle={courseTitle}
         courseId={null}
         questions={[]}
+        riseUrl={riseUrl}
       />
     )
   }
@@ -90,6 +103,7 @@ export default async function TrainingPage() {
         courseTitle={courseTitle}
         courseId={course.id}
         questions={questions}
+        riseUrl={riseUrl}
       />
     )
   }
@@ -114,6 +128,7 @@ export default async function TrainingPage() {
         courseTitle={courseTitle}
         courseId={course.id}
         questions={[]}
+        riseUrl={riseUrl}
         certId={cert.id}
         certNumber={cert.certificate_number}
         issuedAt={cert.issued_at}
@@ -131,6 +146,7 @@ export default async function TrainingPage() {
       courseTitle={courseTitle}
       courseId={course.id}
       questions={[]}
+      riseUrl={riseUrl}
     />
   )
 }
