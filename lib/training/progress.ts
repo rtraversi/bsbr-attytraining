@@ -1,0 +1,183 @@
+// =============================================================================
+// Knowledge-check progress + gating engine.
+//
+// Pure functions (no DB / no React) so the SAME logic runs on the server (to
+// enforce gating + attempt limits authoritatively) and on the client (to render
+// state). State is DERIVED from the append-only `knowledge_check_completed`
+// training_events — there is no separate progress table.
+//
+// Rules (from the brief):
+//  - Sequential gating: lesson N's check unlocks only after N-1 is cleared.
+//  - Lessons 1–4 clear on COMPLETION (any score). Lesson 5 (readiness) requires
+//    a passing score (PASS_THRESHOLD).
+//  - Lesson 5 has a "test-out" SHORTCUT: attempt it directly, skipping 1–4.
+//    Passing via the shortcut grants full completion (all lessons cleared).
+//    Failing the shortcut 3× (before clearing 1–4) LOCKS it → must then do
+//    1–4 in order (which grants lesson 5 a fresh set of sequential attempts).
+//  - While not fully cleared, each check allows MAX_ATTEMPTS. Once EVERY lesson
+//    is cleared (via either path), all checks become unlimited-retake forever.
+//
+// Stars (0–3): 1 = first check cleared; 2 = all of lessons 1–4 cleared;
+//              3 = lesson 5 (readiness) cleared. Done in order the 3rd star is
+//              the natural last step; via the shortcut all three land at once.
+// =============================================================================
+
+import { LESSONS, MAX_ATTEMPTS, PASS_THRESHOLD, READINESS_LESSON } from './lessons'
+
+export interface KnowledgeCheckEvent {
+  lesson: number
+  score: number
+  passed: boolean
+  attemptNumber: number
+  created_at: string // ISO timestamp
+}
+
+export type LessonStatus = 'locked' | 'unlocked' | 'cleared'
+
+export interface LessonState {
+  number: number
+  title: string
+  status: LessonStatus
+  isReadiness: boolean
+  attempts: number
+  /** null = unlimited (full clearance reached) */
+  attemptsRemaining: number | null
+  lastScore: number | null
+  /** Low score on a cleared 1–4 lesson: soft, non-blocking "consider reviewing". */
+  reviewFlag: boolean
+}
+
+export interface Progress {
+  stars: number
+  lessons: LessonState[]
+  fullyCleared: boolean
+  /** Lesson-5 shortcut has been failed out (3×) without clearing 1–4 first. */
+  shortcutLocked: boolean
+  /** Lesson-5 shortcut is currently attemptable (1–4 not done, not locked). */
+  shortcutAvailable: boolean
+  /** Lesson 5 cleared → the future final assessment (Quizzes tab) is unlocked. */
+  quizzesUnlocked: boolean
+}
+
+const REGULAR = [1, 2, 3, 4]
+
+export function deriveProgress(events: KnowledgeCheckEvent[]): Progress {
+  const sorted = [...events].sort((a, b) => a.created_at.localeCompare(b.created_at))
+
+  const byLesson = new Map<number, KnowledgeCheckEvent[]>()
+  for (const l of LESSONS) byLesson.set(l.number, [])
+  for (const e of sorted) byLesson.get(e.lesson)?.push(e)
+
+  const clearedRaw = (n: number) => byLesson.get(n)?.some(e => e.passed) ?? false
+
+  const lesson5Passed = clearedRaw(READINESS_LESSON)
+  // Lesson 5 is the terminus of both paths, so clearing it ⇒ full completion.
+  const fullyCleared = lesson5Passed
+
+  const all14 = REGULAR.every(clearedRaw)
+  const any14 = REGULAR.some(clearedRaw)
+
+  // When 1–4 all became cleared (max of each lesson's first pass). Only meaningful
+  // once all14 — used to separate pre-completion "shortcut" lesson-5 attempts from
+  // post-completion "sequential" ones, so a locked-out shortcut still leaves a
+  // fresh set of sequential attempts on lesson 5.
+  let t14: string | null = null
+  if (all14) {
+    t14 = REGULAR.map(n => byLesson.get(n)!.find(e => e.passed)!.created_at).reduce((a, b) =>
+      a > b ? a : b
+    )
+  }
+
+  const l5events = byLesson.get(READINESS_LESSON)!
+  // Since clearance is monotonic, if 1–4 aren't all cleared NOW they weren't at any
+  // past lesson-5 attempt either — so every prior lesson-5 attempt was a shortcut one.
+  const shortcutFails = all14
+    ? l5events.filter(e => t14 !== null && e.created_at < t14 && !e.passed).length
+    : l5events.filter(e => !e.passed).length
+  const shortcutLocked = !lesson5Passed && !all14 && shortcutFails >= MAX_ATTEMPTS
+  const shortcutAvailable = !lesson5Passed && !all14 && !shortcutLocked
+
+  let stars = 0
+  if (lesson5Passed) stars = 3
+  else if (all14) stars = 2
+  else if (any14) stars = 1
+
+  const lessons: LessonState[] = LESSONS.map(l => {
+    const n = l.number
+    const evs = byLesson.get(n)!
+    const attempts = evs.length
+    const last = evs[evs.length - 1]
+    const clearedThis = clearedRaw(n)
+    const cleared = fullyCleared || clearedThis
+
+    let status: LessonStatus
+    if (cleared) status = 'cleared'
+    else if (n === 1) status = 'unlocked'
+    else if (n >= 2 && n <= 4) status = clearedRaw(n - 1) ? 'unlocked' : 'locked'
+    else status = all14 || shortcutAvailable ? 'unlocked' : 'locked' // lesson 5
+
+    let attemptsRemaining: number | null
+    if (fullyCleared) {
+      attemptsRemaining = null // unlimited review
+    } else if (n === READINESS_LESSON) {
+      // Count only attempts belonging to the CURRENT phase.
+      const phaseAttempts =
+        all14 && t14 !== null ? evs.filter(e => e.created_at >= t14!).length : evs.length
+      attemptsRemaining = Math.max(0, MAX_ATTEMPTS - phaseAttempts)
+    } else {
+      attemptsRemaining = Math.max(0, MAX_ATTEMPTS - attempts)
+    }
+
+    return {
+      number: n,
+      title: l.title,
+      status,
+      isReadiness: n === READINESS_LESSON,
+      attempts,
+      attemptsRemaining,
+      lastScore: last ? last.score : null,
+      reviewFlag: !!last && clearedThis && n !== READINESS_LESSON && last.score < PASS_THRESHOLD,
+    }
+  })
+
+  return {
+    stars,
+    lessons,
+    fullyCleared,
+    shortcutLocked,
+    shortcutAvailable,
+    quizzesUnlocked: lesson5Passed,
+  }
+}
+
+/**
+ * Authoritative server-side gate: may this user attempt `lesson` right now?
+ * Enforces sequential unlock, the shortcut lock, and attempt limits.
+ */
+export function canAttempt(
+  events: KnowledgeCheckEvent[],
+  lesson: number
+): { allowed: boolean; reason?: string } {
+  const p = deriveProgress(events)
+  const ls = p.lessons.find(l => l.number === lesson)
+  if (!ls) return { allowed: false, reason: 'Invalid lesson.' }
+
+  // Full clearance → unlimited retakes on every check.
+  if (p.fullyCleared) return { allowed: true }
+
+  if (ls.status === 'locked') {
+    return {
+      allowed: false,
+      reason:
+        lesson === READINESS_LESSON
+          ? 'The readiness shortcut is locked — complete lessons 1–4 in order first.'
+          : 'Complete the previous lesson’s check first.',
+    }
+  }
+
+  if (ls.attemptsRemaining !== null && ls.attemptsRemaining <= 0) {
+    return { allowed: false, reason: 'No attempts remaining for this check.' }
+  }
+
+  return { allowed: true }
+}

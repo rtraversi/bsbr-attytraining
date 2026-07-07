@@ -1,28 +1,38 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useTheme } from './theme'
 
 interface AccountMenuProps {
   email: string
   fullName: string | null
   role: string | null
+  /** Which side the dropdown panel aligns to. Employee shell = left, admin = right. */
+  anchor?: 'left' | 'right'
+  /** Show the light/dark theme toggle (employee themed shell only). */
+  showTheme?: boolean
+  /** Show relocated legal links (footer is removed from the employee shell). */
+  showLegal?: boolean
 }
 
 /**
- * Profile/account dropdown in the dashboard nav — replaces the old plain
- * "Sign out" link and also hosts the Dashboard ⇄ Training switch. Opens on
- * hover (with a small close delay so crossing the gap to the panel, or a brief
- * exit, doesn't snap it shut) and on click/keyboard for touch + a11y.
- * Role-conditional (admins also get "Manage billing"). Styled to today's
- * Athena system (Stack Sans via .font-headline, #32C7FF / #0094FF).
+ * Compact hoverable/clickable profile dropdown (Claude-desktop-style panel, not a
+ * persistent sidebar). Account actions + optional theme toggle and legal links.
+ * Theme-aware: white panel in light mode, #0D0F12 in dark.
  */
-export function AccountMenu({ email, fullName, role }: AccountMenuProps) {
+export function AccountMenu({
+  email,
+  fullName,
+  role,
+  anchor = 'right',
+  showTheme = false,
+  showLegal = false,
+}: AccountMenuProps) {
   const router = useRouter()
-  const pathname = usePathname()
-  const onTraining = pathname.startsWith('/dashboard/training')
+  const themeCtx = useTheme()
 
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -51,8 +61,6 @@ export function AccountMenu({ email, fullName, role }: AccountMenuProps) {
     setDraft(name)
   }, [name, clearCloseTimer])
 
-  // Hover: open immediately, close after a short grace period. Never auto-close
-  // while the name is being edited (mouse can wander off the small input).
   const handleEnter = useCallback(() => {
     clearCloseTimer()
     setOpen(true)
@@ -64,7 +72,6 @@ export function AccountMenu({ email, fullName, role }: AccountMenuProps) {
     closeTimer.current = setTimeout(close, 200)
   }, [editing, close, clearCloseTimer])
 
-  // Close on outside-click or Escape.
   useEffect(() => {
     if (!open) return
     function onClick(e: MouseEvent) {
@@ -81,7 +88,6 @@ export function AccountMenu({ email, fullName, role }: AccountMenuProps) {
     }
   }, [open, close])
 
-  // Clean up any pending timer on unmount.
   useEffect(() => clearCloseTimer, [clearCloseTimer])
 
   async function handleSave(e: React.FormEvent) {
@@ -94,9 +100,7 @@ export function AccountMenu({ email, fullName, role }: AccountMenuProps) {
     setSaving(true)
     setError(null)
     const supabase = createClient()
-    const { error: updateError } = await supabase.auth.updateUser({
-      data: { full_name: trimmed },
-    })
+    const { error: updateError } = await supabase.auth.updateUser({ data: { full_name: trimmed } })
     setSaving(false)
     if (updateError) {
       setError(updateError.message)
@@ -104,12 +108,12 @@ export function AccountMenu({ email, fullName, role }: AccountMenuProps) {
     }
     setName(trimmed)
     setEditing(false)
-    // Re-render server components (dashboard table, certs) with the new name.
     router.refresh()
   }
 
   const itemClass =
-    'block w-full px-4 py-2 text-left text-sm text-[#0A0A0A] transition-colors hover:bg-[#EAF8FF]'
+    'block w-full px-4 py-2 text-left text-sm font-medium text-[#0A0A0A] transition-colors hover:bg-[#EAF8FF] dark:text-[#F5F7FA] dark:hover:bg-[#131A20]'
+  const dividerClass = 'my-1 border-t border-[#E5EEF5] dark:border-[#1F2429]'
 
   return (
     <div
@@ -132,17 +136,26 @@ export function AccountMenu({ email, fullName, role }: AccountMenuProps) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-[#E5EEF5] bg-white shadow-xl"
+          className={`absolute z-50 mt-2 w-64 overflow-hidden rounded-xl border border-[#E5EEF5] bg-white shadow-xl dark:border-[#1F2429] dark:bg-[#0D0F12] ${
+            anchor === 'left' ? 'left-0' : 'right-0'
+          }`}
         >
           {/* Identity header */}
-          <div className="border-b border-[#E5EEF5] px-4 py-3">
-            <p className="truncate text-sm font-semibold text-[#0A0A0A]">{displayName}</p>
-            <p className="truncate text-xs text-[#8A8A8A]">{email}</p>
+          <div className="border-b border-[#E5EEF5] px-4 py-3 dark:border-[#1F2429]">
+            <p className="truncate text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">
+              {displayName}
+            </p>
+            <p className="truncate text-xs font-extralight text-[#8A8A8A] dark:text-[#7A8189]">
+              {email}
+            </p>
           </div>
 
           {editing ? (
             <form onSubmit={handleSave} className="px-4 py-3">
-              <label htmlFor="account-name" className="mb-1 block text-xs font-medium text-[#8A8A8A]">
+              <label
+                htmlFor="account-name"
+                className="mb-1 block text-xs font-medium text-[#8A8A8A] dark:text-[#7A8189]"
+              >
                 Update your name
               </label>
               <input
@@ -152,7 +165,7 @@ export function AccountMenu({ email, fullName, role }: AccountMenuProps) {
                 onChange={e => setDraft(e.target.value)}
                 autoFocus
                 placeholder="Full name"
-                className="w-full rounded-lg border border-[#E5EEF5] px-3 py-2 text-sm text-[#0A0A0A] outline-none focus:border-[#32C7FF] focus:ring-2 focus:ring-[#32C7FF]/30"
+                className="w-full rounded-lg border border-[#E5EEF5] bg-white px-3 py-2 text-sm font-extralight text-[#0A0A0A] outline-none focus:border-[#32C7FF] focus:ring-2 focus:ring-[#32C7FF]/30 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
               />
               {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
               <div className="mt-3 flex items-center gap-2">
@@ -170,7 +183,7 @@ export function AccountMenu({ email, fullName, role }: AccountMenuProps) {
                     setError(null)
                     setDraft(name)
                   }}
-                  className="text-xs font-medium text-[#8A8A8A] hover:text-[#0A0A0A]"
+                  className="text-xs font-medium text-[#8A8A8A] hover:text-[#0A0A0A] dark:hover:text-[#F5F7FA]"
                 >
                   Cancel
                 </button>
@@ -178,18 +191,6 @@ export function AccountMenu({ email, fullName, role }: AccountMenuProps) {
             </form>
           ) : (
             <div className="py-1">
-              {/* Dashboard ⇄ Training switch */}
-              <Link
-                href={onTraining ? '/dashboard' : '/dashboard/training'}
-                role="menuitem"
-                onClick={close}
-                className={itemClass}
-              >
-                {onTraining ? '← Dashboard' : 'My Training →'}
-              </Link>
-
-              <div className="my-1 border-t border-[#E5EEF5]" />
-
               <button
                 type="button"
                 role="menuitem"
@@ -213,13 +214,45 @@ export function AccountMenu({ email, fullName, role }: AccountMenuProps) {
                 </a>
               )}
 
-              <div className="my-1 border-t border-[#E5EEF5]" />
+              {showTheme && themeCtx && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={themeCtx.toggle}
+                  className={`flex w-full items-center justify-between ${itemClass}`}
+                >
+                  <span>Theme</span>
+                  <span className="flex items-center gap-1.5 text-xs font-extralight text-[#8A8A8A] dark:text-[#7A8189]">
+                    {themeCtx.theme === 'dark' ? <MoonIcon /> : <SunIcon />}
+                    {themeCtx.theme === 'dark' ? 'Dark' : 'Light'}
+                  </span>
+                </button>
+              )}
+
+              {showLegal && (
+                <>
+                  <div className={dividerClass} />
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 px-4 py-2 text-xs font-extralight text-[#8A8A8A] dark:text-[#7A8189]">
+                    <Link href="/privacy" onClick={close} className="hover:text-[#0094FF]">
+                      Privacy Policy
+                    </Link>
+                    <Link href="/terms" onClick={close} className="hover:text-[#0094FF]">
+                      Terms of Service
+                    </Link>
+                    <Link href="/dpa" onClick={close} className="hover:text-[#0094FF]">
+                      Cookies
+                    </Link>
+                  </div>
+                </>
+              )}
+
+              <div className={dividerClass} />
 
               <form action="/api/auth/logout" method="POST">
                 <button
                   type="submit"
                   role="menuitem"
-                  className="block w-full px-4 py-2 text-left text-sm text-[#0094FF] transition-colors hover:bg-[#EAF8FF]"
+                  className="block w-full px-4 py-2 text-left text-sm font-medium text-[#0094FF] transition-colors hover:bg-[#EAF8FF] dark:hover:bg-[#131A20]"
                 >
                   Sign out
                 </button>
@@ -229,5 +262,22 @@ export function AccountMenu({ email, fullName, role }: AccountMenuProps) {
         </div>
       )}
     </div>
+  )
+}
+
+function SunIcon() {
+  return (
+    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <circle cx="12" cy="12" r="4" />
+      <path strokeLinecap="round" d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" />
+    </svg>
   )
 }

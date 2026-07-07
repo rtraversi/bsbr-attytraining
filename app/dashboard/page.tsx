@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -30,6 +29,10 @@ export default async function DashboardPage() {
   const role = user.app_metadata?.role as string | undefined
 
   if (!firmId) redirect('/login')
+
+  // Employees get the multi-section training experience (Overview/Training/Quizzes),
+  // not the admin dashboard. Redirect before running any admin-only queries.
+  if (role === 'employee') redirect('/dashboard/overview')
 
   const admin = createAdminClient()
 
@@ -131,29 +134,6 @@ export default async function DashboardPage() {
   const seatsUsed = seats?.used_seats ?? 0
   const seatsTotal = seats?.max_seats ?? firm?.max_seats ?? 0
   const seatsRemaining = seatsTotal - seatsUsed
-
-  // ── Employee view ────────────────────────────────────────────────────────────
-  if (role === 'employee') {
-    return (
-      <main className="max-w-2xl mx-auto px-6 py-16 text-center">
-        <h1
-          className="text-2xl text-white mb-3"
-          style={{ fontFamily: 'var(--font-gyrotrope)' }}
-        >
-          Welcome
-        </h1>
-        <p className="text-sm text-zinc-400 mb-6">
-          Complete your AI compliance training to earn your certificate.
-        </p>
-        <Link
-          href="/dashboard/training"
-          className="inline-flex items-center rounded-lg bg-teal-500 hover:bg-teal-400 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition-colors"
-        >
-          Go to training
-        </Link>
-      </main>
-    )
-  }
 
   // ── Admin view ───────────────────────────────────────────────────────────────
   return (
