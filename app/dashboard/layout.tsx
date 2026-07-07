@@ -1,8 +1,18 @@
-import { NavLink } from './_components/nav-link'
+import { AccountMenu } from './_components/account-menu'
 import { Footer } from '@/app/_components/footer'
 import { ToastProvider } from './_components/toast-provider'
+import { createClient } from '@/lib/supabase/server'
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const email = user?.email ?? ''
+  const fullName = (user?.user_metadata?.full_name as string | undefined) ?? null
+  const role = (user?.app_metadata?.role as string | undefined) ?? null
+
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col">
       <nav className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
@@ -10,15 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           AI Staff Compliance Training
         </p>
         <div className="flex items-center gap-6">
-          <NavLink />
-          <form action="/api/auth/logout" method="POST">
-            <button
-              type="submit"
-              className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
-            >
-              Sign out
-            </button>
-          </form>
+          <AccountMenu email={email} fullName={fullName} role={role} />
         </div>
       </nav>
       <ToastProvider>
