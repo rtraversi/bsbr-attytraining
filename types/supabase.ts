@@ -156,6 +156,7 @@ export type Database = {
           id: string
           is_published: boolean
           pass_threshold: number
+          rise_embed_url: string | null
           title: string
         }
         Insert: {
@@ -165,6 +166,7 @@ export type Database = {
           id?: string
           is_published?: boolean
           pass_threshold?: number
+          rise_embed_url?: string | null
           title: string
         }
         Update: {
@@ -174,6 +176,7 @@ export type Database = {
           id?: string
           is_published?: boolean
           pass_threshold?: number
+          rise_embed_url?: string | null
           title?: string
         }
         Relationships: []
