@@ -1,104 +1,125 @@
 # Session Handoff
 
 **Date:** 2026-07-09 (Thursday)
-**Who:** Max (terminal)
+**Who:** Rob (with Claude) AND Max (terminal) — both worked this day. Merged handoff below.
 
 ---
 
 ## ⚠️ Read this first
 
-**Three files are modified and UNCOMMITTED — held on purpose (carried over from 2026-07-08).**
-Max is holding these for his own review; they are NOT part of any commit yet:
-- `app/dashboard/_components/account-menu.tsx`
-- `app/dashboard/layout.tsx`
-- `app/dashboard/quizzes/_components/quizzes-client.tsx`
+1. **Max's machine has 3 files modified and UNCOMMITTED — held on purpose (carried from 2026-07-08).**
+   NOT part of any commit yet:
+   - `app/dashboard/_components/account-menu.tsx`
+   - `app/dashboard/layout.tsx`
+   - `app/dashboard/quizzes/_components/quizzes-client.tsx`
 
-They are last session's work: **firm name in the account menu** + **Quizzes tab v2 S-curve
-restyle**. On next session (same machine) the `git pull` will be skipped because the tree is
-dirty — that's expected; this held work is the real state. See `.planning/sessions/20260708-*`
-for their full engineering detail.
+   These are the **firm name in account menu** + **Quizzes tab v2 S-curve restyle**. On Max's next
+   session the `git pull` will be skipped because his tree is dirty — that's expected; the held work
+   is the real state on that machine. See `.planning/sessions/20260708-*` for detail. (Rob's machine
+   is clean — this warning is Max-machine-specific.)
+
+2. **Everything committed by both people this day is on `origin/main`.** Rob's two pieces + Max's
+   quiz redesign are all pushed. Both are statically verified (`tsc` + `eslint` clean); neither is
+   fully runtime-verified against live authenticated endpoints, and nothing is deployed yet.
 
 ---
 
 ## What was done this session
 
-### 1. Startup + recap
-Ran the startup sequence, read all `.planning/sessions/` history. No code changes here.
+### 🅰 Rob's work (with Claude) — API/observability, all pushed
 
-### 2. Shared quiz UI redesign — BUILT, COMMITTED, PUSHED (`14b6507`)
-Redesigned the two quiz-taking UIs to a shared spec (reference: locked
-`/Users/maxlugo/Attorney training/knowledge-check-quiz-v1.html`).
+**Part 1 — Double-billing / silent-provisioning fix (quick task `260709-aeh`).** Two code layers, no DB migration.
+- `app/api/checkout/route.ts` (Layer 1): before creating a Stripe session, if a logged-in user's
+  `app_metadata.firm_id` resolves to a firm with `status === 'active'`, return `{ url: '/api/portal' }`
+  so the client goes to the billing portal instead of a second subscription. Wrapped in try/catch that
+  **falls through to normal checkout on any error** — anonymous revenue path is never blocked.
+- `app/api/webhooks/stripe/route.ts` (Layer 2): the `createUser` email-collision that used to `return`
+  silently now sends a **best-effort operator alert** (`OPERATOR_ALERT_EMAIL` ?? `info@aistaffcompliance.com`)
+  with full Stripe context, then still returns 200. **No auto-cancel, no auto-refund** — Rob approves
+  refunds manually.
+- Commits: `52d0a98`, `52cf9f5`, `53daddf`.
 
-- **New** `app/dashboard/_components/quiz-runner.tsx` — shared full-screen takeover both quizzes
-  import: bottom-aligned header (title/subtitle + timer pill slot + "Question X/N" + close),
-  thin pill progress bar, icon-badge question card, 2×2 answer grid (single col on mobile) with
-  a blue selected state (border + wash + filled letter badge, no checkmark), sticky Previous/Next
-  bar, attestation phase, submitting + inline errors. Props-driven (`allowBack`,
-  `requiresAttestation`, `showReadinessBanner`, `timerLabel`, `onSubmit`, `onExit`, `onResult`,
-  `renderResult`).
-- **Rewrote** `overview/_components/knowledge-check-modal.tsx` → full-screen, `allowBack=true`,
-  dismissable (close affordance). Same Props, so its two callers (overview + quizzes) unchanged.
-- **Rewrote** `training/_components/quiz-component.tsx` → forward-only (`allowBack=false`),
-  attestation, moved off the stale `teal-500` palette onto `#32C7FF`/`#0094FF`.
-- **Edited** `training/_components/training-client.tsx` → confirmed state now opens the overlay
-  (exit returns to the "Completed the training?" gate).
-- **Deliberate behavior change (the only logic change):** real back-navigation for knowledge
-  checks — revisiting a question restores the locked answer and lets you edit it before submit.
-  Final assessment has NO Previous button. Scoring/gating routes + `lib/training/*` UNTOUCHED.
-- **Timer pill** is a real slot rendered as "No time limit" — reserved for a future countdown on
-  the timed final assessment; no timer logic exists yet.
+**Part 2 — Observability groundwork (quick task `260709-b6w`).** Capacity/crash-watch, ahead of the 10k→20k seats/yr goal.
+- `app/api/health/route.ts` — deep health check (Supabase `courses` head count) → `200 {status:ok}` / `503 {status:degraded}`. For BetterStack uptime.
+- `app/api/metrics/route.ts` — secret-gated concurrency metric, fail-closed on `x-metrics-secret` vs `METRICS_SECRET` (401 until set). Returns `activeSessions` = distinct `firm_member_id` in `training_events` over last 5 min.
+- `load-tests/training-flow.js` + README — dormant k6 skeleton, staging-only. Review ~2026-08-19.
+- `.planning/MONITORING.md` — capacity-alerting playbook.
+- Commits: `41f3ee3`, `efcac89`, `d9fe05c`, `6414647`, `688ffdd`. Detail: `.planning/sessions/20260709-rob-summary.md`.
 
-**Verification:** ✅ `tsc` + `eslint` clean. ✅ Drove it in Chrome via a throwaway isolated
-harness (`/quiz-preview`, since deleted): question view light+dark, selected state, back-nav
-(restore + edit + no-Previous-on-Q1), final forward-only (no Previous mid-quiz), attestation →
-submit → result, readiness banner, mobile single-column + stacked header. No console/hydration
-errors. NOT yet exercised against the real authenticated endpoints (needs a provisioned employee
-+ DB) and NOT deployed — but the fetch calls/payloads are byte-identical to the originals.
+### 🅱 Max's work (terminal) — shared quiz UI redesign, committed + pushed (`14b6507`)
+Redesigned the two quiz-taking UIs to a shared spec (ref: locked `/Users/maxlugo/Attorney training/knowledge-check-quiz-v1.html`).
+- **New** `app/dashboard/_components/quiz-runner.tsx` — shared full-screen takeover both quizzes import:
+  bottom-aligned header (title/subtitle + timer pill slot + "Question X/N" + close), thin pill progress
+  bar, icon-badge question card, 2×2 answer grid (single col on mobile), blue selected state, sticky
+  Previous/Next, attestation phase, submitting + inline errors. Props-driven (`allowBack`,
+  `requiresAttestation`, `showReadinessBanner`, `timerLabel`, `onSubmit`, `onExit`, `onResult`, `renderResult`).
+- **Rewrote** `overview/_components/knowledge-check-modal.tsx` → full-screen, `allowBack=true`, dismissable.
+- **Rewrote** `training/_components/quiz-component.tsx` → forward-only, attestation, off stale `teal-500` onto `#32C7FF`/`#0094FF`.
+- **Edited** `training/_components/training-client.tsx` → confirmed state opens the overlay.
+- **Only logic change:** real back-nav for knowledge checks (revisit restores locked answer, editable pre-submit).
+  Final assessment has NO Previous. Scoring/gating routes + `lib/training/*` UNTOUCHED.
+- **Timer pill** rendered "No time limit" — slot reserved for a future timed-final countdown; no timer logic yet.
+- Verified: `tsc` + `eslint` clean; driven in Chrome via a throwaway `/quiz-preview` harness (since deleted).
+  NOT yet run against real authenticated endpoints, NOT deployed. Detail: `.planning/sessions/20260709-max-summary.md` (if present).
 
-### 3. Pulled Rob's 8 commits SAFELY (no work lost)
-Rob had pushed 8 commits (`f42257f..688ffdd`). With our tree dirty + untracked, integrated via:
-backup tarball → `git stash -u` → `git pull --ff-only` → `git stash pop`. **Zero conflicts**
-(no file overlap — Rob was in `app/api/*`, `.planning/*`, `load-tests/*`; we were in
-`app/dashboard/*`). Rob's work: **double-billing / silent-provisioning webhook fix** (closes a
-carried-open item), deep `/api/health` Supabase check, secret-protected `/api/metrics`
-concurrency endpoint, dormant k6 load-test skeleton, monitoring roadmap docs.
+> Note: Max integrated Rob's 8 API/observability commits safely (stash → ff-only pull → pop, zero
+> overlap — Rob in `app/api/*` + `.planning/*` + `load-tests/*`, Max in `app/dashboard/*`).
 
 ---
 
-## Repo state at wrap-up
-- Branch `main`, **in sync with `origin/main`** at the quiz commit `14b6507` (pushed).
-- **3 held files still modified + uncommitted** (see top). Nothing else uncommitted except this
-  handoff + the session summary (committed with the final wrap-up commit).
-- Backup tarball of all dirty+untracked files sits in this session's scratchpad as a safety net.
+## Next steps
 
-## Next steps (Max)
-1. **Deploy** (`pnpm run deploy`) and eyeball the new quiz UI in prod: run a real knowledge check
-   (lessons 1–4 back-nav + change-answer), the lesson-5 readiness check (banner + 80% gate), and
-   the final assessment (no Previous, attestation → submit → cert generation). Light + dark,
-   mobile/tablet/desktop.
-2. **Decide on the 3 held files** — commit as two commits per the 2026-07-08 plan
-   (`feat(dashboard): show firm name…` = layout+account-menu; `feat(quizzes): restyle…` =
-   quizzes-client) or revise first.
+**Deploy + verify (Max):** `pnpm run deploy`, then eyeball the new quiz UI in prod — a real knowledge
+check (lessons 1–4 back-nav + change-answer), the lesson-5 readiness check (banner + 80% gate), and the
+final assessment (no Previous, attestation → submit → cert generation). Light + dark, mobile/tablet/desktop.
+
+**Decide on the 3 held files (Max):** commit as two commits per the 2026-07-08 plan
+(`feat(dashboard): show firm name…` = layout+account-menu; `feat(quizzes): restyle…` = quizzes-client) or revise first.
+
+**Make observability fire (Rob/Max):**
+1. Set the `METRICS_SECRET` Worker secret (`wrangler secret put METRICS_SECRET`) — `/api/metrics` is 401 until it exists.
+2. Wire BetterStack: uptime → `/api/health`; **Supabase resource-utilization alert @ ~70%** (compute/RAM) via
+   the Supabase Prometheus endpoint → BetterStack. **This resource alert is the real crash-preventer** — the
+   early warning to bump the Supabase compute tier before load hits the ceiling. Recipe in `.planning/MONITORING.md`.
+
+**Blocked on Rob providing info:**
+3. GitHub bug/feature submission — needs an example repo/config from another Rob site to mirror.
+4. iurisdesk.com central hub (cross-brand usage tracking) — queued as a **design spike** (own planning session).
+
+**k6:** dormant by design — review ~2026-08-19.
+
+---
 
 ## Still open (carried forward)
+
 - **Double-billing gap** — now FIXED by Rob (`52d0a98` + `52cf9f5`); verify on deploy.
 - **Overview page** low-contrast on light theme — deferred to a Figma pass.
 - **Final assessment timer** — UI slot reserved ("No time limit"); no countdown logic yet.
-- **Final assessment + certificate signing** — blocked on the real question pool; Kapakana font
-  delivered, not yet wired into `public/fonts/`.
+- **Final assessment + certificate signing** — blocked on the real question pool; **Kapakana** font delivered, not yet wired into `public/fonts/`.
 - **Homepage direction** (3-way) undecided. **Admin dashboard redesign** — saved for last.
 - **Star milestone** — confirm star 2 = "lessons 1–4 cleared" is intended.
+- Legal pages placeholder; cert / attestation PDFs reportedly mostly done, not re-checked.
+
+---
 
 ## Workflow (in force)
-- Figma for app UI/screens; Affinity for illustration/cert-art. (This quiz redesign was an
-  exception — it built an already-locked HTML spec.)
+
+- GSD workflow enforced — repo edits go through a GSD command (Rob's pieces ran as `/gsd:quick`).
+- Figma for app UI/screens; Affinity for illustration/logo/cert-art. No text-described layout iteration
+  for new UI — wait for a Figma handoff. (Both the quiz restyle and Rob's API work were exceptions:
+  locked spec / backend.)
 - Verify via `pnpm run deploy` (no persistent local dev server). Max runs pnpm/stripe/CLI himself.
-- Git add/commit/push are Claude's — only after Max's explicit go-ahead.
+- Git add/commit/push are Claude's — **only after explicit go-ahead.**
+- Secrets in Worker env only (`STRIPE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `METRICS_SECRET`) — never in source.
+- Authz uses `getClaims()` (not `getSession()`); `firm_id`/`role` from `app_metadata` (not `user_metadata`).
 
 ## Key references
+
 | Item | Value |
 |------|-------|
 | Main app URL | `https://bsbr-attytraining.aistaffcompliance.workers.dev` |
-| Quiz spec (local) | `/Users/maxlugo/Attorney training/knowledge-check-quiz-v1.html` |
-| Quiz commit | `14b6507` (pushed to origin/main) |
+| Rob's session detail | `.planning/sessions/20260709-rob-summary.md` |
+| Max's quiz commit | `14b6507` (pushed to origin/main) |
+| Quiz spec (local, Max) | `/Users/maxlugo/Attorney training/knowledge-check-quiz-v1.html` |
+| Monitoring playbook | `.planning/MONITORING.md` |
 | GitHub repo | `rtraversi/bsbr-attytraining` |
