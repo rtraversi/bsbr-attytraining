@@ -112,6 +112,29 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (createUserError) {
     // Email already registered — re-purchase edge case, not handled in v1
     console.warn(`[stripe-webhook] createUser skipped for ${email}: ${createUserError.message}`)
+
+    const operatorEmail = process.env.OPERATOR_ALERT_EMAIL ?? 'info@aistaffcompliance.com'
+    const subject = '⚠️ Stripe provisioning collision — manual action needed'
+    const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
+<p style="font-size:14px">A Stripe checkout completed but firm provisioning was skipped because the customer's email is already registered.</p>
+<p style="font-size:14px">This customer has paid but has NOT been provisioned a firm. Manual action is required.</p>
+<ul style="font-size:14px">
+  <li><strong>Customer email:</strong> ${email}</li>
+  <li><strong>Stripe customer ID:</strong> ${session.customer as string}</li>
+  <li><strong>Stripe subscription ID:</strong> ${session.subscription as string}</li>
+  <li><strong>Checkout session ID:</strong> ${session.id}</li>
+  <li><strong>Error:</strong> ${createUserError.message}</li>
+</ul>
+<hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
+<p style="font-size:12px;color:#6b7280">AI Staff Compliance Training — Built Smart by Rob</p>
+</body></html>`
+
+    try {
+      await sendEmail({ to: operatorEmail, subject, html })
+    } catch (mailErr) {
+      console.error('[stripe-webhook] operator alert email failed:', mailErr)
+    }
+
     return
   }
 
