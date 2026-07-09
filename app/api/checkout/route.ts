@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
@@ -26,6 +28,29 @@ export async function POST(req: NextRequest) {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const firmId = user?.app_metadata?.firm_id as string | undefined;
+
+    if (user && firmId) {
+      const admin = createAdminClient();
+      const { data: firm } = await admin
+        .from("firms")
+        .select("status")
+        .eq("id", firmId)
+        .single();
+
+      if (firm?.status === "active") {
+        return NextResponse.json({ url: "/api/portal" });
+      }
+    }
+  } catch (err) {
+    console.error("checkout active-firm check failed, falling through:", err);
+  }
 
   try {
     const session = await getStripe().checkout.sessions.create({
