@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import type { ClientQuestion } from '@/lib/training/questions'
 import type { LessonState, Progress } from '@/lib/training/progress'
+import { PASS_THRESHOLD } from '@/lib/training/lessons'
 import { KnowledgeCheckModal } from './knowledge-check-modal'
 
 export interface ActivityItem {
@@ -31,9 +32,10 @@ const CARD =
 // shell, but Tailwind's preflight writes font-family straight onto some elements
 // and beats the inherited value.
 const HEADING = 'font-headline font-bold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
-const SECTION_HEADING = `${HEADING} mb-4 text-2xl md:text-[2.25rem]`
+const SECTION_HEADING = `${HEADING} mb-4 text-2xl md:text-3xl xl:mb-5 xl:text-[2.5rem]`
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 const ACCENT = 'text-[#0094FF]'
+const CARD_PAD = 'p-6 xl:p-8'
 
 function canOpen(lesson: LessonState, fullyCleared: boolean): boolean {
   if (lesson.status === 'locked') return false
@@ -72,24 +74,32 @@ export function OverviewClient({ progress, questionsByLesson, firstName, activit
       : null
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 py-10 md:px-10">
-      {/* ── Header: greeting + two real stat cards ─────────────────────────── */}
-      <header className="mb-10">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <h1 className={`${HEADING} text-3xl md:text-4xl`}>
+    <main className="mx-auto w-full max-w-[1600px] px-6 py-10 md:px-10 xl:px-14 xl:py-14">
+      {/* ── Header: greeting top-aligned with the stat cards ───────────────── */}
+      <header className="mb-10 xl:mb-14">
+        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between md:gap-10">
+          {/* The greeting's box already lines up with the cards, but `leading-none`
+              still leaves half-leading above the caps — exactly (1 - 0.72)/2 ≈ 0.14em.
+              Nudging up by that em amount levels the glyph tops with the card tops at
+              every font size. Only from md up, where the two sit side by side. */}
+          <h1
+            className={`${HEADING} max-w-3xl text-4xl text-balance md:-mt-[0.14em] md:text-5xl xl:text-6xl`}
+          >
             {firstName ? `Hi ${firstName}, ` : 'Hi, '}
             <span className={ACCENT}>{greeting(progress, clearedCount)}</span>
           </h1>
 
           {/* Fixed widths only from md up — at 390px `w-48 + w-36 + gap` exceeds the
-              content box and would force the whole page into horizontal overflow. */}
-          <div className="flex w-full gap-4 md:w-auto">
-            <div className={`${CARD} min-w-0 flex-1 px-5 py-4 md:w-48 md:flex-none`}>
-              <div className="mb-1.5 flex items-baseline justify-between">
-                <span className={`text-xs font-bold tracking-wide uppercase ${MUTED}`}>Lessons</span>
-                <span className={`text-sm font-bold ${ACCENT}`}>{clearedCount}/5</span>
+              content box, so below md they share the row as equal halves. */}
+          <div className="flex w-full shrink-0 gap-4 md:w-auto xl:gap-5">
+            <div className={`${CARD} min-w-0 flex-1 px-5 py-4 md:w-52 md:flex-none xl:w-64 xl:px-6 xl:py-5`}>
+              <div className="mb-1.5 flex items-baseline justify-between xl:mb-2.5">
+                <span className={`text-xs font-bold tracking-wide uppercase xl:text-sm ${MUTED}`}>
+                  Lessons
+                </span>
+                <span className={`text-sm font-bold xl:text-base ${ACCENT}`}>{clearedCount}/5</span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-[#E5EEF5] dark:bg-[#1F2429]">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-[#E5EEF5] xl:h-2.5 dark:bg-[#1F2429]">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-[#32C7FF] to-[#0094FF] transition-[width] duration-500"
                   style={{ width: `${(clearedCount / 5) * 100}%` }}
@@ -97,17 +107,19 @@ export function OverviewClient({ progress, questionsByLesson, firstName, activit
               </div>
             </div>
 
-            <div className={`${CARD} min-w-0 flex-1 px-5 py-4 md:w-36 md:flex-none`}>
-              <span className={`mb-1.5 block text-xs font-bold tracking-wide uppercase ${MUTED}`}>
+            <div className={`${CARD} min-w-0 flex-1 px-5 py-4 md:w-40 md:flex-none xl:w-48 xl:px-6 xl:py-5`}>
+              <span
+                className={`mb-1.5 block text-xs font-bold tracking-wide uppercase xl:mb-2.5 xl:text-sm ${MUTED}`}
+              >
                 Current grade
               </span>
-              <p className={`font-headline text-2xl font-bold ${ACCENT}`}>
+              <p className={`font-headline text-2xl font-bold xl:text-4xl ${ACCENT}`}>
                 {currentGrade === null ? (
-                  <span className={`text-2xl font-medium ${MUTED}`}>—</span>
+                  <span className={`text-2xl font-medium xl:text-3xl ${MUTED}`}>—</span>
                 ) : (
                   <>
                     {currentGrade}
-                    <span className={`text-sm font-medium ${MUTED}`}>%</span>
+                    <span className={`text-sm font-medium xl:text-base ${MUTED}`}>%</span>
                   </>
                 )}
               </p>
@@ -116,24 +128,17 @@ export function OverviewClient({ progress, questionsByLesson, firstName, activit
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-x-10 gap-y-10 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-x-10 gap-y-10 lg:grid-cols-12 xl:gap-x-14 xl:gap-y-14">
         {/* ── Left: main column ───────────────────────────────────────────── */}
-        <div className="flex flex-col gap-10 lg:col-span-8">
+        <div className="flex flex-col gap-10 lg:col-span-7 xl:gap-14">
           <UpNextCard progress={progress} focus={focus} tryOpen={tryOpen} />
           <RecentActivityCard activity={activity} />
           <CertificateCard certUrl={certUrl} />
         </div>
 
-        {/* ── Right: course outline (no hover-expand — at-a-glance) ───────── */}
-        <aside className="lg:col-span-4">
-          <h2 className={SECTION_HEADING}>Course outline</h2>
-          <div className={`${CARD} p-6`}>
-            <ol className="flex flex-col gap-1">
-              {progress.lessons.map(lesson => (
-                <OutlineRow key={lesson.number} lesson={lesson} isCurrent={lesson.number === focus.number} />
-              ))}
-            </ol>
-          </div>
+        {/* ── Right: course outline. Always shows status; hover/tap reveals detail. */}
+        <aside className="lg:col-span-5">
+          <CourseOutlineCard progress={progress} focus={focus} />
         </aside>
       </div>
 
@@ -186,6 +191,19 @@ function ExpandBody({ open, children }: { open: boolean; children: React.ReactNo
   )
 }
 
+/** Span-based twin of ExpandBody — the outline rows live inside a <button>. */
+function ExpandBodyInline({ open, children }: { open: boolean; children: React.ReactNode }) {
+  return (
+    <span
+      className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+        open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+      }`}
+    >
+      <span className="block overflow-hidden">{children}</span>
+    </span>
+  )
+}
+
 /* ── Up next ──────────────────────────────────────────────────────────────── */
 function UpNextCard({
   progress,
@@ -203,7 +221,7 @@ function UpNextCard({
     <section {...hoverProps}>
       <h2 className={SECTION_HEADING}>Up next</h2>
       <div
-        className={`${CARD} p-6 transition-[transform,box-shadow] duration-300 ${
+        className={`${CARD} ${CARD_PAD} transition-[transform,box-shadow] duration-300 ${
           hovered ? '-translate-y-1 shadow-[0_14px_28px_rgba(50,199,255,0.18)]' : ''
         }`}
       >
@@ -211,29 +229,35 @@ function UpNextCard({
           type="button"
           onClick={toggle}
           aria-expanded={open}
-          className="flex w-full cursor-pointer items-center gap-5 text-left"
+          className="flex w-full cursor-pointer items-center gap-5 text-left xl:gap-7"
         >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-black text-xl font-bold text-white dark:bg-[#F5F7FA] dark:text-[#0A0A0A]">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-black text-xl font-bold text-white xl:h-[4.5rem] xl:w-[4.5rem] xl:text-3xl dark:bg-[#F5F7FA] dark:text-[#0A0A0A]">
             {focus.number}
           </span>
 
           <span className="min-w-0 flex-1">
-            <span className="mb-2 inline-block rounded-lg bg-[#EAF8FF] px-2.5 py-[3px] text-[11px] font-bold text-[#0094FF] dark:bg-[#0094FF]/15">
+            <span className="mb-2 inline-block rounded-lg bg-[#EAF8FF] px-2.5 py-[3px] text-[11px] font-bold text-[#0094FF] xl:text-xs dark:bg-[#0094FF]/15">
               Lesson {focus.number}
               {focus.isReadiness && ' · Readiness check'}
             </span>
-            <span className={`block truncate text-lg ${HEADING}`}>{focus.title}</span>
+            {/* Wraps on narrow screens (where truncation eats most of the title);
+                single-line with ellipsis once there's room for it. */}
+            <span className={`block text-lg text-pretty md:truncate xl:text-2xl ${HEADING}`}>
+              {focus.title}
+            </span>
           </span>
 
-          <span className={`shrink-0 text-sm font-bold whitespace-nowrap ${ACCENT}`}>{percent}%</span>
+          <span className={`shrink-0 text-sm font-bold whitespace-nowrap xl:text-xl ${ACCENT}`}>
+            {percent}%
+          </span>
         </button>
 
         <ExpandBody open={open}>
-          <div className="pt-4">
+          <div className="pt-4 xl:pt-6">
             <button
               type="button"
               onClick={() => tryOpen(focus)}
-              className="w-full cursor-pointer rounded-full bg-black py-3 font-bold text-white transition-colors hover:bg-[#262626] dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
+              className="w-full cursor-pointer rounded-full bg-black py-3 font-bold text-white transition-colors hover:bg-[#262626] xl:py-4 xl:text-lg dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
             >
               {progress.fullyCleared ? `Review Lesson ${focus.number}` : `Resume Lesson ${focus.number}`}
             </button>
@@ -255,12 +279,12 @@ function RecentActivityCard({ activity }: { activity: ActivityItem[] }) {
     <section {...hoverProps}>
       <h2 className={SECTION_HEADING}>Recent activity</h2>
       <div
-        className={`${CARD} p-6 transition-[transform,box-shadow] duration-300 ${
+        className={`${CARD} ${CARD_PAD} transition-[transform,box-shadow] duration-300 ${
           hovered ? '-translate-y-1 shadow-[0_14px_28px_rgba(50,199,255,0.18)]' : ''
         }`}
       >
         {activity.length === 0 ? (
-          <p className={`text-sm ${MUTED}`}>
+          <p className={`text-sm xl:text-base ${MUTED}`}>
             No activity yet — start the training content or your first lesson check.
           </p>
         ) : (
@@ -269,7 +293,7 @@ function RecentActivityCard({ activity }: { activity: ActivityItem[] }) {
             onClick={toggle}
             aria-expanded={open}
             disabled={hidden.length === 0}
-            className="flex w-full flex-col gap-5 text-left enabled:cursor-pointer"
+            className="flex w-full flex-col gap-5 text-left enabled:cursor-pointer xl:gap-6"
           >
             {visible.map((item, i) => (
               <ActivityRow key={`${item.at}-${i}`} item={item} recent />
@@ -279,7 +303,7 @@ function RecentActivityCard({ activity }: { activity: ActivityItem[] }) {
 
         {hidden.length > 0 && (
           <ExpandBody open={open}>
-            <div className="mt-3 flex flex-col gap-5 border-t border-[#E5EEF5] pt-4 dark:border-[#1F2429]">
+            <div className="mt-3 flex flex-col gap-5 border-t border-[#E5EEF5] pt-4 xl:gap-6 xl:pt-6 dark:border-[#1F2429]">
               {hidden.map((item, i) => (
                 <ActivityRow key={`${item.at}-${i}`} item={item} recent={false} />
               ))}
@@ -304,8 +328,8 @@ function ActivityRow({ item, recent }: { item: ActivityItem; recent: boolean }) 
         }`}
       />
       <span className="block min-w-0">
-        <span className={`block text-sm font-semibold ${HEADING}`}>{title}</span>
-        <span className={`block text-xs ${MUTED}`} suppressHydrationWarning>
+        <span className={`block text-sm font-semibold xl:text-base ${HEADING}`}>{title}</span>
+        <span className={`block text-xs xl:text-sm ${MUTED}`} suppressHydrationWarning>
           {detail}
           {detail && ' · '}
           {timeAgo(item.at)}
@@ -358,29 +382,29 @@ function CertificateCard({ certUrl }: { certUrl: string | null }) {
     <section>
       <h2 className={SECTION_HEADING}>Your certificate</h2>
       {unlocked ? (
-        <div className={`${CARD} flex items-center justify-between gap-4 p-6`}>
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#32C7FF]/15">
-              <CertIcon className="h-6 w-6 text-[#0094FF]" />
+        <div className={`${CARD} ${CARD_PAD} flex items-center justify-between gap-4`}>
+          <div className="flex min-w-0 items-center gap-3 xl:gap-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#32C7FF]/15 xl:h-14 xl:w-14">
+              <CertIcon className="h-6 w-6 text-[#0094FF] xl:h-7 xl:w-7" />
             </span>
             <div className="min-w-0">
-              <p className={`text-base ${HEADING}`}>Your certificate</p>
-              <p className={`truncate text-sm ${MUTED}`}>Issued and ready to download.</p>
+              <p className={`text-base xl:text-lg ${HEADING}`}>Your certificate</p>
+              <p className={`truncate text-sm xl:text-base ${MUTED}`}>Issued and ready to download.</p>
             </div>
           </div>
           <a
             href={certUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 cursor-pointer rounded-full bg-[#32C7FF] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+            className="shrink-0 cursor-pointer rounded-full bg-[#32C7FF] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 xl:px-7 xl:py-3 xl:text-base"
           >
             Download
           </a>
         </div>
       ) : (
-        <div className={`${CARD} flex items-center gap-4 p-6 opacity-70`}>
-          <LockIcon className={`h-6 w-6 shrink-0 ${MUTED}`} />
-          <p className={`text-sm italic ${MUTED}`}>
+        <div className={`${CARD} ${CARD_PAD} flex items-center gap-4 opacity-70`}>
+          <LockIcon className={`h-6 w-6 shrink-0 xl:h-7 xl:w-7 ${MUTED}`} />
+          <p className={`text-sm italic xl:text-base ${MUTED}`}>
             Complete Lesson 5 and the final assessment to unlock…
           </p>
         </div>
@@ -389,44 +413,142 @@ function CertificateCard({ certUrl }: { certUrl: string | null }) {
   )
 }
 
-/* ── Course outline row ───────────────────────────────────────────────────── */
-function OutlineRow({ lesson, isCurrent }: { lesson: LessonState; isCurrent: boolean }) {
-  const cleared = lesson.status === 'cleared'
+/* ═══════════════════════════════════════════════════════════════════════════
+   Course outline — status is always visible (this is an at-a-glance dashboard);
+   hovering/tapping the card reveals the per-lesson detail line underneath.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function CourseOutlineCard({ progress, focus }: { progress: Progress; focus: LessonState }) {
+  const { open, hovered, toggle, hoverProps } = useExpand()
 
-  if (cleared) {
-    return (
-      <li className="flex items-center gap-3 py-2.5">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#32C7FF]">
-          <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+  return (
+    <section {...hoverProps}>
+      <h2 className={SECTION_HEADING}>Course outline</h2>
+      <button
+        type="button"
+        onClick={toggle}
+        aria-expanded={open}
+        className={`${CARD} ${CARD_PAD} block w-full cursor-pointer text-left transition-[transform,box-shadow] duration-300 ${
+          hovered ? '-translate-y-1 shadow-[0_14px_28px_rgba(50,199,255,0.18)]' : ''
+        }`}
+      >
+        <span className="flex flex-col gap-1">
+          {progress.lessons.map(lesson => (
+            <OutlineRow
+              key={lesson.number}
+              lesson={lesson}
+              progress={progress}
+              isCurrent={lesson.number === focus.number && lesson.status !== 'cleared'}
+              open={open}
+            />
+          ))}
+        </span>
+      </button>
+    </section>
+  )
+}
+
+function OutlineRow({
+  lesson,
+  progress,
+  isCurrent,
+  open,
+}: {
+  lesson: LessonState
+  progress: Progress
+  isCurrent: boolean
+  open: boolean
+}) {
+  const cleared = lesson.status === 'cleared'
+  const locked = lesson.status === 'locked'
+
+  const rowBase = 'flex items-start gap-3 py-2.5 xl:gap-4 xl:py-3'
+  const rowClass = isCurrent
+    ? `${rowBase} -mx-3 rounded-xl bg-[#EAF8FF] px-3 dark:bg-[#0094FF]/10`
+    : rowBase
+
+  const titleClass = cleared
+    ? 'font-medium text-[#0A0A0A] dark:text-[#F5F7FA]'
+    : isCurrent
+      ? 'font-bold text-[#0094FF]'
+      : MUTED
+
+  return (
+    <span className={rowClass}>
+      {/* Badge */}
+      {cleared ? (
+        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#32C7FF] xl:h-7 xl:w-7">
+          <svg className="h-3.5 w-3.5 text-white xl:h-4 xl:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </span>
-        <span className="text-sm font-medium text-[#0A0A0A] dark:text-[#F5F7FA]">{lesson.title}</span>
-      </li>
-    )
-  }
-
-  if (isCurrent) {
-    return (
-      <li className="-mx-3 flex items-center gap-3 rounded-xl bg-[#EAF8FF] px-3 py-2.5 dark:bg-[#0094FF]/10">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-[#0094FF] text-[11px] font-bold text-[#0094FF]">
+      ) : isCurrent ? (
+        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-[#0094FF] text-[11px] font-bold text-[#0094FF] xl:h-7 xl:w-7 xl:text-xs">
           {lesson.number}
         </span>
-        <span className="text-sm font-bold text-[#0094FF]">{lesson.title}</span>
-      </li>
-    )
+      ) : (
+        <span
+          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#F2F4F7] text-[11px] font-bold xl:h-7 xl:w-7 xl:text-xs dark:bg-[#1F2429] ${MUTED}`}
+        >
+          {lesson.number}
+        </span>
+      )}
+
+      <span className="block min-w-0 flex-1">
+        <span className="flex items-baseline justify-between gap-3">
+          <span className={`text-sm xl:text-base ${titleClass}`}>{lesson.title}</span>
+
+          {/* Always-visible status — the extra width earns this, no hover needed. */}
+          <span className="shrink-0 text-xs font-bold whitespace-nowrap xl:text-sm">
+            {cleared ? (
+              <span className="text-[#16A34A] dark:text-[#4ADE80]">
+                {lesson.lastScore !== null ? `${lesson.lastScore}%` : 'Cleared'}
+              </span>
+            ) : locked ? (
+              <LockIcon className={`h-4 w-4 ${MUTED}`} />
+            ) : (
+              <span className={ACCENT}>{lesson.attempts > 0 ? 'Continue' : 'Available'}</span>
+            )}
+          </span>
+        </span>
+
+        {/* Revealed on hover / tap */}
+        <ExpandBodyInline open={open}>
+          <span className={`block pt-1 text-xs xl:text-sm ${MUTED}`}>
+            {outlineDetail(lesson, progress)}
+          </span>
+        </ExpandBodyInline>
+      </span>
+    </span>
+  )
+}
+
+function outlineDetail(lesson: LessonState, progress: Progress): string {
+  if (lesson.status === 'cleared') {
+    const base =
+      lesson.lastScore !== null ? `Cleared · scored ${lesson.lastScore}%` : 'Cleared'
+    if (lesson.reviewFlag) return `${base} · consider reviewing again`
+    if (progress.fullyCleared) return `${base} · unlimited retakes`
+    return base
   }
 
-  return (
-    <li className="flex items-center gap-3 py-2.5">
-      <span
-        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#F2F4F7] text-[11px] font-bold dark:bg-[#1F2429] ${MUTED}`}
-      >
-        {lesson.number}
-      </span>
-      <span className={`text-sm ${MUTED}`}>{lesson.title}</span>
-    </li>
-  )
+  if (lesson.status === 'locked') {
+    return lesson.isReadiness && progress.shortcutLocked
+      ? 'Shortcut locked — complete lessons 1–4 in order first'
+      : 'Complete the previous lesson’s check first'
+  }
+
+  // unlocked
+  const attempts =
+    lesson.attemptsRemaining === null
+      ? 'unlimited retakes'
+      : `${lesson.attemptsRemaining} attempt${lesson.attemptsRemaining === 1 ? '' : 's'} left`
+
+  if (lesson.isReadiness) {
+    return progress.shortcutAvailable
+      ? `Readiness check · test out of lessons 1–4 · needs ${PASS_THRESHOLD}% · ${attempts}`
+      : `Readiness check · needs ${PASS_THRESHOLD}% to pass · ${attempts}`
+  }
+  return `${lesson.attempts > 0 ? 'In progress' : 'Not started yet'} · ${attempts}`
 }
 
 /* ── Icons ────────────────────────────────────────────────────────────────── */
