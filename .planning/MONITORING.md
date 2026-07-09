@@ -62,12 +62,32 @@ session — do not fold it into a quick task or an unrelated phase.
 
 ---
 
-## 5. GitHub bug/feature submission — BLOCKED
+## 5. GitHub bug/feature submission — PINNED (deferred until product is named + live)
 
-Mirror the pattern used on the operator's other sites (a lightweight in-app "report a
-bug / request a feature" path that files a GitHub issue).
+Files user-submitted bugs/feature requests directly as **GitHub Issues** — Git-native
+tracking, no extra service.
 
-**Status: BLOCKED** pending an example site to replicate the pattern from.
+**Reference implementation: `C:\Sites\iurisdesk`** (Rob's IurisIQ support portal).
+- **Backend** `functions/api/submit-feedback.js` — validates `{type, title, description,
+  steps, severity, portal}`, builds labels (`bug`/`feature-request` + `severity:` +
+  `portal:` + `status: triage`) and a Markdown body, then `POST`s to the GitHub REST API
+  `/repos/{owner}/{repo}/issues` with a Bearer PAT. Returns `{ok, issue_number, url}`.
+- **Front-end** `js/main.js` — bug/feature panels POST JSON to `/api/submit-feedback`,
+  render a success card linking to the created issue.
+- **Secrets (3):** `GITHUB_TOKEN` (fine-grained PAT, Issues read/write only), `GITHUB_OWNER`
+  (`rtraversi`), `GITHUB_REPO` (`iurisiq-support`).
+- iurisdesk already exposes a **generic `portal` dropdown** — so adding this product later
+  is trivial: just add a new portal option there (issues get a `portal: <name>` label, no
+  new code needed).
+
+**Porting note (if a dedicated in-app path is wanted instead of the shared dropdown):**
+iurisdesk uses **Cloudflare Pages Functions** (`onRequest`). attytraining is **Next.js App
+Router on Workers (OpenNext)** — so the backend becomes a Route Handler at
+`app/api/submit-feedback/route.ts` (`export async function POST`, `runtime = 'nodejs'`) and
+the form becomes a React component. GitHub-API logic + the 3 secrets carry over 1:1.
+
+**Status: PINNED (Rob, 2026-07-09).** Product isn't named yet and isn't live — revisit once
+it's up and running. Fastest path then = add it to the iurisdesk portal dropdown.
 
 ---
 
