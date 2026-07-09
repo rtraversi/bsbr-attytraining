@@ -116,26 +116,19 @@ export function TrainingClient({
                 I Have Completed the Training — Begin Quiz
               </button>
             </div>
+          ) : courseId ? (
+            /* Full-screen certification quiz takeover */
+            <QuizComponent
+              key={attemptKey}
+              questions={questions}
+              courseId={courseId}
+              onPass={() => setPhase('cert_pending')}
+              onRetry={() => { setAttemptKey(k => k + 1); router.refresh() }}
+              onExit={() => setTrainingConfirmed(false)}
+            />
           ) : (
-            /* Quiz area */
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-              <h2 className="text-sm font-medium text-zinc-200 mb-1">Certification Quiz</h2>
-              <p className="text-sm text-zinc-500 mb-5">
-                Answer all questions, then attest your identity to submit. You need 80% or higher to pass.
-                Unlimited retakes — a fresh question set each attempt.
-              </p>
-
-              {courseId ? (
-                <QuizComponent
-                  key={attemptKey}
-                  questions={questions}
-                  courseId={courseId}
-                  onPass={() => setPhase('cert_pending')}
-                  onRetry={() => { setAttemptKey(k => k + 1); router.refresh() }}
-                />
-              ) : (
-                <p className="text-sm text-zinc-500">Course not yet initialized.</p>
-              )}
+              <p className="text-sm text-zinc-500">Course not yet initialized.</p>
             </div>
           )}
         </>
