@@ -134,7 +134,18 @@ genuine events needs a provisioned employee + live DB, and the `video_*` half pr
 until the SCORM work deploys.
 
 ## Repo state at wrap-up
-- `main`, 3 commits ahead of the session start (`98da543`, `9b2b095`, + this wrap-up), pushed.
+- `main`, pushed. Rob pushed 3 commits (`963a2d0`, `def1582`, `b770adb` — observability wiring +
+  handoff) *during* this session; merged at wrap-up. Only conflict was `session_handoff.md`,
+  resolved by combining both. **No overlap with either held changeset.**
+- Verified live at wrap-up: Max's mid-session deploy shipped Rob's observability, so Rob's
+  "PRODUCTION IS RUNNING A STALE BUILD" warning is now RESOLVED — `/api/health` returns
+  `{"status":"ok","db":"ok"}` (deep check) and `/api/metrics` returns 401 (was 404).
+- ⚠️ **`/dashboard/training` is BROKEN in prod** — the deployed build predates the `scorm-again`
+  import fix. A redeploy from the current working tree fixes it.
+- Cloudflare quirk confirmed live: `/training-content/scorm-v1/scormdriver/indexAPI.html` → **307**
+  → `…/indexAPI` → 200. CF static assets strip `.html`. The iframe follows the redirect and the
+  package's relative paths still resolve to the same directory, so it works. `.js`/`.xml` serve 200
+  directly. Do NOT drop the `.html` from the iframe src — that would 404 under `next dev`.
 - **3 held files STILL uncommitted, untouched** (from 2026-07-08): `account-menu.tsx`,
   `layout.tsx`, `quizzes-client.tsx`.
 - **SCORM gate uncommitted** (6 files + `public/training-content/` + `package.json`/lockfile).
