@@ -35,11 +35,16 @@ declare global {
 
 const COMPLETE_STATUSES = new Set(['completed', 'passed'])
 
+const DEFAULT_FRAME =
+  'relative h-[75vh] min-h-[560px] w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900'
+
 interface Props {
   /** Fired once, after the completion event has been durably recorded server-side. */
   onCompleted?: () => void
   onStarted?: () => void
   className?: string
+  /** Classes for the iframe's positioned container. Lets the caller resize it (e.g. focus mode). */
+  frameClassName?: string
 }
 
 async function postProgress(event: 'started' | 'completed'): Promise<boolean> {
@@ -60,7 +65,7 @@ async function postProgress(event: 'started' | 'completed'): Promise<boolean> {
   }
 }
 
-export function ScormContent({ onCompleted, onStarted, className }: Props) {
+export function ScormContent({ onCompleted, onStarted, className, frameClassName }: Props) {
   // Gate the iframe until window.API exists.
   const [apiReady, setApiReady] = useState(false)
 
@@ -114,7 +119,7 @@ export function ScormContent({ onCompleted, onStarted, className }: Props) {
 
   return (
     <div className={className}>
-      <div className="relative w-full h-[75vh] min-h-[560px] overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
+      <div className={frameClassName ?? DEFAULT_FRAME}>
         {apiReady ? (
           <iframe
             title="AI Staff Compliance Certificate — course content"
@@ -124,7 +129,7 @@ export function ScormContent({ onCompleted, onStarted, className }: Props) {
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-sm text-zinc-500">Loading course…</p>
+            <p className="text-sm text-[#8A8A8A]">Loading course…</p>
           </div>
         )}
       </div>
