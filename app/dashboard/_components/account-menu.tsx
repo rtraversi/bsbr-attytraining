@@ -10,6 +10,8 @@ interface AccountMenuProps {
   email: string
   fullName: string | null
   role: string | null
+  /** Firm the user belongs to — shown under the email in the identity header. */
+  firmName: string | null
   /** Which side the dropdown panel aligns to. Employee shell = left, admin = right. */
   anchor?: 'left' | 'right'
   /** Show the light/dark theme toggle (employee themed shell only). */
@@ -27,6 +29,7 @@ export function AccountMenu({
   email,
   fullName,
   role,
+  firmName,
   anchor = 'right',
   showTheme = false,
   showLegal = false,
@@ -148,6 +151,11 @@ export function AccountMenu({
             <p className="truncate text-xs font-extralight text-[#8A8A8A] dark:text-[#7A8189]">
               {email}
             </p>
+            {firmName && (
+              <p className="mt-0.5 truncate text-[11px] font-extralight text-[#AEB4BB] dark:text-[#5C636B]">
+                {firmName}
+              </p>
+            )}
           </div>
 
           {editing ? (

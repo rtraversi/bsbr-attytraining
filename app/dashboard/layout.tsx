@@ -4,6 +4,7 @@ import { EmployeeTabBar } from './_components/employee-tab-bar'
 import { ToastProvider } from './_components/toast-provider'
 import { ThemeProvider, ThemeScript } from './_components/theme'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -16,12 +17,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const role = (user?.app_metadata?.role as string | undefined) ?? null
   const isEmployee = role === 'employee'
 
+  // Firm name for the account menu identity header (same firm_id source as
+  // app/dashboard/training/page.tsx). Fetched with the service-role client.
+  const firmId = user?.app_metadata?.firm_id as string | undefined
+  let firmName: string | null = null
+  if (firmId) {
+    const admin = createAdminClient()
+    const { data: firm } = await admin.from('firms').select('name').eq('id', firmId).maybeSingle()
+    firmName = firm?.name ?? null
+  }
+
   // Admin shell — unchanged dark chrome (its pages are still dark-styled).
   if (!isEmployee) {
     return (
       <div className="min-h-screen bg-zinc-950 flex flex-col">
         <nav className="border-b border-zinc-800 px-6 py-4 flex items-center justify-end">
-          <AccountMenu email={email} fullName={fullName} role={role} />
+          <AccountMenu email={email} fullName={fullName} role={role} firmName={firmName} />
         </nav>
         <ToastProvider>
           <div className="flex-1">{children}</div>
@@ -42,6 +53,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             email={email}
             fullName={fullName}
             role={role}
+            firmName={firmName}
             anchor="left"
             showTheme
             showLegal
