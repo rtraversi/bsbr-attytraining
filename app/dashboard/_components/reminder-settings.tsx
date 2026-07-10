@@ -25,7 +25,10 @@ export function ReminderSettings({ initialDays }: { initialDays: number }) {
 
   return (
     <div className="flex items-center gap-3">
-      <label className="text-xs text-zinc-500 whitespace-nowrap" htmlFor="reminder-days">
+      <label
+        className="whitespace-nowrap text-xs text-[#8A8A8A] dark:text-[#7A8189]"
+        htmlFor="reminder-days"
+      >
         Auto-reminder after
       </label>
       <select
@@ -33,16 +36,16 @@ export function ReminderSettings({ initialDays }: { initialDays: number }) {
         value={days}
         onChange={handleChange}
         disabled={status === 'saving'}
-        className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
+        className="rounded-xl border border-[#E5EEF5] bg-white px-3 py-2 text-sm text-[#0A0A0A] outline-none transition-colors focus:border-[#32C7FF] focus:ring-2 focus:ring-[#32C7FF]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
       >
         <option value={3}>3 days</option>
         <option value={7}>7 days</option>
         <option value={14}>14 days</option>
       </select>
-      <span className="text-xs min-w-[3.5rem]">
-        {status === 'saving' && <span className="text-zinc-500">Saving…</span>}
-        {status === 'saved'  && <span className="text-teal-400">Saved</span>}
-        {status === 'error'  && <span className="text-red-400">Failed</span>}
+      <span className="min-w-[3.5rem] text-xs">
+        {status === 'saving' && <span className="text-[#8A8A8A] dark:text-[#7A8189]">Saving…</span>}
+        {status === 'saved' && <span className="font-semibold text-[#0094FF]">Saved</span>}
+        {status === 'error' && <span className="text-[#DC2626]">Failed</span>}
       </span>
     </div>
   )

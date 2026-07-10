@@ -57,6 +57,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      // ThemeScript stamps `dark` onto <html> before paint to avoid a FOUC, so the
+      // class attribute React rendered on the server never matches the client's.
+      suppressHydrationWarning
       className={cn(
         GeistSans.variable,
         GeistMono.variable,
