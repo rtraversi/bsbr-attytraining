@@ -45,6 +45,12 @@ interface Props {
   className?: string
   /** Classes for the iframe's positioned container. Lets the caller resize it (e.g. focus mode). */
   frameClassName?: string
+  /**
+   * SCORM `cmi.core.lesson_location` to resume into (from the learner's last
+   * recorded lesson boundary). Seeded before the iframe mounts so Rise drops
+   * them back into the right lesson instead of restarting from the top.
+   */
+  initialLocation?: string
 }
 
 async function postProgress(event: 'started' | 'completed'): Promise<boolean> {
@@ -65,7 +71,30 @@ async function postProgress(event: 'started' | 'completed'): Promise<boolean> {
   }
 }
 
-export function ScormContent({ onCompleted, onStarted, className, frameClassName }: Props) {
+/** Fire-and-forget POST for the high-frequency telemetry events (location, time). */
+function postContentEvent(body: Record<string, unknown>): void {
+  void fetch('/api/training/content-progress', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).catch(err => console.error('[scorm] content-progress failed:', body.event, err))
+}
+
+/** SCORM 1.2 CMITimespan "HHHH:MM:SS.ss" → seconds, or null if unparseable. */
+function parseScormTime(value: string): number | null {
+  const m = /^(\d{2,4}):(\d{2}):(\d{2}(?:\.\d+)?)$/.exec(value.trim())
+  if (!m) return null
+  const seconds = Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3])
+  return Number.isFinite(seconds) ? seconds : null
+}
+
+export function ScormContent({
+  onCompleted,
+  onStarted,
+  className,
+  frameClassName,
+  initialLocation,
+}: Props) {
   // Gate the iframe until window.API exists.
   const [apiReady, setApiReady] = useState(false)
 
@@ -73,6 +102,15 @@ export function ScormContent({ onCompleted, onStarted, className, frameClassName
   // so the listener closures always read the current value.
   const startedRef = useRef(false)
   const completedRef = useRef(false)
+
+  // Last cmi.core.session_time we saw this mount, in seconds — we post the delta
+  // between ticks, not the absolute. Captured in a ref so the once-registered
+  // listener reads the current value.
+  const lastSecondsRef = useRef(0)
+
+  // Mount-time resume bookmark. A ref so the effect's [] deps stay honest — this
+  // is a server-provided constant for the life of the mount, never a live prop.
+  const initialLocationRef = useRef(initialLocation)
 
   // Keep the latest callbacks reachable from listeners registered once on mount.
   const onCompletedRef = useRef(onCompleted)
@@ -107,6 +145,33 @@ export function ScormContent({ onCompleted, onStarted, className, frameClassName
         else completedRef.current = false // allow a later retry
       })
     })
+
+    // Per-lesson tracking: Rise writes lesson_location exactly at a lesson
+    // boundary. The server dedupes, so posting every write is fine.
+    api.on('LMSSetValue.cmi.core.lesson_location', (_cmiElement: string, value: string) => {
+      if (!value) return
+      postContentEvent({ event: 'lesson_location', location: String(value) })
+    })
+
+    // Time-spent: session_time is the accumulated seconds for THIS session and
+    // ticks up ~every 20s. Post the delta since the last tick (capped, and
+    // negatives — a session reset — skipped) so the server can sum it.
+    api.on('LMSSetValue.cmi.core.session_time', (_cmiElement: string, value: string) => {
+      const seconds = parseScormTime(String(value))
+      if (seconds === null) return
+      let delta = seconds - lastSecondsRef.current
+      lastSecondsRef.current = seconds
+      if (!Number.isFinite(delta) || delta <= 0) return // reset or garbage — skip
+      if (delta > 60) delta = 60 // ticks are ~20s apart; cap absurd jumps
+      postContentEvent({ event: 'session_time', deltaSeconds: delta })
+    })
+
+    // Resume: seed the last-reached lesson before initialize, so the driver
+    // reports it back and Rise opens there instead of at lesson 1. Must precede
+    // window.API assignment (and therefore the iframe mount).
+    if (initialLocationRef.current) {
+      api.loadFromJSON({ core: { lesson_location: initialLocationRef.current } })
+    }
 
     window.API = api
     setApiReady(true)

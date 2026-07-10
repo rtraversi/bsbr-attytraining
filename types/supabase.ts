@@ -189,6 +189,7 @@ export type Database = {
           firm_id: string
           id: string
           status: string
+          total_training_seconds: number
           user_id: string
         }
         Insert: {
@@ -198,6 +199,7 @@ export type Database = {
           firm_id: string
           id?: string
           status?: string
+          total_training_seconds?: number
           user_id: string
         }
         Update: {
@@ -207,6 +209,7 @@ export type Database = {
           firm_id?: string
           id?: string
           status?: string
+          total_training_seconds?: number
           user_id?: string
         }
         Relationships: [
@@ -507,6 +510,10 @@ export type Database = {
       firm_id: { Args: never; Returns: string }
       firm_role: { Args: never; Returns: string }
       generate_certificate_number: { Args: never; Returns: string }
+      increment_training_seconds: {
+        Args: { p_delta: number; p_enrollment_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

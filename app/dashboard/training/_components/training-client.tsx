@@ -21,6 +21,16 @@ interface Props {
   checksCleared: boolean
   /** SCORM course reported completion (verified — a video_completed event exists). */
   contentViewed: boolean
+  /** Highest lesson boundary reached (1–5), from the latest lesson_location_changed event. */
+  currentLessonNumber?: number | null
+  /** SCORM lesson_location to resume into — plumbed straight to ScormContent. */
+  initialLocation?: string
+  /**
+   * Accumulated training seconds (enrollments.total_training_seconds). Plumbed in
+   * now for the time-spent stat, but not yet rendered — the display is a separate
+   * design pass (intentionally not destructured below, so it isn't a dead binding).
+   */
+  totalTrainingSeconds?: number
   certId?: string
   certNumber?: string
   issuedAt?: string
@@ -53,6 +63,8 @@ export function TrainingClient({
   questions,
   checksCleared,
   contentViewed,
+  currentLessonNumber,
+  initialLocation,
   certId,
   certNumber,
   issuedAt,
@@ -116,10 +128,14 @@ export function TrainingClient({
   const gatesOpen = checksCleared && contentViewed
   const showQuiz = phase === 'not_started' && gatesOpen && !!courseId && !quizDismissed
 
-  // The only two real signals we have. No new derivation. Passing the assessment
-  // supersedes both — a certified learner is done regardless of event backfill.
-  const progressPct =
-    phase === 'not_started' ? (contentViewed ? 50 : 0) + (checksCleared ? 50 : 0) : 100
+  // Honest progress: content is the first half (0–50%), lesson checks the second
+  // (50%). Before the SCORM course reports full completion, credit partial content
+  // progress from how far through the 5 lessons the learner has actually reached
+  // (lesson N reached ⇒ N-1 done). Passing the assessment supersedes everything.
+  const lessonsCompletedCount = currentLessonNumber ? currentLessonNumber - 1 : 0
+  const contentPct = contentViewed ? 50 : Math.round((lessonsCompletedCount / 5) * 50)
+  const checksPct = checksCleared ? 50 : 0
+  const progressPct = phase === 'not_started' ? contentPct + checksPct : 100
 
   // Content is done but the assessment isn't on screen — surface the next step
   // over the player rather than burying it below the fold.
@@ -210,7 +226,7 @@ export function TrainingClient({
               }`}
             >
               <div
-                className="h-full rounded-full transition-[width] duration-500"
+                className="h-full rounded-l-full transition-[width] duration-500"
                 style={{
                   width: `${progressPct}%`,
                   background: 'linear-gradient(90deg, #32C7FF 0%, #0094FF 100%)',
@@ -239,6 +255,7 @@ export function TrainingClient({
         >
           <ScormContent
             onCompleted={() => router.refresh()}
+            initialLocation={initialLocation}
             className={focus ? 'h-full w-full' : ''}
             frameClassName={
               focus

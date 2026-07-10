@@ -69,15 +69,19 @@ export default async function TrainingPage() {
 
   // Fetch enrollment + questions + both halves of the assessment gate in parallel.
   type KcRow = { metadata: unknown; event_timestamp: string }
-  const [enrollmentResult, questionsResult, kcResult, contentResult] = await Promise.all([
-    admin
-      .from('enrollments')
-      .select('id, status, completed_at')
-      .eq('user_id', userId)
-      .eq('course_id', course.id)
-      .order('enrolled_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+  const [enrollmentResult, questionsResult, kcResult, contentResult, lessonLocationResult] =
+    await Promise.all([
+      // total_training_seconds isn't in generated types yet — regenerate with
+      // `supabase gen types` after migration 0011 is pushed to drop this cast.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (admin as any)
+        .from('enrollments')
+        .select('id, status, completed_at, total_training_seconds')
+        .eq('user_id', userId)
+        .eq('course_id', course.id)
+        .order('enrolled_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     // Select id, question_text, answers only — correct_index stays server-side
     // quiz_questions isn't in generated types yet; re-run `supabase gen types` after db push
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -105,9 +109,34 @@ export default async function TrainingPage() {
           .limit(1)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    // Resume point — the member's most recent lesson boundary (metadata.location
+    // seeds SCORM resume; metadata.lessonNumber drives the honest progress bar).
+    member
+      ? admin
+          .from('training_events')
+          .select('metadata')
+          .eq('firm_member_id', member.id)
+          .eq('event_type', 'lesson_location_changed')
+          .order('event_timestamp', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null as { metadata: unknown } | null }),
   ])
 
-  const enrollment = enrollmentResult.data
+  type EnrollmentRow = {
+    id: string
+    status: string
+    completed_at: string | null
+    total_training_seconds: number | null
+  }
+  const enrollment = enrollmentResult.data as EnrollmentRow | null
+
+  // Resume point + honest-progress inputs, derived from the latest lesson event.
+  const locMeta = (lessonLocationResult.data?.metadata ?? null) as Record<string, unknown> | null
+  const rawLessonNumber = Number(locMeta?.lessonNumber)
+  const currentLessonNumber = Number.isInteger(rawLessonNumber) ? rawLessonNumber : null
+  const initialLocation = typeof locMeta?.location === 'string' ? locMeta.location : undefined
+  const totalTrainingSeconds = enrollment?.total_training_seconds ?? 0
 
   const kcEvents: KnowledgeCheckEvent[] = ((kcResult.data ?? []) as KcRow[])
     .map(r => {
@@ -144,6 +173,9 @@ export default async function TrainingPage() {
         questions={questions}
         checksCleared={checksCleared}
         contentViewed={contentViewed}
+        currentLessonNumber={currentLessonNumber}
+        initialLocation={initialLocation}
+        totalTrainingSeconds={totalTrainingSeconds}
       />
     )
   }
@@ -170,6 +202,9 @@ export default async function TrainingPage() {
         questions={[]}
         checksCleared={checksCleared}
         contentViewed={contentViewed}
+        currentLessonNumber={currentLessonNumber}
+        initialLocation={initialLocation}
+        totalTrainingSeconds={totalTrainingSeconds}
         certId={cert.id}
         certNumber={cert.certificate_number}
         issuedAt={cert.issued_at}
@@ -189,6 +224,9 @@ export default async function TrainingPage() {
       questions={[]}
       checksCleared={checksCleared}
       contentViewed={contentViewed}
+      currentLessonNumber={currentLessonNumber}
+      initialLocation={initialLocation}
+      totalTrainingSeconds={totalTrainingSeconds}
     />
   )
 }
