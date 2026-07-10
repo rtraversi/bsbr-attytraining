@@ -1,0 +1,27 @@
+{
+  "version": "3.120.37241.0",
+  "course_id": "6SikKqXGwuy",
+  "title": "animations 4",
+  "thumbnail": "story_content/thumbnail.jpg",
+  "scenes": [
+    {
+      "title": "Escena introductoria"
+    }
+  ],
+  "slides": [
+    {
+      "id": "5fSe4tlBF47",
+      "title": "Diapositiva de introducción",
+      "scene_index": "1.1"
+    }
+  ],
+  "player": {
+    "name": "unified",
+    "width": 1940,
+    "height": 1151
+  },
+  "stage": {
+    "width": 1920,
+    "height": 1080
+  }
+}

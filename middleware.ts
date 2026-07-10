@@ -56,6 +56,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // `training-content/` is the static SCORM package (~325 files: html/js/css/
+    // json/fonts/audio). Without this exclusion every asset request would run
+    // middleware and pay a supabase.auth.getUser() round-trip.
+    '/((?!_next/static|_next/image|favicon.ico|api/|training-content/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

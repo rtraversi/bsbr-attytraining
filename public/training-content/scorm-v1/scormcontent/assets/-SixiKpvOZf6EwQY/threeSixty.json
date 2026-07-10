@@ -1,0 +1,37 @@
+{
+  "version": "3.120.37241.0",
+  "course_id": "6nUzRJwbtFp",
+  "title": "animations",
+  "thumbnail": "story_content/thumbnail.jpg",
+  "scenes": [
+    {
+      "title": "Escena introductoria"
+    }
+  ],
+  "slides": [
+    {
+      "id": "6KzE69jt0lG",
+      "title": "Diapositiva sin título",
+      "scene_index": "1.1"
+    },
+    {
+      "id": "6bCxMSzziek",
+      "title": "Diapositiva de introducción",
+      "scene_index": "1.2"
+    },
+    {
+      "id": "5oYk1of9H3L",
+      "title": "Diapositiva sin título",
+      "scene_index": "1.3"
+    }
+  ],
+  "player": {
+    "name": "unified",
+    "width": 1940,
+    "height": 1151
+  },
+  "stage": {
+    "width": 1920,
+    "height": 1080
+  }
+}

@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { deriveProgress, type KnowledgeCheckEvent } from '@/lib/training/progress'
+import { READINESS_LESSON } from '@/lib/training/lessons'
 import { TrainingClient } from './_components/training-client'
 import type { QuizQuestion } from './_components/quiz-component'
 
@@ -31,26 +33,26 @@ export default async function TrainingPage() {
   const userId = user.id
   const admin = createAdminClient()
 
-  // Get the course.
-  // rise_embed_url is added in migration 0010 and isn't in the generated types
-  // until `supabase gen types` is re-run — query untyped (same pattern as the
-  // quiz_questions select below) and re-apply a precise type.
+  // Course + firm member resolve independently — fetch together.
   type CourseRow = {
     id: string
     title: string
     pass_threshold: number | null
-    rise_embed_url: string | null
   }
-  const { data: courseRaw } = await // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (admin as any)
-      .from('courses')
-      .select('id, title, pass_threshold, rise_embed_url')
-      .limit(1)
-      .maybeSingle()
-  const course = courseRaw as CourseRow | null
+  const [courseResult, memberResult] = await Promise.all([
+    admin.from('courses').select('id, title, pass_threshold').limit(1).maybeSingle(),
+    admin
+      .from('firm_members')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('firm_id', firmId)
+      .maybeSingle(),
+  ])
+
+  const course = courseResult.data as CourseRow | null
+  const member = memberResult.data
 
   const courseTitle = course?.title ?? 'Responsible Use of AI within the Legal Industry'
-  const riseUrl = course?.rise_embed_url ?? null
 
   if (!course) {
     return (
@@ -59,13 +61,15 @@ export default async function TrainingPage() {
         courseTitle={courseTitle}
         courseId={null}
         questions={[]}
-        riseUrl={riseUrl}
+        checksCleared={false}
+        contentViewed={false}
       />
     )
   }
 
-  // Fetch enrollment + questions in parallel
-  const [enrollmentResult, questionsResult] = await Promise.all([
+  // Fetch enrollment + questions + both halves of the assessment gate in parallel.
+  type KcRow = { metadata: unknown; event_timestamp: string }
+  const [enrollmentResult, questionsResult, kcResult, contentResult] = await Promise.all([
     admin
       .from('enrollments')
       .select('id, status, completed_at')
@@ -82,9 +86,44 @@ export default async function TrainingPage() {
       .select('id, question_text, answers')
       .eq('course_id', course.id)
       .eq('is_active', true),
+    // Gate half 1 — lesson checks cleared (same derivation as overview/quizzes pages)
+    member
+      ? admin
+          .from('training_events')
+          .select('metadata, event_timestamp')
+          .eq('firm_member_id', member.id)
+          .eq('event_type', 'knowledge_check_completed')
+          .order('event_timestamp', { ascending: true })
+      : Promise.resolve({ data: [] as KcRow[] }),
+    // Gate half 2 — SCORM content actually completed (verified, not self-reported)
+    member
+      ? admin
+          .from('training_events')
+          .select('id')
+          .eq('firm_member_id', member.id)
+          .eq('event_type', 'video_completed')
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ])
 
   const enrollment = enrollmentResult.data
+
+  const kcEvents: KnowledgeCheckEvent[] = ((kcResult.data ?? []) as KcRow[])
+    .map(r => {
+      const m = (r.metadata ?? {}) as Record<string, unknown>
+      return {
+        lesson: Number(m.lesson),
+        score: Number(m.score),
+        passed: m.passed === true,
+        attemptNumber: Number(m.attemptNumber ?? 0),
+        created_at: r.event_timestamp,
+      }
+    })
+    .filter(e => Number.isInteger(e.lesson) && e.lesson >= 1 && e.lesson <= READINESS_LESSON)
+
+  const checksCleared = deriveProgress(kcEvents).quizzesUnlocked
+  const contentViewed = contentResult.data !== null
 
   // Cast and shuffle — correct_index is never sent to the client
   type RawQuestion = { id: string; question_text: string; answers: unknown }
@@ -103,7 +142,8 @@ export default async function TrainingPage() {
         courseTitle={courseTitle}
         courseId={course.id}
         questions={questions}
-        riseUrl={riseUrl}
+        checksCleared={checksCleared}
+        contentViewed={contentViewed}
       />
     )
   }
@@ -128,7 +168,8 @@ export default async function TrainingPage() {
         courseTitle={courseTitle}
         courseId={course.id}
         questions={[]}
-        riseUrl={riseUrl}
+        checksCleared={checksCleared}
+        contentViewed={contentViewed}
         certId={cert.id}
         certNumber={cert.certificate_number}
         issuedAt={cert.issued_at}
@@ -146,7 +187,8 @@ export default async function TrainingPage() {
       courseTitle={courseTitle}
       courseId={course.id}
       questions={[]}
-      riseUrl={riseUrl}
+      checksCleared={checksCleared}
+      contentViewed={contentViewed}
     />
   )
 }

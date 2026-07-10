@@ -1,0 +1,27 @@
+{
+  "version": "3.120.37241.0",
+  "course_id": "5YMiYkxsGCZ",
+  "title": "animations 5",
+  "thumbnail": "story_content/thumbnail.jpg",
+  "scenes": [
+    {
+      "title": "Escena introductoria"
+    }
+  ],
+  "slides": [
+    {
+      "id": "611rUOfUMcX",
+      "title": "Diapositiva de introducción",
+      "scene_index": "1.1"
+    }
+  ],
+  "player": {
+    "name": "unified",
+    "width": 2180,
+    "height": 1175
+  },
+  "stage": {
+    "width": 1920,
+    "height": 1080
+  }
+}
