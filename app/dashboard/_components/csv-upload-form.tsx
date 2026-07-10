@@ -116,74 +116,71 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  // Seats-full: the disabled affordance stays visible so the action is still
+  // discoverable. The explanatory note is rendered once by the Invitations card.
   if (seatsRemaining <= 0) {
     return (
-      <p className="text-sm text-yellow-400">
-        All seats are in use. Contact us to add more before bulk-inviting.
-      </p>
+      <button
+        type="button"
+        disabled
+        className="w-full cursor-not-allowed rounded-xl border border-[#E5EEF5] py-2.5 text-xs font-bold text-[#B0B7BF] dark:border-[#1F2429] dark:text-[#4E555C]"
+      >
+        Bulk invite (CSV)
+      </button>
     )
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-xs text-zinc-500">
-        CSV format: <code className="text-zinc-400 bg-zinc-800 px-1 py-0.5 rounded">name,email</code> — one employee per row, header row required.
+    <div className="flex flex-col gap-2">
+      <label className="cursor-pointer">
+        <span className="block w-full rounded-xl border border-[#E5EEF5] py-2.5 text-center text-xs font-bold text-[#3D3D3D] transition-colors hover:border-[#0094FF] hover:text-[#0094FF] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[#32C7FF] dark:hover:text-[#32C7FF]">
+          {fileName || 'Bulk invite (CSV)'}
+        </span>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          onChange={handleFileChange}
+          className="sr-only"
+        />
+      </label>
+
+      <p className="text-[10px] text-[#8A8A8A] dark:text-[#7A8189]">
+        CSV format: <code className="rounded bg-[#F5F7FA] px-1 py-0.5 dark:bg-[#131A20]">name,email</code> — one per row.
       </p>
 
-      {/* File picker */}
-      <div className="flex items-center gap-3">
-        <label className="cursor-pointer">
-          <span className="rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors inline-block">
-            {fileName || 'Choose CSV file'}
-          </span>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,text/csv"
-            onChange={handleFileChange}
-            className="sr-only"
-          />
-        </label>
-
-        {phase === 'preview' && (
+      {phase === 'preview' && (
+        <>
           <button
             onClick={handleUpload}
-            className="rounded-lg bg-teal-500 hover:bg-teal-400 active:bg-teal-600 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors whitespace-nowrap"
+            className="w-full rounded-xl bg-black py-2.5 text-xs font-bold text-white transition-colors hover:bg-gray-800 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
           >
             Invite {rows.length} {rows.length === 1 ? 'employee' : 'employees'}
           </button>
-        )}
-
-        {phase === 'uploading' && (
-          <span className="text-sm text-zinc-400">Sending invites…</span>
-        )}
-      </div>
-
-      {/* Preview count */}
-      {phase === 'preview' && (
-        <p className="text-xs text-zinc-500">
-          {rows.length} {rows.length === 1 ? 'row' : 'rows'} found —{' '}
-          {seatsRemaining} seat{seatsRemaining !== 1 ? 's' : ''} remaining
-        </p>
+          <p className="text-[10px] text-[#8A8A8A] dark:text-[#7A8189]">
+            {rows.length} {rows.length === 1 ? 'row' : 'rows'} found — {seatsRemaining} seat
+            {seatsRemaining !== 1 ? 's' : ''} remaining
+          </p>
+        </>
       )}
 
-      {/* Result */}
+      {phase === 'uploading' && (
+        <span className="text-[11px] text-[#8A8A8A] dark:text-[#7A8189]">Sending invites…</span>
+      )}
+
       {phase === 'done' && result && (
-        <div className="flex items-center justify-between rounded-lg border border-teal-500/20 bg-teal-500/5 px-4 py-3">
-          <p className="text-sm text-teal-400">{summaryText(result)}</p>
+        <div className="flex items-center justify-between gap-2 rounded-xl bg-[#EAF8FF] px-3 py-2 dark:bg-[#0094FF]/10">
+          <p className="text-[11px] font-semibold text-[#0094FF]">{summaryText(result)}</p>
           <button
             onClick={handleReset}
-            className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors ml-4 shrink-0"
+            className="shrink-0 text-[10px] text-[#8A8A8A] transition-colors hover:text-[#0A0A0A] dark:hover:text-[#F5F7FA]"
           >
             Upload another
           </button>
         </div>
       )}
 
-      {/* Error */}
-      {phase === 'error' && (
-        <p className="text-sm text-red-400">{errorMsg}</p>
-      )}
+      {phase === 'error' && <p className="text-[11px] text-[#DC2626]">{errorMsg}</p>}
     </div>
   )
 }

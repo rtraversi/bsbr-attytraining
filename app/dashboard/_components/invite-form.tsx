@@ -44,17 +44,23 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
     addToast(`Invite sent to ${sentEmail}`)
   }
 
+  // Seats-full: the disabled affordance stays visible so the action is still
+  // discoverable. The explanatory note is rendered once by the Invitations card.
   if (seatsRemaining <= 0) {
     return (
-      <p className="text-sm text-yellow-400">
-        All seats are in use. Contact us to add more.
-      </p>
+      <button
+        type="button"
+        disabled
+        className="w-full cursor-not-allowed rounded-xl bg-[#F2F4F7] py-2.5 text-xs font-bold text-[#B0B7BF] dark:bg-[#1A1F24] dark:text-[#4E555C]"
+      >
+        Invite by email
+      </button>
     )
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <form onSubmit={handleSubmit} className="flex gap-3">
+    <div className="flex flex-col gap-2">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2">
         <input
           type="email"
           required
@@ -62,32 +68,24 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={phase === 'loading'}
-          className="flex-1 rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
+          className="w-full rounded-xl border border-[#E5EEF5] bg-white px-3 py-2.5 text-xs text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[#32C7FF] focus:ring-2 focus:ring-[#32C7FF]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
         />
         <button
           type="submit"
           disabled={phase === 'loading'}
-          className="rounded-lg bg-teal-500 hover:bg-teal-400 active:bg-teal-600 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          className="w-full rounded-xl bg-black py-2.5 text-xs font-bold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
         >
-          {phase === 'loading' ? 'Sending…' : 'Send invite'}
+          {phase === 'loading' ? 'Sending…' : 'Invite by email'}
         </button>
       </form>
 
-      {phase === 'done' && (
-        <p className="text-sm text-teal-400">Invite sent!</p>
-      )}
-
-      {phase === 'error' && (
-        <p className="text-sm text-red-400">{errorMsg}</p>
-      )}
+      {phase === 'done' && <p className="text-[11px] font-semibold text-[#0094FF]">Invite sent.</p>}
+      {phase === 'error' && <p className="text-[11px] text-[#DC2626]">{errorMsg}</p>}
 
       {devLink && (
-        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3">
-          <p className="text-xs text-yellow-400 mb-1 font-mono">DEV — invite link (email not sent):</p>
-          <a
-            href={devLink}
-            className="text-xs text-yellow-300 break-all underline hover:text-yellow-200"
-          >
+        <div className="rounded-xl border border-[#FDE8B8] bg-[#FFF7E6] p-2.5">
+          <p className="mb-1 font-mono text-[10px] text-[#B45309]">DEV — invite link (email not sent):</p>
+          <a href={devLink} className="break-all text-[10px] text-[#B45309] underline hover:opacity-80">
             {devLink}
           </a>
         </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { createContext, useContext, useMemo, useState } from 'react'
 import { ReassignModal } from './reassign-modal'
 import { CertPreviewModal } from './cert-preview-modal'
 import { useToast } from './toast-provider'
@@ -25,7 +25,40 @@ export interface MemberDetail {
 
 type RemindState = 'idle' | 'loading' | 'sent' | 'error'
 
-export function TeamTable({ memberDetails }: { memberDetails: MemberDetail[] }) {
+/**
+ * The spec splits one table into two cards — actionable "Manage team" and
+ * read-only "Team overview" — that sit in different grid cells. They share
+ * row state (a delete in one must drop the row from the other), so the state
+ * lives in a provider that wraps both. Handlers and gating are unchanged from
+ * the single-table version.
+ */
+interface TeamCtx {
+  visible: MemberDetail[]
+  total: number
+  remindStates: Record<string, RemindState>
+  deletingIds: Set<string>
+  reassignedIds: Set<string>
+  handleRemind: (userId: string, displayName: string) => void
+  handleDelete: (memberId: string, displayName: string) => void
+  setReassignTarget: (m: MemberDetail) => void
+  setCertPreview: (m: MemberDetail) => void
+}
+
+const Ctx = createContext<TeamCtx | null>(null)
+
+function useTeam(): TeamCtx {
+  const ctx = useContext(Ctx)
+  if (!ctx) throw new Error('Team panels must be rendered inside <TeamProvider>')
+  return ctx
+}
+
+export function TeamProvider({
+  memberDetails,
+  children,
+}: {
+  memberDetails: MemberDetail[]
+  children: React.ReactNode
+}) {
   const { addToast } = useToast()
   const [remindStates, setRemindStates] = useState<Record<string, RemindState>>({})
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
@@ -81,22 +114,25 @@ export function TeamTable({ memberDetails }: { memberDetails: MemberDetail[] }) 
     setReassignTarget(null)
   }
 
-  const visible = memberDetails.filter(m => !deletedIds.has(m.id))
+  const visible = useMemo(
+    () => memberDetails.filter(m => !deletedIds.has(m.id)),
+    [memberDetails, deletedIds]
+  )
 
-  if (memberDetails.length === 0) {
-    return (
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 py-16 flex flex-col items-center gap-3 text-center">
-        <PersonPlusIcon />
-        <p className="text-sm font-medium text-zinc-400">Your team is empty</p>
-        <p className="text-xs text-zinc-600 max-w-xs leading-relaxed">
-          Invite your first team member above to get started with AI compliance training.
-        </p>
-      </div>
-    )
+  const value: TeamCtx = {
+    visible,
+    total: memberDetails.length,
+    remindStates,
+    deletingIds,
+    reassignedIds,
+    handleRemind,
+    handleDelete,
+    setReassignTarget,
+    setCertPreview,
   }
 
   return (
-    <>
+    <Ctx.Provider value={value}>
       <ReassignModal
         member={reassignTarget}
         onClose={() => setReassignTarget(null)}
@@ -112,184 +148,235 @@ export function TeamTable({ memberDetails }: { memberDetails: MemberDetail[] }) 
           onClose={() => setCertPreview(null)}
         />
       )}
+      {children}
+    </Ctx.Provider>
+  )
+}
 
-      <div className="rounded-2xl border border-zinc-800 overflow-hidden overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-zinc-800 bg-zinc-900/50">
-              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Name</th>
-              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Email</th>
-              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Training Status</th>
-              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Score</th>
-              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Completion Date</th>
-              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Certificate</th>
-              <th className="text-left px-4 py-3 text-zinc-500 font-normal whitespace-nowrap">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-800">
-            {visible.map((m) => {
-              // Reassigned rows show a one-line confirmation instead of normal cells
-              if (reassignedIds.has(m.id)) {
-                return (
-                  <tr key={m.id} className="bg-zinc-900">
-                    <td colSpan={7} className="px-4 py-3 text-xs text-zinc-500 italic">
-                      Reassigned — invite sent to new employee
-                    </td>
-                  </tr>
-                )
-              }
+/* ── Shared tokens ─────────────────────────────────────────────────────────── */
 
-              const remindState = remindStates[m.user_id] ?? 'idle'
-              const canRemind = m.trainingStatus === 'not_started' || m.trainingStatus === 'in_progress'
-              const canReassign = m.trainingStatus !== 'passed'
-              const isDeleting = deletingIds.has(m.id)
+const CARD =
+  'rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
+const HEADING =
+  'font-headline text-[1.05rem] font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
+const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 
+const ROW_ACTION =
+  'whitespace-nowrap rounded-lg border border-[#E5EEF5] px-2.5 py-1 text-[11px] font-semibold text-[#3D3D3D] transition-colors hover:border-[#0094FF] hover:text-[#0094FF] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[#32C7FF] dark:hover:text-[#32C7FF]'
+const ROW_ACTION_DANGER =
+  'whitespace-nowrap rounded-lg border border-[#FEE2E2] px-2.5 py-1 text-[11px] font-semibold text-[#DC2626] transition-colors hover:border-[#DC2626] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#3A1D1D]'
+
+/* ── Manage team — actionable rows ─────────────────────────────────────────── */
+
+export function ManageTeamPanel() {
+  const { visible, total, remindStates, deletingIds, reassignedIds, handleRemind, handleDelete, setReassignTarget } =
+    useTeam()
+
+  return (
+    <div className={CARD}>
+      <div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <h2 className={HEADING}>Manage team</h2>
+        <span className={`text-xs ${MUTED}`}>Remind, reassign, or remove a team member</span>
+      </div>
+
+      {total === 0 ? (
+        <EmptyTeam />
+      ) : (
+        <div className="flex flex-col divide-y divide-[#F2F4F7] dark:divide-[#1F2429]">
+          {visible.map(m => {
+            if (reassignedIds.has(m.id)) {
               return (
-                <tr key={m.id} className="bg-zinc-900 hover:bg-zinc-800/50 transition-colors">
-                  <td className="px-4 py-3 text-zinc-200 whitespace-nowrap">{m.name}</td>
-                  <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">{m.email}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                <p key={m.id} className={`py-3 text-xs italic ${MUTED}`}>
+                  Reassigned — invite sent to new employee
+                </p>
+              )
+            }
+
+            const remindState = remindStates[m.user_id] ?? 'idle'
+            const canRemind = m.trainingStatus === 'not_started' || m.trainingStatus === 'in_progress'
+            const canReassign = m.trainingStatus !== 'passed'
+            const isDeleting = deletingIds.has(m.id)
+
+            return (
+              <div key={m.id} className="flex items-center justify-between gap-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{m.name}</p>
+                  <p className={`truncate text-xs ${MUTED}`}>{m.email}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {canRemind &&
+                    (remindState === 'idle' ? (
+                      <button onClick={() => handleRemind(m.user_id, m.name)} className={ROW_ACTION}>
+                        Remind
+                      </button>
+                    ) : remindState === 'loading' ? (
+                      <span className={`text-[11px] ${MUTED}`}>Sending…</span>
+                    ) : remindState === 'sent' ? (
+                      <span className="text-[11px] font-semibold text-[#0094FF]">Sent ✓</span>
+                    ) : (
+                      <button
+                        onClick={() => handleRemind(m.user_id, m.name)}
+                        className="text-[11px] font-semibold text-[#DC2626] hover:underline"
+                      >
+                        Failed — try again
+                      </button>
+                    ))}
+
+                  {canReassign && (
+                    <button onClick={() => setReassignTarget(m)} className={ROW_ACTION}>
+                      Reassign
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => handleDelete(m.id, m.name)}
+                    disabled={isDeleting}
+                    className={ROW_ACTION_DANGER}
+                  >
+                    {isDeleting ? '…' : 'Delete'}
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+
+          {visible.length === 0 && (
+            <p className={`py-6 text-center text-sm ${MUTED}`}>All members have been removed.</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ── Team overview — read-only status table ────────────────────────────────── */
+
+export function TeamOverviewTable() {
+  const { visible, total, setCertPreview } = useTeam()
+
+  return (
+    <div className={`${CARD} h-full`}>
+      <div className="mb-4">
+        <h2 className={`${HEADING} mb-0.5`}>Team overview</h2>
+        <p className={`text-xs ${MUTED}`}>Real-time status of all employees</p>
+      </div>
+
+      {total === 0 ? (
+        <EmptyTeam />
+      ) : (
+        <div className="-mx-2 overflow-x-auto">
+          {/* Scroll the table rather than crushing names/dates on a narrow card. */}
+          <table className="w-full min-w-[560px] text-sm">
+            <thead>
+              <tr className="border-b border-[#E5EEF5] dark:border-[#1F2429]">
+                {['Employee', 'Status', 'Score', 'Completed', 'Certificate'].map(h => (
+                  <th
+                    key={h}
+                    className={`whitespace-nowrap px-2 py-2 text-left text-xs font-semibold ${MUTED}`}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#F2F4F7] dark:divide-[#1F2429]">
+              {visible.map(m => (
+                <tr key={m.id}>
+                  <td className="px-2 py-3">
+                    <p className="font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{m.name}</p>
+                    <p className={`text-xs ${MUTED}`}>{m.email}</p>
+                  </td>
+                  <td className="px-2 py-3">
                     <TrainingStatusBadge status={m.trainingStatus} />
                   </td>
-                  <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">
+                  <td className={`px-2 py-3 whitespace-nowrap ${m.score !== null ? 'font-semibold' : MUTED}`}>
                     {m.score !== null ? `${Math.round(m.score)}%` : '—'}
                   </td>
-                  <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">
+                  <td className={`whitespace-nowrap px-2 py-3 ${MUTED}`}>
                     {m.completedAt
-                      ? new Date(m.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                      ? new Date(m.completedAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })
                       : '—'}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="whitespace-nowrap px-2 py-3">
                     {m.certId ? (
                       <button
                         onClick={() => setCertPreview(m)}
-                        className="text-teal-400 hover:text-teal-300 text-xs underline underline-offset-2 transition-colors"
+                        className="text-xs font-semibold text-[#0094FF] hover:underline"
                       >
-                        View
+                        View &amp; download
                       </button>
                     ) : (
-                      <span className="text-zinc-600">—</span>
+                      <span className={MUTED}>—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {/* Remind — incomplete rows only */}
-                      {canRemind && (
-                        remindState === 'idle' ? (
-                          <button
-                            onClick={() => handleRemind(m.user_id, m.name)}
-                            className="text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 rounded px-2.5 py-1 transition-colors"
-                          >
-                            Remind
-                          </button>
-                        ) : remindState === 'loading' ? (
-                          <span className="text-xs text-zinc-500">Sending…</span>
-                        ) : remindState === 'sent' ? (
-                          <span className="text-xs text-teal-400">Sent ✓</span>
-                        ) : (
-                          <button
-                            onClick={() => handleRemind(m.user_id, m.name)}
-                            className="text-xs text-red-400 hover:text-red-300 transition-colors"
-                          >
-                            Failed — try again
-                          </button>
-                        )
-                      )}
-
-                      {/* Reassign — all non-passed rows */}
-                      {canReassign && (
-                        <button
-                          onClick={() => setReassignTarget(m)}
-                          className="text-xs text-zinc-400 hover:text-indigo-300 border border-zinc-700 hover:border-indigo-600/50 rounded px-2.5 py-1 transition-colors"
-                        >
-                          Reassign
-                        </button>
-                      )}
-
-                      {/* Delete — all rows */}
-                      <button
-                        onClick={() => handleDelete(m.id, m.name)}
-                        disabled={isDeleting}
-                        className="text-xs text-red-900 hover:text-red-400 border border-red-900/40 hover:border-red-500/40 rounded px-2.5 py-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {isDeleting ? '…' : 'Delete'}
-                      </button>
-                    </div>
+                </tr>
+              ))}
+              {visible.length === 0 && (
+                <tr>
+                  <td colSpan={5} className={`px-2 py-6 text-center text-sm ${MUTED}`}>
+                    All members have been removed.
                   </td>
                 </tr>
-              )
-            })}
-            {visible.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-sm text-zinc-600">
-                  {memberDetails.length === 0
-                    ? 'No team members yet. Invite your first employee above.'
-                    : 'All members have been removed.'}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ── Bits ──────────────────────────────────────────────────────────────────── */
+
+function EmptyTeam() {
+  return (
+    <div className="flex flex-col items-center gap-3 py-12 text-center">
+      <PersonPlusIcon />
+      <p className={`text-sm font-medium ${MUTED}`}>Your team is empty</p>
+      <p className={`max-w-xs text-xs leading-relaxed ${MUTED}`}>
+        Invite your first team member to get started with AI compliance training.
+      </p>
+    </div>
   )
 }
 
 function PersonPlusIcon() {
   return (
-    <svg className="w-8 h-8 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <svg className="h-8 w-8 text-[#C7CDD3] dark:text-[#3A4048]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
     </svg>
   )
 }
 
-function TrainingStatusBadge({ status }: { status: TrainingStatus }) {
-  const config: Record<TrainingStatus, { pill: string; icon: React.ReactNode; label: string }> = {
+export function TrainingStatusBadge({ status }: { status: TrainingStatus }) {
+  const config: Record<TrainingStatus, { pill: string; label: string }> = {
     not_started: {
-      pill: 'bg-zinc-700/50 text-zinc-400',
+      pill: 'bg-[#F2F4F7] text-[#8A8A8A] dark:bg-[#1A1F24] dark:text-[#7A8189]',
       label: 'Not started',
-      icon: (
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-          <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
-      ),
     },
     in_progress: {
-      pill: 'bg-yellow-500/15 text-yellow-400',
+      pill: 'bg-[#FFF7E6] text-[#B45309] dark:bg-[#B45309]/15 dark:text-[#F0B357]',
       label: 'In progress',
-      icon: (
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-          <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.5" />
-          <path d="M6 3v3l2 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-      ),
     },
     passed: {
-      pill: 'bg-teal-500/15 text-teal-400',
+      pill: 'bg-[#EAF8FF] text-[#0094FF] dark:bg-[#0094FF]/15 dark:text-[#32C7FF]',
       label: 'Passed',
-      icon: (
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-          <path d="M2 6.5l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      ),
     },
     expired: {
-      pill: 'bg-red-500/15 text-red-400',
+      pill: 'bg-[#FEE2E2] text-[#DC2626] dark:bg-[#DC2626]/15 dark:text-[#F87171]',
       label: 'Expired',
-      icon: (
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-          <path d="M6 1L11 10H1L6 1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-          <path d="M6 5v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          <circle cx="6" cy="8.5" r="0.5" fill="currentColor" />
-        </svg>
-      ),
     },
   }
 
-  const { pill, icon, label } = config[status]
+  const { pill, label } = config[status]
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${pill}`}>
-      {icon}
+    <span
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-[3px] text-[11px] font-bold ${pill}`}
+    >
       {label}
     </span>
   )
