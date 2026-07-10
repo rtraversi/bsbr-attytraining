@@ -15,14 +15,15 @@ interface NavPillProps {
 const TRAINING_ROUTES = ['/dashboard/overview', '/dashboard/training', '/dashboard/quizzes']
 
 /**
- * Unified overhead nav, shared by the admin and employee shells. Collapsed to
- * just the profile circle at rest; hovering unfurls the firm name and section
- * links.
+ * Unified overhead nav, shared by the admin and employee shells. Profile circle
+ * and firm name on the left, section links always visible to their right.
  *
- * The hover target is the whole pill, not the circle: once unfurled, the links
- * sit to the right of the circle, so a circle-only trigger would un-hover — and
- * slam the pill shut — the moment the mouse moved toward a link. `group` wraps
- * circle + reveal together so the boundary covers both.
+ * The tabs used to collapse to just the profile circle and unfurl on hover, but
+ * the first real user to see it cold couldn't find any navigation at all — a
+ * bare avatar reads as decoration, not a menu. So the tabs are now always shown
+ * (Katy's testing, 2026-07-10). On a narrow screen the tab row scrolls
+ * internally rather than pushing the whole page sideways; the firm name hides
+ * below `sm` so the links keep priority for the space.
  *
  * Separate from EmployeeTabBar: this switches app sections, that one navigates
  * within the training area.
@@ -64,18 +65,18 @@ export function NavPill({ email, fullName, firmName, role }: NavPillProps) {
 
   return (
     <nav className="flex max-w-full">
-      <div className="group relative inline-flex max-w-full items-center rounded-full bg-white p-1.5 dark:bg-[#0D0F12]">
+      <div className="relative inline-flex max-w-full items-center rounded-full bg-white p-1.5 shadow-[0_1px_2px_rgba(10,10,10,0.04)] transition-shadow hover:shadow-[0_6px_20px_rgba(10,10,10,0.10)] dark:bg-[#0D0F12] dark:shadow-none dark:hover:shadow-[0_6px_20px_rgba(0,0,0,0.5)]">
         <AccountMenu email={email} fullName={fullName} anchor="left" />
 
-        {/* Collapsed to zero width at rest. focus-within keeps it keyboard-reachable.
-            The expanded cap is clamped to the viewport so a narrow screen scrolls the
-            pill internally rather than pushing the whole page sideways. */}
-        <div className="ml-0 flex max-w-0 items-center gap-2 overflow-hidden whitespace-nowrap opacity-0 transition-[max-width,opacity,margin-left] duration-300 ease-out [scrollbar-width:none] group-hover:ml-2.5 group-hover:max-w-[min(900px,calc(100vw_-_7.5rem))] group-hover:overflow-x-auto group-hover:opacity-100 group-focus-within:ml-2.5 group-focus-within:max-w-[min(900px,calc(100vw_-_7.5rem))] group-focus-within:overflow-x-auto group-focus-within:opacity-100 motion-reduce:transition-none">
-          {/* Hidden below sm: on a phone the firm name alone fills the clamped pill
-              and pushes every nav link out of view. */}
+        {/* Always visible. min-w-0 + overflow-x-auto lets the row shrink and
+            scroll within the pill on a narrow screen instead of pushing the whole
+            page sideways. */}
+        <div className="ml-2.5 flex min-w-0 items-center gap-2 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* Hidden below sm: on a phone the firm name alone eats the pill's width
+              and pushes the nav links out of reach — the links win the space. */}
           {firmName && (
             <span
-              className={`${pillBase} font-headline hidden bg-[#F5F7FA] font-bold text-[#0094FF] sm:inline-flex dark:bg-[#131A20] dark:text-[#32C7FF]`}
+              className={`${pillBase} font-headline hidden shrink-0 bg-[#F5F7FA] font-bold text-[#0094FF] sm:inline-flex dark:bg-[#131A20] dark:text-[#32C7FF]`}
             >
               {firmName}
             </span>
@@ -86,7 +87,7 @@ export function NavPill({ email, fullName, firmName, role }: NavPillProps) {
               key={link.href}
               href={link.href}
               aria-current={link.active ? 'page' : undefined}
-              className={`${pillBase} ${link.active ? pillActive : pillIdle}`}
+              className={`${pillBase} shrink-0 ${link.active ? pillActive : pillIdle}`}
             >
               {link.label}
             </Link>

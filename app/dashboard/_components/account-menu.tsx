@@ -15,9 +15,9 @@ interface AccountMenuProps {
  * dark-mode toggle and sign out. Name and password changes live on
  * /dashboard/settings.
  *
- * Opening is click-only on purpose: this sits inside NavPill, whose *hover*
- * already means "unfurl the nav". Hover-opening the dropdown too would fire
- * both gestures from one mouse movement.
+ * Opening is click-only on purpose: a hover-opening dropdown sitting in the top
+ * corner would pop open every time the cursor crossed the profile circle on its
+ * way to the nav links beside it.
  */
 export function AccountMenu({ email, fullName, anchor = 'left' }: AccountMenuProps) {
   const themeCtx = useTheme()
