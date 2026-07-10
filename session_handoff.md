@@ -6,7 +6,52 @@ and the Training tab + focus mode.
 
 ---
 
-## ⚠️ Read this first
+## 🔴 READ THIS FIRST OF ALL — real user testing happened after this wrap-up was drafted, and it
+## found critical bugs. This supersedes the priority order below.
+
+Immediately after this session's builds landed, Max sent a real invite to **Katy Chavez**
+(attorney co-author, testing as a firm **admin**) and Rob — the first time anyone outside Max has
+touched the rebuild. It surfaced real, load-bearing problems that headless/mock-prop testing
+could not catch. **Full detail, verbatim quotes, and root-cause analysis:**
+`.planning/INTERFACE-CORRECTIONS.md` — read it before doing anything else.
+
+**Headline findings (all four need triage before more feature work):**
+1. **Admins cannot access their own quizzes/lesson-checks at all** — Katy passed her checks and
+   was still blocked entering the quiz flow, described it as feeling like "a penalty box." Root
+   cause: `/dashboard/overview` + `/dashboard/quizzes` hard-redirect any non-`employee` role, and
+   the data model has no concept of an admin also being an employee. This was previously a
+   *pinned, hypothetical* future task (`task_59201337`) — **it is now a confirmed, reproduced
+   blocker**, not a hypothetical. Raise its priority accordingly.
+2. **False-positive course completion** — clicking on an in-scene character ("Paul") flashed his
+   scenario for a fraction of a second and immediately marked the course complete. This is a
+   certification-integrity bug: the SCORM gate built this session can apparently be triggered by
+   an unintended click path, not just real completion. Needs investigation into which
+   Storyline/Rise interaction the completion trigger is actually wired to.
+3. **Rise's native "Exit course" button is a dead end** — exiting mid-course leaves the learner
+   with no way back in, and combined with the already-known "no SCORM resume" gap, progress is
+   lost entirely. Previously logged as "poor UX, not blocking" — real testing shows it's an
+   **actual dead-end**, not just an inconvenience.
+4. **The new nav pill's hover-to-unfurl is not discoverable** — Katy sat on the admin dashboard
+   for a while unable to find any navigation at all; she didn't know the collapsed profile icon
+   was interactive. Her direct recommendation: *"just show the tabs"*, or at minimum add a
+   hamburger/indicator icon signaling there's more. **This contradicts the hover-unfurl design
+   shipped this session** — it worked in every mechanical/automated test below, but failed
+   completely on the first real person who saw it cold. Needs a real design decision, not a patch.
+
+**Open question worth resolving early in the next session:** the screenshots Katy sent show
+*this session's* new UI (new admin dashboard, new nav pill) already live and in use via a real
+invite email — but section 2 below (written by terminal at wrap-up) says nothing had been
+deployed yet. Don't assume either claim — check actual deploy state directly before doing
+anything else that depends on it.
+
+Two smaller items also came out of this round: a progress-bar percentage that doesn't match its
+own rendered fill width, and a content-authoring note from Katy about reworking one scenario's
+narrative (not a code task — hers to action in Rise directly). Full detail in
+`INTERFACE-CORRECTIONS.md`.
+
+---
+
+## ⚠️ Read this next
 
 ### 1. Six commits are ahead of origin, pushed at this wrap-up. Nothing is uncommitted.
 Working tree is clean. The six (oldest→newest):
@@ -73,22 +118,37 @@ training-tab dark mode (not screenshotted).
 
 ---
 
-## Next steps (Max)
-1. **`pnpm run deploy`** — fixes broken `/dashboard/training`, ships both restyles + the SCORM gate.
-2. Walk both restyles as real admin + employee (see NOT-verified list — especially focus-mode
-   Escape after clicking *into* Rise, and Manage-team↔Team-overview shared delete).
-3. Decide Certified colour if the tiering isn't wanted.
-4. Key Takeaways copy — blocked on a per-lesson content signal + written copy (Rob/Katy).
+## Next steps (Max) — reordered given the real-testing findings above
+
+1. **Confirm actual deploy state first** — resolve the discrepancy noted above before trusting
+   either claim. `pnpm run deploy` regardless, to be sure: fixes broken `/dashboard/training`,
+   ships both restyles + the SCORM gate if it hasn't already gone out.
+2. **Triage the 4 critical findings in `INTERFACE-CORRECTIONS.md`** — this is now the real
+   priority, ahead of any new feature work. Suggested order: (a) nav pill discoverability, since
+   it blocks a real user from finding *anything* and everything else is downstream of being able
+   to navigate at all; (b) admin training-access (`task_59201337` — no longer hypothetical); (c)
+   false-positive course completion, a certification-integrity bug; (d) the Exit-course dead end.
+3. Re-test as a **team member** account (not admin) once the admin-access bug is fixed, to get a
+   clean read on the real employee experience — Katy's admin-role testing conflated "broken for
+   admins" with "broken in general" for several findings.
+4. Walk both restyles as real admin + employee per terminal's original NOT-verified list below.
+5. Decide Certified colour if the tiering isn't wanted.
+6. Key Takeaways copy — blocked on a per-lesson content signal + written copy (Rob/Katy).
 
 ## Still open (carried)
-- Storyline-block completion gate — where does `cmr0u5l7w007a2e78rd3axbg5` sit? (Rob)
-- No SCORM resume; course content publicly readable; 67 MB in git.
+- Storyline-block completion gate — where does `cmr0u5l7w007a2e78rd3axbg5` sit, and is it the
+  same interaction Katy's "clicked Paul" false-positive hit? (Rob + needs investigation)
+- No SCORM resume; course content publicly readable; 67 MB in git. **No-resume is now proven to
+  combine badly with the Exit-course dead end (see finding #3 above) — no longer just "poor UX."**
 - **Quizzes tab** still on `max-w-6xl` — needs the retroactive `max-w-[1600px]` widen. (Training
   got it this session; the old dark/teal Training caveat is now **resolved**.)
 - Final-assessment timer (slot only); cert signing blocked on real question pool; Kapakana font
   not wired. Homepage direction (3-way). Double-billing fix — verify on deploy.
 - Supabase Pro upgrade → Step 3 monitoring runbook (Rob); BetterStack `/api/health` monitor
   confirm (Rob).
+- Progress-bar percentage vs. rendered fill-width mismatch (Katy's testing, item 4 in
+  `INTERFACE-CORRECTIONS.md`) — needs a direct comparison of the displayed number vs. the CSS
+  width value driving the bar.
 
 ---
 
@@ -100,6 +160,7 @@ training-tab dark mode (not screenshotted).
 | Training tab spec | `/Users/maxlugo/Attorney training/training-tab-v1.html` |
 | Overview width standard | `max-w-[1600px]` + `px-6 md:px-10 xl:px-14 xl:py-14` |
 | This session detail | `.planning/sessions/20260710-max-summary.md` |
+| Real user testing findings (READ FIRST) | `.planning/INTERFACE-CORRECTIONS.md` |
 
 ## Workflow (in force)
 - Figma/HTML specs for app UI; verify via `pnpm run deploy` (Max runs pnpm/stripe/CLI). Git
