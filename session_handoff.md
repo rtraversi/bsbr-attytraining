@@ -186,11 +186,36 @@ gates pass and then reveals with **no click**, and a revisit logs no duplicate `
   provisioned employee, and the `video_*` half needs (B) deployed.
 - **Double-billing gap** — FIXED by Rob (`52d0a98` + `52cf9f5`); verify on deploy.
 - **Overview page low-contrast on light theme** — superseded by the 2026-07-09 rebuild; re-check.
-- **Training page** still on the old dark/teal palette (deliberately untouched).
+- **Training page** still on the old dark/teal palette (deliberately untouched) AND still at the
+  original `max-w-2xl` (672px) cap — never got either the theme pass or the "size released" width
+  treatment (Overview's `max-w-6xl`→`max-w-[1600px]` widen). Grep-confirmed 2026-07-09 (desktop).
+- **Quizzes tab** got the theme restyle but is still at `max-w-6xl` (1152px) — the *first*, not
+  final, width fix. It never got the follow-up widen to `max-w-[1600px]` that Overview did after
+  Max flagged unused space on a wide monitor. Grep-confirmed 2026-07-09 (desktop).
 - **Final assessment timer** — UI slot reserved ("No time limit"); no countdown logic yet.
 - **Final assessment + certificate signing** — blocked on the real question pool; **Kapakana** font
   delivered, not yet wired into `public/fonts/`.
-- **Homepage direction** (3-way) undecided. **Admin dashboard redesign** — saved for last.
+- **Homepage direction** (3-way) undecided.
+- **Admin dashboard redesign — design LOCKED, not yet built.** Full session in the desktop chat
+  2026-07-09: mockup at `/Users/maxlugo/Attorney training/admin-dashboard-v1.html`, built directly
+  from Max's own wireframe (exact block outline — Quick Actions/Manage Team row, Certified/
+  Invitations/Billing-and-Seats left stack, tall Team Overview right column) and cross-checked
+  against the real `app/dashboard/page.tsx` + its components (`team-table.tsx`, `invite-form.tsx`,
+  `reassign-modal.tsx`, `reminder-settings.tsx`, `compliance-score.tsx`) so every block maps to
+  real data/actions, not invented content. Built to the `max-w-[1600px]` "size released" standard
+  from the start — does NOT need the follow-up widen pass Quizzes/Training still need.
+  Key decisions: Rule 5.3 explainer deliberately cut (needs its own future home, isn't an
+  "action" like the others); seats-full state added (disabled invite buttons + note); the
+  grace-period/lapsed subscription warning lives inline in Billing and Seats now, not a page
+  banner; profile icon is sign-out + dark-mode toggle ONLY (name/account edits move to a real
+  Settings page); onboarding checklist deliberately dropped from this pass, noted for a future
+  interactive redesign (not a static block). **New unified nav pattern** (this is the big one):
+  one pill nav shared across admin AND team member views — collapses to just the profile icon at
+  rest, hovering the whole pill (not just the icon) unfurls it into Dashboard (admin only, hidden
+  for plain team members)/Training/Settings/Support. This top pill is *separate from and doesn't
+  replace* the existing bottom tab bar (Overview/Training/Quizzes) — that stays exactly as-is,
+  it's sub-navigation within the Training area specifically, confirmed with Max, no conflict.
+  Not yet turned into a terminal build prompt.
 - **Star milestone** — moot on Overview (stars cut), but confirm intent if reused elsewhere.
 - Legal pages placeholder; cert / attestation PDFs reportedly mostly done, not re-checked.
 
