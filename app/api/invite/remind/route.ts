@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { render } from '@react-email/render'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendEmail } from '@/lib/resend'
-import { TrainingReminderEmail } from '@/emails/training-reminder'
+import { sendTrainingReminder } from '@/lib/invite/send-training-reminder'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -48,36 +46,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Could not retrieve employee email' }, { status: 500 })
   }
 
-  const { data: firm } = await admin.from('firms').select('name').eq('id', firmId).single()
-  const firmName = firm?.name ?? 'Your firm'
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-    type: 'magiclink',
-    email,
-    options: { redirectTo: `${appUrl}/auth/callback?next=/dashboard/training` },
-  })
-
-  if (linkError) {
-    console.error('[invite/remind] generateLink error:', linkError)
-    return NextResponse.json({ error: 'Failed to generate login link' }, { status: 500 })
-  }
-
-  const hashedToken = linkData?.properties?.hashed_token
-  const actionLink = hashedToken
-    ? `${appUrl}/auth/confirm?token_hash=${hashedToken}&type=magiclink&next=/dashboard/training`
-    : linkData?.properties?.action_link
-
-  try {
-    const html = await render(TrainingReminderEmail({ firmName, actionLink: actionLink ?? '' }))
-    await sendEmail({
-      to: email,
-      subject: 'Reminder: Complete your AI compliance training',
-      html,
-    })
-  } catch (err) {
-    console.error('[invite/remind] sendEmail error:', err)
-    return NextResponse.json({ error: 'Failed to send reminder email' }, { status: 500 })
+  const result = await sendTrainingReminder(admin, firmId, email)
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status })
   }
 
   return NextResponse.json({ success: true })

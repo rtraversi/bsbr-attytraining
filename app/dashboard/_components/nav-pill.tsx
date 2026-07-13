@@ -32,9 +32,9 @@ export function NavPill({ email, fullName, firmName, role }: NavPillProps) {
   const pathname = usePathname()
   const isAdmin = role === 'admin'
 
-  // Admins aren't routed through /dashboard/overview — it redirects non-employees
-  // back to /dashboard. /dashboard/training has no role gate, so it's their entry.
-  const trainingHref = isAdmin ? '/dashboard/training' : '/dashboard/overview'
+  // Overview is the training entry point for everyone — greeting, course outline,
+  // cert status — now that admins are unblocked there too (route-based shell).
+  const trainingHref = '/dashboard/overview'
 
   const links = [
     ...(isAdmin

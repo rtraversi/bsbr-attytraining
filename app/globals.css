@@ -148,6 +148,10 @@
   .font-headline {
     font-family: var(--font-headline), system-ui, sans-serif;
   }
+  /* Kapakana — self-hosted display font, Light–Regular weights only. */
+  .font-kapakana {
+    font-family: var(--font-kapakana), system-ui, sans-serif;
+  }
   /* Cycling italic hero word. 'Bethany Elingston' first (licensed primary — picked
      up from Font Book / a future webfont), Instrument Serif Italic as the shipped
      fallback, Bodoni Moda as second fallback per brief §2. */

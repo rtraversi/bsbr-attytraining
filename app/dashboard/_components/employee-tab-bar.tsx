@@ -8,7 +8,7 @@ import { usePathname } from 'next/navigation'
 // content/footer aren't hidden behind it.
 const TABS = [
   { href: '/dashboard/overview', label: 'Overview', icon: OverviewIcon },
-  { href: '/dashboard/training', label: 'Training', icon: TrainingIcon },
+  { href: '/dashboard/training', label: 'Content', icon: TrainingIcon },
   { href: '/dashboard/quizzes', label: 'Quizzes', icon: QuizzesIcon },
 ] as const
 

@@ -68,6 +68,17 @@ dead-end, not just an inconvenience.** Needs to either: hide/disable the native 
 Rise's embed API allows it, intercept it with our own confirmation + real navigation back, or
 (longer-term) build real SCORM resume so re-entering isn't destructive regardless.
 
+**RESOLVED (decision made 2026-07-10, Rob):** Confirmed via the package's own
+`runtime-data.js` that this is a Rise export setting, not something baked unchangeably into the
+compiled bundle — `lmsOptions.enableExitCourse: true` is a checkbox in Rise's "Export for LMS"
+dialog. **Rob will uncheck "Enable Exit Course button" and re-export** — no app code change
+needed, the button disappears from the compiled SCORM package entirely. The companion hamburger
+icon (☰, Rise's own course outline/lesson navigator — `sidebarMode: "open"`) is being left alone;
+it's not broken, just undiscovered (same shape of problem as the nav pill, item #5 below), and
+it's the built-in answer to item #7's "back/forward isn't obvious" complaint. Real SCORM
+resume (the longer-term option) is still separately open — see item #4 below, now folded into
+the broader "own the Rise integration" rework Rob is scoping (2026-07-10 follow-up conversation).
+
 ### 4. Progress bar doesn't match its own label
 5th screenshot: pill reads "50% Complete" but the rendered fill bar is visibly much less than
 half the track width. Either the percentage calculation or the bar's width-binding is wrong —

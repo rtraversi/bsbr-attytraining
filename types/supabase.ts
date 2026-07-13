@@ -237,6 +237,8 @@ export type Database = {
           id: string
           invited_at: string
           role: string
+          scorm_lesson_location: string | null
+          scorm_suspend_data: string | null
           status: string
           user_id: string
         }
@@ -247,6 +249,8 @@ export type Database = {
           id?: string
           invited_at?: string
           role?: string
+          scorm_lesson_location?: string | null
+          scorm_suspend_data?: string | null
           status?: string
           user_id: string
         }
@@ -257,6 +261,8 @@ export type Database = {
           id?: string
           invited_at?: string
           role?: string
+          scorm_lesson_location?: string | null
+          scorm_suspend_data?: string | null
           status?: string
           user_id?: string
         }

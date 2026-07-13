@@ -43,6 +43,14 @@ const stackSans = localFont({
   weight: "200 700",
 });
 
+// Kapakana — self-hosted variable font, Light→Regular only (fvar wght axis: 300–400).
+const kapakana = localFont({
+  src: "../public/fonts/Kapakana-VariableFont_wght.ttf",
+  variable: "--font-kapakana",
+  display: "swap",
+  weight: "300 400",
+});
+
 export const metadata: Metadata = {
   title: "Athena — AI Staff Compliance Training | Built Smart by Rob",
   description:
@@ -66,7 +74,8 @@ export default function RootLayout({
         gyrotrope.variable,
         hostGrotesk.variable,
         instrumentSerif.variable,
-        stackSans.variable
+        stackSans.variable,
+        kapakana.variable
       )}
     >
       <body className="antialiased">{children}</body>

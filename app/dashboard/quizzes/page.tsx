@@ -21,7 +21,8 @@ export default async function QuizzesPage() {
   const firmId = user.app_metadata?.firm_id as string | undefined
   const role = user.app_metadata?.role as string | undefined
   if (!firmId) redirect('/login')
-  if (role !== 'employee') redirect('/dashboard')
+  // Open to employees AND admins taking their own training (shell is route-based).
+  if (role !== 'employee' && role !== 'admin') redirect('/dashboard')
 
   const admin = createAdminClient()
 

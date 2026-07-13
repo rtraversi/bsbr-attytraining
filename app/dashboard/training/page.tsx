@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { deriveProgress, type KnowledgeCheckEvent } from '@/lib/training/progress'
 import { READINESS_LESSON } from '@/lib/training/lessons'
+import { clientQuestionsByLesson } from '@/lib/training/questions'
 import { TrainingClient } from './_components/training-client'
 import type { QuizQuestion } from './_components/quiz-component'
 
@@ -33,24 +34,36 @@ export default async function TrainingPage() {
   const userId = user.id
   const admin = createAdminClient()
 
+  // Per-lesson knowledge-check questions for the soft-nag quiz (same call as
+  // overview/page.tsx and quizzes/page.tsx). Pure/local — no DB round-trip.
+  const questionsByLesson = clientQuestionsByLesson()
+
   // Course + firm member resolve independently — fetch together.
   type CourseRow = {
     id: string
     title: string
     pass_threshold: number | null
   }
+  type MemberRow = {
+    id: string
+    scorm_suspend_data: string | null
+    scorm_lesson_location: string | null
+  }
   const [courseResult, memberResult] = await Promise.all([
     admin.from('courses').select('id, title, pass_threshold').limit(1).maybeSingle(),
-    admin
+    // scorm_suspend_data / scorm_lesson_location aren't in generated types yet —
+    // regenerate with `supabase gen types` after 0012 is pushed to drop this cast.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any)
       .from('firm_members')
-      .select('id')
+      .select('id, scorm_suspend_data, scorm_lesson_location')
       .eq('user_id', userId)
       .eq('firm_id', firmId)
       .maybeSingle(),
   ])
 
   const course = courseResult.data as CourseRow | null
-  const member = memberResult.data
+  const member = memberResult.data as MemberRow | null
 
   const courseTitle = course?.title ?? 'Responsible Use of AI within the Legal Industry'
 
@@ -61,6 +74,7 @@ export default async function TrainingPage() {
         courseTitle={courseTitle}
         courseId={null}
         questions={[]}
+        questionsByLesson={questionsByLesson}
         checksCleared={false}
         contentViewed={false}
       />
@@ -131,11 +145,17 @@ export default async function TrainingPage() {
   }
   const enrollment = enrollmentResult.data as EnrollmentRow | null
 
-  // Resume point + honest-progress inputs, derived from the latest lesson event.
+  // Resume point + honest-progress inputs. currentLessonNumber (progress bar)
+  // comes from the latest lesson event; the resume seeds prefer the member's
+  // stored (suspend_data, lesson_location) pair — Rise's actual resume payload —
+  // falling back to the event-derived location for members provisioned pre-0012.
   const locMeta = (lessonLocationResult.data?.metadata ?? null) as Record<string, unknown> | null
   const rawLessonNumber = Number(locMeta?.lessonNumber)
   const currentLessonNumber = Number.isInteger(rawLessonNumber) ? rawLessonNumber : null
-  const initialLocation = typeof locMeta?.location === 'string' ? locMeta.location : undefined
+  const initialSuspendData = member?.scorm_suspend_data ?? undefined
+  const initialLocation =
+    member?.scorm_lesson_location ??
+    (typeof locMeta?.location === 'string' ? locMeta.location : undefined)
   const totalTrainingSeconds = enrollment?.total_training_seconds ?? 0
 
   const kcEvents: KnowledgeCheckEvent[] = ((kcResult.data ?? []) as KcRow[])
@@ -171,10 +191,12 @@ export default async function TrainingPage() {
         courseTitle={courseTitle}
         courseId={course.id}
         questions={questions}
+        questionsByLesson={questionsByLesson}
         checksCleared={checksCleared}
         contentViewed={contentViewed}
         currentLessonNumber={currentLessonNumber}
         initialLocation={initialLocation}
+        initialSuspendData={initialSuspendData}
         totalTrainingSeconds={totalTrainingSeconds}
       />
     )
@@ -200,10 +222,12 @@ export default async function TrainingPage() {
         courseTitle={courseTitle}
         courseId={course.id}
         questions={[]}
+        questionsByLesson={questionsByLesson}
         checksCleared={checksCleared}
         contentViewed={contentViewed}
         currentLessonNumber={currentLessonNumber}
         initialLocation={initialLocation}
+        initialSuspendData={initialSuspendData}
         totalTrainingSeconds={totalTrainingSeconds}
         certId={cert.id}
         certNumber={cert.certificate_number}
@@ -222,10 +246,12 @@ export default async function TrainingPage() {
       courseTitle={courseTitle}
       courseId={course.id}
       questions={[]}
+      questionsByLesson={questionsByLesson}
       checksCleared={checksCleared}
       contentViewed={contentViewed}
       currentLessonNumber={currentLessonNumber}
       initialLocation={initialLocation}
+      initialSuspendData={initialSuspendData}
       totalTrainingSeconds={totalTrainingSeconds}
     />
   )

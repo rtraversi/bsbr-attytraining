@@ -1,134 +1,54 @@
 # Session Handoff
 
-**Date:** 2026-07-10 (Friday) — Max (desktop chat + terminal, parallel, earlier) **then** Rob
-(terminal, evening) with Claude. Max's parallel session did investigation/design/verification and
-the quick-wins build; **Rob's evening session committed + deployed that work and hit a new blocker.**
-Detail: `.planning/sessions/20260710-rob-summary.md` and `20260710-max-summary.md`.
-Real-user findings: `.planning/INTERFACE-CORRECTIONS.md`.
+**Date:** 2026-07-13 (Monday) — Max (terminal) with Claude. A large build session, all
+committed at wrap-up (first commit of this work). Full detail:
+`.planning/sessions/20260713-max-summary.md`.
 
 ---
 
-## 🔴 READ FIRST — NEW BLOCKER: admin dashboard 1102 on login
+## 🟢 What shipped this session (all committed, `tsc`+`eslint` clean, NOT deployed)
 
-Logging in **as admin** → Cloudflare **Error 1102 "Worker exceeded resource limits"**
-(Ray a19242c6…, 20:19 UTC) on `bsbr-attytraining.aistaffcompliance.workers.dev`. **Ruled out:**
-worker is up (public routes 200/307, fast); the **employee** dashboard renders fine on the same
-worker; **member volume** (max 12 active/firm → the O(N) `admin.auth.admin.getUserById` fan-out in
-`app/dashboard/page.tsx` is trivial); **the SCORM changes** (employee-training only). Cause is
-specific to the **admin dashboard render** — code untouched this session — and is genuinely unknown.
-The tested build was deployed from a **messy working tree** (uncommitted Kapakana edits to root
-`app/layout.tsx`, which wraps every page).
-
-**Fix sequence tomorrow:** (1) hard-refresh retry — may be a transient cold-start spike;
-(2) `pnpm run deploy` from clean committed `main` — removes the messy-tree variable;
-(3) if still broken, `npx wrangler tail bsbr-attytraining --format pretty`, reproduce admin login,
-read the stack trace. **Don't keep guessing without the log.** Blocks all admin usage.
-
----
-
-## Committed + deployed this session (Rob's evening pass)
-
-- **Nav pill discoverability (item #5) — `eaf1acc`, PUSHED + DEPLOYED, verified good.** Tabs always
-  visible (Katy's exact ask), no hover needed; firm name hides below `sm`, tab row scrolls
-  internally. Rob confirmed live.
-- **SCORM "quick wins" — `963f341`, PUSHED, migration applied, DEPLOYED.** The in-progress batch
-  Max prompted (below) **landed and was verified** (`tsc`/`eslint` clean): migration `0011`
-  (`lesson_location_changed` event, `enrollments.total_training_seconds` + `increment_training_seconds`
-  RPC) **applied to the linked DB via `supabase db push`**; `types/supabase.ts` **regenerated**;
-  per-lesson tracking, session-time counter, lesson-level `loadFromJSON` resume, and the honest
-  lesson-based `progressPct` all live. Diagnostic harness replaced with real code (not reverted).
-- **"Progress bar shows 50%" — RESOLVED, not a bug.** DB check: exactly one stale `video_completed`
-  (16:01, pre-deploy) on the test account flips the content half fully to 50 — the item-#2 "Paul"
-  artifact persisting. Partial per-lesson credit only applies when NO completion event exists. New
-  tracking confirmed live (a `lesson_location_changed` row landed at 20:02 post-deploy).
-
-## Also done + verified earlier (Max's parallel session)
-
-1. **Kapakana font wired** — `public/fonts/Kapakana-VariableFont_wght.ttf`, registered in
-   `app/layout.tsx` (`--font-kapakana`, weight `300 400`) + `.font-kapakana` in `app/globals.css`.
-   Available, unused (no design target yet). **STILL UNCOMMITTED — Rob's to finish.**
-2. **Quizzes tab width** — `max-w-6xl` → `max-w-[1600px]` in `quizzes-client.tsx`. **UNCOMMITTED.**
-3. **Exit-course dead end (item #3) — RESOLVED, no code.** `runtime-data.js` `lmsOptions.enableExitCourse:
-   true` is a Rise export checkbox. **Max will uncheck it and re-export** → button gone from the
-   package. (Independently reconfirmed this session: iframe is same-origin and scorm-again's
-   `LMSFinish` is hookable, so an in-app intercept is the fallback if re-export slips.)
-4. **Progress-bar width math** — measured at exactly 50.0% fill for `progressPct=50`; no width bug.
-   Superseded by the honest lesson-based %; kept a defensive `rounded-l-full` on the fill.
-5. **SCORM/Rise investigation** — confirmed via a diagnostic harness + Max's real lesson 1→2→3 walk:
-   `lesson_location` fires at boundaries with real UUIDs; `suspend_data` updates every 1–2s;
-   `session_time` ticks ~20s; `loadFromJSON({core:{lesson_location}})` seeds resume; the export blocks
-   skipping >1 lesson (so the signal is trustworthy). This is what the quick-wins batch is built on.
-
-## Repo state
-- `main`: `eaf1acc` + `963f341` + this handoff commit — **all pushed at wrap-up.**
-- **Uncommitted, DO NOT LOSE (Rob's in-progress, for tomorrow):** Kapakana font
-  (`app/layout.tsx`, `app/globals.css`, `public/fonts/Kapakana-VariableFont_wght.ttf`),
-  `app/dashboard/quizzes/_components/quizzes-client.tsx`, `.planning/INTERFACE-CORRECTIONS.md`.
+1. **Admin training access** (`task_59201337`) — admins can take their own training. New
+   route-based `dashboard-shell.tsx`; only bare `/dashboard` is the admin shell now,
+   everything else (incl. Settings/Support) is the standard shell.
+2. **Real SCORM resume via `suspend_data`** — migration `0012` (`firm_members.scorm_suspend_data`
+   + `scorm_lesson_location`), capture/restore in `scorm-content.tsx`. Migration pushed to DB.
+3. **Admin-dashboard restyle batch** — resend-invite feature (new route + shared helper +
+   modal), text-only row actions, heading bumps, hide "Active" badge, centered columns,
+   bigger Compliance number, etc.
+4. **Six-block grid row-height matching** — explicit shared `lg:` heights per row
+   (`lg:h-[380px]` / `lg:h-[460px]`); left stack fills row 2, Certified/Invitations expand.
+5. **Overview rework** onto real content data (`currentLessonNumber` / `contentViewed`):
+   content-based Course Outline + demoted compact Quiz card; honest progress pill.
+6. **Per-lesson soft-nag** after each content lesson (dismissible, once per boundary, opens
+   the same KnowledgeCheckModal) + **real per-lesson copy** in `lib/training/lessons.ts`.
+7. **Live-update callback** (`onLessonChange`) — nag + progress bar + Lesson Overview now
+   update the instant a lesson boundary is crossed, not on the next refresh.
+8. **Loading spinners**, **"Training"→"Content"** tab label, **heading-size consistency**,
+   **team-table pagination**, and finished the pre-existing **Kapakana font** / quizzes-width work.
 
 ---
 
-## Designed but NOT built — admin training access (item #1, the real fix)
+## 🔴 Do FIRST next session
+- **`supabase gen types`** → then drop the `as any` casts in `training/page.tsx` and
+  `content-progress/route.ts` (0012 columns).
+- **`pnpm run deploy` + walk it as a real admin AND employee.** Nothing here is deploy-verified.
+  Highest-risk to eyeball: suspend_data resume, soft-nag firing LIVE on a boundary, the admin
+  dashboard grid (tune the placeholder `380`/`460` heights), admin training-access shells.
+- **Admin 1102 blocker (from 07-10) is STILL OPEN** and untested against these changes.
 
-Earlier framing ("data model can't support admin+employee") is **false, disproven this session.**
-`app/api/onboarding/complete/route.ts` has an `enroll_self` flow; `app/api/quiz/attempt/route.ts`
-lazily creates an enrollment on first pass. No data-model gap. Real blockers, all confirmed in code:
-
-1. **Two blunt redirects:** `app/dashboard/overview/page.tsx` + `app/dashboard/quizzes/page.tsx` both
-   `if (role !== 'employee') redirect('/dashboard')`. Let `'admin'` through too.
-2. **Shell selection is role-based, not route-based.** `app/dashboard/layout.tsx` picks the whole
-   shell off `isEmployee = role === 'employee'` — admins get the admin shell with **no bottom
-   Overview/Training/Quizzes tab bar**. Fix: extract shell branching into a client component (same
-   `usePathname()` pattern as `NavPill`/`EmployeeTabBar`) that shows the **training shell** for
-   `/dashboard/overview|training|quizzes` **regardless of role**; only bare `/dashboard` stays
-   admin-shell. Leave Settings/Support shells unchanged.
-3. **Nav pill admin "Training" link skips Overview.** `nav-pill.tsx` `trainingHref`. Once Overview is
-   unblocked for admins, point it to `/dashboard/overview` for everyone.
-
-`EmployeeTabBar` needs no changes (already role-agnostic). **Max confirmed this plan matches intent.**
-Turn it into a terminal prompt first thing next session — file paths + exact code already identified,
-no re-investigation needed. (This is `task_59201337`, now fully designed.)
-
-## Diagnosed — false-positive completion (item #2)
-
-Completion is gated (declaratively, in `scormdriver/indexAPI.html` `__DRIVER_CONFIG__`) on a **single
-embedded Storyline block**: `quizId:null, storylineId:"cmr0u5l7w007a2e78rd3axbg5"`. Clicking "Paul"
-fires that block's own complete/passed trigger early, and because it IS the whole course's gate, one
-click certifies everything (a real `video_completed` row from this exists — see the 50% resolution).
-Max couldn't reproduce live; remaining work is **static analysis** — find "Paul" in `runtime-data.js`
-and confirm its interaction sits inside/triggers that storylineId block. Fix (Rob/Katy decision):
-fix the block's Storyline triggers, or re-export Rise tracking onto the real quiz.
-
----
-
-## Still open (carried, unchanged)
-- Homepage direction (3-way, Rob's call).
-- Final-assessment timer (slot only); cert signing blocked on the real question pool.
-- Kapakana font has no design target yet (wired, unused).
-- Double-billing fix — verify on deploy.
-- Supabase Pro upgrade → Step 3 monitoring runbook (Rob); BetterStack `/api/health` (Rob).
-- Overview design pass: current-lesson + time-spent stat (data now available: `currentLessonNumber`
-  + `enrollments.total_training_seconds`). Also deferred: full `suspend_data` slide-level resume,
-  per-lesson quiz-pause overlay.
-- Rise-authoring items #6 (mark clickable elements), #7 (native back/forward), #8 (confidentiality
-  scenario rework) — Max/Katy's tasks in Rise, not code.
-- Optional: delete the one stale `video_completed` row on the test account for a clean progress read.
-
-## Next session — suggested order
-1. **Fix the admin 1102** (retry → clean redeploy from `main` → `wrangler tail`). Blocks admin usage.
-2. Write the terminal prompt for **admin-training-access** (item #1 — plan fully specified above).
-3. **False-positive completion** (item #2) — static analysis of `runtime-data.js` (no repro needed).
-4. Finish **Kapakana** + **quizzes-client** (uncommitted); commit them.
-5. Everything in "still open," opportunistically.
+## Open questions
+- Placeholder row heights `380`/`460` — Max to tune (keep both cells in a row equal).
+- Reassign button blue `#0094FF` — confirm it's the intended blue.
+- Whether the shell/dashboard rework affects the unresolved admin 1102 — needs a deploy + login.
 
 ## Key references
 | Item | Value |
 |------|-------|
 | Main app URL | `https://bsbr-attytraining.aistaffcompliance.workers.dev` |
-| This session detail | `.planning/sessions/20260710-rob-summary.md` |
-| SCORM completion gate | `__DRIVER_CONFIG__` in `public/training-content/scorm-v1/scormdriver/indexAPI.html` |
-| Real user findings | `.planning/INTERFACE-CORRECTIONS.md` |
+| This session detail | `.planning/sessions/20260713-max-summary.md` |
+| New migration | `supabase/migrations/0012_scorm_suspend_data.sql` |
 
 ## Workflow (in force)
-- Verify via `pnpm run deploy` (Rob/Max run pnpm/supabase/CLI). Git add/commit/push are Claude's,
-  after go-ahead. Secrets in Worker env only. Authz via `getClaims()`; `firm_id`/`role` from
-  `app_metadata`.
+Verify via `pnpm run deploy` (Max runs pnpm/supabase/CLI). Git add/commit/push are Claude's.
+Secrets in Worker env only. Authz via `getClaims()`; `firm_id`/`role` from `app_metadata`.

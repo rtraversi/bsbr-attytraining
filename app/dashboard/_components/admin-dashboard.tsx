@@ -3,11 +3,17 @@ import { InviteForm } from './invite-form'
 import { CsvUploadForm } from './csv-upload-form'
 import { TeamProvider, ManageTeamPanel, TeamOverviewTable, type MemberDetail } from './team-table'
 import { ComplianceScore } from './compliance-score'
+import { ResendInviteAction } from './resend-invite-modal'
 
 const CARD = 'rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
-const HEADING = 'font-headline text-[1.05rem] font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
+const HEADING = 'font-headline text-xl md:text-2xl font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 const LABEL = `text-xs font-bold uppercase tracking-wide ${MUTED}`
+
+// Light card tile with a coloured icon chip. Single source of truth so the
+// resend-invite tile (which takes this as a prop) matches for free.
+const QUICK_ACTION_TILE =
+  'flex flex-col items-center gap-2 rounded-2xl border border-[#E5EEF5] bg-[#F5F7FA] px-3 py-4 transition-all hover:-translate-y-0.5 hover:border-[#0094FF] hover:bg-[#EAF8FF] dark:border-[#1F2429] dark:bg-[#131A20] dark:hover:border-[#32C7FF] dark:hover:bg-[#0094FF]/10'
 
 export interface AdminDashboardProps {
   memberDetails: MemberDetail[]
@@ -55,9 +61,20 @@ export function AdminDashboard({
 
   return (
     <TeamProvider memberDetails={memberDetails}>
+      {/*
+        Row-height matching is done by giving BOTH cells in a row the same explicit
+        lg: height (see below), NOT by a forced grid-template-rows split. CSS Grid's
+        auto rows size to the tallest cell's natural content, and overflow/min-h-0 on
+        a child never reduces that measured size — it only clips once a definite
+        height is already imposed. So Manage Team's full list always dictated the row.
+        The scroll regions only engage because their <section> now has a real height.
+        Mobile keeps normal single-column page-scroll (heights are lg:-only).
+      */}
       <div className="grid grid-cols-12 gap-4">
         {/* ── Quick actions ─────────────────────────────────────────────────── */}
-        <section className={`col-span-12 lg:col-span-4 ${CARD}`}>
+        {/* Row 1 height reference. lg:h-[380px] is a PLACEHOLDER for Max's visual
+            pass (a 2×2 tile grid + heading) — Manage Team shares the exact value. */}
+        <section className={`col-span-12 lg:col-span-4 lg:h-[380px] ${CARD}`}>
           <h2 className={`${HEADING} mb-4`}>Quick actions</h2>
           <div className="grid grid-cols-2 gap-3">
             {/* Not a "send now" action — auto-reminder cadence is configured in Settings. */}
@@ -67,20 +84,31 @@ export function AdminDashboard({
             <QuickAction href="/api/firm/audit-log/export" label="Export audit log" external>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </QuickAction>
-            <QuickAction href="/api/firm/attestation" label="Firm attestation" external wide>
+            <QuickAction href="/api/firm/attestation" label="Firm attestation" external>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </QuickAction>
+            {/* On-demand resend (item 1) — opens a modal, so it's a client tile, not a link. */}
+            <ResendInviteAction tileClassName={QUICK_ACTION_TILE} />
           </div>
         </section>
 
         {/* ── Manage team ───────────────────────────────────────────────────── */}
-        <section className="col-span-12 lg:col-span-8">
+        {/* Shares Quick actions' exact height — this definite height is what makes
+            the panel's inner flex-1 min-h-0 overflow-y-auto actually clip + scroll. */}
+        <section className="col-span-12 lg:col-span-8 lg:h-[380px]">
           <ManageTeamPanel />
         </section>
 
         {/* ── Left stack: Certified + Invitations, then Billing ──────────────── */}
-        <div className="col-span-12 flex flex-col gap-4 lg:col-span-5">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Row 2 height reference — lg:h-[460px] PLACEHOLDER (taller than row 1: this
+            stack holds Compliance + Invitations + Billing). Now that it has a real
+            height, the flex-1 sub-grid below has something definite to divide with
+            Billing. Team overview shares the exact value. */}
+        <div className="col-span-12 flex flex-col gap-4 lg:col-span-5 lg:h-[460px]">
+          {/* Expands to fill the space above Billing (lg:flex-1). lg:grid-rows-1
+              makes its single row a 1fr track so Certified + Invitations stretch to
+              fill it instead of sitting at natural height with whitespace below. */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:min-h-0 lg:flex-1 lg:grid-rows-1">
             <ComplianceScore score={complianceScore} certified={certifiedCount} total={totalCount} />
 
             <section className={CARD}>
@@ -99,10 +127,12 @@ export function AdminDashboard({
 
           {/* ── Billing and seats ───────────────────────────────────────────── */}
           <section className={CARD}>
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
+            <div className="mb-2 flex items-start justify-between gap-3">
+              <div className="group">
                 <h2 className={`${HEADING} mb-0.5`}>Billing and seats</h2>
-                <p className={`text-xs ${MUTED}`}>{planName} Plan &middot; Annual billing</p>
+                <p className={`text-xs opacity-0 transition-opacity group-hover:opacity-100 ${MUTED}`}>
+                  {planName} Plan &middot; Annual billing
+                </p>
               </div>
               <FirmStatusBadge status={firmStatus} />
             </div>
@@ -160,7 +190,8 @@ export function AdminDashboard({
         </div>
 
         {/* ── Team overview ─────────────────────────────────────────────────── */}
-        <section className="col-span-12 lg:col-span-7">
+        {/* Shares the left stack's exact height (see Manage team for the mechanism). */}
+        <section className="col-span-12 lg:col-span-7 lg:h-[460px]">
           <TeamOverviewTable />
         </section>
       </div>
@@ -183,9 +214,7 @@ function QuickAction({
   wide?: boolean
   children: React.ReactNode
 }) {
-  const className = `flex flex-col items-center gap-2 rounded-2xl border border-[#E5EEF5] bg-[#F5F7FA] px-3 py-4 transition-all hover:-translate-y-0.5 hover:border-[#0094FF] hover:bg-[#EAF8FF] dark:border-[#1F2429] dark:bg-[#131A20] dark:hover:border-[#32C7FF] dark:hover:bg-[#0094FF]/10 ${
-    wide ? 'col-span-2' : ''
-  }`
+  const className = `${QUICK_ACTION_TILE} ${wide ? 'col-span-2' : ''}`
 
   const inner = (
     <>
@@ -211,11 +240,10 @@ function QuickAction({
 }
 
 function FirmStatusBadge({ status }: { status: string }) {
+  // Only the warning states get a badge. 'active' (and any healthy/unknown status)
+  // is redundant — if you're using the dashboard, you're active — so render nothing.
+  // These two carry real weight, matching the inline grace/lapsed banners above.
   const config: Record<string, { pill: string; label: string }> = {
-    active: {
-      pill: 'bg-[#EAF8FF] text-[#0094FF] dark:bg-[#0094FF]/15 dark:text-[#32C7FF]',
-      label: 'Active',
-    },
     payment_failed: {
       pill: 'bg-[#FFF7E6] text-[#B45309] dark:bg-[#B45309]/15 dark:text-[#F0B357]',
       label: 'Payment failed',
@@ -225,7 +253,9 @@ function FirmStatusBadge({ status }: { status: string }) {
       label: 'Cancelled',
     },
   }
-  const { pill, label } = config[status] ?? config.active
+  const entry = config[status]
+  if (!entry) return null
+  const { pill, label } = entry
 
   return (
     <span

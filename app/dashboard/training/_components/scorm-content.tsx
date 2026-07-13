@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 // NAMED export — so the default resolves to undefined at runtime while tsc stays
 // happy. The root entry's types and runtime agree (both named).
 import { Scorm12API } from 'scorm-again'
+import { lessonNumberFromLocation } from '@/lib/training/lessons'
 
 const LAUNCH_URL = '/training-content/scorm-v1/scormdriver/indexAPI.html'
 
@@ -42,6 +43,8 @@ interface Props {
   /** Fired once, after the completion event has been durably recorded server-side. */
   onCompleted?: () => void
   onStarted?: () => void
+  /** Fired live when Rise crosses into a new lesson (resolved 1–5), for the nag + progress bar. */
+  onLessonChange?: (lessonNumber: number) => void
   className?: string
   /** Classes for the iframe's positioned container. Lets the caller resize it (e.g. focus mode). */
   frameClassName?: string
@@ -51,7 +54,17 @@ interface Props {
    * them back into the right lesson instead of restarting from the top.
    */
   initialLocation?: string
+  /**
+   * SCORM `cmi.suspend_data` to resume into — Rise's own compact resume string
+   * (which slides/cards seen, position within a lesson). This is what Rise
+   * actually reads to restore state; lesson_location alone does not resume it.
+   * Seeded before the iframe mounts.
+   */
+  initialSuspendData?: string
 }
+
+/** Throttle window for persisting suspend_data — Rise rewrites it every 1–2s. */
+const SUSPEND_SAVE_INTERVAL_MS = 5000
 
 async function postProgress(event: 'started' | 'completed'): Promise<boolean> {
   try {
@@ -91,9 +104,11 @@ function parseScormTime(value: string): number | null {
 export function ScormContent({
   onCompleted,
   onStarted,
+  onLessonChange,
   className,
   frameClassName,
   initialLocation,
+  initialSuspendData,
 }: Props) {
   // Gate the iframe until window.API exists.
   const [apiReady, setApiReady] = useState(false)
@@ -108,17 +123,67 @@ export function ScormContent({
   // listener reads the current value.
   const lastSecondsRef = useRef(0)
 
-  // Mount-time resume bookmark. A ref so the effect's [] deps stay honest — this
-  // is a server-provided constant for the life of the mount, never a live prop.
+  // Mount-time resume bookmarks. Refs so the effect's [] deps stay honest — these
+  // are server-provided constants for the life of the mount, never live props.
   const initialLocationRef = useRef(initialLocation)
+  const initialSuspendRef = useRef(initialSuspendData)
+
+  // suspend_data persistence state. Rise rewrites suspend_data every 1–2s; we
+  // throttle saves to one per SUSPEND_SAVE_INTERVAL_MS and always flush on the
+  // way out (unmount / tab hide) so the last state is never lost.
+  const latestSuspendRef = useRef(initialSuspendData ?? '')
+  const latestLocationRef = useRef(initialLocation ?? '')
+  const suspendDirtyRef = useRef(false)
+  const suspendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Keep the latest callbacks reachable from listeners registered once on mount.
   const onCompletedRef = useRef(onCompleted)
   const onStartedRef = useRef(onStarted)
+  const onLessonChangeRef = useRef(onLessonChange)
   useEffect(() => { onCompletedRef.current = onCompleted }, [onCompleted])
   useEffect(() => { onStartedRef.current = onStarted }, [onStarted])
+  useEffect(() => { onLessonChangeRef.current = onLessonChange }, [onLessonChange])
 
   useEffect(() => {
+    // Persist the latest suspend_data now. `keepalive` lets the request outlive a
+    // page unload (used on tab hide / navigation away) — the payload is a few KB,
+    // well under the 64KB keepalive limit.
+    const flushSuspend = (keepalive: boolean) => {
+      if (suspendTimerRef.current) {
+        clearTimeout(suspendTimerRef.current)
+        suspendTimerRef.current = null
+      }
+      if (!suspendDirtyRef.current) return
+      suspendDirtyRef.current = false
+      const body = JSON.stringify({
+        event: 'suspend_data',
+        suspendData: latestSuspendRef.current,
+        location: latestLocationRef.current,
+      })
+      void fetch('/api/training/content-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        keepalive,
+      }).catch(err => console.error('[scorm] suspend_data save failed:', err))
+    }
+
+    // Throttle: fire SUSPEND_SAVE_INTERVAL_MS after the first change in a burst,
+    // then clear — so continuous activity saves at a steady cadence rather than
+    // never (a resetting debounce) or on every 1–2s write (too chatty).
+    const scheduleSuspendSave = () => {
+      if (suspendTimerRef.current) return
+      suspendTimerRef.current = setTimeout(() => {
+        suspendTimerRef.current = null
+        flushSuspend(false)
+      }, SUSPEND_SAVE_INTERVAL_MS)
+    }
+
+    const onPageHide = () => flushSuspend(true)
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flushSuspend(true)
+    }
+
     const api = new Scorm12API({
       autocommit: false,
       lmsCommitUrl: false,
@@ -150,7 +215,20 @@ export function ScormContent({
     // boundary. The server dedupes, so posting every write is fine.
     api.on('LMSSetValue.cmi.core.lesson_location', (_cmiElement: string, value: string) => {
       if (!value) return
+      latestLocationRef.current = String(value)
       postContentEvent({ event: 'lesson_location', location: String(value) })
+      // Live boundary signal for the parent (soft nag + progress bar), resolved to
+      // a lesson number the same way the server does. No-op on unknown locations.
+      const n = lessonNumberFromLocation(String(value))
+      if (n !== null) onLessonChangeRef.current?.(n)
+    })
+
+    // Resume state: Rise rewrites suspend_data every 1–2s. Stash the latest and
+    // throttle the save; the flush-on-exit below guarantees the final value lands.
+    api.on('LMSSetValue.cmi.suspend_data', (_cmiElement: string, value: string) => {
+      latestSuspendRef.current = String(value)
+      suspendDirtyRef.current = true
+      scheduleSuspendSave()
     })
 
     // Time-spent: session_time is the accumulated seconds for THIS session and
@@ -166,17 +244,26 @@ export function ScormContent({
       postContentEvent({ event: 'session_time', deltaSeconds: delta })
     })
 
-    // Resume: seed the last-reached lesson before initialize, so the driver
-    // reports it back and Rise opens there instead of at lesson 1. Must precede
-    // window.API assignment (and therefore the iframe mount).
-    if (initialLocationRef.current) {
-      api.loadFromJSON({ core: { lesson_location: initialLocationRef.current } })
-    }
+    // Resume: seed both bookmarks before initialize, so the driver reports them
+    // back and Rise restores state (suspend_data) at the right lesson
+    // (lesson_location) instead of restarting. suspend_data is what Rise actually
+    // reads to resume; lesson_location alone does not. Must precede window.API
+    // assignment (and therefore the iframe mount).
+    const seed: { core?: { lesson_location: string }; suspend_data?: string } = {}
+    if (initialLocationRef.current) seed.core = { lesson_location: initialLocationRef.current }
+    if (initialSuspendRef.current) seed.suspend_data = initialSuspendRef.current
+    if (seed.core || seed.suspend_data) api.loadFromJSON(seed)
 
     window.API = api
     setApiReady(true)
 
+    window.addEventListener('pagehide', onPageHide)
+    document.addEventListener('visibilitychange', onVisibility)
+
     return () => {
+      window.removeEventListener('pagehide', onPageHide)
+      document.removeEventListener('visibilitychange', onVisibility)
+      flushSuspend(true) // don't lose the last few seconds of progress on unmount
       if (window.API === api) delete window.API
       setApiReady(false)
     }

@@ -11,9 +11,14 @@ export const metadata = {
 }
 
 // Recent activity surfaces both halves of the training: the knowledge checks and
-// the SCORM course content. Content events are course-level (one row per learner),
-// not per-lesson — see the mapping below.
-const ACTIVITY_TYPES = ['knowledge_check_completed', 'video_started', 'video_completed'] as const
+// the SCORM course content — including per-lesson boundary events (0012), which
+// carry a lessonNumber. The video_* events are course-level (one row per learner).
+const ACTIVITY_TYPES = [
+  'knowledge_check_completed',
+  'video_started',
+  'video_completed',
+  'lesson_location_changed',
+] as const
 const ACTIVITY_LIMIT = 4 // 2 shown collapsed + 2 revealed on expand
 
 export default async function OverviewPage() {
@@ -27,8 +32,9 @@ export default async function OverviewPage() {
   const firmId = user.app_metadata?.firm_id as string | undefined
   const role = user.app_metadata?.role as string | undefined
   if (!firmId) redirect('/login')
-  // The employee Overview/gating experience is employee-only; admins have the dashboard.
-  if (role !== 'employee') redirect('/dashboard')
+  // The training experience (Overview/Training/Quizzes) is open to employees AND
+  // admins taking their own training — the shell is route-based (see DashboardShell).
+  if (role !== 'employee' && role !== 'admin') redirect('/dashboard')
 
   const admin = createAdminClient()
 
@@ -41,9 +47,13 @@ export default async function OverviewPage() {
 
   let events: KnowledgeCheckEvent[] = []
   let activity: ActivityItem[] = []
+  // Real SCORM content progress (0012) — highest lesson boundary reached, and
+  // whether the course reported completion. Same derivation as training/page.tsx.
+  let currentLessonNumber: number | null = null
+  let contentViewed = false
 
   if (member) {
-    const [checksResult, activityResult] = await Promise.all([
+    const [checksResult, activityResult, lessonLocationResult, contentResult] = await Promise.all([
       admin
         .from('training_events')
         .select('metadata, event_timestamp')
@@ -57,6 +67,23 @@ export default async function OverviewPage() {
         .in('event_type', [...ACTIVITY_TYPES])
         .order('event_timestamp', { ascending: false })
         .limit(ACTIVITY_LIMIT),
+      // Most recent lesson boundary → current lesson number.
+      admin
+        .from('training_events')
+        .select('metadata')
+        .eq('firm_member_id', member.id)
+        .eq('event_type', 'lesson_location_changed')
+        .order('event_timestamp', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      // Course content completed? (verified — a video_completed event exists.)
+      admin
+        .from('training_events')
+        .select('id')
+        .eq('firm_member_id', member.id)
+        .eq('event_type', 'video_completed')
+        .limit(1)
+        .maybeSingle(),
     ])
 
     events = (checksResult.data ?? [])
@@ -85,6 +112,17 @@ export default async function OverviewPage() {
           at,
         }
       }
+      if (r.event_type === 'lesson_location_changed') {
+        const ln = Number(m.lessonNumber)
+        return {
+          kind: 'lesson_location_changed' as const,
+          lesson: null,
+          lessonNumber: Number.isInteger(ln) ? ln : null,
+          score: null,
+          passed: true,
+          at,
+        }
+      }
       // video_started / video_completed carry no lesson — the SCORM package
       // reports course-level completion only (one row per learner).
       return {
@@ -95,6 +133,11 @@ export default async function OverviewPage() {
         at,
       }
     })
+
+    const locMeta = (lessonLocationResult.data?.metadata ?? null) as Record<string, unknown> | null
+    const rawLessonNumber = Number(locMeta?.lessonNumber)
+    currentLessonNumber = Number.isInteger(rawLessonNumber) ? rawLessonNumber : null
+    contentViewed = contentResult.data !== null
   }
 
   const progress = deriveProgress(events)
@@ -138,6 +181,8 @@ export default async function OverviewPage() {
       firstName={firstName}
       activity={activity}
       certUrl={certUrl}
+      currentLessonNumber={currentLessonNumber}
+      contentViewed={contentViewed}
     />
   )
 }

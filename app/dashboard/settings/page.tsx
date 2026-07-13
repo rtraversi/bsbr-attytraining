@@ -10,7 +10,9 @@ export const metadata = {
 }
 
 const CARD = 'rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
-const HEADING = 'font-headline text-[1.05rem] font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
+// Section headings sit ABOVE their card, sized to match training-client's
+// "Lesson Overview"/"Next Up" convention.
+const HEADING = 'font-headline text-2xl md:text-3xl xl:text-[2.5rem] font-bold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 
 export default async function SettingsPage() {
@@ -39,34 +41,34 @@ export default async function SettingsPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-8 md:px-0">
-      <h1 className="font-headline mb-6 text-2xl font-bold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]">
-        Settings
-      </h1>
+      <div className="flex flex-col gap-6">
+        <div>
+          <h2 className={`${HEADING} mb-3`}>Your account</h2>
+          <section className={CARD}>
+            <p className={`mb-5 text-xs ${MUTED}`}>Update how your name appears across the platform.</p>
+            <NameSettings email={user.email ?? ''} fullName={(user.user_metadata?.full_name as string | undefined) ?? null} />
 
-      <div className="flex flex-col gap-4">
-        <section className={CARD}>
-          <h2 className={`${HEADING} mb-1`}>Your account</h2>
-          <p className={`mb-5 text-xs ${MUTED}`}>Update how your name appears across the platform.</p>
-          <NameSettings email={user.email ?? ''} fullName={(user.user_metadata?.full_name as string | undefined) ?? null} />
-
-          <div className="mt-6 border-t border-[#E5EEF5] pt-4 dark:border-[#1F2429]">
-            <Link
-              href="/update-password"
-              className="text-xs font-semibold text-[#0094FF] hover:underline"
-            >
-              Change password
-            </Link>
-          </div>
-        </section>
+            <div className="mt-6 border-t border-[#E5EEF5] pt-4 dark:border-[#1F2429]">
+              <Link
+                href="/update-password"
+                className="text-xs font-semibold text-[#0094FF] hover:underline"
+              >
+                Change password
+              </Link>
+            </div>
+          </section>
+        </div>
 
         {isAdmin && (
-          <section className={CARD}>
-            <h2 className={`${HEADING} mb-1`}>Auto-reminders</h2>
-            <p className={`mb-5 text-xs ${MUTED}`}>
-              Automatically email staff who have not completed training after this many days.
-            </p>
-            <ReminderSettings initialDays={reminderDays} />
-          </section>
+          <div>
+            <h2 className={`${HEADING} mb-3`}>Auto-reminders</h2>
+            <section className={CARD}>
+              <p className={`mb-5 text-xs ${MUTED}`}>
+                Automatically email staff who have not completed training after this many days.
+              </p>
+              <ReminderSettings initialDays={reminderDays} />
+            </section>
+          </div>
         )}
 
         <nav className={`flex flex-wrap gap-x-5 gap-y-1 px-1 text-xs ${MUTED}`}>

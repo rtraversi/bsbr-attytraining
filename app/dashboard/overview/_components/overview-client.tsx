@@ -1,16 +1,19 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import type { ClientQuestion } from '@/lib/training/questions'
 import type { LessonState, Progress } from '@/lib/training/progress'
-import { PASS_THRESHOLD } from '@/lib/training/lessons'
+import { LESSONS, type Lesson } from '@/lib/training/lessons'
 import { KnowledgeCheckModal } from './knowledge-check-modal'
 
 export interface ActivityItem {
-  kind: 'knowledge_check' | 'content_started' | 'content_completed'
-  /** Content events are course-level and carry no lesson number. */
+  kind: 'knowledge_check' | 'content_started' | 'content_completed' | 'lesson_location_changed'
+  /** Video (content) events are course-level and carry no lesson number. */
   lesson: number | null
+  /** Set only for lesson_location_changed — the lesson boundary reached. */
+  lessonNumber?: number | null
   score: number | null
   passed: boolean
   /** ISO timestamp. */
@@ -23,6 +26,10 @@ interface Props {
   firstName: string | null
   activity: ActivityItem[]
   certUrl: string | null
+  /** Real SCORM content progress — highest lesson boundary reached (1–5), or null. */
+  currentLessonNumber: number | null
+  /** Real SCORM content completion (a video_completed event exists). */
+  contentViewed: boolean
 }
 
 /* ── Shared tokens — exact values already in the codebase ──────────────────── */
@@ -42,7 +49,15 @@ function canOpen(lesson: LessonState, fullyCleared: boolean): boolean {
   return fullyCleared || lesson.attemptsRemaining === null || lesson.attemptsRemaining > 0
 }
 
-export function OverviewClient({ progress, questionsByLesson, firstName, activity, certUrl }: Props) {
+export function OverviewClient({
+  progress,
+  questionsByLesson,
+  firstName,
+  activity,
+  certUrl,
+  currentLessonNumber,
+  contentViewed,
+}: Props) {
   const router = useRouter()
   const [openLesson, setOpenLesson] = useState<number | null>(null)
 
@@ -60,7 +75,7 @@ export function OverviewClient({ progress, questionsByLesson, firstName, activit
     router.refresh() // re-derive authoritative progress server-side
   }
 
-  // The current actionable lesson = earliest unlocked one (sequential gating
+  // The current actionable quiz lesson = earliest unlocked one (sequential gating
   // guarantees ordering). Fully cleared → fall back to the last lesson for review.
   const focus =
     progress.lessons.find(l => l.status === 'unlocked') ??
@@ -72,6 +87,10 @@ export function OverviewClient({ progress, questionsByLesson, firstName, activit
     scored.length > 0
       ? Math.round(scored.reduce((sum, l) => sum + (l.lastScore ?? 0), 0) / scored.length)
       : null
+
+  // Honest content-based progress for the "Lessons X/5" pill — same math as
+  // training-client.tsx. This is COURSE content, not quiz clearance.
+  const lessonsComplete = contentViewed ? 5 : currentLessonNumber ? currentLessonNumber - 1 : 0
 
   return (
     <main className="mx-auto w-full max-w-[1600px] px-6 py-10 md:px-10 xl:px-14 xl:py-14">
@@ -97,12 +116,12 @@ export function OverviewClient({ progress, questionsByLesson, firstName, activit
                 <span className={`text-xs font-bold tracking-wide uppercase xl:text-sm ${MUTED}`}>
                   Lessons
                 </span>
-                <span className={`text-sm font-bold xl:text-base ${ACCENT}`}>{clearedCount}/5</span>
+                <span className={`text-sm font-bold xl:text-base ${ACCENT}`}>{lessonsComplete}/5</span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-[#E5EEF5] xl:h-2.5 dark:bg-[#1F2429]">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-[#32C7FF] to-[#0094FF] transition-[width] duration-500"
-                  style={{ width: `${(clearedCount / 5) * 100}%` }}
+                  style={{ width: `${(lessonsComplete / 5) * 100}%` }}
                 />
               </div>
             </div>
@@ -131,14 +150,20 @@ export function OverviewClient({ progress, questionsByLesson, firstName, activit
       <div className="grid grid-cols-1 gap-x-10 gap-y-10 lg:grid-cols-12 xl:gap-x-14 xl:gap-y-14">
         {/* ── Left: main column ───────────────────────────────────────────── */}
         <div className="flex flex-col gap-10 lg:col-span-7 xl:gap-14">
-          <UpNextCard progress={progress} focus={focus} tryOpen={tryOpen} />
+          <UpNextCard currentLessonNumber={currentLessonNumber} contentViewed={contentViewed} />
           <RecentActivityCard activity={activity} />
           <CertificateCard certUrl={certUrl} />
         </div>
 
-        {/* ── Right: course outline. Always shows status; hover/tap reveals detail. */}
+        {/* ── Right: real course-content outline, quiz progress demoted below. */}
         <aside className="lg:col-span-5">
-          <CourseOutlineCard progress={progress} focus={focus} />
+          <CourseOutlineCard currentLessonNumber={currentLessonNumber} contentViewed={contentViewed} />
+          <QuizProgressCard
+            progress={progress}
+            focus={focus}
+            currentGrade={currentGrade}
+            tryOpen={tryOpen}
+          />
         </aside>
       </div>
 
@@ -163,7 +188,7 @@ function greeting(progress: Progress, clearedCount: number): string {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Hover-expand (desktop) + click/tap-toggle (mobile) — same as "Jump back in"
+   Hover-expand (desktop) + click/tap-toggle (mobile)
    ═══════════════════════════════════════════════════════════════════════════ */
 function useExpand() {
   const [pinned, setPinned] = useState(false)
@@ -191,79 +216,51 @@ function ExpandBody({ open, children }: { open: boolean; children: React.ReactNo
   )
 }
 
-/** Span-based twin of ExpandBody — the outline rows live inside a <button>. */
-function ExpandBodyInline({ open, children }: { open: boolean; children: React.ReactNode }) {
-  return (
-    <span
-      className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-        open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-      }`}
-    >
-      <span className="block overflow-hidden">{children}</span>
-    </span>
-  )
-}
-
-/* ── Up next ──────────────────────────────────────────────────────────────── */
+/* ── Up next — now driven by real course-content progress ──────────────────── */
 function UpNextCard({
-  progress,
-  focus,
-  tryOpen,
+  currentLessonNumber,
+  contentViewed,
 }: {
-  progress: Progress
-  focus: LessonState
-  tryOpen: (l: LessonState | number) => void
+  currentLessonNumber: number | null
+  contentViewed: boolean
 }) {
-  const { open, hovered, toggle, hoverProps } = useExpand()
-  const percent = focus.lastScore ?? 0
+  const { hovered, hoverProps } = useExpand()
+
+  // "Started" once content has reached at least lesson 1 (or fully completed).
+  const started = contentViewed || currentLessonNumber !== null
+  const lessonN = contentViewed ? LESSONS.length : (currentLessonNumber ?? 1)
+  const title = LESSONS.find(l => l.number === lessonN)?.title ?? ''
+  const cta = started ? `Resume Lesson ${lessonN}` : 'Get started with Lesson 1'
 
   return (
     <section {...hoverProps}>
       <h2 className={SECTION_HEADING}>Up next</h2>
-      <div
-        className={`${CARD} ${CARD_PAD} transition-[transform,box-shadow] duration-300 ${
+      {/* The whole card navigates to the training player — no quiz modal here. */}
+      <Link
+        href="/dashboard/training"
+        className={`${CARD} ${CARD_PAD} flex items-center gap-5 transition-[transform,box-shadow] duration-300 xl:gap-7 ${
           hovered ? '-translate-y-1 shadow-[0_14px_28px_rgba(50,199,255,0.18)]' : ''
         }`}
       >
-        <button
-          type="button"
-          onClick={toggle}
-          aria-expanded={open}
-          className="flex w-full cursor-pointer items-center gap-5 text-left xl:gap-7"
-        >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-black text-xl font-bold text-white xl:h-[4.5rem] xl:w-[4.5rem] xl:text-3xl dark:bg-[#F5F7FA] dark:text-[#0A0A0A]">
-            {focus.number}
-          </span>
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-black text-xl font-bold text-white xl:h-[4.5rem] xl:w-[4.5rem] xl:text-3xl dark:bg-[#F5F7FA] dark:text-[#0A0A0A]">
+          {lessonN}
+        </span>
 
-          <span className="min-w-0 flex-1">
-            <span className="mb-2 inline-block rounded-lg bg-[#EAF8FF] px-2.5 py-[3px] text-[11px] font-bold text-[#0094FF] xl:text-xs dark:bg-[#0094FF]/15">
-              Lesson {focus.number}
-              {focus.isReadiness && ' · Readiness check'}
-            </span>
-            {/* Wraps on narrow screens (where truncation eats most of the title);
-                single-line with ellipsis once there's room for it. */}
-            <span className={`block text-lg text-pretty md:truncate xl:text-2xl ${HEADING}`}>
-              {focus.title}
-            </span>
+        <span className="min-w-0 flex-1">
+          <span className="mb-2 inline-block rounded-lg bg-[#EAF8FF] px-2.5 py-[3px] text-[11px] font-bold text-[#0094FF] xl:text-xs dark:bg-[#0094FF]/15">
+            {started ? `Lesson ${lessonN}` : 'Get started'}
           </span>
-
-          <span className={`shrink-0 text-sm font-bold whitespace-nowrap xl:text-xl ${ACCENT}`}>
-            {percent}%
+          {/* Wraps on narrow screens; single-line with ellipsis once there's room. */}
+          <span className={`block text-lg text-pretty md:truncate xl:text-2xl ${HEADING}`}>
+            {title}
           </span>
-        </button>
+        </span>
 
-        <ExpandBody open={open}>
-          <div className="pt-4 xl:pt-6">
-            <button
-              type="button"
-              onClick={() => tryOpen(focus)}
-              className="w-full cursor-pointer rounded-full bg-black py-3 font-bold text-white transition-colors hover:bg-[#262626] xl:py-4 xl:text-lg dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
-            >
-              {progress.fullyCleared ? `Review Lesson ${focus.number}` : `Resume Lesson ${focus.number}`}
-            </button>
-          </div>
-        </ExpandBody>
-      </div>
+        <span className={`flex shrink-0 items-center gap-1.5 text-sm font-bold whitespace-nowrap xl:text-base ${ACCENT}`}>
+          <span className="hidden sm:inline">{cta}</span>
+          <ArrowRightIcon className="h-4 w-4 xl:h-5 xl:w-5" />
+        </span>
+      </Link>
     </section>
   )
 }
@@ -347,6 +344,12 @@ function describeActivity(item: ActivityItem): { title: string; detail: string }
       detail: item.score !== null ? `Scored ${item.score}%` : '',
     }
   }
+  if (item.kind === 'lesson_location_changed') {
+    return {
+      title: item.lessonNumber ? `Reached Lesson ${item.lessonNumber}` : 'Reached a new lesson',
+      detail: '',
+    }
+  }
   // The SCORM package reports course-level completion, so there is no lesson to name.
   if (item.kind === 'content_completed') {
     return { title: 'Completed the training content', detail: '' }
@@ -414,141 +417,209 @@ function CertificateCard({ certUrl }: { certUrl: string | null }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Course outline — status is always visible (this is an at-a-glance dashboard);
-   hovering/tapping the card reveals the per-lesson detail line underneath.
+   Course outline — real SCORM content progress. Linear progression is guaranteed
+   (Rise blocks skipping ahead), so each lesson's status is purely positional
+   relative to the highest boundary reached. The current lesson gets a Play/Resume
+   link straight to the training player.
    ═══════════════════════════════════════════════════════════════════════════ */
-function CourseOutlineCard({ progress, focus }: { progress: Progress; focus: LessonState }) {
-  const { open, hovered, toggle, hoverProps } = useExpand()
+function CourseOutlineCard({
+  currentLessonNumber,
+  contentViewed,
+}: {
+  currentLessonNumber: number | null
+  contentViewed: boolean
+}) {
+  const current = currentLessonNumber ?? 1
+
+  function statusOf(n: number): 'done' | 'current' | 'locked' {
+    if (contentViewed) return 'done'
+    if (n < current) return 'done'
+    if (n === current) return 'current'
+    return 'locked'
+  }
 
   return (
-    <section {...hoverProps}>
+    <section>
       <h2 className={SECTION_HEADING}>Course outline</h2>
-      <button
-        type="button"
-        onClick={toggle}
-        aria-expanded={open}
-        className={`${CARD} ${CARD_PAD} block w-full cursor-pointer text-left transition-[transform,box-shadow] duration-300 ${
-          hovered ? '-translate-y-1 shadow-[0_14px_28px_rgba(50,199,255,0.18)]' : ''
-        }`}
-      >
-        <span className="flex flex-col gap-1">
-          {progress.lessons.map(lesson => (
-            <OutlineRow
-              key={lesson.number}
-              lesson={lesson}
-              progress={progress}
-              isCurrent={lesson.number === focus.number && lesson.status !== 'cleared'}
-              open={open}
-            />
+      <div className={`${CARD} ${CARD_PAD}`}>
+        <div className="flex flex-col gap-1">
+          {LESSONS.map(lesson => (
+            <ContentOutlineRow key={lesson.number} lesson={lesson} status={statusOf(lesson.number)} />
           ))}
-        </span>
-      </button>
+        </div>
+      </div>
     </section>
   )
 }
 
-function OutlineRow({
+function ContentOutlineRow({
   lesson,
-  progress,
-  isCurrent,
-  open,
+  status,
 }: {
-  lesson: LessonState
-  progress: Progress
-  isCurrent: boolean
-  open: boolean
+  lesson: Lesson
+  status: 'done' | 'current' | 'locked'
 }) {
-  const cleared = lesson.status === 'cleared'
-  const locked = lesson.status === 'locked'
+  const done = status === 'done'
+  const current = status === 'current'
 
-  const rowBase = 'flex items-start gap-3 py-2.5 xl:gap-4 xl:py-3'
-  const rowClass = isCurrent
+  const rowBase = 'flex items-center gap-3 py-2.5 xl:gap-4 xl:py-3'
+  const rowClass = current
     ? `${rowBase} -mx-3 rounded-xl bg-[#EAF8FF] px-3 dark:bg-[#0094FF]/10`
     : rowBase
 
-  const titleClass = cleared
+  const titleClass = done
     ? 'font-medium text-[#0A0A0A] dark:text-[#F5F7FA]'
-    : isCurrent
+    : current
       ? 'font-bold text-[#0094FF]'
       : MUTED
 
   return (
-    <span className={rowClass}>
-      {/* Badge */}
-      {cleared ? (
-        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#32C7FF] xl:h-7 xl:w-7">
+    <div className={rowClass}>
+      {/* Badge — content is not a quiz, so a done lesson shows a check, no score. */}
+      {done ? (
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#32C7FF] xl:h-7 xl:w-7">
           <svg className="h-3.5 w-3.5 text-white xl:h-4 xl:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </span>
-      ) : isCurrent ? (
-        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-[#0094FF] text-[11px] font-bold text-[#0094FF] xl:h-7 xl:w-7 xl:text-xs">
+      ) : current ? (
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-[#0094FF] text-[11px] font-bold text-[#0094FF] xl:h-7 xl:w-7 xl:text-xs">
           {lesson.number}
         </span>
       ) : (
         <span
-          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#F2F4F7] text-[11px] font-bold xl:h-7 xl:w-7 xl:text-xs dark:bg-[#1F2429] ${MUTED}`}
+          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#F2F4F7] text-[11px] font-bold xl:h-7 xl:w-7 xl:text-xs dark:bg-[#1F2429] ${MUTED}`}
         >
           {lesson.number}
         </span>
       )}
 
-      <span className="block min-w-0 flex-1">
-        <span className="flex items-baseline justify-between gap-3">
-          <span className={`text-sm xl:text-base ${titleClass}`}>{lesson.title}</span>
+      <span className={`min-w-0 flex-1 text-sm xl:text-base ${titleClass}`}>{lesson.title}</span>
 
-          {/* Always-visible status — the extra width earns this, no hover needed. */}
-          <span className="shrink-0 text-xs font-bold whitespace-nowrap xl:text-sm">
-            {cleared ? (
-              <span className="text-[#16A34A] dark:text-[#4ADE80]">
-                {lesson.lastScore !== null ? `${lesson.lastScore}%` : 'Cleared'}
-              </span>
-            ) : locked ? (
-              <LockIcon className={`h-4 w-4 ${MUTED}`} />
-            ) : (
-              <span className={ACCENT}>{lesson.attempts > 0 ? 'Continue' : 'Available'}</span>
-            )}
-          </span>
-        </span>
-
-        {/* Revealed on hover / tap */}
-        <ExpandBodyInline open={open}>
-          <span className={`block pt-1 text-xs xl:text-sm ${MUTED}`}>
-            {outlineDetail(lesson, progress)}
-          </span>
-        </ExpandBodyInline>
-      </span>
-    </span>
+      {current ? (
+        <Link
+          href="/dashboard/training"
+          aria-label={`Resume ${lesson.title}`}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black text-white transition-colors hover:bg-[#262626] xl:h-9 xl:w-9 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
+        >
+          <PlayIcon className="h-4 w-4" />
+        </Link>
+      ) : status === 'locked' ? (
+        <LockIcon className={`h-4 w-4 shrink-0 xl:h-5 xl:w-5 ${MUTED}`} />
+      ) : null}
+    </div>
   )
 }
 
-function outlineDetail(lesson: LessonState, progress: Progress): string {
-  if (lesson.status === 'cleared') {
-    const base =
-      lesson.lastScore !== null ? `Cleared · scored ${lesson.lastScore}%` : 'Cleared'
-    if (lesson.reviewFlag) return `${base} · consider reviewing again`
-    if (progress.fullyCleared) return `${base} · unlimited retakes`
-    return base
-  }
+/* ── Lesson checks (quiz) — demoted, compact secondary block ────────────────
+   The quiz system (deriveProgress, shortcut, KnowledgeCheckModal) is unchanged;
+   it's just visually condensed here. Full detail lives on the Quizzes tab.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function QuizProgressCard({
+  progress,
+  focus,
+  currentGrade,
+  tryOpen,
+}: {
+  progress: Progress
+  focus: LessonState
+  currentGrade: number | null
+  tryOpen: (l: LessonState | number) => void
+}) {
+  const clearedCount = progress.lessons.filter(l => l.status === 'cleared').length
 
-  if (lesson.status === 'locked') {
-    return lesson.isReadiness && progress.shortcutLocked
-      ? 'Shortcut locked — complete lessons 1–4 in order first'
-      : 'Complete the previous lesson’s check first'
-  }
+  return (
+    <section className="mt-10 xl:mt-14">
+      <h2 className={SECTION_HEADING}>Lesson checks</h2>
+      <div className={`${CARD} ${CARD_PAD}`}>
+        <div className="mb-4 flex items-center justify-between xl:mb-5">
+          <span className={`text-sm font-bold xl:text-base ${ACCENT}`}>{clearedCount}/5 cleared</span>
+          {currentGrade !== null && (
+            <span className={`text-xs xl:text-sm ${MUTED}`}>Avg score {currentGrade}%</span>
+          )}
+        </div>
 
-  // unlocked
-  const attempts =
-    lesson.attemptsRemaining === null
-      ? 'unlimited retakes'
-      : `${lesson.attemptsRemaining} attempt${lesson.attemptsRemaining === 1 ? '' : 's'} left`
+        <div className="flex flex-col gap-1">
+          {progress.lessons.map(lesson => (
+            <QuizRow
+              key={lesson.number}
+              lesson={lesson}
+              isNext={lesson.number === focus.number && lesson.status !== 'cleared'}
+              openable={canOpen(lesson, progress.fullyCleared)}
+              onOpen={() => tryOpen(lesson)}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
 
-  if (lesson.isReadiness) {
-    return progress.shortcutAvailable
-      ? `Readiness check · test out of lessons 1–4 · needs ${PASS_THRESHOLD}% · ${attempts}`
-      : `Readiness check · needs ${PASS_THRESHOLD}% to pass · ${attempts}`
-  }
-  return `${lesson.attempts > 0 ? 'In progress' : 'Not started yet'} · ${attempts}`
+function QuizRow({
+  lesson,
+  isNext,
+  openable,
+  onOpen,
+}: {
+  lesson: LessonState
+  isNext: boolean
+  openable: boolean
+  onOpen: () => void
+}) {
+  const cleared = lesson.status === 'cleared'
+  const locked = lesson.status === 'locked'
+
+  const rowBase = 'flex items-center gap-3 py-2 xl:gap-4 xl:py-2.5'
+  const rowClass = isNext
+    ? `${rowBase} -mx-3 rounded-xl bg-[#EAF8FF] px-3 dark:bg-[#0094FF]/10`
+    : rowBase
+
+  const titleClass = cleared
+    ? 'font-medium text-[#0A0A0A] dark:text-[#F5F7FA]'
+    : isNext
+      ? 'font-bold text-[#0094FF]'
+      : MUTED
+
+  return (
+    <div className={rowClass}>
+      {cleared ? (
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#32C7FF] xl:h-7 xl:w-7">
+          <svg className="h-3.5 w-3.5 text-white xl:h-4 xl:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </span>
+      ) : (
+        <span
+          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold xl:h-7 xl:w-7 xl:text-xs ${
+            isNext
+              ? 'border-2 border-[#0094FF] text-[#0094FF]'
+              : `bg-[#F2F4F7] dark:bg-[#1F2429] ${MUTED}`
+          }`}
+        >
+          {lesson.number}
+        </span>
+      )}
+
+      <span className={`min-w-0 flex-1 text-sm xl:text-base ${titleClass}`}>{lesson.title}</span>
+
+      {cleared ? (
+        <span className="shrink-0 text-xs font-bold whitespace-nowrap text-[#16A34A] xl:text-sm dark:text-[#4ADE80]">
+          {lesson.lastScore !== null ? `${lesson.lastScore}%` : 'Cleared'}
+        </span>
+      ) : locked ? (
+        <LockIcon className={`h-4 w-4 shrink-0 ${MUTED}`} />
+      ) : (
+        <button
+          type="button"
+          onClick={onOpen}
+          disabled={!openable}
+          className="shrink-0 rounded-full bg-black px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-[#262626] disabled:cursor-not-allowed disabled:opacity-40 xl:text-sm dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
+        >
+          {lesson.attempts > 0 ? 'Continue' : 'Start'}
+        </button>
+      )}
+    </div>
+  )
 }
 
 /* ── Icons ────────────────────────────────────────────────────────────────── */
@@ -569,6 +640,22 @@ function CertIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <circle cx="12" cy="9" r="5" />
       <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 13.5L7 21l5-2.5L17 21l-1.5-7.5" />
+    </svg>
+  )
+}
+
+function PlayIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  )
+}
+
+function ArrowRightIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
     </svg>
   )
 }

@@ -12,7 +12,12 @@ interface RequestBody {
   event?: unknown
   location?: unknown
   deltaSeconds?: unknown
+  suspendData?: unknown
 }
+
+// Rise's suspend_data is a compact string, but cap it defensively — never trust
+// the wire. This is far above what Rise emits (a few KB) yet bounds abuse.
+const MAX_SUSPEND_DATA_LENGTH = 65536
 
 /**
  * Records SCORM content progress for the embedded Rise course.
@@ -58,7 +63,8 @@ export async function POST(req: NextRequest) {
     event !== 'started' &&
     event !== 'completed' &&
     event !== 'lesson_location' &&
-    event !== 'session_time'
+    event !== 'session_time' &&
+    event !== 'suspend_data'
   ) {
     return NextResponse.json({ error: 'Invalid event' }, { status: 400 })
   }
@@ -113,6 +119,31 @@ export async function POST(req: NextRequest) {
 
   if (!member) {
     return NextResponse.json({ error: 'Firm membership not found' }, { status: 403 })
+  }
+
+  // ── suspend_data: Rise's resume payload — mutable state, overwritten each save ─
+  if (event === 'suspend_data') {
+    const suspendData = typeof body.suspendData === 'string' ? body.suspendData : null
+    if (suspendData === null || suspendData.length > MAX_SUSPEND_DATA_LENGTH) {
+      return NextResponse.json({ error: 'Invalid suspendData' }, { status: 400 })
+    }
+    // The paired lesson_location, so resume seeds a consistent (state, bookmark) pair.
+    const location = typeof body.location === 'string' ? body.location.slice(0, 4096) : null
+
+    // scorm_suspend_data / scorm_lesson_location aren't in generated types yet —
+    // regenerate with `supabase gen types` after 0012 is pushed to drop this cast.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updErr } = await (admin as any)
+      .from('firm_members')
+      .update({ scorm_suspend_data: suspendData, scorm_lesson_location: location })
+      .eq('id', member.id)
+
+    if (updErr) {
+      console.error('[content-progress] suspend_data update failed:', updErr)
+      return NextResponse.json({ error: 'Failed to save progress' }, { status: 500 })
+    }
+
+    return NextResponse.json({ ok: true, recorded: true })
   }
 
   const ip = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for') ?? null

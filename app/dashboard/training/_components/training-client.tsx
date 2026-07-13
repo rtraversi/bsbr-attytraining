@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import type { ClientQuestion } from '@/lib/training/questions'
+import { LESSONS } from '@/lib/training/lessons'
 import { QuizComponent, type QuizQuestion } from './quiz-component'
 import { ScormContent } from './scorm-content'
+import { KnowledgeCheckModal } from '@/app/dashboard/overview/_components/knowledge-check-modal'
 import { CertPreviewModal } from '@/app/dashboard/_components/cert-preview-modal'
 
 type TrainingPhase =
@@ -17,6 +20,8 @@ interface Props {
   courseTitle: string
   courseId: string | null
   questions: QuizQuestion[]
+  /** Per-lesson knowledge-check questions, for the soft-nag quiz (same modal as Quizzes/Overview). */
+  questionsByLesson: Record<number, ClientQuestion[]>
   /** Lesson checks 1–5 cleared (derived server-side from knowledge_check_completed events). */
   checksCleared: boolean
   /** SCORM course reported completion (verified — a video_completed event exists). */
@@ -25,6 +30,8 @@ interface Props {
   currentLessonNumber?: number | null
   /** SCORM lesson_location to resume into — plumbed straight to ScormContent. */
   initialLocation?: string
+  /** SCORM suspend_data (Rise's own resume string) — plumbed straight to ScormContent. */
+  initialSuspendData?: string
   /**
    * Accumulated training seconds (enrollments.total_training_seconds). Plumbed in
    * now for the time-spent stat, but not yet rendered — the display is a separate
@@ -48,23 +55,16 @@ const CARD =
 const HEADING = 'font-headline font-bold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 
-/**
- * Per-course key takeaways have no data source yet — there is one course-level
- * SCORM completion event, no per-lesson content signal. The reveal-on-complete
- * block below renders only when this is populated, so nothing fabricated ships.
- * Rob/Max to supply copy.
- */
-const KEY_TAKEAWAYS: string[] = []
-
 export function TrainingClient({
   phase: initialPhase,
-  courseTitle,
   courseId,
   questions,
+  questionsByLesson,
   checksCleared,
   contentViewed,
   currentLessonNumber,
   initialLocation,
+  initialSuspendData,
   certId,
   certNumber,
   issuedAt,
@@ -83,6 +83,15 @@ export function TrainingClient({
   const [focus, setFocus] = useState(false)
   const [chromeIdle, setChromeIdle] = useState(false)
   const [nextUpOpen, setNextUpOpen] = useState(false)
+
+  // Per-lesson soft nag: fires once when a content lesson boundary is crossed live.
+  const [nagLesson, setNagLesson] = useState<number | null>(null)
+  const [nagQuizOpen, setNagQuizOpen] = useState(false)
+
+  // Live lesson number — updated the instant Rise crosses a boundary (via
+  // ScormContent's onLessonChange), so the progress bar + Lesson Overview + nag
+  // don't wait for a full-page refresh. Seeded from the server prop at mount.
+  const [liveLessonNumber, setLiveLessonNumber] = useState<number | null>(currentLessonNumber ?? null)
 
   // Sync phase when server re-renders with new data (e.g. cert_pending → certified)
   useEffect(() => { setPhase(initialPhase) }, [initialPhase])
@@ -125,6 +134,20 @@ export function TrainingClient({
     }
   }, [focus])
 
+  // Boundary detection flows through ScormContent's onLessonChange (a live,
+  // client-side signal), not a server-prop-watching effect. The ref seeds to the
+  // mount value, so a cold load never fires a false nag — there's no prior
+  // in-session value to exceed. A forward crossing nags for the lesson just
+  // finished (`prev`), which can only be 1–4 (n ≤ 5 ⇒ prev ≤ 4); lesson 5's
+  // completion is handled by the full-course overlay.
+  const prevLessonRef = useRef<number | null>(currentLessonNumber ?? null)
+  const handleLessonChange = (n: number) => {
+    const prev = prevLessonRef.current
+    prevLessonRef.current = n
+    setLiveLessonNumber(n)
+    if (prev !== null && n > prev) setNagLesson(prev) // the lesson just finished
+  }
+
   const gatesOpen = checksCleared && contentViewed
   const showQuiz = phase === 'not_started' && gatesOpen && !!courseId && !quizDismissed
 
@@ -132,7 +155,7 @@ export function TrainingClient({
   // (50%). Before the SCORM course reports full completion, credit partial content
   // progress from how far through the 5 lessons the learner has actually reached
   // (lesson N reached ⇒ N-1 done). Passing the assessment supersedes everything.
-  const lessonsCompletedCount = currentLessonNumber ? currentLessonNumber - 1 : 0
+  const lessonsCompletedCount = liveLessonNumber ? liveLessonNumber - 1 : 0
   const contentPct = contentViewed ? 50 : Math.round((lessonsCompletedCount / 5) * 50)
   const checksPct = checksCleared ? 50 : 0
   const progressPct = phase === 'not_started' ? contentPct + checksPct : 100
@@ -142,6 +165,11 @@ export function TrainingClient({
   const showCompletionOverlay = phase === 'not_started' && contentViewed && !showQuiz
 
   const openAssessment = () => setQuizDismissed(false)
+
+  // Lesson Overview + Key Takeaways follow the lesson the learner is currently on.
+  // Uses liveLessonNumber (same root cause as the progress bar) so it tracks
+  // boundary crossings immediately; defaults to lesson 1 before any are recorded.
+  const overviewLesson = LESSONS.find(l => l.number === (liveLessonNumber ?? 1)) ?? LESSONS[0]
 
   return (
     <>
@@ -165,6 +193,22 @@ export function TrainingClient({
           issuedAt={issuedAt ?? null}
           expiresAt={expiresAt ?? null}
           onClose={() => setCertModalOpen(false)}
+        />
+      )}
+
+      {/* Soft-nag quiz — the exact same KnowledgeCheckModal used on Quizzes/Overview.
+          Closing it (pass, fail, or backing out) dismisses the nag for good. */}
+      {nagQuizOpen && nagLesson !== null && (
+        <KnowledgeCheckModal
+          lesson={nagLesson}
+          title={LESSONS.find(l => l.number === nagLesson)?.title ?? ''}
+          questions={questionsByLesson[nagLesson] ?? []}
+          isReadiness={false}
+          onClose={() => {
+            setNagQuizOpen(false)
+            setNagLesson(null)
+            router.refresh()
+          }}
         />
       )}
 
@@ -193,7 +237,7 @@ export function TrainingClient({
         >
           <div className="flex items-center gap-3">
             <h1
-              className={`${HEADING} text-2xl transition-opacity duration-500 md:text-3xl ${
+              className={`${HEADING} text-2xl transition-opacity duration-500 md:text-3xl xl:text-[2.5rem] ${
                 focus ? 'text-white dark:text-white' : ''
               } ${focus && chromeIdle ? 'opacity-0' : 'opacity-100'}`}
             >
@@ -255,7 +299,9 @@ export function TrainingClient({
         >
           <ScormContent
             onCompleted={() => router.refresh()}
+            onLessonChange={handleLessonChange}
             initialLocation={initialLocation}
+            initialSuspendData={initialSuspendData}
             className={focus ? 'h-full w-full' : ''}
             frameClassName={
               focus
@@ -302,30 +348,59 @@ export function TrainingClient({
               </div>
             </div>
           )}
+
+          {/* Per-lesson soft nag — same z-20/backdrop treatment as the completion
+              overlay, so it layers over the iframe in normal AND focus mode. Soft:
+              "Done" always dismisses, never a hard block. Hidden while its quiz is open. */}
+          {nagLesson !== null && !nagQuizOpen && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-[rgba(8,12,16,0.78)] px-6 backdrop-blur-md">
+              <div className="mx-auto max-w-2xl text-center">
+                <p className="font-headline text-xl font-bold leading-snug text-white md:text-3xl">
+                  You’ve finished Lesson {nagLesson}.
+                </p>
+                <p className="mt-3 text-sm text-white/60">
+                  Read the Lesson Overview above, then take the Lesson {nagLesson} quiz whenever
+                  you’re ready.
+                </p>
+                <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+                  <button
+                    onClick={() => setNagQuizOpen(true)}
+                    className="rounded-full bg-white px-8 py-3 text-sm font-bold text-black transition-colors hover:bg-gray-200"
+                  >
+                    Take the Lesson {nagLesson} Quiz →
+                  </button>
+                  <button
+                    onClick={() => setNagLesson(null)}
+                    className="rounded-full border border-white/40 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/10"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Below the fold — hidden in focus mode ───────────────────────── */}
         {!focus && (
           <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className={phase === 'not_started' ? 'md:col-span-2' : 'md:col-span-3'}>
-              <h2 className={`${HEADING} mb-3 text-xl md:text-2xl`}>Lesson Overview</h2>
+              <h2 className={`${HEADING} mb-3 text-2xl md:text-3xl xl:text-[2.5rem]`}>Lesson Overview</h2>
               <div className={`${CARD} p-6`}>
                 <p className="text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">
-                  {courseTitle}
+                  Lesson {overviewLesson.number}: {overviewLesson.title}
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-[#3D3D3D] dark:text-[#C4C9CE]">
-                  Work through the course above at your own pace. It records its own completion —
-                  there is nothing to mark done by hand. Your lesson checks live on the Quizzes tab,
-                  and once both are finished the final assessment unlocks here.
+                  {overviewLesson.summary}
                 </p>
 
-                {contentViewed && KEY_TAKEAWAYS.length > 0 && (
+                {overviewLesson.keyTakeaways.length > 0 && (
                   <div className="mt-5 border-t border-[#E5EEF5] pt-5 dark:border-[#1F2429]">
                     <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-[#0094FF]">
                       Key Takeaways
                     </h3>
                     <ul className="space-y-2">
-                      {KEY_TAKEAWAYS.map(t => (
+                      {overviewLesson.keyTakeaways.map(t => (
                         <li key={t} className="flex gap-2 text-sm text-[#3D3D3D] dark:text-[#C4C9CE]">
                           <CircleIcon />
                           {t}
@@ -343,7 +418,7 @@ export function TrainingClient({
               onMouseEnter={() => setNextUpOpen(true)}
               onMouseLeave={() => setNextUpOpen(false)}
             >
-              <h2 className={`${HEADING} mb-3 text-xl md:text-2xl`}>Next Up</h2>
+              <h2 className={`${HEADING} mb-3 text-2xl md:text-3xl xl:text-[2.5rem]`}>Next Up</h2>
               <div
                 className={`${CARD} cursor-pointer p-5`}
                 onClick={() => setNextUpOpen(o => !o)}

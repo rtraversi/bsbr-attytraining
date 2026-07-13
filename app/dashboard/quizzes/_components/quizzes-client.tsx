@@ -46,7 +46,7 @@ export function QuizzesClient({ progress, questionsByLesson, certUrl, firstName 
   return (
     <>
       <QuizStyles />
-      <main className="mx-auto w-full max-w-6xl px-5 py-8 md:px-8 md:py-12 lg:px-10">
+      <main className="mx-auto w-full max-w-[1600px] px-5 py-8 md:px-8 md:py-12 lg:px-10">
         <div className="grid grid-cols-1 gap-x-10 gap-y-10 md:grid-cols-12 lg:gap-x-14">
           {/* ── Left column: the action cards ─────────────────────────────────── */}
           <section className="flex flex-col gap-10 md:col-span-7 md:gap-12">

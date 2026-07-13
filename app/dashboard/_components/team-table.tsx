@@ -158,13 +158,31 @@ export function TeamProvider({
 const CARD =
   'rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
 const HEADING =
-  'font-headline text-[1.05rem] font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
+  'font-headline text-xl md:text-2xl font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 
+// Neutral outline button — kept for the pagination Prev/Next controls only.
 const ROW_ACTION =
   'whitespace-nowrap rounded-lg border border-[#E5EEF5] px-2.5 py-1 text-[11px] font-semibold text-[#3D3D3D] transition-colors hover:border-[#0094FF] hover:text-[#0094FF] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[#32C7FF] dark:hover:text-[#32C7FF]'
-const ROW_ACTION_DANGER =
-  'whitespace-nowrap rounded-lg border border-[#FEE2E2] px-2.5 py-1 text-[11px] font-semibold text-[#DC2626] transition-colors hover:border-[#DC2626] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#3A1D1D]'
+
+// Text-only row actions: coloured text, no fill, no border — all matching the
+// Delete (danger) look. Hover is a slight opacity shift.
+const TEXT_ROW_ACTION =
+  'whitespace-nowrap rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40'
+const ROW_ACTION_REMIND = `${TEXT_ROW_ACTION} text-[#FF6600]`
+const ROW_ACTION_REASSIGN = `${TEXT_ROW_ACTION} text-[#0094FF]`
+const ROW_ACTION_DANGER = `${TEXT_ROW_ACTION} text-[#DC2626]`
+
+// Window the member list so the block can't grow unbounded and break the
+// six-block grid. Panels paginate past this many members; below it, nothing
+// changes visually except the fixed-height scroll container.
+const PAGE_SIZE = 20
+
+// Height-follower: fill the space the card has left after its heading, then scroll
+// internally. `min-h-0` is load-bearing — a flex child won't shrink below its
+// content's natural size without it, so the overflow would never kick in. The
+// card's actual height is set by its parent grid cell (see admin-dashboard.tsx).
+const LIST_SCROLL = 'flex-1 min-h-0 overflow-y-auto'
 
 /* ── Manage team — actionable rows ─────────────────────────────────────────── */
 
@@ -172,78 +190,96 @@ export function ManageTeamPanel() {
   const { visible, total, remindStates, deletingIds, reassignedIds, handleRemind, handleDelete, setReassignTarget } =
     useTeam()
 
+  // Local paging, independent of the overview panel. currentPage clamps `page`
+  // so a delete that shrinks the list off the last page snaps back into range.
+  const [page, setPage] = useState(0)
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages - 1)
+  const pageItems = visible.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
+
   return (
-    <div className={CARD}>
-      <div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+    <div className={`${CARD} flex h-full flex-col`}>
+      <div className="mb-4">
         <h2 className={HEADING}>Manage team</h2>
-        <span className={`text-xs ${MUTED}`}>Remind, reassign, or remove a team member</span>
       </div>
 
       {total === 0 ? (
         <EmptyTeam />
       ) : (
-        <div className="flex flex-col divide-y divide-[#F2F4F7] dark:divide-[#1F2429]">
-          {visible.map(m => {
-            if (reassignedIds.has(m.id)) {
-              return (
-                <p key={m.id} className={`py-3 text-xs italic ${MUTED}`}>
-                  Reassigned — invite sent to new employee
-                </p>
-              )
-            }
+        <>
+          <div className={LIST_SCROLL}>
+            <div className="flex flex-col divide-y divide-[#F2F4F7] dark:divide-[#1F2429]">
+              {pageItems.map(m => {
+                if (reassignedIds.has(m.id)) {
+                  return (
+                    <p key={m.id} className={`py-3 text-xs italic ${MUTED}`}>
+                      Reassigned — invite sent to new employee
+                    </p>
+                  )
+                }
 
-            const remindState = remindStates[m.user_id] ?? 'idle'
-            const canRemind = m.trainingStatus === 'not_started' || m.trainingStatus === 'in_progress'
-            const canReassign = m.trainingStatus !== 'passed'
-            const isDeleting = deletingIds.has(m.id)
+                const remindState = remindStates[m.user_id] ?? 'idle'
+                const canRemind = m.trainingStatus === 'not_started' || m.trainingStatus === 'in_progress'
+                const canReassign = m.trainingStatus !== 'passed'
+                const isDeleting = deletingIds.has(m.id)
 
-            return (
-              <div key={m.id} className="flex items-center justify-between gap-3 py-2.5">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{m.name}</p>
-                  <p className={`truncate text-xs ${MUTED}`}>{m.email}</p>
-                </div>
-                <div className="flex shrink-0 items-center gap-1.5">
-                  {canRemind &&
-                    (remindState === 'idle' ? (
-                      <button onClick={() => handleRemind(m.user_id, m.name)} className={ROW_ACTION}>
-                        Remind
-                      </button>
-                    ) : remindState === 'loading' ? (
-                      <span className={`text-[11px] ${MUTED}`}>Sending…</span>
-                    ) : remindState === 'sent' ? (
-                      <span className="text-[11px] font-semibold text-[#0094FF]">Sent ✓</span>
-                    ) : (
+                return (
+                  <div key={m.id} className="flex items-center justify-between gap-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{m.name}</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {canRemind &&
+                        (remindState === 'idle' ? (
+                          <button onClick={() => handleRemind(m.user_id, m.name)} className={ROW_ACTION_REMIND}>
+                            Remind
+                          </button>
+                        ) : remindState === 'loading' ? (
+                          <span className={`text-[11px] ${MUTED}`}>Sending…</span>
+                        ) : remindState === 'sent' ? (
+                          <span className="text-[11px] font-semibold text-[#0094FF]">Sent ✓</span>
+                        ) : (
+                          <button
+                            onClick={() => handleRemind(m.user_id, m.name)}
+                            className="text-[11px] font-semibold text-[#DC2626] hover:underline"
+                          >
+                            Failed — try again
+                          </button>
+                        ))}
+
+                      {canReassign && (
+                        <button onClick={() => setReassignTarget(m)} className={ROW_ACTION_REASSIGN}>
+                          Reassign
+                        </button>
+                      )}
+
                       <button
-                        onClick={() => handleRemind(m.user_id, m.name)}
-                        className="text-[11px] font-semibold text-[#DC2626] hover:underline"
+                        onClick={() => handleDelete(m.id, m.name)}
+                        disabled={isDeleting}
+                        className={ROW_ACTION_DANGER}
                       >
-                        Failed — try again
+                        {isDeleting ? '…' : 'Delete'}
                       </button>
-                    ))}
+                    </div>
+                  </div>
+                )
+              })}
 
-                  {canReassign && (
-                    <button onClick={() => setReassignTarget(m)} className={ROW_ACTION}>
-                      Reassign
-                    </button>
-                  )}
+              {visible.length === 0 && (
+                <p className={`py-6 text-center text-sm ${MUTED}`}>All members have been removed.</p>
+              )}
+            </div>
+          </div>
 
-                  <button
-                    onClick={() => handleDelete(m.id, m.name)}
-                    disabled={isDeleting}
-                    className={ROW_ACTION_DANGER}
-                  >
-                    {isDeleting ? '…' : 'Delete'}
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-
-          {visible.length === 0 && (
-            <p className={`py-6 text-center text-sm ${MUTED}`}>All members have been removed.</p>
+          {visible.length > PAGE_SIZE && (
+            <PaginationControls
+              page={currentPage}
+              totalPages={totalPages}
+              onPrev={() => setPage(currentPage - 1)}
+              onNext={() => setPage(currentPage + 1)}
+            />
           )}
-        </div>
+        </>
       )}
     </div>
   )
@@ -254,83 +290,138 @@ export function ManageTeamPanel() {
 export function TeamOverviewTable() {
   const { visible, total, setCertPreview } = useTeam()
 
+  // Independent paging (see ManageTeamPanel) — the two panels needn't stay in sync.
+  const [page, setPage] = useState(0)
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages - 1)
+  const pageItems = visible.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
+
   return (
-    <div className={`${CARD} h-full`}>
+    <div className={`${CARD} flex h-full flex-col`}>
       <div className="mb-4">
-        <h2 className={`${HEADING} mb-0.5`}>Team overview</h2>
-        <p className={`text-xs ${MUTED}`}>Real-time status of all employees</p>
+        <h2 className={HEADING}>Team overview</h2>
       </div>
 
       {total === 0 ? (
         <EmptyTeam />
       ) : (
-        <div className="-mx-2 overflow-x-auto">
-          {/* Scroll the table rather than crushing names/dates on a narrow card. */}
-          <table className="w-full min-w-[560px] text-sm">
-            <thead>
-              <tr className="border-b border-[#E5EEF5] dark:border-[#1F2429]">
-                {['Employee', 'Status', 'Score', 'Completed', 'Certificate'].map(h => (
-                  <th
-                    key={h}
-                    className={`whitespace-nowrap px-2 py-2 text-left text-xs font-semibold ${MUTED}`}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F2F4F7] dark:divide-[#1F2429]">
-              {visible.map(m => (
-                <tr key={m.id}>
-                  <td className="px-2 py-3">
-                    <p className="font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{m.name}</p>
-                    <p className={`text-xs ${MUTED}`}>{m.email}</p>
-                  </td>
-                  <td className="px-2 py-3">
-                    <TrainingStatusBadge status={m.trainingStatus} />
-                  </td>
-                  <td className={`px-2 py-3 whitespace-nowrap ${m.score !== null ? 'font-semibold' : MUTED}`}>
-                    {m.score !== null ? `${Math.round(m.score)}%` : '—'}
-                  </td>
-                  <td className={`whitespace-nowrap px-2 py-3 ${MUTED}`}>
-                    {m.completedAt
-                      ? new Date(m.completedAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })
-                      : '—'}
-                  </td>
-                  <td className="whitespace-nowrap px-2 py-3">
-                    {m.certId ? (
-                      <button
-                        onClick={() => setCertPreview(m)}
-                        className="text-xs font-semibold text-[#0094FF] hover:underline"
+        <>
+          {/* overflow-x scrolls wide rows; LIST_SCROLL caps height + scrolls vertically. */}
+          <div className={`-mx-2 overflow-x-auto ${LIST_SCROLL}`}>
+            <table className="w-full min-w-[560px] text-sm">
+              <thead>
+                <tr className="border-b border-[#E5EEF5] dark:border-[#1F2429]">
+                  {['Employee', 'Status', 'Score', 'Completed', 'Certificate'].map(h => {
+                    // Status/Score/Completed center; Employee/Certificate stay left.
+                    const centered = h === 'Status' || h === 'Score' || h === 'Completed'
+                    return (
+                      <th
+                        key={h}
+                        className={`whitespace-nowrap px-2 py-2 text-xs font-semibold ${
+                          centered ? 'text-center' : 'text-left'
+                        } ${MUTED}`}
                       >
-                        View &amp; download
-                      </button>
-                    ) : (
-                      <span className={MUTED}>—</span>
-                    )}
-                  </td>
+                        {h}
+                      </th>
+                    )
+                  })}
                 </tr>
-              ))}
-              {visible.length === 0 && (
-                <tr>
-                  <td colSpan={5} className={`px-2 py-6 text-center text-sm ${MUTED}`}>
-                    All members have been removed.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-[#F2F4F7] dark:divide-[#1F2429]">
+                {pageItems.map(m => (
+                  <tr key={m.id}>
+                    <td className="px-2 py-3">
+                      <p className="font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{m.name}</p>
+                      <p className={`text-xs ${MUTED}`}>{m.email}</p>
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      <TrainingStatusBadge status={m.trainingStatus} />
+                    </td>
+                    <td className={`px-2 py-3 whitespace-nowrap text-center ${m.score !== null ? 'font-semibold' : MUTED}`}>
+                      {m.score !== null ? `${Math.round(m.score)}%` : '—'}
+                    </td>
+                    <td className={`whitespace-nowrap px-2 py-3 text-center ${MUTED}`}>
+                      {m.completedAt
+                        ? new Date(m.completedAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })
+                        : '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-2 py-3">
+                      {m.certId ? (
+                        <button
+                          onClick={() => setCertPreview(m)}
+                          className="text-xs font-semibold text-[#0094FF] hover:underline"
+                        >
+                          View &amp; download
+                        </button>
+                      ) : (
+                        <span className={MUTED}>—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {visible.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className={`px-2 py-6 text-center text-sm ${MUTED}`}>
+                      All members have been removed.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {visible.length > PAGE_SIZE && (
+            <PaginationControls
+              page={currentPage}
+              totalPages={totalPages}
+              onPrev={() => setPage(currentPage - 1)}
+              onNext={() => setPage(currentPage + 1)}
+            />
+          )}
+        </>
       )}
     </div>
   )
 }
 
 /* ── Bits ──────────────────────────────────────────────────────────────────── */
+
+// Prev/Next + "Page X of Y". `page` is the already-clamped currentPage, so the
+// disabled bounds are always correct even right after a delete shrinks the list.
+function PaginationControls({
+  page,
+  totalPages,
+  onPrev,
+  onNext,
+}: {
+  page: number
+  totalPages: number
+  onPrev: () => void
+  onNext: () => void
+}) {
+  return (
+    <div className="mt-3 flex items-center justify-between gap-3">
+      <button type="button" onClick={onPrev} disabled={page === 0} className={ROW_ACTION}>
+        Prev
+      </button>
+      <span className={`text-xs ${MUTED}`}>
+        Page {page + 1} of {totalPages}
+      </span>
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={page >= totalPages - 1}
+        className={ROW_ACTION}
+      >
+        Next
+      </button>
+    </div>
+  )
+}
 
 function EmptyTeam() {
   return (

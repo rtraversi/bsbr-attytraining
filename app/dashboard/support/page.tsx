@@ -5,7 +5,7 @@ export const metadata = {
 export default function SupportPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-8 md:px-0">
-      <h1 className="font-headline mb-6 text-2xl font-bold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]">
+      <h1 className="font-headline mb-6 text-2xl font-bold tracking-tight text-[#0A0A0A] md:text-3xl xl:text-[2.5rem] dark:text-[#F5F7FA]">
         Support
       </h1>
 
