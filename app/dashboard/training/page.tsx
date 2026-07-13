@@ -51,10 +51,7 @@ export default async function TrainingPage() {
   }
   const [courseResult, memberResult] = await Promise.all([
     admin.from('courses').select('id, title, pass_threshold').limit(1).maybeSingle(),
-    // scorm_suspend_data / scorm_lesson_location aren't in generated types yet —
-    // regenerate with `supabase gen types` after 0012 is pushed to drop this cast.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (admin as any)
+    admin
       .from('firm_members')
       .select('id, scorm_suspend_data, scorm_lesson_location')
       .eq('user_id', userId)
@@ -85,10 +82,7 @@ export default async function TrainingPage() {
   type KcRow = { metadata: unknown; event_timestamp: string }
   const [enrollmentResult, questionsResult, kcResult, contentResult, lessonLocationResult] =
     await Promise.all([
-      // total_training_seconds isn't in generated types yet — regenerate with
-      // `supabase gen types` after migration 0011 is pushed to drop this cast.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (admin as any)
+      admin
         .from('enrollments')
         .select('id, status, completed_at, total_training_seconds')
         .eq('user_id', userId)
@@ -97,9 +91,7 @@ export default async function TrainingPage() {
         .limit(1)
         .maybeSingle(),
     // Select id, question_text, answers only — correct_index stays server-side
-    // quiz_questions isn't in generated types yet; re-run `supabase gen types` after db push
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (admin as any)
+    admin
       .from('quiz_questions')
       .select('id, question_text, answers')
       .eq('course_id', course.id)

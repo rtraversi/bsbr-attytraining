@@ -126,12 +126,6 @@ function JumpBackInCard({
     progress.lessons.find(l => l.status === 'unlocked') ??
     progress.lessons[progress.lessons.length - 1]
 
-  const focusLabel = progress.fullyCleared
-    ? 'Cleared'
-    : focus.attempts > 0
-      ? 'Continue'
-      : 'Start'
-
   const resumeLabel = progress.fullyCleared
     ? 'Review lessons'
     : focus.attempts > 0
@@ -157,12 +151,9 @@ function JumpBackInCard({
             <span className={`block text-base font-semibold md:text-lg ${HEADING}`}>
               {progress.fullyCleared ? 'All lessons cleared' : `Lesson ${focus.number}`}
             </span>
-            <span className={`mt-0.5 block truncate text-xs md:text-sm ${MUTED}`}>
+            <span className="mt-0.5 block truncate text-xs text-[#0094FF] md:text-sm">
               {progress.fullyCleared ? 'Review any check anytime' : focus.title}
             </span>
-          </span>
-          <span className="shrink-0 text-xs font-bold whitespace-nowrap text-[#0094FF]">
-            {focusLabel}
           </span>
         </button>
 
@@ -222,14 +213,20 @@ function LessonRow({
   const showShortcutUnlock =
     lesson.isReadiness && !cleared && progress.shortcutAvailable && openable
 
+  // The Final Review row never gets the blue "unlocked" treatment — it stays
+  // muted and the right-side icon alone signals whether it's clickable.
   const dotColor = cleared
     ? 'bg-[#22C55E]'
-    : lesson.status === 'unlocked'
+    : lesson.status === 'unlocked' && !lesson.isReadiness
       ? 'bg-[#32C7FF]'
       : 'bg-[#D1D5DB] dark:bg-[#374151]'
 
   const titleColor =
-    lesson.status === 'locked' ? MUTED : cleared ? BODY : `${HEADING} font-medium`
+    lesson.status === 'locked' || (lesson.isReadiness && !cleared)
+      ? MUTED
+      : cleared
+        ? BODY
+        : `${HEADING} font-medium`
 
   const content = (
     <>
@@ -239,19 +236,29 @@ function LessonRow({
           Lesson {lesson.number}: {lesson.title}
         </span>
       </span>
-      {cleared ? (
-        <span className="shrink-0 text-xs font-bold whitespace-nowrap text-[#16A34A] dark:text-[#4ADE80]">
-          {lesson.lastScore !== null ? `Cleared · ${lesson.lastScore}%` : 'Cleared'}
-        </span>
-      ) : showShortcutUnlock ? (
-        <UnlockIcon className="h-4 w-4 shrink-0 text-[#0094FF]" />
-      ) : lesson.status === 'unlocked' ? (
-        <span className="shrink-0 text-xs font-bold whitespace-nowrap text-[#0094FF]">
-          {lesson.attempts > 0 ? 'Continue' : 'Available'}
-        </span>
-      ) : (
-        <LockIcon className="h-4 w-4 shrink-0 text-[#8A8A8A]" />
-      )}
+      {/* Fixed-width slot so every row's status element centers on the same axis. */}
+      <span className="flex w-12 shrink-0 items-center justify-center">
+        {cleared ? (
+          // Score only — no "Cleared" word here (the Overview block does the
+          // inverse). A cleared lesson without a score is an edge case that
+          // shouldn't occur; show nothing rather than the word.
+          lesson.lastScore !== null ? (
+            <span className="text-xs font-bold whitespace-nowrap text-[#16A34A] dark:text-[#4ADE80]">
+              {lesson.lastScore}%
+            </span>
+          ) : null
+        ) : showShortcutUnlock ? (
+          <UnlockIcon className="h-4 w-4 text-[#0094FF]" />
+        ) : lesson.status === 'unlocked' ? (
+          // Visual affordance only — the whole row is already the button, so a
+          // nested <button> would be invalid. Mirrors Overview's outline play chip.
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black text-white dark:bg-[#F5F7FA] dark:text-[#0A0A0A]">
+            <PlayIcon className="h-3.5 w-3.5" />
+          </span>
+        ) : (
+          <LockIcon className="h-4 w-4 text-[#8A8A8A]" />
+        )}
+      </span>
     </>
   )
 
@@ -376,22 +383,21 @@ function FinalTestCard({ progress }: { progress: Progress }) {
                   Per-lesson scores appear here as you clear each check.
                 </p>
               ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    {scored.map(l => (
-                      <div key={l.number} className={`text-sm ${MUTED}`}>
-                        L{l.number} quiz:{' '}
-                        <span className={`font-bold ${HEADING}`}>{l.lastScore}%</span>
-                      </div>
-                    ))}
-                  </div>
+                // Average sits in the same grid as the per-lesson scores — one
+                // merged block, no separate bordered row.
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  {scored.map(l => (
+                    <div key={l.number} className={`text-sm ${MUTED}`}>
+                      L{l.number} quiz:{' '}
+                      <span className={`font-bold ${HEADING}`}>{l.lastScore}%</span>
+                    </div>
+                  ))}
                   {average !== null && (
-                    <div className="mt-2 border-t border-[#E5EEF5] pt-2 text-sm dark:border-[#1F2429]">
-                      <span className={MUTED}>Current average: </span>
-                      <span className={`font-bold ${HEADING}`}>{average}%</span>
+                    <div className={`text-sm ${MUTED}`}>
+                      Average: <span className={`font-bold ${HEADING}`}>{average}%</span>
                     </div>
                   )}
-                </>
+                </div>
               )}
             </div>
           </div>
@@ -517,8 +523,11 @@ function PathMap({
             })}
             {NODES.map((node, i) => {
               const lesson = byNum.get(node.n)!
-              const reached = lesson.status !== 'locked'
               const openable = canOpen(lesson, progress.fullyCleared)
+              // The Final Review checkpoint stays grayed out until actually
+              // cleared; regular lessons light up as soon as they're reached.
+              const lit =
+                node.n === 5 ? lesson.status === 'cleared' : lesson.status !== 'locked'
               return (
                 <ellipse
                   key={node.n}
@@ -529,7 +538,7 @@ function PathMap({
                   style={{ animationDelay: `${i * 0.4}s` }}
                   onClick={openable ? () => tryOpen(lesson) : undefined}
                   className={`qz-dot ${
-                    reached ? 'fill-[#32C7FF]' : 'fill-[#D1D5DB] dark:fill-[#374151]'
+                    lit ? 'fill-[#32C7FF]' : 'fill-[#D1D5DB] dark:fill-[#374151]'
                   } ${openable ? 'cursor-pointer' : ''}`}
                 />
               )
@@ -555,6 +564,11 @@ function PathMap({
               ? 'text-[#0094FF]'
               : 'text-[#9AA1A9] dark:text-[#5C636B]'
             if (node.n === 5) {
+              // Grayed out until actually cleared, same rule as its dot.
+              const color5 =
+                lesson.status === 'cleared'
+                  ? 'text-[#0094FF]'
+                  : 'text-[#9AA1A9] dark:text-[#5C636B]'
               // Centred above its dot so the wide "Final Review" label can't clip.
               return (
                 <div
@@ -562,7 +576,7 @@ function PathMap({
                   className="pointer-events-none absolute"
                   style={{ left: `${node.leftPct}%`, top: `${node.topPct}%`, transform: 'translate(-50%,-190%)' }}
                 >
-                  <span className={`text-[11px] font-bold whitespace-nowrap md:text-xs ${color}`}>
+                  <span className={`text-[11px] font-bold whitespace-nowrap md:text-xs ${color5}`}>
                     Final Review
                   </span>
                 </div>
@@ -576,7 +590,11 @@ function PathMap({
                 style={{
                   left: `${node.leftPct}%`,
                   top: `${node.topPct}%`,
-                  transform: onLeft ? 'translate(-132%,-50%)' : 'translate(32%,-50%)',
+                  // Fixed-px gap from the dot — %-based offsets scale with the
+                  // label's own width, so spacing drifted from label to label.
+                  transform: onLeft
+                    ? 'translate(calc(-100% - 14px),-50%)'
+                    : 'translate(14px,-50%)',
                 }}
               >
                 <span className={`text-[11px] font-bold whitespace-nowrap md:text-xs ${color}`}>
@@ -639,10 +657,12 @@ function QuizStyles() {
     <style>{`
       @keyframes qzEnter { to { opacity: 1; transform: translateY(0); } }
       @keyframes qzDotPulse { 0%, 78%, 100% { transform: scale(1); } 89% { transform: scale(1.3); } }
+      /* The pennant's pole bottom sits at the icon's bottom edge, so -100% plants
+         it exactly on the dot center. */
       @keyframes qzFlagPop {
-        0% { opacity: 0; transform: translate(-50%,-30%) scale(0.3); }
-        70% { opacity: 1; transform: translate(-50%,-95%) scale(1.15); }
-        100% { opacity: 1; transform: translate(-50%,-82%) scale(1); }
+        0% { opacity: 0; transform: translate(-50%,-40%) scale(0.3); }
+        70% { opacity: 1; transform: translate(-50%,-112%) scale(1.15); }
+        100% { opacity: 1; transform: translate(-50%,-100%) scale(1); }
       }
       .qz-entrance { opacity: 0; transform: translateY(14px); animation: qzEnter 0.55s cubic-bezier(.2,.7,.3,1) forwards; }
       .qz-d1 { animation-delay: 0.05s; }
@@ -652,7 +672,9 @@ function QuizStyles() {
       .qz-dot { transform-box: fill-box; transform-origin: center; animation: qzDotPulse 3.6s ease-in-out infinite; }
       .qz-flag { transform-origin: bottom center; animation: qzFlagPop 0.5s cubic-bezier(.3,1.6,.4,1) 1.1s forwards; opacity: 0; }
       @media (prefers-reduced-motion: reduce) {
-        .qz-entrance, .qz-flag { animation: none; opacity: 1; transform: none; }
+        .qz-entrance { animation: none; opacity: 1; transform: none; }
+        /* Flags still need their planted position when the pop is disabled. */
+        .qz-flag { animation: none; opacity: 1; transform: translate(-50%,-100%); }
         .qz-dot { animation: none; }
       }
     `}</style>
@@ -723,6 +745,13 @@ function UnlockIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0M6 11h12a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6a2 2 0 012-2z" />
+    </svg>
+  )
+}
+function PlayIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M8 5v14l11-7z" />
     </svg>
   )
 }

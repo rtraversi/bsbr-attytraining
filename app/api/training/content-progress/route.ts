@@ -93,10 +93,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, recorded: false })
     }
 
-    // total_training_seconds + the RPC aren't in generated types yet — regenerate
-    // with `supabase gen types` after this migration is pushed to drop the cast.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: rpcErr } = await (admin as any).rpc('increment_training_seconds', {
+    const { error: rpcErr } = await admin.rpc('increment_training_seconds', {
       p_enrollment_id: enrollment.id,
       p_delta: Math.round(delta),
     })
@@ -130,10 +127,7 @@ export async function POST(req: NextRequest) {
     // The paired lesson_location, so resume seeds a consistent (state, bookmark) pair.
     const location = typeof body.location === 'string' ? body.location.slice(0, 4096) : null
 
-    // scorm_suspend_data / scorm_lesson_location aren't in generated types yet —
-    // regenerate with `supabase gen types` after 0012 is pushed to drop this cast.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: updErr } = await (admin as any)
+    const { error: updErr } = await admin
       .from('firm_members')
       .update({ scorm_suspend_data: suspendData, scorm_lesson_location: location })
       .eq('id', member.id)

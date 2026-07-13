@@ -158,12 +158,7 @@ export function OverviewClient({
         {/* ── Right: real course-content outline, quiz progress demoted below. */}
         <aside className="lg:col-span-5">
           <CourseOutlineCard currentLessonNumber={currentLessonNumber} contentViewed={contentViewed} />
-          <QuizProgressCard
-            progress={progress}
-            focus={focus}
-            currentGrade={currentGrade}
-            tryOpen={tryOpen}
-          />
+          <QuizProgressCard progress={progress} focus={focus} tryOpen={tryOpen} />
         </aside>
       </div>
 
@@ -224,43 +219,50 @@ function UpNextCard({
   currentLessonNumber: number | null
   contentViewed: boolean
 }) {
-  const { hovered, hoverProps } = useExpand()
+  const { open, hovered, toggle, hoverProps } = useExpand()
 
   // "Started" once content has reached at least lesson 1 (or fully completed).
   const started = contentViewed || currentLessonNumber !== null
   const lessonN = contentViewed ? LESSONS.length : (currentLessonNumber ?? 1)
   const title = LESSONS.find(l => l.number === lessonN)?.title ?? ''
-  const cta = started ? `Resume Lesson ${lessonN}` : 'Get started with Lesson 1'
+  const cta = started ? `Resume Lesson ${lessonN}` : `Get Started with Lesson ${lessonN}`
 
   return (
     <section {...hoverProps}>
       <h2 className={SECTION_HEADING}>Up next</h2>
-      {/* The whole card navigates to the training player — no quiz modal here. */}
-      <Link
-        href="/dashboard/training"
-        className={`${CARD} ${CARD_PAD} flex items-center gap-5 transition-[transform,box-shadow] duration-300 xl:gap-7 ${
+      <div
+        className={`${CARD} ${CARD_PAD} transition-[transform,box-shadow] duration-300 ${
           hovered ? '-translate-y-1 shadow-[0_14px_28px_rgba(50,199,255,0.18)]' : ''
         }`}
       >
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-black text-xl font-bold text-white xl:h-[4.5rem] xl:w-[4.5rem] xl:text-3xl dark:bg-[#F5F7FA] dark:text-[#0A0A0A]">
-          {lessonN}
-        </span>
-
-        <span className="min-w-0 flex-1">
-          <span className="mb-2 inline-block rounded-lg bg-[#EAF8FF] px-2.5 py-[3px] text-[11px] font-bold text-[#0094FF] xl:text-xs dark:bg-[#0094FF]/15">
-            {started ? `Lesson ${lessonN}` : 'Get started'}
+        {/* Collapsed: number circle + lesson title only; taps toggle on mobile. */}
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={open}
+          className="flex w-full cursor-pointer items-center gap-5 text-left xl:gap-7"
+        >
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-black text-xl font-bold text-white xl:h-[4.5rem] xl:w-[4.5rem] xl:text-3xl dark:bg-[#F5F7FA] dark:text-[#0A0A0A]">
+            {lessonN}
           </span>
           {/* Wraps on narrow screens; single-line with ellipsis once there's room. */}
-          <span className={`block text-lg text-pretty md:truncate xl:text-2xl ${HEADING}`}>
+          <span className={`min-w-0 flex-1 text-lg text-pretty md:truncate xl:text-2xl ${HEADING}`}>
             {title}
           </span>
-        </span>
+        </button>
 
-        <span className={`flex shrink-0 items-center gap-1.5 text-sm font-bold whitespace-nowrap xl:text-base ${ACCENT}`}>
-          <span className="hidden sm:inline">{cta}</span>
-          <ArrowRightIcon className="h-4 w-4 xl:h-5 xl:w-5" />
-        </span>
-      </Link>
+        {/* Hover (or tap) reveals real navigation — a Link, not a quiz modal. */}
+        <ExpandBody open={open}>
+          <div className="pt-4 xl:pt-6">
+            <Link
+              href="/dashboard/training"
+              className="block w-full cursor-pointer rounded-full bg-black py-3 text-center font-bold text-white transition-colors hover:bg-[#262626] xl:py-4 xl:text-lg dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
+            >
+              {cta}
+            </Link>
+          </div>
+        </ExpandBody>
+      </div>
     </section>
   )
 }
@@ -281,7 +283,7 @@ function RecentActivityCard({ activity }: { activity: ActivityItem[] }) {
         }`}
       >
         {activity.length === 0 ? (
-          <p className={`text-sm xl:text-base ${MUTED}`}>
+          <p className={`text-base xl:text-lg ${MUTED}`}>
             No activity yet — start the training content or your first lesson check.
           </p>
         ) : (
@@ -325,8 +327,8 @@ function ActivityRow({ item, recent }: { item: ActivityItem; recent: boolean }) 
         }`}
       />
       <span className="block min-w-0">
-        <span className={`block text-sm font-semibold xl:text-base ${HEADING}`}>{title}</span>
-        <span className={`block text-xs xl:text-sm ${MUTED}`} suppressHydrationWarning>
+        <span className={`block text-base font-semibold xl:text-lg ${HEADING}`}>{title}</span>
+        <span className={`block text-sm xl:text-base ${MUTED}`} suppressHydrationWarning>
           {detail}
           {detail && ' · '}
           {timeAgo(item.at)}
@@ -391,8 +393,8 @@ function CertificateCard({ certUrl }: { certUrl: string | null }) {
               <CertIcon className="h-6 w-6 text-[#0094FF] xl:h-7 xl:w-7" />
             </span>
             <div className="min-w-0">
-              <p className={`text-base xl:text-lg ${HEADING}`}>Your certificate</p>
-              <p className={`truncate text-sm xl:text-base ${MUTED}`}>Issued and ready to download.</p>
+              <p className={`text-lg xl:text-xl ${HEADING}`}>Your certificate</p>
+              <p className={`truncate text-base xl:text-lg ${MUTED}`}>Issued and ready to download.</p>
             </div>
           </div>
           <a
@@ -407,7 +409,7 @@ function CertificateCard({ certUrl }: { certUrl: string | null }) {
       ) : (
         <div className={`${CARD} ${CARD_PAD} flex items-center gap-4 opacity-70`}>
           <LockIcon className={`h-6 w-6 shrink-0 xl:h-7 xl:w-7 ${MUTED}`} />
-          <p className={`text-sm italic xl:text-base ${MUTED}`}>
+          <p className={`text-base italic xl:text-lg ${MUTED}`}>
             Complete Lesson 5 and the final assessment to unlock…
           </p>
         </div>
@@ -494,7 +496,7 @@ function ContentOutlineRow({
         </span>
       )}
 
-      <span className={`min-w-0 flex-1 text-sm xl:text-base ${titleClass}`}>{lesson.title}</span>
+      <span className={`min-w-0 flex-1 text-base xl:text-lg ${titleClass}`}>{lesson.title}</span>
 
       {current ? (
         <Link
@@ -518,12 +520,10 @@ function ContentOutlineRow({
 function QuizProgressCard({
   progress,
   focus,
-  currentGrade,
   tryOpen,
 }: {
   progress: Progress
   focus: LessonState
-  currentGrade: number | null
   tryOpen: (l: LessonState | number) => void
 }) {
   const clearedCount = progress.lessons.filter(l => l.status === 'cleared').length
@@ -533,10 +533,7 @@ function QuizProgressCard({
       <h2 className={SECTION_HEADING}>Lesson checks</h2>
       <div className={`${CARD} ${CARD_PAD}`}>
         <div className="mb-4 flex items-center justify-between xl:mb-5">
-          <span className={`text-sm font-bold xl:text-base ${ACCENT}`}>{clearedCount}/5 cleared</span>
-          {currentGrade !== null && (
-            <span className={`text-xs xl:text-sm ${MUTED}`}>Avg score {currentGrade}%</span>
-          )}
+          <span className={`text-base font-bold xl:text-lg ${ACCENT}`}>{clearedCount}/5 cleared</span>
         </div>
 
         <div className="flex flex-col gap-1">
@@ -600,10 +597,10 @@ function QuizRow({
         </span>
       )}
 
-      <span className={`min-w-0 flex-1 text-sm xl:text-base ${titleClass}`}>{lesson.title}</span>
+      <span className={`min-w-0 flex-1 text-base xl:text-lg ${titleClass}`}>{lesson.title}</span>
 
       {cleared ? (
-        <span className="shrink-0 text-xs font-bold whitespace-nowrap text-[#16A34A] xl:text-sm dark:text-[#4ADE80]">
+        <span className="shrink-0 text-sm font-bold whitespace-nowrap text-[#16A34A] xl:text-base dark:text-[#4ADE80]">
           {lesson.lastScore !== null ? `${lesson.lastScore}%` : 'Cleared'}
         </span>
       ) : locked ? (
@@ -613,7 +610,7 @@ function QuizRow({
           type="button"
           onClick={onOpen}
           disabled={!openable}
-          className="shrink-0 rounded-full bg-black px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-[#262626] disabled:cursor-not-allowed disabled:opacity-40 xl:text-sm dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
+          className="shrink-0 rounded-full bg-black px-3 py-1 text-sm font-bold text-white transition-colors hover:bg-[#262626] disabled:cursor-not-allowed disabled:opacity-40 xl:text-base dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
         >
           {lesson.attempts > 0 ? 'Continue' : 'Start'}
         </button>
@@ -648,14 +645,6 @@ function PlayIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
       <path d="M8 5v14l11-7z" />
-    </svg>
-  )
-}
-
-function ArrowRightIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
     </svg>
   )
 }
