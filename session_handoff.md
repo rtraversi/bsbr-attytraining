@@ -1,5 +1,42 @@
 # Session Handoff
 
+**Date:** 2026-07-14 (Tuesday, session 3) — Max (desktop chat) with Claude, same day as the two
+terminal sessions below. This section is layered on top, not a replacement — both are current.
+
+## 🟢 Resolved from session 2's "Do FIRST" list
+
+The `contentViewed`/shortcut question flagged below **is resolved, not still open**: confirmed
+with Max directly. Root cause understood — Rise's course reports `"passed-incomplete"`, which
+requires an internal graded interaction to ever set `lesson_status`, but this course's own
+knowledge checks are deliberately ungraded, so `contentViewed` structurally can never go true
+through normal use. Decision: `checksCleared` alone is the real certifiable gate (per the
+project's own original architecture — Rise is the learning layer only, never meant to gate the
+real assessment). `training-client.tsx`'s `gatesOpen = checksCleared` is intentional and final,
+not a stopgap. No further discussion needed on this point.
+
+## 🟢 Also done this session (desktop)
+
+- Certified block locked: no "CERTIFIED" label/subtext, lighter-weight bigger number, flat
+  lighter gold at 100% (`#D9AE4E`, no shimmer — tried and explicitly rejected).
+- Certification Forecast card: subtitle removed, dead middle gap fixed (content sized up —
+  bigger callout/date/bar/avatars — rather than `justify-between` spreading whitespace, which
+  was the first attempt and didn't actually read as "full").
+- Old zinc/teal-theme leftovers swept and fixed across 8 files: toast, cert-preview-modal,
+  resend-invite-modal, onboarding-checklist, dashboard-footer, cert-download-button,
+  knowledge-check-modal's generic amber → brand amber hex, scorm-content's unused fallback frame.
+- Explored an externally-designed Settings page mockup (zip from another AI tool) — not wired
+  into the app, just reviewed/reconstructed for reference. Nothing in `app/dashboard/settings`
+  changed.
+
+## ⚠️ Verification caveat — read before deploying
+
+`tsc --noEmit` passed clean. **`eslint` did NOT complete — it hit a JS heap OOM crash in this
+environment**, not a real pass/fail result. Lint status on tonight's changes (and everything
+below from session 2) is genuinely unverified. Run it for real with more memory
+(`NODE_OPTIONS=--max-old-space-size=4096 npx eslint .` or similar) before trusting it's clean.
+
+---
+
 **Date:** 2026-07-14 (Tuesday, session 2) — Max (terminal) with Claude. Follow-up to the morning's
 admin-dashboard design pass. Full detail: `.planning/sessions/20260714-max-summary-2.md` (and
 `-summary.md` for session 1).
@@ -32,15 +69,13 @@ admin-dashboard design pass. Full detail: `.planning/sessions/20260714-max-summa
 
 ## 🔴 Do FIRST next session
 
-- **Resolve the `contentViewed` question before touching the shortcut gate or the Training
-  assessment gate again.** A parallel session changed `training-client.tsx`'s
-  `gatesOpen` from `checksCleared && contentViewed` to just `checksCleared`, reasoning that
-  Rise's completion signal structurally can't fire since our knowledge checks are ungraded.
-  **If that's right, this session's Lesson-5 shortcut gate (`contentViewed` in
-  `lib/training/progress.ts` / `knowledge-check/route.ts`) may have made the shortcut
-  permanently unavailable, not just "gated on finishing content."** Needs a decision:
-  confirm with Rob/Katy, then either drop `contentViewed` as a gate everywhere or build a
-  real completion signal. Full reasoning in `.planning/sessions/20260714-max-summary-2.md` §2.
+- ~~Resolve the `contentViewed` question before touching the shortcut gate or the Training
+  assessment gate again.~~ **RESOLVED in session 3 above — `checksCleared` alone is the
+  intended final gate.** One real consequence to actually verify live, though: since the
+  Lesson-5 shortcut (`lib/training/progress.ts`) is now `contentViewed`-gated and
+  `contentViewed` can structurally never go true, **the shortcut may be permanently
+  unavailable in practice.** Whether that's acceptable (shortcut becomes effectively
+  decorative/dead) or needs its own follow-up decision hasn't been discussed — flag to Max.
 - **`pnpm run deploy` + walk it as a real admin AND employee.** Well over a full day of
   undeployed work now (this session + the morning's 4 commits). Highest-risk to eyeball:
   reassign morph (cross-fade timing, mobile), Manage Team's icon-only columns, Invitations
