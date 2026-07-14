@@ -21,7 +21,7 @@ export function ComplianceScore({ score, total }: Props) {
 
   // Big and notorious: fluid clamp so it fills the card's width, leading-none +
   // tighter padding so the taller glyph can't overflow. The % scales with it (em).
-  const NUMBER = 'mb-1.5 text-[clamp(3.5rem,9vw,6rem)] font-light leading-none'
+  const NUMBER = 'mb-2 text-[clamp(4rem,8vw,10rem)] font-light leading-none'
 
   // Warm radial celebration backdrop, 100% only. dark:bg-none drops the white
   // gradient in dark mode so the card falls back to the standard dark surface.
@@ -42,7 +42,7 @@ export function ComplianceScore({ score, total }: Props) {
           <span className="text-[0.45em]">%</span>
         </p>
       )}
-      <span className="text-[13px] font-extralight text-[#8A8A8A] dark:text-[#7A8189]">
+      <span className="text-xl font-extralight text-[#8A8A8A] dark:text-[#7A8189]">
         Certified
       </span>
     </div>

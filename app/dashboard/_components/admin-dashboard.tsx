@@ -7,7 +7,7 @@ import { CertificationForecast } from './certification-forecast'
 import { ResendInviteAction } from './resend-invite-modal'
 
 const CARD = 'rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
-const HEADING = 'font-headline text-xl md:text-2xl font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
+const HEADING = 'font-headline text-2xl md:text-3xl font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 const LABEL = `text-xs font-bold uppercase tracking-wide ${MUTED}`
 
@@ -113,9 +113,11 @@ export function AdminDashboard({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:min-h-0 lg:flex-1 lg:grid-rows-1">
             <ComplianceScore score={complianceScore} total={totalCount} />
 
-            <section className={CARD}>
+            {/* flex-col + flex-1/justify-center spreads the forms into the full
+                row-track height instead of leaving a dead strip at the bottom. */}
+            <section className={`flex flex-col ${CARD}`}>
               <h2 className={`${HEADING} mb-3`}>Invitations</h2>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:justify-center">
                 <InviteForm seatsRemaining={seatsRemaining} />
                 <CsvUploadForm seatsRemaining={seatsRemaining} />
                 {seatsRemaining <= 0 && (
@@ -130,9 +132,10 @@ export function AdminDashboard({
           {/* ── Billing and seats ───────────────────────────────────────────── */}
           <section className={CARD}>
             <div className="mb-2 flex items-start justify-between gap-3">
-              <div className="group">
-                <h2 className={`${HEADING} mb-0.5`}>Billing and seats</h2>
-                <p className={`text-xs opacity-0 transition-opacity group-hover:opacity-100 ${MUTED}`}>
+              {/* Plan subtext reveals beside the heading on hover, not below it. */}
+              <div className="group flex min-w-0 items-baseline gap-2.5">
+                <h2 className={`${HEADING} whitespace-nowrap`}>Billing and seats</h2>
+                <p className={`truncate text-xs opacity-0 transition-opacity group-hover:opacity-100 ${MUTED}`}>
                   {planName} Plan &middot; Annual billing
                 </p>
               </div>
