@@ -140,7 +140,7 @@ export default async function OverviewPage() {
     contentViewed = contentResult.data !== null
   }
 
-  const progress = deriveProgress(events)
+  const progress = deriveProgress(events, contentViewed)
 
   // Certificate state drives the (quiet, bottom-of-page) certificate block.
   // Same lookup chain as app/dashboard/quizzes/page.tsx: course → enrollment → cert → signed URL.

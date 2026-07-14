@@ -76,7 +76,7 @@ export function QuizComponent({ questions, courseId, onPass, onRetry, onExit }: 
 
   return (
     <QuizRunner
-      title="Final Assessment"
+      title="Certificate Assessment"
       subtitle="Certification quiz — you need 80% or higher to pass."
       questions={questions}
       allowBack={false}

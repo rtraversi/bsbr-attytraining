@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useMemo, useState } from 'react'
-import { ReassignModal } from './reassign-modal'
+import { ReassignPanel } from './reassign-panel'
 import { CertPreviewModal } from './cert-preview-modal'
 import { useToast } from './toast-provider'
 
@@ -35,12 +35,18 @@ type RemindState = 'idle' | 'loading' | 'sent' | 'error'
 interface TeamCtx {
   visible: MemberDetail[]
   total: number
+  /** The signed-in admin's own auth user id — so they can't delete themselves. */
+  currentUserId: string
   remindStates: Record<string, RemindState>
   deletingIds: Set<string>
   reassignedIds: Set<string>
+  /** Non-null while a reassign is in progress — ManageTeamPanel morphs the
+   *  table into the ReassignPanel in place rather than opening a floating modal. */
+  reassignTarget: MemberDetail | null
   handleRemind: (userId: string, displayName: string) => void
   handleDelete: (memberId: string, displayName: string) => void
-  setReassignTarget: (m: MemberDetail) => void
+  setReassignTarget: (m: MemberDetail | null) => void
+  handleReassignSuccess: (memberId: string) => void
   setCertPreview: (m: MemberDetail) => void
 }
 
@@ -54,9 +60,11 @@ export function useTeam(): TeamCtx {
 
 export function TeamProvider({
   memberDetails,
+  currentUserId,
   children,
 }: {
   memberDetails: MemberDetail[]
+  currentUserId: string
   children: React.ReactNode
 }) {
   const { addToast } = useToast()
@@ -122,22 +130,20 @@ export function TeamProvider({
   const value: TeamCtx = {
     visible,
     total: memberDetails.length,
+    currentUserId,
     remindStates,
     deletingIds,
     reassignedIds,
+    reassignTarget,
     handleRemind,
     handleDelete,
     setReassignTarget,
+    handleReassignSuccess,
     setCertPreview,
   }
 
   return (
     <Ctx.Provider value={value}>
-      <ReassignModal
-        member={reassignTarget}
-        onClose={() => setReassignTarget(null)}
-        onSuccess={handleReassignSuccess}
-      />
       {certPreview?.certId && (
         <CertPreviewModal
           certId={certPreview.certId}
@@ -170,13 +176,15 @@ const EM_DASH = 'text-[#C7CDD3] dark:text-[#3A4048]'
 const ROW_ACTION =
   'whitespace-nowrap rounded-lg border border-[#E5EEF5] px-2.5 py-1 text-sm font-semibold text-[#3D3D3D] transition-colors hover:border-[#0094FF] hover:text-[#0094FF] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[#32C7FF] dark:hover:text-[#32C7FF]'
 
-// Text-only row actions: coloured text, no fill, no border — all matching the
-// Delete (danger) look. Hover is a slight opacity shift.
-const TEXT_ROW_ACTION =
-  'whitespace-nowrap rounded-lg px-2.5 py-1 text-sm font-semibold transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40'
-const ROW_ACTION_REMIND = `${TEXT_ROW_ACTION} text-[#FF6600]`
-const ROW_ACTION_REASSIGN = `${TEXT_ROW_ACTION} text-[#0094FF]`
-const ROW_ACTION_DANGER = `${TEXT_ROW_ACTION} text-[#DC2626]`
+// Per-column row actions: compact bordered icon buttons, one column each
+// (Remind / Reassign / Delete). The column headers carry the label, so the
+// buttons stay icon-only and the table doesn't balloon. Colours keep the
+// established coding: remind orange, reassign blue, delete red.
+const ICON_ACTION =
+  'inline-flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:opacity-40'
+const ICON_ACTION_REMIND = `${ICON_ACTION} border-[#FF6600]/35 text-[#FF6600] hover:bg-[#FF6600]/10 dark:border-[#FF6600]/45`
+const ICON_ACTION_REASSIGN = `${ICON_ACTION} border-[#0094FF]/35 text-[#0094FF] hover:bg-[#EAF8FF] dark:border-[#0094FF]/45 dark:hover:bg-[#0094FF]/10`
+const ICON_ACTION_DANGER = `${ICON_ACTION} border-[#DC2626]/35 text-[#DC2626] hover:bg-[#DC2626]/10 dark:border-[#DC2626]/45`
 
 // Window the member list so the block can't grow unbounded and break the
 // six-block grid. Panels paginate past this many members; below it, nothing
@@ -195,12 +203,15 @@ export function ManageTeamPanel() {
   const {
     visible,
     total,
+    currentUserId,
     remindStates,
     deletingIds,
     reassignedIds,
+    reassignTarget,
     handleRemind,
     handleDelete,
     setReassignTarget,
+    handleReassignSuccess,
     setCertPreview,
   } = useTeam()
 
@@ -211,148 +222,205 @@ export function ManageTeamPanel() {
   const currentPage = Math.min(page, totalPages - 1)
   const pageItems = visible.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
 
+  const reassigning = reassignTarget !== null
+
   return (
     <div className={`${CARD} flex h-full flex-col`}>
       <div className="mb-4">
-        <h2 className={HEADING}>Manage team</h2>
+        <h2 className={HEADING}>{reassigning ? 'Reassign seat' : 'Manage team'}</h2>
       </div>
 
-      {total === 0 ? (
-        <EmptyTeam />
-      ) : (
-        <>
-          {/* overflow-x scrolls wide rows; LIST_SCROLL caps height + scrolls vertically. */}
-          <div className={`-mx-2 overflow-x-auto ${LIST_SCROLL}`}>
-            <table className="w-full min-w-[780px] text-base">
-              <thead>
-                <tr className="border-b border-[#E5EEF5] dark:border-[#1F2429]">
-                  {['Employee', 'Status', 'Score', 'Completed', 'Certificate', 'Actions'].map(h => {
-                    // Status/Score/Completed/Certificate center; Employee stays
-                    // left; Actions right, matching its right-aligned cells.
-                    const centered = h === 'Status' || h === 'Score' || h === 'Completed' || h === 'Certificate'
-                    return (
+      {/* Table and reassign form share this grid cell and cross-fade between
+          each other — a deliberate alternative to a floating backdrop-blur
+          modal, which reads as generic. Both layers stay mounted (rather than
+          swapping via a plain conditional) so the transition has something to
+          animate; the hidden one gets pointer-events-none so it can't be
+          interacted with or tabbed into. */}
+      <div className="relative grid min-h-0 flex-1 grid-cols-1 grid-rows-1">
+        <div
+          className={`col-start-1 row-start-1 flex min-h-0 flex-col transition-[opacity,transform] duration-300 ease-out ${
+            reassigning ? 'pointer-events-none scale-[0.98] opacity-0' : 'opacity-100'
+          }`}
+        >
+        {total === 0 ? (
+          <EmptyTeam />
+        ) : (
+          <>
+            {/* overflow-x scrolls wide rows; LIST_SCROLL caps height + scrolls vertically. */}
+            <div className={`-mx-2 overflow-x-auto ${LIST_SCROLL}`}>
+              <table className="w-full min-w-[820px] text-base">
+                <thead>
+                  <tr className="border-b border-[#E5EEF5] dark:border-[#1F2429]">
+                    {/* Each action gets its own labelled column — the row buttons
+                        below are icon-only, so the header is what names them. */}
+                    {['Employee', 'Status', 'Score', 'Completed', 'Certificate', 'Remind', 'Reassign', 'Delete'].map(h => (
                       <th
                         key={h}
                         className={`whitespace-nowrap px-2 py-2 text-sm font-semibold ${
-                          centered ? 'text-center' : h === 'Actions' ? 'text-right' : 'text-left'
+                          h === 'Employee' ? 'text-left' : 'text-center'
                         } ${MUTED}`}
                       >
                         {h}
                       </th>
-                    )
-                  })}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F2F4F7] dark:divide-[#1F2429]">
-                {pageItems.map(m => {
-                  if (reassignedIds.has(m.id)) {
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F2F4F7] dark:divide-[#1F2429]">
+                  {pageItems.map(m => {
+                    if (reassignedIds.has(m.id)) {
+                      return (
+                        <tr key={m.id}>
+                          <td colSpan={8} className={`px-2 py-3 text-sm italic ${MUTED}`}>
+                            Reassigned — invite sent to new employee
+                          </td>
+                        </tr>
+                      )
+                    }
+  
+                    const remindState = remindStates[m.user_id] ?? 'idle'
+                    const canRemind = m.trainingStatus === 'not_started' || m.trainingStatus === 'in_progress'
+                    const canReassign = m.trainingStatus !== 'passed'
+                    const canDelete = m.user_id !== currentUserId
+                    const isDeleting = deletingIds.has(m.id)
+  
                     return (
                       <tr key={m.id}>
-                        <td colSpan={6} className={`px-2 py-3 text-sm italic ${MUTED}`}>
-                          Reassigned — invite sent to new employee
+                        {/* Name only — it falls back to the email when the member
+                            hasn't set one, so a second email line is redundant. */}
+                        <td className="px-2 py-3">
+                          <p className="font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{m.name}</p>
                         </td>
-                      </tr>
-                    )
-                  }
-
-                  const remindState = remindStates[m.user_id] ?? 'idle'
-                  const canRemind = m.trainingStatus === 'not_started' || m.trainingStatus === 'in_progress'
-                  const canReassign = m.trainingStatus !== 'passed'
-                  const isDeleting = deletingIds.has(m.id)
-
-                  return (
-                    <tr key={m.id}>
-                      {/* Name only — it falls back to the email when the member
-                          hasn't set one, so a second email line is redundant. */}
-                      <td className="px-2 py-3">
-                        <p className="font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{m.name}</p>
-                      </td>
-                      <td className="px-2 py-3 text-center">
-                        <TrainingStatusBadge status={m.trainingStatus} />
-                      </td>
-                      <td className={`px-2 py-3 whitespace-nowrap text-center ${m.score !== null ? 'font-semibold' : EM_DASH}`}>
-                        {m.score !== null ? `${Math.round(m.score)}%` : '—'}
-                      </td>
-                      <td className={`whitespace-nowrap px-2 py-3 text-center ${m.completedAt ? MUTED : EM_DASH}`}>
-                        {m.completedAt
-                          ? new Date(m.completedAt).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })
-                          : '—'}
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-3 text-center">
-                        {m.certId ? (
-                          <button
-                            onClick={() => setCertPreview(m)}
-                            className="text-sm font-semibold text-[#0094FF] hover:underline"
-                          >
-                            View &amp; download
-                          </button>
-                        ) : (
-                          <span className={EM_DASH}>—</span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-3">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {canRemind &&
-                            (remindState === 'idle' ? (
-                              <button onClick={() => handleRemind(m.user_id, m.name)} className={ROW_ACTION_REMIND}>
-                                Remind
+                        <td className="px-2 py-3 text-center">
+                          <TrainingStatusBadge status={m.trainingStatus} />
+                        </td>
+                        <td className={`px-2 py-3 whitespace-nowrap text-center ${m.score !== null ? 'font-semibold' : EM_DASH}`}>
+                          {m.score !== null ? `${Math.round(m.score)}%` : '—'}
+                        </td>
+                        <td className={`whitespace-nowrap px-2 py-3 text-center ${m.completedAt ? MUTED : EM_DASH}`}>
+                          {m.completedAt
+                            ? new Date(m.completedAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })
+                            : '—'}
+                        </td>
+                        <td className="whitespace-nowrap px-2 py-3 text-center">
+                          {m.certId ? (
+                            <button
+                              onClick={() => setCertPreview(m)}
+                              className="text-sm font-semibold text-[#0094FF] hover:underline"
+                            >
+                              View &amp; download
+                            </button>
+                          ) : (
+                            <span className={EM_DASH}>—</span>
+                          )}
+                        </td>
+                        {/* One column per action; ineligible rows show the same
+                            extra-muted em dash as the data columns. Gating is
+                            unchanged: remind on not_started/in_progress, reassign
+                            on non-passed, delete always (confirm + PII redaction). */}
+                        <td className="whitespace-nowrap px-2 py-3 text-center">
+                          {canRemind ? (
+                            remindState === 'idle' ? (
+                              <button
+                                onClick={() => handleRemind(m.user_id, m.name)}
+                                className={ICON_ACTION_REMIND}
+                                title={`Send ${m.name} a reminder`}
+                                aria-label={`Remind ${m.name}`}
+                              >
+                                <BellIcon />
                               </button>
                             ) : remindState === 'loading' ? (
-                              <span className={`text-sm ${MUTED}`}>Sending…</span>
+                              <span className={`text-sm ${MUTED}`}>…</span>
                             ) : remindState === 'sent' ? (
                               <span className="text-sm font-semibold text-[#0094FF]">Sent ✓</span>
                             ) : (
                               <button
                                 onClick={() => handleRemind(m.user_id, m.name)}
-                                className="text-sm font-semibold text-[#DC2626] hover:underline"
+                                className={ICON_ACTION_DANGER}
+                                title="Sending failed — try again"
+                                aria-label={`Retry reminder for ${m.name}`}
                               >
-                                Failed — try again
+                                <BellIcon />
                               </button>
-                            ))}
-
-                          {canReassign && (
-                            <button onClick={() => setReassignTarget(m)} className={ROW_ACTION_REASSIGN}>
-                              Reassign
-                            </button>
+                            )
+                          ) : (
+                            <span className={EM_DASH}>—</span>
                           )}
-
-                          <button
-                            onClick={() => handleDelete(m.id, m.name)}
-                            disabled={isDeleting}
-                            className={ROW_ACTION_DANGER}
-                          >
-                            {isDeleting ? '…' : 'Delete'}
-                          </button>
-                        </div>
+                        </td>
+                        <td className="whitespace-nowrap px-2 py-3 text-center">
+                          {canReassign ? (
+                            <button
+                              onClick={() => setReassignTarget(m)}
+                              className={ICON_ACTION_REASSIGN}
+                              title={`Reassign ${m.name}'s seat`}
+                              aria-label={`Reassign ${m.name}`}
+                            >
+                              <SwapIcon />
+                            </button>
+                          ) : (
+                            <span className={EM_DASH}>—</span>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap px-2 py-3 text-center">
+                          {canDelete ? (
+                            <button
+                              onClick={() => handleDelete(m.id, m.name)}
+                              disabled={isDeleting}
+                              className={ICON_ACTION_DANGER}
+                              title={`Delete ${m.name}`}
+                              aria-label={`Delete ${m.name}`}
+                            >
+                              {isDeleting ? <span className="text-sm">…</span> : <TrashIcon />}
+                            </button>
+                          ) : (
+                            <span className={EM_DASH} title="You can't delete your own account">
+                              —
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {visible.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className={`px-2 py-6 text-center text-sm ${MUTED}`}>
+                        All members have been removed.
                       </td>
                     </tr>
-                  )
-                })}
-                {visible.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className={`px-2 py-6 text-center text-sm ${MUTED}`}>
-                      All members have been removed.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
+  
+            {visible.length > PAGE_SIZE && (
+              <PaginationControls
+                page={currentPage}
+                totalPages={totalPages}
+                onPrev={() => setPage(currentPage - 1)}
+                onNext={() => setPage(currentPage + 1)}
+              />
+            )}
+          </>
+        )}
           </div>
 
-          {visible.length > PAGE_SIZE && (
-            <PaginationControls
-              page={currentPage}
-              totalPages={totalPages}
-              onPrev={() => setPage(currentPage - 1)}
-              onNext={() => setPage(currentPage + 1)}
+        <div
+          className={`col-start-1 row-start-1 flex min-h-0 items-start overflow-y-auto transition-[opacity,transform] duration-300 ease-out ${
+            reassigning ? 'opacity-100' : 'pointer-events-none scale-[0.98] opacity-0'
+          }`}
+        >
+          {reassignTarget && (
+            <ReassignPanel
+              member={reassignTarget}
+              onClose={() => setReassignTarget(null)}
+              onSuccess={handleReassignSuccess}
             />
           )}
-        </>
-      )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -401,6 +469,31 @@ function EmptyTeam() {
         Invite your first team member to get started with AI compliance training.
       </p>
     </div>
+  )
+}
+
+// Row-action icons — h-4 w-4 to sit comfortably in the h-8 w-8 buttons.
+function BellIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    </svg>
+  )
+}
+
+function SwapIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4" />
+    </svg>
+  )
+}
+
+function TrashIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
   )
 }
 

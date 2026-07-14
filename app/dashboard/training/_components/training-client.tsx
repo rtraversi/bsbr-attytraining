@@ -148,7 +148,14 @@ export function TrainingClient({
     if (prev !== null && n > prev) setNagLesson(prev) // the lesson just finished
   }
 
-  const gatesOpen = checksCleared && contentViewed
+  // Rise's SCORM completion signal ("passed-incomplete" reporting) requires an
+  // internal graded interaction to ever fire — but this course's own knowledge
+  // checks are deliberately ungraded, so `contentViewed` can never go true
+  // through normal use. The custom quiz layer (checksCleared, now spanning all
+  // 5 lessons via the Final Review) is the actual certifiable signal per the
+  // project's own architecture — Rise is the learning layer only and was never
+  // meant to gate the real assessment.
+  const gatesOpen = checksCleared
   const showQuiz = phase === 'not_started' && gatesOpen && !!courseId && !quizDismissed
 
   // Honest progress: content is the first half (0–50%), lesson checks the second
@@ -320,8 +327,8 @@ export function TrainingClient({
                 </p>
                 <p className="mt-3 text-sm text-white/60">
                   {gatesOpen
-                    ? 'The final assessment is unlocked.'
-                    : 'Clear your lesson checks to unlock the final assessment.'}
+                    ? 'The Certificate Assessment is unlocked.'
+                    : 'Clear your lesson checks to unlock the Certificate Assessment.'}
                 </p>
 
                 <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
@@ -330,7 +337,7 @@ export function TrainingClient({
                       onClick={openAssessment}
                       className="rounded-full bg-white px-8 py-3 text-sm font-bold text-black transition-colors hover:bg-gray-200"
                     >
-                      Take the Final Assessment →
+                      Take the Certificate Assessment →
                     </button>
                   )}
                   {gatesOpen && !courseId && (
@@ -424,7 +431,7 @@ export function TrainingClient({
                 onClick={() => setNextUpOpen(o => !o)}
               >
                 <p className="mb-3 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
-                  Final Assessment
+                  Certificate Assessment
                 </p>
 
                 {gatesOpen && courseId ? (

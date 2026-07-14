@@ -14,6 +14,9 @@
 //    Passing via the shortcut grants full completion (all lessons cleared).
 //    Failing the shortcut 3× (before clearing 1–4) LOCKS it → must then do
 //    1–4 in order (which grants lesson 5 a fresh set of sequential attempts).
+//    The shortcut only opens once the training CONTENT is verifiably complete
+//    (contentViewed — a driver-reported video_completed event exists). The
+//    sequential 1–4 path is NOT content-gated; only the skip is.
 //  - While not fully cleared, each check allows MAX_ATTEMPTS. Once EVERY lesson
 //    is cleared (via either path), all checks become unlimited-retake forever.
 //
@@ -53,7 +56,7 @@ export interface Progress {
   fullyCleared: boolean
   /** Lesson-5 shortcut has been failed out (3×) without clearing 1–4 first. */
   shortcutLocked: boolean
-  /** Lesson-5 shortcut is currently attemptable (1–4 not done, not locked). */
+  /** Lesson-5 shortcut is currently attemptable (1–4 not done, not locked, content finished). */
   shortcutAvailable: boolean
   /** Lesson 5 cleared → the future final assessment (Quizzes tab) is unlocked. */
   quizzesUnlocked: boolean
@@ -61,7 +64,7 @@ export interface Progress {
 
 const REGULAR = [1, 2, 3, 4]
 
-export function deriveProgress(events: KnowledgeCheckEvent[]): Progress {
+export function deriveProgress(events: KnowledgeCheckEvent[], contentViewed: boolean): Progress {
   const sorted = [...events].sort((a, b) => a.created_at.localeCompare(b.created_at))
 
   const byLesson = new Map<number, KnowledgeCheckEvent[]>()
@@ -95,7 +98,7 @@ export function deriveProgress(events: KnowledgeCheckEvent[]): Progress {
     ? l5events.filter(e => t14 !== null && e.created_at < t14 && !e.passed).length
     : l5events.filter(e => !e.passed).length
   const shortcutLocked = !lesson5Passed && !all14 && shortcutFails >= MAX_ATTEMPTS
-  const shortcutAvailable = !lesson5Passed && !all14 && !shortcutLocked
+  const shortcutAvailable = !lesson5Passed && !all14 && !shortcutLocked && contentViewed
 
   let stars = 0
   if (lesson5Passed) stars = 3
@@ -130,7 +133,7 @@ export function deriveProgress(events: KnowledgeCheckEvent[]): Progress {
 
     return {
       number: n,
-      title: l.title,
+      title: l.checkLabel ?? l.title,
       status,
       isReadiness: n === READINESS_LESSON,
       attempts,
@@ -156,9 +159,10 @@ export function deriveProgress(events: KnowledgeCheckEvent[]): Progress {
  */
 export function canAttempt(
   events: KnowledgeCheckEvent[],
-  lesson: number
+  lesson: number,
+  contentViewed: boolean
 ): { allowed: boolean; reason?: string } {
-  const p = deriveProgress(events)
+  const p = deriveProgress(events, contentViewed)
   const ls = p.lessons.find(l => l.number === lesson)
   if (!ls) return { allowed: false, reason: 'Invalid lesson.' }
 
@@ -170,7 +174,9 @@ export function canAttempt(
       allowed: false,
       reason:
         lesson === READINESS_LESSON
-          ? 'The readiness shortcut is locked — complete lessons 1–4 in order first.'
+          ? p.shortcutLocked
+            ? 'The readiness shortcut is locked — complete lessons 1–4 in order first.'
+            : 'Finish the training content to unlock this shortcut.'
           : 'Complete the previous lesson’s check first.',
     }
   }

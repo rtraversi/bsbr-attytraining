@@ -20,6 +20,8 @@ const QUICK_ACTION_TILE =
 
 export interface AdminDashboardProps {
   memberDetails: MemberDetail[]
+  /** The signed-in admin's own auth user id — so they can't delete themselves. */
+  currentUserId: string
   totalCount: number
   complianceScore: number
   seatsUsed: number
@@ -45,6 +47,7 @@ export interface AdminDashboardProps {
  */
 export function AdminDashboard({
   memberDetails,
+  currentUserId,
   totalCount,
   complianceScore,
   seatsUsed,
@@ -61,7 +64,7 @@ export function AdminDashboard({
   const planName = tier.charAt(0).toUpperCase() + tier.slice(1)
 
   return (
-    <TeamProvider memberDetails={memberDetails}>
+    <TeamProvider memberDetails={memberDetails} currentUserId={currentUserId}>
       {/*
         Row heights at lg+ are fr-based fractions of whatever height the shell hands
         this grid (viewport minus pill + padding — see dashboard-shell.tsx), so the
@@ -113,11 +116,16 @@ export function AdminDashboard({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:min-h-0 lg:flex-1 lg:grid-rows-1">
             <ComplianceScore score={complianceScore} total={totalCount} />
 
-            {/* flex-col + flex-1/justify-center spreads the forms into the full
-                row-track height instead of leaving a dead strip at the bottom. */}
+            {/* flex-col + flex-1 spreads the forms into the full row-track height
+                instead of leaving a dead strip at the bottom. justify-center-safe
+                (not plain justify-center) is load-bearing: when the forms are
+                taller than the track, plain centering overflows in BOTH directions
+                and the top half spills over the "Invitations" heading — safe
+                centering falls back to start-aligned, and overflow-y-auto keeps
+                the excess inside the card. */}
             <section className={`flex flex-col ${CARD}`}>
               <h2 className={`${HEADING} mb-3`}>Invitations</h2>
-              <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:justify-center">
+              <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:justify-center-safe lg:overflow-y-auto">
                 <InviteForm seatsRemaining={seatsRemaining} />
                 <CsvUploadForm seatsRemaining={seatsRemaining} />
                 {seatsRemaining <= 0 && (

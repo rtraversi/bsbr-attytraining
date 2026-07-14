@@ -60,111 +60,116 @@ export function CertificationForecast() {
 
   return (
     <div className={`${CARD} flex h-full flex-col`}>
-      <h2 className={HEADING}>Certification Forecast</h2>
-      <p className={`mb-5 mt-1 text-sm ${MUTED}`}>Projected pace to full certification.</p>
+      <h2 className={`${HEADING} mb-5`}>Certification Forecast</h2>
 
-      {hasProjection || fullyCertified ? (
-        <div className="mb-5 rounded-2xl bg-[#EAF8FF] px-5 py-[18px] dark:bg-[#0094FF]/10">
-          <p className="mb-1.5 text-base font-semibold text-[#0094FF] dark:text-[#32C7FF]">
-            Projected Fully Certified
-          </p>
-          {fullyCertified ? (
-            <p className="text-[28px] font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
-              Fully certified
+      {/* The three content blocks fill the card by being sized generously, not by
+          gap-stretching between them — gap-8 is a fixed rhythm, not a filler. */}
+      <div className="flex min-h-0 flex-1 flex-col justify-center gap-8">
+        {hasProjection || fullyCertified ? (
+          <div className="rounded-2xl bg-[#EAF8FF] px-7 py-8 dark:bg-[#0094FF]/10">
+            <p className="mb-3 text-xl font-semibold text-[#0094FF] dark:text-[#32C7FF]">
+              Projected Fully Certified
             </p>
-          ) : (
-            <>
-              <p className="mb-1.5 text-[28px] font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
-                {projectedDateLabel}
+            {fullyCertified ? (
+              <p className="text-[44px] font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
+                Fully certified
               </p>
-              <p className="flex items-center gap-1 text-sm font-semibold text-[#16A34A]">
-                ↗ Pace picking up — {certifiedLast7Days} certified in the last 7 days
-              </p>
-            </>
-          )}
-        </div>
-      ) : (
-        <div className="mb-5 rounded-2xl bg-[#F5F7FA] px-5 py-[18px] dark:bg-[#131A20]">
-          <p className={`mb-1.5 text-base font-semibold ${MUTED}`}>Projected Fully Certified</p>
-          <p className="mb-1.5 text-lg font-medium text-[#6B7684] dark:text-[#9AA3AC]">
-            Not enough recent activity to project a date yet
-          </p>
-          <p className={`flex items-center gap-1 text-sm font-semibold ${MUTED}`}>
-            No certifications in the last 7 days
-          </p>
-        </div>
-      )}
-
-      <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-[#6B7684] dark:text-[#9AA3AC]">
-        <span>Certified so far</span>
-        <span>
-          {certifiedCount} of {total}
-        </span>
-      </div>
-      <div className="mb-2 flex h-2.5 overflow-hidden rounded bg-[#F0F3F7] dark:bg-[#1F2429]">
-        {hasProjection ? (
-          <>
-            <div
-              style={{
-                flexGrow: flexActual,
-                background: 'linear-gradient(90deg, #32C7FF 0%, #0094FF 100%)',
-              }}
-            />
-            <div
-              style={{
-                flexGrow: flexProjected,
-                background: 'repeating-linear-gradient(110deg, #CDEBFF 0 6px, #E3F3FF 6px 12px)',
-              }}
-            />
-          </>
-        ) : (
-          <div
-            style={{
-              width: `${certifiedPct}%`,
-              background: 'linear-gradient(90deg, #32C7FF 0%, #0094FF 100%)',
-            }}
-          />
-        )}
-      </div>
-      <div className="mb-5 flex items-center justify-between text-xs text-[#98A2AD]">
-        <span>First invite</span>
-        <span className="font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">Today</span>
-        <span className="italic">{hasProjection ? 'Projected finish (est.)' : ' '}</span>
-      </div>
-
-      {remainingSeats > 0 && (
-        <div className="mt-auto flex items-center gap-2.5">
-          <div className="flex">
-            {remainingMembers.slice(0, 3).map((m, i) => (
-              <span
-                key={m.id}
-                className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-sm font-bold text-white first:ml-0 dark:border-[#0D0F12]"
-                style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
-              >
-                {m.name.charAt(0).toUpperCase()}
-              </span>
-            ))}
-            {remainingSeats > 3 && (
-              <span className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[#EAF1F8] text-sm font-bold text-[#6B7684] first:ml-0 dark:border-[#0D0F12] dark:bg-[#1A1F24] dark:text-[#9AA3AC]">
-                +{remainingSeats - 3}
-              </span>
+            ) : (
+              <>
+                <p className="mb-3 text-[44px] font-bold leading-none text-[#0A0A0A] dark:text-[#F5F7FA]">
+                  {projectedDateLabel}
+                </p>
+                <p className="flex items-center gap-1 text-lg font-semibold text-[#16A34A]">
+                  ↗ Pace picking up — {certifiedLast7Days} certified in the last 7 days
+                </p>
+              </>
             )}
           </div>
-          {/* Best-effort scroll for now (no filtering yet). On lg+ the page
-              doesn't scroll and the table is already on screen, so it's a no-op
-              there; on mobile it scrolls the stacked layout up to the table. */}
-          <a
-            href="#manage-team"
-            onClick={e => {
-              e.preventDefault()
-              document.getElementById('manage-team')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            }}
-            className="ml-auto text-sm font-bold text-[#0094FF] hover:underline dark:text-[#32C7FF]"
-          >
-            View who&apos;s left &rarr;
-          </a>
+        ) : (
+          <div className="rounded-2xl bg-[#F5F7FA] px-7 py-8 dark:bg-[#131A20]">
+            <p className={`mb-3 text-xl font-semibold ${MUTED}`}>Projected Fully Certified</p>
+            <p className="mb-3 text-2xl font-medium text-[#6B7684] dark:text-[#9AA3AC]">
+              Not enough recent activity to project a date yet
+            </p>
+            <p className={`flex items-center gap-1 text-lg font-semibold ${MUTED}`}>
+              No certifications in the last 7 days
+            </p>
+          </div>
+        )}
+
+        <div>
+          <div className="mb-2 flex items-center justify-between text-base font-semibold text-[#6B7684] dark:text-[#9AA3AC]">
+            <span>Certified so far</span>
+            <span>
+              {certifiedCount} of {total}
+            </span>
+          </div>
+          <div className="mb-2 flex h-3.5 overflow-hidden rounded bg-[#F0F3F7] dark:bg-[#1F2429]">
+            {hasProjection ? (
+              <>
+                <div
+                  style={{
+                    flexGrow: flexActual,
+                    background: 'linear-gradient(90deg, #32C7FF 0%, #0094FF 100%)',
+                  }}
+                />
+                <div
+                  style={{
+                    flexGrow: flexProjected,
+                    background: 'repeating-linear-gradient(110deg, #CDEBFF 0 6px, #E3F3FF 6px 12px)',
+                  }}
+                />
+              </>
+            ) : (
+              <div
+                style={{
+                  width: `${certifiedPct}%`,
+                  background: 'linear-gradient(90deg, #32C7FF 0%, #0094FF 100%)',
+                }}
+              />
+            )}
+          </div>
+          <div className="flex items-center justify-between text-sm text-[#98A2AD]">
+            <span>First invite</span>
+            <span className="font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">Today</span>
+            <span className="italic">{hasProjection ? 'Projected finish (est.)' : ' '}</span>
+          </div>
         </div>
-      )}
+
+        {remainingSeats > 0 && (
+          <div className="flex items-center gap-3">
+            <div className="flex">
+              {remainingMembers.slice(0, 3).map((m, i) => (
+                <span
+                  key={m.id}
+                  className="-ml-2.5 flex h-11 w-11 items-center justify-center rounded-full border-2 border-white text-base font-bold text-white first:ml-0 dark:border-[#0D0F12]"
+                  style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                >
+                  {m.name.charAt(0).toUpperCase()}
+                </span>
+              ))}
+              {remainingSeats > 3 && (
+                <span className="-ml-2.5 flex h-11 w-11 items-center justify-center rounded-full border-2 border-white bg-[#EAF1F8] text-base font-bold text-[#6B7684] first:ml-0 dark:border-[#0D0F12] dark:bg-[#1A1F24] dark:text-[#9AA3AC]">
+                  +{remainingSeats - 3}
+                </span>
+              )}
+            </div>
+            {/* Best-effort scroll for now (no filtering yet). On lg+ the page
+                doesn't scroll and the table is already on screen, so it's a no-op
+                there; on mobile it scrolls the stacked layout up to the table. */}
+            <a
+              href="#manage-team"
+              onClick={e => {
+                e.preventDefault()
+                document.getElementById('manage-team')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }}
+              className="ml-auto text-sm font-bold text-[#0094FF] hover:underline dark:text-[#32C7FF]"
+            >
+              View who&apos;s left &rarr;
+            </a>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

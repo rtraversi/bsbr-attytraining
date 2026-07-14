@@ -39,6 +39,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Member not found in this firm' }, { status: 404 })
   }
 
+  // Authoritative guard — an admin can't delete (and PII-redact) their own
+  // account. Client-side the button is already hidden for this row; this is
+  // the enforcement point that actually matters.
+  if (member.user_id === user.id) {
+    return NextResponse.json({ error: "You can't delete your own account" }, { status: 400 })
+  }
+
   // Soft-delete: mark the row as deleted (preserves cert IDs, dates, training_events)
   const { error: updateError } = await admin
     .from('firm_members')

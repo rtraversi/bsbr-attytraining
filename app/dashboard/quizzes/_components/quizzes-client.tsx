@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import type { ClientQuestion } from '@/lib/training/questions'
@@ -11,6 +12,8 @@ interface Props {
   questionsByLesson: Record<number, ClientQuestion[]>
   certUrl: string | null
   firstName: string | null
+  /** Real SCORM content completion (a video_completed event exists). */
+  contentViewed: boolean
 }
 
 // The readiness lesson (5) is the terminus/gate. Lessons 1–4 are the "regular" path.
@@ -22,7 +25,13 @@ function canOpen(lesson: LessonState, fullyCleared: boolean): boolean {
   return fullyCleared || lesson.attemptsRemaining === null || lesson.attemptsRemaining > 0
 }
 
-export function QuizzesClient({ progress, questionsByLesson, certUrl, firstName }: Props) {
+export function QuizzesClient({
+  progress,
+  questionsByLesson,
+  certUrl,
+  firstName,
+  contentViewed,
+}: Props) {
   const router = useRouter()
   const [openLesson, setOpenLesson] = useState<number | null>(null)
 
@@ -51,7 +60,7 @@ export function QuizzesClient({ progress, questionsByLesson, certUrl, firstName 
           {/* ── Left column: the action cards ─────────────────────────────────── */}
           <section className="flex flex-col gap-10 md:col-span-7 md:gap-12">
             <JumpBackInCard progress={progress} tryOpen={tryOpen} firstName={firstName} />
-            <FinalTestCard progress={progress} />
+            <FinalTestCard progress={progress} contentViewed={contentViewed} />
             <CertificateCard certUnlocked={certUnlocked} certUrl={certUrl} />
           </section>
 
@@ -64,6 +73,7 @@ export function QuizzesClient({ progress, questionsByLesson, certUrl, firstName 
               progress={progress}
               lesson5={lesson5}
               certUnlocked={certUnlocked}
+              contentViewed={contentViewed}
               tryOpen={tryOpen}
             />
           </aside>
@@ -283,11 +293,16 @@ function LessonRow({
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Card 2 — "Ready for the final test?"
+   Card 2 — "Ready for the Certificate Assessment?"
    ═══════════════════════════════════════════════════════════════════════════ */
-function FinalTestCard({ progress }: { progress: Progress }) {
+function FinalTestCard({
+  progress,
+  contentViewed,
+}: {
+  progress: Progress
+  contentViewed: boolean
+}) {
   const { open, hovered, toggle, hoverProps } = useExpand()
-  const [assessmentNote, setAssessmentNote] = useState(false)
 
   // All derived from progress.lessons — nothing hardcoded.
   const regular = progress.lessons.filter(l => REGULAR.includes(l.number))
@@ -318,7 +333,7 @@ function FinalTestCard({ progress }: { progress: Progress }) {
 
   return (
     <div className="qz-entrance qz-d3 group" {...hoverProps}>
-      <h2 className={`mb-4 text-2xl md:text-3xl ${HEADING}`}>Ready for the final test?</h2>
+      <h2 className={`mb-4 text-2xl md:text-3xl ${HEADING}`}>Ready for the Certificate Assessment?</h2>
       <div
         className={`px-6 py-5 transition-[transform,box-shadow] duration-300 md:px-8 md:py-6 ${
           unlocked
@@ -326,23 +341,30 @@ function FinalTestCard({ progress }: { progress: Progress }) {
             : PILL
         } ${hovered ? '-translate-y-1 shadow-[0_14px_28px_rgba(50,199,255,0.18)]' : ''}`}
       >
-        <button
-          type="button"
-          onClick={() => (unlocked ? setAssessmentNote(true) : toggle())}
-          aria-expanded={open}
-          className={`w-full rounded-full py-3 text-sm font-bold transition-colors md:text-base ${
-            unlocked
-              ? 'cursor-pointer bg-[#32C7FF] text-white hover:opacity-90'
-              : 'cursor-pointer bg-[#E5EAEF] text-[#9AA1A9] dark:bg-[#1F2429] dark:text-[#5C636B]'
-          }`}
-        >
-          Take Final Test
-        </button>
+        {unlocked ? (
+          // The real gated assessment lives on the Training tab (checksCleared &&
+          // contentViewed) — navigate there instead of dead-ending here.
+          <Link
+            href="/dashboard/training"
+            className="block w-full cursor-pointer rounded-full bg-[#32C7FF] py-3 text-center text-sm font-bold text-white transition-opacity hover:opacity-90 md:text-base"
+          >
+            Take Certificate Assessment
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={toggle}
+            aria-expanded={open}
+            className="w-full cursor-pointer rounded-full bg-[#E5EAEF] py-3 text-sm font-bold text-[#9AA1A9] transition-colors md:text-base dark:bg-[#1F2429] dark:text-[#5C636B]"
+          >
+            Take Certificate Assessment
+          </button>
+        )}
         <p className={`mt-2 text-center text-xs ${MUTED}`}>
           {unlocked
-            ? assessmentNote
-              ? 'The timed final assessment is coming in a future update.'
-              : 'You’ve cleared every lesson check — pass this to earn your certificate.'
+            ? contentViewed
+              ? 'You’ve cleared every lesson check — pass this to earn your certificate.'
+              : 'You’ve cleared every lesson check — finish the training content, then pass this to earn your certificate.'
             : 'Complete the Final Review to unlock.'}
         </p>
 
@@ -447,7 +469,7 @@ function CertificateCard({
           className={`${PILL} flex items-center justify-between gap-4 px-6 py-5 opacity-80 md:px-8 md:py-6`}
         >
           <span className={`text-sm italic md:text-base ${MUTED}`}>
-            Complete Lesson 5 and the final assessment to unlock…
+            Complete Lesson 5 and the Certificate Assessment to unlock…
           </span>
           <LockIcon className="h-6 w-6 shrink-0 text-[#8A8A8A]" />
         </div>
@@ -485,15 +507,23 @@ function PathMap({
   progress,
   lesson5,
   certUnlocked,
+  contentViewed,
   tryOpen,
 }: {
   progress: Progress
   lesson5: LessonState
   certUnlocked: boolean
+  contentViewed: boolean
   tryOpen: (l: LessonState | number) => void
 }) {
   const byNum = new Map(progress.lessons.map(l => [l.number, l]))
   const goalReached = progress.quizzesUnlocked || certUnlocked
+
+  // The shortcut would be on offer but for unfinished content — distinct from
+  // the attempt-lockout case, which has its own message below.
+  const all14 = REGULAR.every(n => byNum.get(n)?.status === 'cleared')
+  const shortcutContentGated =
+    !contentViewed && lesson5.status !== 'cleared' && !all14 && !progress.shortcutLocked
 
   return (
     <div className="qz-entrance qz-d2">
@@ -593,8 +623,8 @@ function PathMap({
                   // Fixed-px gap from the dot — %-based offsets scale with the
                   // label's own width, so spacing drifted from label to label.
                   transform: onLeft
-                    ? 'translate(calc(-100% - 14px),-50%)'
-                    : 'translate(14px,-50%)',
+                    ? 'translate(calc(-100% - 18px),-50%)'
+                    : 'translate(18px,-50%)',
                 }}
               >
                 <span className={`text-[11px] font-bold whitespace-nowrap md:text-xs ${color}`}>
@@ -604,7 +634,7 @@ function PathMap({
             )
           })}
 
-          {/* Castle — the Final Assessment goal */}
+          {/* Castle — the Certificate Assessment goal */}
           <div
             className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 text-center"
             style={{ left: `${CASTLE.leftPct}%`, top: `${CASTLE.topPct}%` }}
@@ -621,7 +651,7 @@ function PathMap({
                 goalReached ? 'text-[#0094FF]' : 'text-[#9AA1A9] dark:text-[#5C636B]'
               }`}
             >
-              Final Assessment
+              Certificate Assessment
             </span>
           </div>
         </div>
@@ -642,6 +672,10 @@ function PathMap({
         ) : progress.shortcutLocked && lesson5.status !== 'cleared' ? (
           <p className={`mt-5 text-center text-xs ${MUTED}`}>
             Shortcut locked — complete lessons 1–4 in order.
+          </p>
+        ) : shortcutContentGated ? (
+          <p className={`mt-5 text-center text-xs ${MUTED}`}>
+            Finish the training content to unlock this shortcut.
           </p>
         ) : null}
       </div>

@@ -36,36 +36,34 @@ export function CertPreviewModal({ certId, certNumber, employeeName, issuedAt, e
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Card */}
-      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-5">
-          <p className="text-xs uppercase tracking-widest text-zinc-500">Certificate</p>
+      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-[#E5EEF5] bg-white p-6 shadow-2xl dark:border-[#1F2429] dark:bg-[#0D0F12]">
+        <div className="mb-5 flex items-center justify-between">
+          <p className="text-xs uppercase tracking-widest text-[#8A8A8A] dark:text-[#7A8189]">Certificate</p>
           <button
             onClick={onClose}
-            className="text-zinc-600 hover:text-zinc-300 transition-colors"
+            className="text-[#8A8A8A] transition-colors hover:text-[#0A0A0A] dark:text-[#7A8189] dark:hover:text-[#F5F7FA]"
             aria-label="Close"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="space-y-3 mb-6">
-          <p className="text-xs text-zinc-500 font-mono">
-            #{certNumber ?? '—'}
-          </p>
-          <p className="text-base font-semibold text-white">{employeeName}</p>
-          <div className="space-y-1.5 text-sm text-zinc-400">
+        <div className="mb-6 space-y-3">
+          <p className="font-mono text-xs text-[#8A8A8A] dark:text-[#7A8189]">#{certNumber ?? '—'}</p>
+          <p className="text-base font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{employeeName}</p>
+          <div className="space-y-1.5 text-sm text-[#3D3D3D] dark:text-[#C4C9CE]">
             <p>
-              <span className="text-zinc-600">Issued:&nbsp;</span>
+              <span className="text-[#8A8A8A] dark:text-[#7A8189]">Issued:&nbsp;</span>
               {fmt(issuedAt)}
             </p>
             <p>
-              <span className="text-zinc-600">Expires:&nbsp;</span>
+              <span className="text-[#8A8A8A] dark:text-[#7A8189]">Expires:&nbsp;</span>
               {fmt(expiresAt)}
             </p>
             <p>
-              <span className="text-zinc-600">Course:&nbsp;</span>
+              <span className="text-[#8A8A8A] dark:text-[#7A8189]">Course:&nbsp;</span>
               Responsible Use of AI within the Legal Industry
             </p>
           </div>
@@ -75,13 +73,13 @@ export function CertPreviewModal({ certId, certNumber, employeeName, issuedAt, e
           <button
             onClick={handleDownload}
             disabled={loading}
-            className="flex-1 rounded-lg bg-teal-500 hover:bg-teal-400 active:bg-teal-600 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 rounded-xl bg-[#0094FF] px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? 'Opening…' : 'Download PDF'}
           </button>
           <button
             onClick={onClose}
-            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
+            className="flex-1 rounded-xl border border-[#E5EEF5] bg-[#F2F4F7] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#E5EEF5] dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
           >
             Close
           </button>

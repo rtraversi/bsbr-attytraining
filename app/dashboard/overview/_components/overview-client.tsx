@@ -118,7 +118,7 @@ export function OverviewClient({
                 </span>
                 <span className={`text-sm font-bold xl:text-base ${ACCENT}`}>{lessonsComplete}/5</span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-[#E5EEF5] xl:h-2.5 dark:bg-[#1F2429]">
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#E5EEF5] xl:h-3.5 dark:bg-[#1F2429]">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-[#32C7FF] to-[#0094FF] transition-[width] duration-500"
                   style={{ width: `${(lessonsComplete / 5) * 100}%` }}
@@ -246,7 +246,7 @@ function UpNextCard({
             {lessonN}
           </span>
           {/* Wraps on narrow screens; single-line with ellipsis once there's room. */}
-          <span className={`min-w-0 flex-1 text-lg text-pretty md:truncate xl:text-2xl ${HEADING}`}>
+          <span className="min-w-0 flex-1 font-headline text-base font-semibold tracking-tight text-[#0094FF] text-pretty md:truncate xl:text-xl">
             {title}
           </span>
         </button>
@@ -410,7 +410,7 @@ function CertificateCard({ certUrl }: { certUrl: string | null }) {
         <div className={`${CARD} ${CARD_PAD} flex items-center gap-4 opacity-70`}>
           <LockIcon className={`h-6 w-6 shrink-0 xl:h-7 xl:w-7 ${MUTED}`} />
           <p className={`text-base italic xl:text-lg ${MUTED}`}>
-            Complete Lesson 5 and the final assessment to unlock…
+            Complete Lesson 5 and the Certificate Assessment to unlock…
           </p>
         </div>
       )}

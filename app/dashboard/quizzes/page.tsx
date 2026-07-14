@@ -35,15 +35,28 @@ export default async function QuizzesPage() {
     .maybeSingle()
 
   let events: KnowledgeCheckEvent[] = []
+  // Real SCORM content completion — gates the lesson-5 shortcut and softens the
+  // assessment copy. Same existence-check pattern as overview/page.tsx.
+  let contentViewed = false
   if (member) {
-    const { data: rows } = await admin
-      .from('training_events')
-      .select('metadata, event_timestamp')
-      .eq('firm_member_id', member.id)
-      .eq('event_type', 'knowledge_check_completed')
-      .order('event_timestamp', { ascending: true })
+    const [checksResult, contentResult] = await Promise.all([
+      admin
+        .from('training_events')
+        .select('metadata, event_timestamp')
+        .eq('firm_member_id', member.id)
+        .eq('event_type', 'knowledge_check_completed')
+        .order('event_timestamp', { ascending: true }),
+      admin
+        .from('training_events')
+        .select('id')
+        .eq('firm_member_id', member.id)
+        .eq('event_type', 'video_completed')
+        .limit(1)
+        .maybeSingle(),
+    ])
 
-    events = (rows ?? [])
+    contentViewed = contentResult.data !== null
+    events = (checksResult.data ?? [])
       .map(r => {
         const m = (r.metadata ?? {}) as Record<string, unknown>
         return {
@@ -57,7 +70,7 @@ export default async function QuizzesPage() {
       .filter(e => Number.isInteger(e.lesson) && e.lesson >= 1 && e.lesson <= READINESS_LESSON)
   }
 
-  const progress = deriveProgress(events)
+  const progress = deriveProgress(events, contentViewed)
 
   // Real certificate state drives the Certificate block's locked/unlocked look.
   // (The final assessment itself is a later stage; until it exists, an issued
@@ -99,6 +112,7 @@ export default async function QuizzesPage() {
       questionsByLesson={clientQuestionsByLesson()}
       certUrl={certUrl}
       firstName={firstName}
+      contentViewed={contentViewed}
     />
   )
 }

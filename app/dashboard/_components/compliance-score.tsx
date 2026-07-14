@@ -21,9 +21,9 @@ export function ComplianceScore({ score, total }: Props) {
 
   // Big and notorious: sized against the CARD's width (cqw via the @container
   // on the card div), not the viewport, so even "100%" (~2.1em wide) can never
-  // overflow — 34cqw × 2.1 ≈ 71% of the card. leading-none keeps the tall glyph
+  // overflow — 42cqw × 2.1 ≈ 88% of the card. leading-none keeps the tall glyph
   // inside the padding. The % sign scales with it (em).
-  const NUMBER = 'mb-2 text-[clamp(4rem,34cqw,14rem)] font-extralight leading-none'
+  const NUMBER = 'mb-2 text-[clamp(4.5rem,42cqw,14rem)] font-extralight leading-none'
 
   // Warm radial celebration backdrop, 100% only. dark:bg-none drops the white
   // gradient in dark mode so the card falls back to the standard dark surface.

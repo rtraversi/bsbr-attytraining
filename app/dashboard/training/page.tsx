@@ -163,8 +163,8 @@ export default async function TrainingPage() {
     })
     .filter(e => Number.isInteger(e.lesson) && e.lesson >= 1 && e.lesson <= READINESS_LESSON)
 
-  const checksCleared = deriveProgress(kcEvents).quizzesUnlocked
   const contentViewed = contentResult.data !== null
+  const checksCleared = deriveProgress(kcEvents, contentViewed).quizzesUnlocked
 
   // Cast and shuffle — correct_index is never sent to the client
   type RawQuestion = { id: string; question_text: string; answers: unknown }

@@ -73,13 +73,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Firm membership not found' }, { status: 403 })
   }
 
-  // ── Load prior knowledge-check events → derive authoritative state ──────────
-  const { data: rows, error: eventsErr } = await admin
-    .from('training_events')
-    .select('metadata, event_timestamp')
-    .eq('firm_member_id', member.id)
-    .eq('event_type', 'knowledge_check_completed')
-    .order('event_timestamp', { ascending: true })
+  // ── Load prior knowledge-check events + content completion → derive state ───
+  const [{ data: rows, error: eventsErr }, { data: contentRow }] = await Promise.all([
+    admin
+      .from('training_events')
+      .select('metadata, event_timestamp')
+      .eq('firm_member_id', member.id)
+      .eq('event_type', 'knowledge_check_completed')
+      .order('event_timestamp', { ascending: true }),
+    // Same existence check as content-progress/route.ts: a driver-reported
+    // video_completed event means the training content is verifiably finished.
+    // Gates the lesson-5 shortcut only — the sequential 1–4 path is unaffected.
+    admin
+      .from('training_events')
+      .select('id')
+      .eq('firm_member_id', member.id)
+      .eq('event_type', 'video_completed')
+      .limit(1)
+      .maybeSingle(),
+  ])
 
   if (eventsErr) {
     console.error('[knowledge-check] events fetch failed:', eventsErr)
@@ -99,8 +111,10 @@ export async function POST(req: NextRequest) {
     })
     .filter(e => Number.isInteger(e.lesson) && e.lesson >= 1 && e.lesson <= READINESS_LESSON)
 
+  const contentViewed = contentRow !== null
+
   // ── Gate: sequential unlock, shortcut lock, attempt limits (server-side) ────
-  const gate = canAttempt(events, lesson)
+  const gate = canAttempt(events, lesson, contentViewed)
   if (!gate.allowed) {
     return NextResponse.json({ error: gate.reason ?? 'Not allowed' }, { status: 403 })
   }
@@ -139,10 +153,10 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Return the updated progress (client also router.refresh()es for truth) ──
-  const progress = deriveProgress([
-    ...events,
-    { lesson, score, passed, attemptNumber, created_at: new Date().toISOString() },
-  ])
+  const progress = deriveProgress(
+    [...events, { lesson, score, passed, attemptNumber, created_at: new Date().toISOString() }],
+    contentViewed
+  )
 
   return NextResponse.json({ score, passed, passThreshold: PASS_THRESHOLD, progress })
 }

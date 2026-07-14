@@ -14,6 +14,13 @@ export interface Lesson {
    */
   id: string
   title: string
+  /**
+   * Quiz-layer display name override. When set, everything derived from
+   * LessonState (deriveProgress) shows this instead of `title` — the content
+   * surfaces (Course Outline, Up Next, Lesson Overview) keep the real subject
+   * title by reading LESSONS directly.
+   */
+  checkLabel?: string
   /** One-paragraph overview, sourced from the actual Rise course text. */
   summary: string
   /** Per-lesson key takeaways, sourced from the actual Rise course text. */
@@ -73,6 +80,7 @@ export const LESSONS: Lesson[] = [
     number: 5,
     id: 'cmqqsf360002l2e7a4ghytq01',
     title: 'Applying Ethical Rules and Firm Policy to Everyday AI Use',
+    checkLabel: 'Final Review',
     summary:
       'Real-world AI use is full of gray areas — when staff can act independently versus when attorney supervision is required, how to evaluate whether an AI vendor is safe, and how to apply firm policy to situations no checklist covers.',
     keyTakeaways: [

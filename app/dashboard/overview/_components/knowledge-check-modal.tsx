@@ -83,14 +83,14 @@ function KnowledgeCheckResult({
           </p>
         </div>
         {!isReadiness && result.score < result.passThreshold && (
-          <p className="mb-6 text-sm text-amber-600 dark:text-amber-400/90">
+          <p className="mb-6 text-sm text-[#B45309] dark:text-[#F0B357]">
             Your score was on the low side — consider reviewing this lesson again. (It’s still marked
             complete.)
           </p>
         )}
         {isReadiness && (
           <p className="mb-6 text-sm text-[#6D7980] dark:text-[#7A8189]">
-            You’re cleared for the final assessment.
+            You’re cleared for the Certificate Assessment.
           </p>
         )}
         <DoneButton onClick={onDone} />

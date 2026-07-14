@@ -86,15 +86,17 @@ function ResendInviteModal({
       />
 
       {/* Card */}
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl">
-        <h2 className="mb-1 text-sm font-medium text-zinc-200">Resend invite</h2>
-        <p className="mb-5 text-xs text-zinc-500">
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-[#E5EEF5] bg-white p-6 shadow-2xl dark:border-[#1F2429] dark:bg-[#0D0F12]">
+        <h2 className="mb-1 text-lg font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">Resend invite</h2>
+        <p className="mb-5 text-xs text-[#8A8A8A] dark:text-[#7A8189]">
           Send a fresh login link to a team member. Enter the email on their seat.
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="mb-1.5 block text-xs text-zinc-500">Team member email</label>
+            <label className="mb-1.5 block text-xs text-[#8A8A8A] dark:text-[#7A8189]">
+              Team member email
+            </label>
             <input
               type="email"
               required
@@ -102,25 +104,25 @@ function ResendInviteModal({
               value={email}
               onChange={e => setEmail(e.target.value)}
               disabled={phase === 'loading'}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
+              className="w-full rounded-lg border border-[#E5EEF5] bg-white px-3 py-2.5 text-sm text-[#0A0A0A] placeholder:text-[#8A8A8A] focus:outline-none focus:ring-2 focus:ring-[#0094FF] disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:placeholder:text-[#7A8189]"
             />
           </div>
 
-          {error && <p className="text-xs text-red-400">{error}</p>}
+          {error && <p className="text-xs text-[#DC2626] dark:text-[#F87171]">{error}</p>}
 
           <div className="flex gap-3 pt-1">
             <button
               type="button"
               onClick={onClose}
               disabled={phase === 'loading'}
-              className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white disabled:opacity-50"
+              className="flex-1 rounded-xl border border-[#E5EEF5] bg-[#F2F4F7] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#E5EEF5] disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={phase === 'loading'}
-              className="flex-1 rounded-lg bg-teal-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-teal-400 active:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-xl bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#262626] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
             >
               {phase === 'loading' ? 'Sending…' : 'Send invite'}
             </button>
