@@ -227,9 +227,9 @@ export function ManageTeamPanel() {
               <thead>
                 <tr className="border-b border-[#E5EEF5] dark:border-[#1F2429]">
                   {['Employee', 'Status', 'Score', 'Completed', 'Certificate', 'Actions'].map(h => {
-                    // Status/Score/Completed center; Employee/Certificate stay
+                    // Status/Score/Completed/Certificate center; Employee stays
                     // left; Actions right, matching its right-aligned cells.
-                    const centered = h === 'Status' || h === 'Score' || h === 'Completed'
+                    const centered = h === 'Status' || h === 'Score' || h === 'Completed' || h === 'Certificate'
                     return (
                       <th
                         key={h}
@@ -262,9 +262,10 @@ export function ManageTeamPanel() {
 
                   return (
                     <tr key={m.id}>
+                      {/* Name only — it falls back to the email when the member
+                          hasn't set one, so a second email line is redundant. */}
                       <td className="px-2 py-3">
                         <p className="font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{m.name}</p>
-                        <p className={`text-xs ${MUTED}`}>{m.email}</p>
                       </td>
                       <td className="px-2 py-3 text-center">
                         <TrainingStatusBadge status={m.trainingStatus} />
@@ -281,7 +282,7 @@ export function ManageTeamPanel() {
                             })
                           : '—'}
                       </td>
-                      <td className="whitespace-nowrap px-2 py-3">
+                      <td className="whitespace-nowrap px-2 py-3 text-center">
                         {m.certId ? (
                           <button
                             onClick={() => setCertPreview(m)}

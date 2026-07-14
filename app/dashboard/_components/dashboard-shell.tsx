@@ -39,9 +39,10 @@ export function DashboardShell({
   }
 
   // Admin home shell — same flat shape as the standard shell (pill in the same
-  // slot, content in one max-w wrapper), only the light backdrop differs
-  // (#CFDCE8 is admin-home-specific). Dark mode is the same flat black as the
-  // standard shell — no separate inset panel.
+  // slot), only the light backdrop differs (#CFDCE8 is admin-home-specific).
+  // Dark mode is the same flat black as the standard shell — no separate inset
+  // panel. Full-bleed on purpose (no max-w cap, minimal padding): the grid owns
+  // the whole viewport, side padding matches the pill's so cards line up with it.
   //
   // At lg+ the shell is viewport-locked (h-screen + overflow-hidden): the pill
   // takes its natural height and the content wrapper gets the rest (flex-1 +
@@ -51,7 +52,7 @@ export function DashboardShell({
     <div className="font-headline flex min-h-screen flex-col bg-[#CFDCE8] text-[#0A0A0A] transition-colors lg:h-screen lg:overflow-hidden dark:bg-[#050607] dark:text-[#F5F7FA]">
       <div className="px-4 py-3 md:px-6">{pill}</div>
       <ToastProvider>
-        <div className="mx-auto w-full max-w-[1600px] px-6 py-6 md:px-10 md:py-8 lg:min-h-0 lg:flex-1 xl:px-14 xl:py-14">
+        <div className="w-full px-4 pb-4 pt-1 md:px-6 lg:min-h-0 lg:flex-1">
           {children}
         </div>
       </ToastProvider>

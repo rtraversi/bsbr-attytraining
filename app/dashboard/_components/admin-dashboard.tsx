@@ -69,10 +69,11 @@ export function AdminDashboard({
         proportionally more room. minmax(0, Nfr) — not bare Nfr, which means
         minmax(auto, Nfr) and lets tall content (Manage Team's list) blow the track
         out — keeps the split strict so the internal scrollers actually engage.
-        19:23 carries over the old 380:460 proportion; tune the two numbers here.
+        19:26 weights row 2 (Certified/Invitations/Forecast get the height the
+        full-bleed shell freed up — Max's call); tune the two numbers here.
         Mobile keeps normal single-column page-scroll (all of this is lg:-only).
       */}
-      <div className="grid grid-cols-12 gap-4 lg:h-full lg:grid-rows-[minmax(0,19fr)_minmax(0,23fr)]">
+      <div className="grid grid-cols-12 gap-4 lg:h-full lg:grid-rows-[minmax(0,19fr)_minmax(0,26fr)]">
         {/* ── Quick actions ─────────────────────────────────────────────────── */}
         {/* flex-col + flex-1 + grid-rows-2 lets the 2×2 tile grid stretch into the
             row height (tiles grow, no dead space); below lg it sits at natural height. */}
