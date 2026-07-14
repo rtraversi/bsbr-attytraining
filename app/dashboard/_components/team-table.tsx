@@ -26,11 +26,11 @@ export interface MemberDetail {
 type RemindState = 'idle' | 'loading' | 'sent' | 'error'
 
 /**
- * The spec splits one table into two cards — actionable "Manage team" and
- * read-only "Team overview" — that sit in different grid cells. They share
- * row state (a delete in one must drop the row from the other), so the state
- * lives in a provider that wraps both. Handlers and gating are unchanged from
- * the single-table version.
+ * Team state lives in a provider rather than the panel itself so other cards
+ * can read the same data: ManageTeamPanel (the merged actionable table) and
+ * CertificationForecast (projects a completion date off the same members —
+ * a delete updates both live). Handlers and gating are unchanged from the
+ * pre-merge two-panel version.
  */
 interface TeamCtx {
   visible: MemberDetail[]
@@ -46,7 +46,7 @@ interface TeamCtx {
 
 const Ctx = createContext<TeamCtx | null>(null)
 
-function useTeam(): TeamCtx {
+export function useTeam(): TeamCtx {
   const ctx = useContext(Ctx)
   if (!ctx) throw new Error('Team panels must be rendered inside <TeamProvider>')
   return ctx
@@ -161,6 +161,11 @@ const HEADING =
   'font-headline text-xl md:text-2xl font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 
+// Extra-muted, one step lighter than MUTED (matches PersonPlusIcon) — for the
+// em-dash placeholders in Score/Completed/Certificate, which read heavy at
+// MUTED next to real values.
+const EM_DASH = 'text-[#C7CDD3] dark:text-[#3A4048]'
+
 // Neutral outline button — kept for the pagination Prev/Next controls only.
 const ROW_ACTION =
   'whitespace-nowrap rounded-lg border border-[#E5EEF5] px-2.5 py-1 text-[11px] font-semibold text-[#3D3D3D] transition-colors hover:border-[#0094FF] hover:text-[#0094FF] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[#32C7FF] dark:hover:text-[#32C7FF]'
@@ -184,14 +189,23 @@ const PAGE_SIZE = 20
 // card's actual height is set by its parent grid cell (see admin-dashboard.tsx).
 const LIST_SCROLL = 'flex-1 min-h-0 overflow-y-auto'
 
-/* ── Manage team — actionable rows ─────────────────────────────────────────── */
+/* ── Manage team — merged table (status + certificate + actions) ───────────── */
 
 export function ManageTeamPanel() {
-  const { visible, total, remindStates, deletingIds, reassignedIds, handleRemind, handleDelete, setReassignTarget } =
-    useTeam()
+  const {
+    visible,
+    total,
+    remindStates,
+    deletingIds,
+    reassignedIds,
+    handleRemind,
+    handleDelete,
+    setReassignTarget,
+    setCertPreview,
+  } = useTeam()
 
-  // Local paging, independent of the overview panel. currentPage clamps `page`
-  // so a delete that shrinks the list off the last page snaps back into range.
+  // currentPage clamps `page` so a delete that shrinks the list off the last
+  // page snaps back into range.
   const [page, setPage] = useState(0)
   const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages - 1)
@@ -207,118 +221,20 @@ export function ManageTeamPanel() {
         <EmptyTeam />
       ) : (
         <>
-          <div className={LIST_SCROLL}>
-            <div className="flex flex-col divide-y divide-[#F2F4F7] dark:divide-[#1F2429]">
-              {pageItems.map(m => {
-                if (reassignedIds.has(m.id)) {
-                  return (
-                    <p key={m.id} className={`py-3 text-xs italic ${MUTED}`}>
-                      Reassigned — invite sent to new employee
-                    </p>
-                  )
-                }
-
-                const remindState = remindStates[m.user_id] ?? 'idle'
-                const canRemind = m.trainingStatus === 'not_started' || m.trainingStatus === 'in_progress'
-                const canReassign = m.trainingStatus !== 'passed'
-                const isDeleting = deletingIds.has(m.id)
-
-                return (
-                  <div key={m.id} className="flex items-center justify-between gap-3 py-2.5">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{m.name}</p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      {canRemind &&
-                        (remindState === 'idle' ? (
-                          <button onClick={() => handleRemind(m.user_id, m.name)} className={ROW_ACTION_REMIND}>
-                            Remind
-                          </button>
-                        ) : remindState === 'loading' ? (
-                          <span className={`text-[11px] ${MUTED}`}>Sending…</span>
-                        ) : remindState === 'sent' ? (
-                          <span className="text-[11px] font-semibold text-[#0094FF]">Sent ✓</span>
-                        ) : (
-                          <button
-                            onClick={() => handleRemind(m.user_id, m.name)}
-                            className="text-[11px] font-semibold text-[#DC2626] hover:underline"
-                          >
-                            Failed — try again
-                          </button>
-                        ))}
-
-                      {canReassign && (
-                        <button onClick={() => setReassignTarget(m)} className={ROW_ACTION_REASSIGN}>
-                          Reassign
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => handleDelete(m.id, m.name)}
-                        disabled={isDeleting}
-                        className={ROW_ACTION_DANGER}
-                      >
-                        {isDeleting ? '…' : 'Delete'}
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-
-              {visible.length === 0 && (
-                <p className={`py-6 text-center text-sm ${MUTED}`}>All members have been removed.</p>
-              )}
-            </div>
-          </div>
-
-          {visible.length > PAGE_SIZE && (
-            <PaginationControls
-              page={currentPage}
-              totalPages={totalPages}
-              onPrev={() => setPage(currentPage - 1)}
-              onNext={() => setPage(currentPage + 1)}
-            />
-          )}
-        </>
-      )}
-    </div>
-  )
-}
-
-/* ── Team overview — read-only status table ────────────────────────────────── */
-
-export function TeamOverviewTable() {
-  const { visible, total, setCertPreview } = useTeam()
-
-  // Independent paging (see ManageTeamPanel) — the two panels needn't stay in sync.
-  const [page, setPage] = useState(0)
-  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE))
-  const currentPage = Math.min(page, totalPages - 1)
-  const pageItems = visible.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
-
-  return (
-    <div className={`${CARD} flex h-full flex-col`}>
-      <div className="mb-4">
-        <h2 className={HEADING}>Team overview</h2>
-      </div>
-
-      {total === 0 ? (
-        <EmptyTeam />
-      ) : (
-        <>
           {/* overflow-x scrolls wide rows; LIST_SCROLL caps height + scrolls vertically. */}
           <div className={`-mx-2 overflow-x-auto ${LIST_SCROLL}`}>
-            <table className="w-full min-w-[560px] text-sm">
+            <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-[#E5EEF5] dark:border-[#1F2429]">
-                  {['Employee', 'Status', 'Score', 'Completed', 'Certificate'].map(h => {
-                    // Status/Score/Completed center; Employee/Certificate stay left.
+                  {['Employee', 'Status', 'Score', 'Completed', 'Certificate', 'Actions'].map(h => {
+                    // Status/Score/Completed center; Employee/Certificate stay
+                    // left; Actions right, matching its right-aligned cells.
                     const centered = h === 'Status' || h === 'Score' || h === 'Completed'
                     return (
                       <th
                         key={h}
                         className={`whitespace-nowrap px-2 py-2 text-xs font-semibold ${
-                          centered ? 'text-center' : 'text-left'
+                          centered ? 'text-center' : h === 'Actions' ? 'text-right' : 'text-left'
                         } ${MUTED}`}
                       >
                         {h}
@@ -328,44 +244,96 @@ export function TeamOverviewTable() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F2F4F7] dark:divide-[#1F2429]">
-                {pageItems.map(m => (
-                  <tr key={m.id}>
-                    <td className="px-2 py-3">
-                      <p className="font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{m.name}</p>
-                      <p className={`text-xs ${MUTED}`}>{m.email}</p>
-                    </td>
-                    <td className="px-2 py-3 text-center">
-                      <TrainingStatusBadge status={m.trainingStatus} />
-                    </td>
-                    <td className={`px-2 py-3 whitespace-nowrap text-center ${m.score !== null ? 'font-semibold' : MUTED}`}>
-                      {m.score !== null ? `${Math.round(m.score)}%` : '—'}
-                    </td>
-                    <td className={`whitespace-nowrap px-2 py-3 text-center ${MUTED}`}>
-                      {m.completedAt
-                        ? new Date(m.completedAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })
-                        : '—'}
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-3">
-                      {m.certId ? (
-                        <button
-                          onClick={() => setCertPreview(m)}
-                          className="text-xs font-semibold text-[#0094FF] hover:underline"
-                        >
-                          View &amp; download
-                        </button>
-                      ) : (
-                        <span className={MUTED}>—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {pageItems.map(m => {
+                  if (reassignedIds.has(m.id)) {
+                    return (
+                      <tr key={m.id}>
+                        <td colSpan={6} className={`px-2 py-3 text-xs italic ${MUTED}`}>
+                          Reassigned — invite sent to new employee
+                        </td>
+                      </tr>
+                    )
+                  }
+
+                  const remindState = remindStates[m.user_id] ?? 'idle'
+                  const canRemind = m.trainingStatus === 'not_started' || m.trainingStatus === 'in_progress'
+                  const canReassign = m.trainingStatus !== 'passed'
+                  const isDeleting = deletingIds.has(m.id)
+
+                  return (
+                    <tr key={m.id}>
+                      <td className="px-2 py-3">
+                        <p className="font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{m.name}</p>
+                        <p className={`text-xs ${MUTED}`}>{m.email}</p>
+                      </td>
+                      <td className="px-2 py-3 text-center">
+                        <TrainingStatusBadge status={m.trainingStatus} />
+                      </td>
+                      <td className={`px-2 py-3 whitespace-nowrap text-center ${m.score !== null ? 'font-semibold' : EM_DASH}`}>
+                        {m.score !== null ? `${Math.round(m.score)}%` : '—'}
+                      </td>
+                      <td className={`whitespace-nowrap px-2 py-3 text-center ${m.completedAt ? MUTED : EM_DASH}`}>
+                        {m.completedAt
+                          ? new Date(m.completedAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })
+                          : '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-3">
+                        {m.certId ? (
+                          <button
+                            onClick={() => setCertPreview(m)}
+                            className="text-xs font-semibold text-[#0094FF] hover:underline"
+                          >
+                            View &amp; download
+                          </button>
+                        ) : (
+                          <span className={EM_DASH}>—</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-3">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {canRemind &&
+                            (remindState === 'idle' ? (
+                              <button onClick={() => handleRemind(m.user_id, m.name)} className={ROW_ACTION_REMIND}>
+                                Remind
+                              </button>
+                            ) : remindState === 'loading' ? (
+                              <span className={`text-[11px] ${MUTED}`}>Sending…</span>
+                            ) : remindState === 'sent' ? (
+                              <span className="text-[11px] font-semibold text-[#0094FF]">Sent ✓</span>
+                            ) : (
+                              <button
+                                onClick={() => handleRemind(m.user_id, m.name)}
+                                className="text-[11px] font-semibold text-[#DC2626] hover:underline"
+                              >
+                                Failed — try again
+                              </button>
+                            ))}
+
+                          {canReassign && (
+                            <button onClick={() => setReassignTarget(m)} className={ROW_ACTION_REASSIGN}>
+                              Reassign
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => handleDelete(m.id, m.name)}
+                            disabled={isDeleting}
+                            className={ROW_ACTION_DANGER}
+                          >
+                            {isDeleting ? '…' : 'Delete'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
                 {visible.length === 0 && (
                   <tr>
-                    <td colSpan={5} className={`px-2 py-6 text-center text-sm ${MUTED}`}>
+                    <td colSpan={6} className={`px-2 py-6 text-center text-sm ${MUTED}`}>
                       All members have been removed.
                     </td>
                   </tr>

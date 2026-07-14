@@ -129,7 +129,6 @@ export default async function DashboardPage() {
   return (
     <AdminDashboard
       memberDetails={memberDetails}
-      certifiedCount={certifiedCount}
       totalCount={totalCount}
       complianceScore={complianceScore}
       seatsUsed={seatsUsed}

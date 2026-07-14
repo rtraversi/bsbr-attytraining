@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { InviteForm } from './invite-form'
 import { CsvUploadForm } from './csv-upload-form'
-import { TeamProvider, ManageTeamPanel, TeamOverviewTable, type MemberDetail } from './team-table'
+import { TeamProvider, ManageTeamPanel, type MemberDetail } from './team-table'
 import { ComplianceScore } from './compliance-score'
+import { CertificationForecast } from './certification-forecast'
 import { ResendInviteAction } from './resend-invite-modal'
 
 const CARD = 'rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
@@ -12,12 +13,13 @@ const LABEL = `text-xs font-bold uppercase tracking-wide ${MUTED}`
 
 // Light card tile with a coloured icon chip. Single source of truth so the
 // resend-invite tile (which takes this as a prop) matches for free.
+// justify-center matters at lg+, where the tiles stretch to fill the viewport-
+// proportional row instead of leaving dead space under a natural-height grid.
 const QUICK_ACTION_TILE =
-  'flex flex-col items-center gap-2 rounded-2xl border border-[#E5EEF5] bg-[#F5F7FA] px-3 py-4 transition-all hover:-translate-y-0.5 hover:border-[#0094FF] hover:bg-[#EAF8FF] dark:border-[#1F2429] dark:bg-[#131A20] dark:hover:border-[#32C7FF] dark:hover:bg-[#0094FF]/10'
+  'flex flex-col items-center justify-center gap-2 rounded-2xl border border-[#E5EEF5] bg-[#F5F7FA] px-3 py-4 transition-all hover:-translate-y-0.5 hover:border-[#0094FF] hover:bg-[#EAF8FF] dark:border-[#1F2429] dark:bg-[#131A20] dark:hover:border-[#32C7FF] dark:hover:bg-[#0094FF]/10'
 
 export interface AdminDashboardProps {
   memberDetails: MemberDetail[]
-  certifiedCount: number
   totalCount: number
   complianceScore: number
   seatsUsed: number
@@ -38,12 +40,11 @@ export interface AdminDashboardProps {
  * `app/dashboard/page.tsx`, which keeps this renderable from a preview harness.
  *
  * Grid: one 12-col container. 4+8 fills row one (Quick actions / Manage team),
- * 5+7 fills row two (left stack / Team overview), so auto-flow lands each block
- * without explicit row placement.
+ * 5+7 fills row two (left stack / Certification forecast), so auto-flow lands
+ * each block without explicit row placement.
  */
 export function AdminDashboard({
   memberDetails,
-  certifiedCount,
   totalCount,
   complianceScore,
   seatsUsed,
@@ -62,21 +63,22 @@ export function AdminDashboard({
   return (
     <TeamProvider memberDetails={memberDetails}>
       {/*
-        Row-height matching is done by giving BOTH cells in a row the same explicit
-        lg: height (see below), NOT by a forced grid-template-rows split. CSS Grid's
-        auto rows size to the tallest cell's natural content, and overflow/min-h-0 on
-        a child never reduces that measured size — it only clips once a definite
-        height is already imposed. So Manage Team's full list always dictated the row.
-        The scroll regions only engage because their <section> now has a real height.
-        Mobile keeps normal single-column page-scroll (heights are lg:-only).
+        Row heights at lg+ are fr-based fractions of whatever height the shell hands
+        this grid (viewport minus pill + padding — see dashboard-shell.tsx), so the
+        whole dashboard fits the screen with no page scroll and bigger monitors get
+        proportionally more room. minmax(0, Nfr) — not bare Nfr, which means
+        minmax(auto, Nfr) and lets tall content (Manage Team's list) blow the track
+        out — keeps the split strict so the internal scrollers actually engage.
+        19:23 carries over the old 380:460 proportion; tune the two numbers here.
+        Mobile keeps normal single-column page-scroll (all of this is lg:-only).
       */}
-      <div className="grid grid-cols-12 gap-4">
+      <div className="grid grid-cols-12 gap-4 lg:h-full lg:grid-rows-[minmax(0,19fr)_minmax(0,23fr)]">
         {/* ── Quick actions ─────────────────────────────────────────────────── */}
-        {/* Row 1 height reference. lg:h-[380px] is a PLACEHOLDER for Max's visual
-            pass (a 2×2 tile grid + heading) — Manage Team shares the exact value. */}
-        <section className={`col-span-12 lg:col-span-4 lg:h-[380px] ${CARD}`}>
+        {/* flex-col + flex-1 + grid-rows-2 lets the 2×2 tile grid stretch into the
+            row height (tiles grow, no dead space); below lg it sits at natural height. */}
+        <section className={`col-span-12 flex flex-col lg:col-span-4 lg:min-h-0 ${CARD}`}>
           <h2 className={`${HEADING} mb-4`}>Quick actions</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 lg:min-h-0 lg:flex-1 lg:grid-rows-2">
             {/* Not a "send now" action — auto-reminder cadence is configured in Settings. */}
             <QuickAction href="/dashboard/settings" label="Auto-reminders">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -92,24 +94,23 @@ export function AdminDashboard({
           </div>
         </section>
 
-        {/* ── Manage team ───────────────────────────────────────────────────── */}
-        {/* Shares Quick actions' exact height — this definite height is what makes
-            the panel's inner flex-1 min-h-0 overflow-y-auto actually clip + scroll. */}
-        <section className="col-span-12 lg:col-span-8 lg:h-[380px]">
+        {/* ── Manage team (merged table) ────────────────────────────────────── */}
+        {/* The row track's definite height is what makes the panel's inner
+            flex-1 min-h-0 overflow-y-auto actually clip + scroll. id anchors the
+            forecast card's "View who's left" link. */}
+        <section id="manage-team" className="col-span-12 lg:col-span-8 lg:min-h-0">
           <ManageTeamPanel />
         </section>
 
         {/* ── Left stack: Certified + Invitations, then Billing ──────────────── */}
-        {/* Row 2 height reference — lg:h-[460px] PLACEHOLDER (taller than row 1: this
-            stack holds Compliance + Invitations + Billing). Now that it has a real
-            height, the flex-1 sub-grid below has something definite to divide with
-            Billing. Team overview shares the exact value. */}
-        <div className="col-span-12 flex flex-col gap-4 lg:col-span-5 lg:h-[460px]">
+        {/* The row-2 track height gives the flex-1 sub-grid below something
+            definite to divide with Billing. */}
+        <div className="col-span-12 flex flex-col gap-4 lg:col-span-5 lg:min-h-0">
           {/* Expands to fill the space above Billing (lg:flex-1). lg:grid-rows-1
               makes its single row a 1fr track so Certified + Invitations stretch to
               fill it instead of sitting at natural height with whitespace below. */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:min-h-0 lg:flex-1 lg:grid-rows-1">
-            <ComplianceScore score={complianceScore} certified={certifiedCount} total={totalCount} />
+            <ComplianceScore score={complianceScore} total={totalCount} />
 
             <section className={CARD}>
               <h2 className={`${HEADING} mb-3`}>Invitations</h2>
@@ -189,10 +190,10 @@ export function AdminDashboard({
           </section>
         </div>
 
-        {/* ── Team overview ─────────────────────────────────────────────────── */}
-        {/* Shares the left stack's exact height (see Manage team for the mechanism). */}
-        <section className="col-span-12 lg:col-span-7 lg:h-[460px]">
-          <TeamOverviewTable />
+        {/* ── Certification forecast ────────────────────────────────────────── */}
+        {/* Took over Team overview's slot when that table merged into Manage team. */}
+        <section className="col-span-12 lg:col-span-7 lg:min-h-0">
+          <CertificationForecast />
         </section>
       </div>
     </TeamProvider>
