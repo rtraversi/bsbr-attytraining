@@ -51,7 +51,7 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
       <button
         type="button"
         disabled
-        className="w-full cursor-not-allowed rounded-xl bg-[#F2F4F7] py-3.5 text-sm font-bold text-[#B0B7BF] dark:bg-[#1A1F24] dark:text-[#4E555C]"
+        className="w-full cursor-not-allowed rounded-xl bg-[#F2F4F7] py-4 text-base font-bold text-[#B0B7BF] dark:bg-[#1A1F24] dark:text-[#4E555C]"
       >
         Invite by email
       </button>
@@ -68,19 +68,19 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={phase === 'loading'}
-          className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-3.5 text-sm text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[#32C7FF] focus:ring-2 focus:ring-[#32C7FF]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
+          className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-4 text-base text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[#32C7FF] focus:ring-2 focus:ring-[#32C7FF]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
         />
         <button
           type="submit"
           disabled={phase === 'loading'}
-          className="w-full rounded-xl bg-black py-3.5 text-sm font-bold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
+          className="w-full rounded-xl bg-black py-4 text-base font-bold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
         >
           {phase === 'loading' ? 'Sending…' : 'Invite by email'}
         </button>
       </form>
 
-      {phase === 'done' && <p className="text-[11px] font-semibold text-[#0094FF]">Invite sent.</p>}
-      {phase === 'error' && <p className="text-[11px] text-[#DC2626]">{errorMsg}</p>}
+      {phase === 'done' && <p className="text-sm font-semibold text-[#0094FF]">Invite sent.</p>}
+      {phase === 'error' && <p className="text-sm text-[#DC2626]">{errorMsg}</p>}
 
       {devLink && (
         <div className="rounded-xl border border-[#FDE8B8] bg-[#FFF7E6] p-2.5">

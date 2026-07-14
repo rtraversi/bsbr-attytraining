@@ -15,8 +15,8 @@ export function ResendInviteAction({ tileClassName }: { tileClassName: string })
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className={tileClassName}>
-        <span className="flex h-[38px] w-[38px] items-center justify-center rounded-xl bg-[#EAF8FF] text-[#0094FF] dark:bg-[#0094FF]/15 dark:text-[#32C7FF]">
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EAF8FF] text-[#0094FF] dark:bg-[#0094FF]/15 dark:text-[#32C7FF]">
+          <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -24,7 +24,7 @@ export function ResendInviteAction({ tileClassName }: { tileClassName: string })
             />
           </svg>
         </span>
-        <span className="text-center text-xs font-semibold">Resend invite</span>
+        <span className="text-center text-base font-semibold">Resend invite</span>
       </button>
 
       {open && (

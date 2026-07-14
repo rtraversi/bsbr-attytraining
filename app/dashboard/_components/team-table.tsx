@@ -168,12 +168,12 @@ const EM_DASH = 'text-[#C7CDD3] dark:text-[#3A4048]'
 
 // Neutral outline button — kept for the pagination Prev/Next controls only.
 const ROW_ACTION =
-  'whitespace-nowrap rounded-lg border border-[#E5EEF5] px-2.5 py-1 text-[11px] font-semibold text-[#3D3D3D] transition-colors hover:border-[#0094FF] hover:text-[#0094FF] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[#32C7FF] dark:hover:text-[#32C7FF]'
+  'whitespace-nowrap rounded-lg border border-[#E5EEF5] px-2.5 py-1 text-sm font-semibold text-[#3D3D3D] transition-colors hover:border-[#0094FF] hover:text-[#0094FF] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[#32C7FF] dark:hover:text-[#32C7FF]'
 
 // Text-only row actions: coloured text, no fill, no border — all matching the
 // Delete (danger) look. Hover is a slight opacity shift.
 const TEXT_ROW_ACTION =
-  'whitespace-nowrap rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40'
+  'whitespace-nowrap rounded-lg px-2.5 py-1 text-sm font-semibold transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40'
 const ROW_ACTION_REMIND = `${TEXT_ROW_ACTION} text-[#FF6600]`
 const ROW_ACTION_REASSIGN = `${TEXT_ROW_ACTION} text-[#0094FF]`
 const ROW_ACTION_DANGER = `${TEXT_ROW_ACTION} text-[#DC2626]`
@@ -223,7 +223,7 @@ export function ManageTeamPanel() {
         <>
           {/* overflow-x scrolls wide rows; LIST_SCROLL caps height + scrolls vertically. */}
           <div className={`-mx-2 overflow-x-auto ${LIST_SCROLL}`}>
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[780px] text-base">
               <thead>
                 <tr className="border-b border-[#E5EEF5] dark:border-[#1F2429]">
                   {['Employee', 'Status', 'Score', 'Completed', 'Certificate', 'Actions'].map(h => {
@@ -233,7 +233,7 @@ export function ManageTeamPanel() {
                     return (
                       <th
                         key={h}
-                        className={`whitespace-nowrap px-2 py-2 text-xs font-semibold ${
+                        className={`whitespace-nowrap px-2 py-2 text-sm font-semibold ${
                           centered ? 'text-center' : h === 'Actions' ? 'text-right' : 'text-left'
                         } ${MUTED}`}
                       >
@@ -248,7 +248,7 @@ export function ManageTeamPanel() {
                   if (reassignedIds.has(m.id)) {
                     return (
                       <tr key={m.id}>
-                        <td colSpan={6} className={`px-2 py-3 text-xs italic ${MUTED}`}>
+                        <td colSpan={6} className={`px-2 py-3 text-sm italic ${MUTED}`}>
                           Reassigned — invite sent to new employee
                         </td>
                       </tr>
@@ -286,7 +286,7 @@ export function ManageTeamPanel() {
                         {m.certId ? (
                           <button
                             onClick={() => setCertPreview(m)}
-                            className="text-xs font-semibold text-[#0094FF] hover:underline"
+                            className="text-sm font-semibold text-[#0094FF] hover:underline"
                           >
                             View &amp; download
                           </button>
@@ -302,13 +302,13 @@ export function ManageTeamPanel() {
                                 Remind
                               </button>
                             ) : remindState === 'loading' ? (
-                              <span className={`text-[11px] ${MUTED}`}>Sending…</span>
+                              <span className={`text-sm ${MUTED}`}>Sending…</span>
                             ) : remindState === 'sent' ? (
-                              <span className="text-[11px] font-semibold text-[#0094FF]">Sent ✓</span>
+                              <span className="text-sm font-semibold text-[#0094FF]">Sent ✓</span>
                             ) : (
                               <button
                                 onClick={() => handleRemind(m.user_id, m.name)}
-                                className="text-[11px] font-semibold text-[#DC2626] hover:underline"
+                                className="text-sm font-semibold text-[#DC2626] hover:underline"
                               >
                                 Failed — try again
                               </button>
@@ -377,7 +377,7 @@ function PaginationControls({
       <button type="button" onClick={onPrev} disabled={page === 0} className={ROW_ACTION}>
         Prev
       </button>
-      <span className={`text-xs ${MUTED}`}>
+      <span className={`text-sm ${MUTED}`}>
         Page {page + 1} of {totalPages}
       </span>
       <button
@@ -435,7 +435,7 @@ export function TrainingStatusBadge({ status }: { status: TrainingStatus }) {
   const { pill, label } = config[status]
   return (
     <span
-      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-[3px] text-[11px] font-bold ${pill}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-1 text-sm font-bold ${pill}`}
     >
       {label}
     </span>

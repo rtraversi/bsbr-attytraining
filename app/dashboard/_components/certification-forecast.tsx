@@ -61,23 +61,23 @@ export function CertificationForecast() {
   return (
     <div className={`${CARD} flex h-full flex-col`}>
       <h2 className={HEADING}>Certification Forecast</h2>
-      <p className={`mb-5 mt-1 text-xs ${MUTED}`}>Projected pace to full certification.</p>
+      <p className={`mb-5 mt-1 text-sm ${MUTED}`}>Projected pace to full certification.</p>
 
       {hasProjection || fullyCertified ? (
         <div className="mb-5 rounded-2xl bg-[#EAF8FF] px-5 py-[18px] dark:bg-[#0094FF]/10">
-          <p className="mb-1.5 text-[13px] font-semibold text-[#0094FF] dark:text-[#32C7FF]">
+          <p className="mb-1.5 text-base font-semibold text-[#0094FF] dark:text-[#32C7FF]">
             Projected Fully Certified
           </p>
           {fullyCertified ? (
-            <p className="text-[22px] font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
+            <p className="text-[28px] font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
               Fully certified
             </p>
           ) : (
             <>
-              <p className="mb-1.5 text-[22px] font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
+              <p className="mb-1.5 text-[28px] font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
                 {projectedDateLabel}
               </p>
-              <p className="flex items-center gap-1 text-xs font-semibold text-[#16A34A]">
+              <p className="flex items-center gap-1 text-sm font-semibold text-[#16A34A]">
                 ↗ Pace picking up — {certifiedLast7Days} certified in the last 7 days
               </p>
             </>
@@ -85,23 +85,23 @@ export function CertificationForecast() {
         </div>
       ) : (
         <div className="mb-5 rounded-2xl bg-[#F5F7FA] px-5 py-[18px] dark:bg-[#131A20]">
-          <p className={`mb-1.5 text-[13px] font-semibold ${MUTED}`}>Projected Fully Certified</p>
-          <p className="mb-1.5 text-sm font-medium text-[#6B7684] dark:text-[#9AA3AC]">
+          <p className={`mb-1.5 text-base font-semibold ${MUTED}`}>Projected Fully Certified</p>
+          <p className="mb-1.5 text-lg font-medium text-[#6B7684] dark:text-[#9AA3AC]">
             Not enough recent activity to project a date yet
           </p>
-          <p className={`flex items-center gap-1 text-xs font-semibold ${MUTED}`}>
+          <p className={`flex items-center gap-1 text-sm font-semibold ${MUTED}`}>
             No certifications in the last 7 days
           </p>
         </div>
       )}
 
-      <div className="mb-1.5 flex items-center justify-between text-[11px] font-semibold text-[#6B7684] dark:text-[#9AA3AC]">
+      <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-[#6B7684] dark:text-[#9AA3AC]">
         <span>Certified so far</span>
         <span>
           {certifiedCount} of {total}
         </span>
       </div>
-      <div className="mb-2 flex h-2 overflow-hidden rounded bg-[#F0F3F7] dark:bg-[#1F2429]">
+      <div className="mb-2 flex h-2.5 overflow-hidden rounded bg-[#F0F3F7] dark:bg-[#1F2429]">
         {hasProjection ? (
           <>
             <div
@@ -126,7 +126,7 @@ export function CertificationForecast() {
           />
         )}
       </div>
-      <div className="mb-5 flex items-center justify-between text-[10.5px] text-[#98A2AD]">
+      <div className="mb-5 flex items-center justify-between text-xs text-[#98A2AD]">
         <span>First invite</span>
         <span className="font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">Today</span>
         <span className="italic">{hasProjection ? 'Projected finish (est.)' : ' '}</span>
@@ -138,14 +138,14 @@ export function CertificationForecast() {
             {remainingMembers.slice(0, 3).map((m, i) => (
               <span
                 key={m.id}
-                className="-ml-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-[11px] font-bold text-white first:ml-0 dark:border-[#0D0F12]"
+                className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-sm font-bold text-white first:ml-0 dark:border-[#0D0F12]"
                 style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
               >
                 {m.name.charAt(0).toUpperCase()}
               </span>
             ))}
             {remainingSeats > 3 && (
-              <span className="-ml-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#EAF1F8] text-[11px] font-bold text-[#6B7684] first:ml-0 dark:border-[#0D0F12] dark:bg-[#1A1F24] dark:text-[#9AA3AC]">
+              <span className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[#EAF1F8] text-sm font-bold text-[#6B7684] first:ml-0 dark:border-[#0D0F12] dark:bg-[#1A1F24] dark:text-[#9AA3AC]">
                 +{remainingSeats - 3}
               </span>
             )}
@@ -159,7 +159,7 @@ export function CertificationForecast() {
               e.preventDefault()
               document.getElementById('manage-team')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }}
-            className="ml-auto text-xs font-bold text-[#0094FF] hover:underline dark:text-[#32C7FF]"
+            className="ml-auto text-sm font-bold text-[#0094FF] hover:underline dark:text-[#32C7FF]"
           >
             View who&apos;s left &rarr;
           </a>

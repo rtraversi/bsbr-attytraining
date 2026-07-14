@@ -123,7 +123,7 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
       <button
         type="button"
         disabled
-        className="w-full cursor-not-allowed rounded-xl border border-[#E5EEF5] py-3.5 text-sm font-bold text-[#B0B7BF] dark:border-[#1F2429] dark:text-[#4E555C]"
+        className="w-full cursor-not-allowed rounded-xl border border-[#E5EEF5] py-4 text-base font-bold text-[#B0B7BF] dark:border-[#1F2429] dark:text-[#4E555C]"
       >
         Bulk invite (CSV)
       </button>
@@ -133,7 +133,7 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
   return (
     <div className="flex flex-col gap-3">
       <label className="cursor-pointer">
-        <span className="block w-full rounded-xl border border-[#E5EEF5] py-3.5 text-center text-sm font-bold text-[#3D3D3D] transition-colors hover:border-[#0094FF] hover:text-[#0094FF] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[#32C7FF] dark:hover:text-[#32C7FF]">
+        <span className="block w-full rounded-xl border border-[#E5EEF5] py-4 text-center text-base font-bold text-[#3D3D3D] transition-colors hover:border-[#0094FF] hover:text-[#0094FF] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[#32C7FF] dark:hover:text-[#32C7FF]">
           {fileName || 'Bulk invite (CSV)'}
         </span>
         <input
@@ -145,7 +145,7 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
         />
       </label>
 
-      <p className="text-center text-xs text-[#8A8A8A] dark:text-[#7A8189]">
+      <p className="text-center text-sm text-[#8A8A8A] dark:text-[#7A8189]">
         CSV format: <code className="rounded bg-[#F5F7FA] px-1 py-0.5 dark:bg-[#131A20]">name,email</code> — one per row.
       </p>
 
@@ -153,11 +153,11 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
         <>
           <button
             onClick={handleUpload}
-            className="w-full rounded-xl bg-black py-3.5 text-sm font-bold text-white transition-colors hover:bg-gray-800 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
+            className="w-full rounded-xl bg-black py-4 text-base font-bold text-white transition-colors hover:bg-gray-800 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
           >
             Invite {rows.length} {rows.length === 1 ? 'employee' : 'employees'}
           </button>
-          <p className="text-center text-xs text-[#8A8A8A] dark:text-[#7A8189]">
+          <p className="text-center text-sm text-[#8A8A8A] dark:text-[#7A8189]">
             {rows.length} {rows.length === 1 ? 'row' : 'rows'} found — {seatsRemaining} seat
             {seatsRemaining !== 1 ? 's' : ''} remaining
           </p>
@@ -165,22 +165,22 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
       )}
 
       {phase === 'uploading' && (
-        <span className="text-[11px] text-[#8A8A8A] dark:text-[#7A8189]">Sending invites…</span>
+        <span className="text-sm text-[#8A8A8A] dark:text-[#7A8189]">Sending invites…</span>
       )}
 
       {phase === 'done' && result && (
         <div className="flex items-center justify-between gap-2 rounded-xl bg-[#EAF8FF] px-3 py-2 dark:bg-[#0094FF]/10">
-          <p className="text-[11px] font-semibold text-[#0094FF]">{summaryText(result)}</p>
+          <p className="text-sm font-semibold text-[#0094FF]">{summaryText(result)}</p>
           <button
             onClick={handleReset}
-            className="shrink-0 text-[10px] text-[#8A8A8A] transition-colors hover:text-[#0A0A0A] dark:hover:text-[#F5F7FA]"
+            className="shrink-0 text-xs text-[#8A8A8A] transition-colors hover:text-[#0A0A0A] dark:hover:text-[#F5F7FA]"
           >
             Upload another
           </button>
         </div>
       )}
 
-      {phase === 'error' && <p className="text-[11px] text-[#DC2626]">{errorMsg}</p>}
+      {phase === 'error' && <p className="text-sm text-[#DC2626]">{errorMsg}</p>}
     </div>
   )
 }

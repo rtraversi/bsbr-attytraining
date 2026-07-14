@@ -19,9 +19,11 @@ export function ComplianceScore({ score, total }: Props) {
           ? 'text-[#CA8A04]'
           : 'text-[#8A8A8A] dark:text-[#7A8189]'
 
-  // Big and notorious: fluid clamp so it fills the card's width, leading-none +
-  // tighter padding so the taller glyph can't overflow. The % scales with it (em).
-  const NUMBER = 'mb-2 text-[clamp(4rem,8vw,10rem)] font-light leading-none'
+  // Big and notorious: sized against the CARD's width (cqw via the @container
+  // on the card div), not the viewport, so even "100%" (~2.1em wide) can never
+  // overflow — 34cqw × 2.1 ≈ 71% of the card. leading-none keeps the tall glyph
+  // inside the padding. The % sign scales with it (em).
+  const NUMBER = 'mb-2 text-[clamp(4rem,34cqw,14rem)] font-extralight leading-none'
 
   // Warm radial celebration backdrop, 100% only. dark:bg-none drops the white
   // gradient in dark mode so the card falls back to the standard dark surface.
@@ -32,7 +34,7 @@ export function ComplianceScore({ score, total }: Props) {
 
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-3xl bg-white px-4 py-5 text-center dark:border dark:border-[#1F2429] dark:bg-[#0D0F12] ${goldBg}`}
+      className={`@container flex flex-col items-center justify-center rounded-3xl bg-white px-4 py-5 text-center dark:border dark:border-[#1F2429] dark:bg-[#0D0F12] ${goldBg}`}
     >
       {total === 0 ? (
         <p className={`${NUMBER} text-[#8A8A8A] dark:text-[#7A8189]`}>—</p>
