@@ -1,48 +1,69 @@
 # Session Handoff
 
-**Date:** 2026-07-13 (Monday, session 2) — Max (terminal) with Claude. Follow-up to the big
-07-13 build session. Full detail: `.planning/sessions/20260713-max-summary-2.md` (and
-`-summary.md` for session 1).
+**Date:** 2026-07-14 (Tuesday) — Max (terminal) with Claude. Admin-dashboard design pass.
+Full detail: `.planning/sessions/20260714-max-summary.md`.
 
 ---
 
-## 🟢 What shipped this session (committed, `tsc`+`eslint` clean, NOT deployed)
+## 🟢 What shipped this session (4 commits, `tsc`+`eslint` clean, NOT deployed)
 
-1. **`as any` cast cleanup DONE** — types were already regenerated in `c4a3c84`; dropped all
-   5 casts (`training/page.tsx` ×3, `content-progress/route.ts` ×2) + stale comments.
-2. **Overview additions** (`overview-client.tsx`) — UpNextCard hover-reveal restored
-   (collapsed = circle + title; hover reveals real `<Link>` to training; pill badge deleted);
-   QuizProgressCard aggregate avg removed (header pill keeps it); body text bumped ~1 step.
-3. **Quizzes tab** (`quizzes-client.tsx`) — path-map label spacing (fixed 14px gap), flag
-   planted at `-100%` (+ reduced-motion fix), Final Review node/label grayed until cleared,
-   "Start" label removed from Jump Back In, average merged into score grid; LessonRow: blue
-   subtitle, score-only cleared rows, play-chip for unlocked rows, lesson 5 always muted
-   (UnlockIcon kept), right column centered in fixed `w-12` slot.
+Ported the locked sketch `../certified-status-chart-v1.html` into the real admin dashboard,
+then three rounds of Max-driven layout/size iteration:
+
+1. **`1e7550b`** — viewport-fill grid (lg+: `h-screen` shell + `minmax(0,fr)` rows, no page
+   scroll), **Manage team + Team overview merged into one 6-col table** (TeamOverviewTable
+   deleted, handlers untouched), extra-muted em-dashes, **Certified block restyle** (plain
+   label, weight ramp, 100% = flat gold `#D9AE4E` + warm radial), **NEW
+   `certification-forecast.tsx`** (projects completion date off last-7-days cert pace via
+   exported `useTeam`; honest fallback, no divide-by-zero).
+2. **`bc1e00e`** — full-bleed: dropped `max-w-[1600px]` + `xl:py-14` from the admin shell
+   wrapper; row split → **19:26**; name-only team rows; centered Certificate column.
+3. **`3215a2a`** — headings → `text-2xl md:text-3xl`; billing plan subtext hover-reveals
+   BESIDE the heading; Invitations fills its row, bigger controls; CSV text centered.
+4. **`4eab2f1`** — Certified number container-query sized (`@container` +
+   `clamp(4rem,34cqw,14rem)`, extralight — "100%" can never overflow; `34cqw` = the dial);
+   quick-action chips 48px/icons h-7/labels text-base (also in `resend-invite-modal.tsx`'s
+   duplicated tile); Manage team body `text-base` (min-w 780); invite buttons `py-4
+   text-base`; forecast texts up a step, avatars 36px.
+
+**Forecast judgment calls:** fallback copy says "last 7 days" (matches the real calc window;
+sketch mock said 30); bar's solid segment anchors on earliest `certIssuedAt` since
+`MemberDetail` has no invite date — "First invite" label is approximate.
 
 ---
 
 ## 🔴 Do FIRST next session
-- **`pnpm run deploy` + walk it as a real admin AND employee.** TWO sessions of work are now
-  deploy-unverified (everything in `c4a3c84` + this session). Highest-risk to eyeball:
-  - suspend_data resume, soft-nag firing LIVE on a boundary, admin training-access shells.
-  - Admin dashboard grid — tune placeholder `lg:h-[380px]`/`lg:h-[460px]` heights.
-  - NEW: Up-next hover-reveal; Quizzes path map geometry (14px label gap, flag -100% plant —
-    both set without a screenshot); play-chip row height; bumped body text wrap in narrow columns.
-- **Admin 1102 blocker (from 07-10) is STILL OPEN** and untested against these changes.
+- **`pnpm run deploy` + walk it as a real admin AND employee.** THREE sessions of work are
+  now deploy-unverified (everything since `c4a3c84`). Admin-home checklist: viewport fill
+  (also try a short window — rows compress, internal scrollers must engage), 19:26 split,
+  Certified number size, merged-table density at `text-base`, forecast with real cert
+  dates, billing hover, quick-action tile balance.
+- **Admin 1102 blocker (from 07-10) STILL OPEN + untested.** If it recurs:
+  `npx wrangler tail bsbr-attytraining --format pretty`, reproduce admin login, read the
+  stack — don't guess.
 
-## Open questions
-- Placeholder row heights `380`/`460` — Max to tune (keep both cells in a row equal).
-- Reassign button blue `#0094FF` — confirm it's the intended blue.
-- Whether the shell/dashboard rework affects the unresolved admin 1102 — needs deploy + login.
+## Still open (carried)
+- **07-13 desktop items:** `overview-client.tsx` QuizProgressCard cleared-lesson should
+  always say "Cleared" (opposite of Quizzes-tab rule — one-line ternary swap); site-wide
+  body-text bump (~1 Tailwind step, ALL five pages — confirmed scope, prompt never written);
+  "Up Next" interleaved lesson+quiz sequence (needs the combined state machine designed
+  first — don't prompt blind); verify whether Final Assessment no-back/timer actually needs
+  building (read `quiz-component.tsx`/`quiz-runner.tsx` first).
+- Storyline completion-gate ("Paul" false-positive) decision — Rob/Katy; Exit-button dead
+  end; real question pool; Stripe live mode; Resend domain verification.
+- Machine note: `git config --global user.email` unset on Max's machine — commits land as
+  `maxlugo@Maxs-MacBook-Air.local`.
 
 ## Key references
 | Item | Value |
 |------|-------|
 | Main app URL | `https://bsbr-attytraining.aistaffcompliance.workers.dev` |
-| This session detail | `.planning/sessions/20260713-max-summary-2.md` |
-| Session 1 detail | `.planning/sessions/20260713-max-summary.md` |
+| This session detail | `.planning/sessions/20260714-max-summary.md` |
+| Sketch spec | `../certified-status-chart-v1.html` (parent folder, local-only) |
+| Row-split dial | `admin-dashboard.tsx` grid `minmax(0,19fr)_minmax(0,26fr)` |
+| Certified-size dial | `compliance-score.tsx` `34cqw` |
 
 ## Workflow (in force)
-Verify via `pnpm run deploy` (Max runs pnpm/supabase/CLI; consider `pnpm run preview` for
-local workerd checks). Git add/commit/push are Claude's. Secrets in Worker env only. Authz via
-`getClaims()`; `firm_id`/`role` from `app_metadata`.
+Verify via `pnpm run deploy` (Max runs pnpm/supabase/CLI; `pnpm run preview` for local
+workerd checks). Git add/commit/push are Claude's, after explicit go-ahead. Secrets in
+Worker env only. Authz via `getClaims()`; `firm_id`/`role` from `app_metadata`.
