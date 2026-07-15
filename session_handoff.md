@@ -1,5 +1,58 @@
 # Session Handoff
 
+**Date:** 2026-07-15 (Wednesday) — Max, two sessions: desktop (planning/content, no code) then
+terminal (built the reassign-panel fix planned below). Layered on top of 2026-07-14 below, which
+is still current.
+
+## 🟢 What happened this session
+
+- **Storyline animation content prep — Episode 2 ("The Perfect Brief," hallucinations, Lesson 3).**
+  Character renamed Attorney Jackson → **Attorney Jacqueline** (matches the reference photo Max
+  generated 07-14: auburn updo, navy blazer). Locked a reusable character/style bible (photoreal
+  corporate office style, warm string-light/pendant lighting, Jacqueline + Carlos descriptions) for
+  DALL-E prompt consistency. Katy Chavez flagged two issues in the first batch (3 different devices
+  used across shots; screens facing the camera instead of the characters) — fixed by standardizing
+  on Carlos's laptop as the only device across all shots, always angled away from camera.
+  **Final: 9 image prompts drafted**, all in this session's chat transcript (not saved to a repo
+  file — these are DALL-E prompts, not code). Shot 8 (original split-screen AI-log-vs-Westlaw
+  teaching beat) was dropped since it's already covered by an existing Storyline animation; merged
+  into a combined teaching+resolution shot instead. Shot 9 is new dialogue Max is adding: "Wait,
+  but look. Let me ask it again so you can see how I verified" — the transition line into the
+  existing "verifying with Claude" animation.
+- Extracted `storyboard AI-1.pdf` (Max's Downloads) into 8 PNGs, zipped as
+  `storyline animation 3 images.zip`, saved to Downloads. Unrelated to the repo.
+- **Reassign-panel dead-space fix — built in the terminal session, same day.** Max flagged dead
+  space on the right side of `app/dashboard/_components/reassign-panel.tsx` on wide screens
+  (content capped at `max-w-2xl` inside a much wider parent card) and handed the plan below to a
+  terminal session. First pass built the planned two-column layout (form left, "outgoing seat"
+  recap card right — name/email/`TrainingStatusBadge`/score/`completedAt`/cert info, all off
+  `MemberDetail`, no backend work needed). A screenshot showed that version *still* left a large
+  empty rectangle bottom-right (the recap card is naturally much shorter than the form), so Max
+  redirected to a **three-column** layout instead: form+actions / notice callout / preserved
+  record, no `max-w` cap, grid `items-stretch` so all three columns match the tallest one — no
+  dead space left anywhere. Detail: `.planning/sessions/20260715-max-summary.md`. `tsc` clean;
+  `eslint` not run (still broken, see caveat below). **Not deployed, not browser-verified** — Max
+  chose to eyeball it himself on the next deploy rather than have Claude spin up a local server.
+- **Open data/UX question, tabled for tomorrow — do not just patch the label.** On the Overview
+  lessons list (`overview-client.tsx:604`), some cleared lessons show "Cleared" instead of a score
+  because `lastScore` is `null` (no recorded knowledge-check event for that lesson on this
+  account) — see `progress.ts:141`. Max wants every cleared lesson to show "100%". Before doing
+  that: (1) "cleared" does NOT structurally guarantee 100% — `PASS_THRESHOLD` isn't necessarily
+  100, so hardcoding 100% could show an inaccurate score on a compliance-cert product; (2) unclear
+  whether the missing `lastScore` on this specific account is a real data gap (real user, should be
+  investigated) or expected (test/seed account, in which case the label fallback itself may be
+  fine as-is or need a different fix). **Next session: check which case this is before touching
+  the code.**
+
+## Status
+
+`reassign-panel.tsx` committed at this wrap-up. Local `main` was already 1 commit ahead of origin
+at session start (2026-07-14's handoff commit); now further ahead, still unpushed. **Well over a
+day and a half of accumulated undeployed work** — next session should prioritize
+`pnpm run deploy` + a full manual walkthrough over adding anything new.
+
+---
+
 **Date:** 2026-07-14 (Tuesday, session 3) — Max (desktop chat) with Claude, same day as the two
 terminal sessions below. This section is layered on top, not a replacement — both are current.
 
