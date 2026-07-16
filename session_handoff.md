@@ -1,7 +1,10 @@
 # Session Handoff
 
 **Date:** 2026-07-16 (Thursday) — Max, desktop + terminal in parallel. Layered on top of 2026-07-15
-below, which is still current.
+below, which is still current. *Amended by the terminal session at its own wrap-up* — the desktop
+session's draft below didn't yet know the team-status fix had been deployed and confirmed broken,
+and was missing the shell-height-floor work (entirely a terminal-session thread); see the ⚠️-marked
+bullets and the Status/Next-steps sections for the corrected picture.
 
 ## 🟢 What happened this session
 
@@ -46,31 +49,61 @@ below, which is still current.
   (no dashboard) get a non-interactive identity display in the same slot instead. Sketch:
   `/Users/maxlugo/Attorney training/nav-pill-v1.html`. **`nav-pill.tsx` shows no diff in the working
   tree — this was not picked up this session, first thing to check next time.**
-- **Bonus fix found along the way (not prompted, terminal's own catch):** admin dashboard was
-  showing "Not started" for members actively mid-course, because `enrollments` rows only get
-  created at first quiz attempt — `training_events` now checked too so "in progress" shows
-  correctly before that point (`app/dashboard/page.tsx`).
+- **Team-status fix — committed and pushed, but ⚠️ CONFIRMED BROKEN LIVE, needs re-investigation.**
+  Root cause diagnosed correctly (admin dashboard showed "Not started" for members actively
+  mid-course because `enrollments` rows only get created at first quiz attempt; added a
+  `training_events` presence check as a fallback in `app/dashboard/page.tsx`). **Max deployed this
+  exact fix and confirmed it still doesn't work** ("does not show in progress") before this got
+  swept into `61b152d` — the fix landed in the commit anyway since it was sitting in the working
+  tree. **Do not treat this as done.** Either the `training_events` theory is incomplete or
+  something else (caching, a different query path) is masking it — needs fresh investigation, not
+  a re-deploy of the same diff.
+- **Lessons progress-bar height — also swept into `61b152d` without final visual sign-off.** Went
+  through two nudges in the terminal session (`h-3.5/xl:h-5` → Max: "still missing a bit of height"
+  → `h-4/xl:h-6`); the second nudge was sitting uncommitted awaiting Max's next look when the sweep
+  happened. Currently live at `h-4/xl:h-6` — **not yet confirmed it actually lands**, may need
+  another pass.
+- **Admin-home shell height floor — two-pass fix, both committed (`7d2cc4f`, `e39017d`), NOT
+  mentioned above because it happened entirely in the terminal session.** `lg:h-screen
+  lg:overflow-hidden` had no floor, so a short viewport squeezed the dashboard's fr-based grid rows
+  and card content (Quick Actions tiles, Certification Forecast) started overlapping instead of
+  clipping. First pass used `max(100vh,960px)`, reasoned from component measurements — Max caught
+  it live: too aggressive, forced scroll on normal desktop heights that should never scroll.
+  Second pass swept a range of heights via direct DOM overrides and used `getBoundingClientRect()`
+  to find the *actual* pixel where `CertificationForecast`'s heading starts overlapping its banner
+  (868px, empirically measured) — corrected floor to `880px`. Verified live down to a 399px real
+  window on this machine.
+- **`nav-pill.tsx` correction:** it does have a diff this session, but not the redesign above — it
+  was touched separately (in `71bc60d`) to thread a new `avatarUrl` prop through to
+  `account-menu.tsx` for the Settings page's profile-photo feature. The sketched account-menu-removal
+  redesign is still not built.
 
 ## Status
 
-Everything above is in the working tree and about to be committed+pushed at this wrap-up
-(`reassign-panel.tsx`, `overview-client.tsx`, `quizzes-client.tsx`, `scorm-content.tsx`,
-`training-client.tsx`, `eslint.config.mjs`, `package.json`, `load-tests/training-flow.js`,
-`app/dashboard/page.tsx` — plus `71bc60d` for Settings, already committed earlier this session).
-Diffs sanity-checked against what was actually asked for before committing — all clean.
+Everything is now committed AND pushed — `main`/`origin/main` are in sync at `61b152d`
+(the sweep commit) on top of `71bc60d` (Settings), `e39017d`/`7d2cc4f` (shell floor), `837e68d`
+(bar-height, first nudge). Working tree is clean. **But: `61b152d` includes the team-status fix
+that Max confirmed is broken live, and a bar-height nudge that was never visually confirmed** — see
+the ⚠️ items above. This is worth knowing before assuming "committed and pushed" means "done and
+safe" — parts of this sweep were mid-review when it happened.
 
 ## Next steps
 
-1. **Nav pill rebuild** — prompt is fully specified in this session's chat and in the sketch file;
-   just needs a terminal session to actually pick it up and build it.
-2. **Sign out has no home yet** — it was removed from the account-menu plan but the "add it to the
+1. **Team-status fix is broken in a commit that's already on `origin/main`.** Needs
+   re-investigation (not a re-deploy of the same diff), then either a real fix or a revert of just
+   that piece in a new commit — don't leave known-broken code live without a plan.
+2. **Confirm the `h-4/xl:h-6` Lessons-bar height actually lands** — nudge again if not.
+3. **Nav pill rebuild** — prompt is fully specified in this session's chat and in the sketch file
+   (`nav-pill-v1.html`); just needs a session to actually pick it up and build it.
+4. **Sign out has no home yet** — it was removed from the account-menu plan but the "add it to the
    end of Settings" part hasn't been built. Don't ship the nav-pill change (which deletes
    `account-menu.tsx`) before this lands, or there's no way to sign out of the app.
-3. Weekly-summary digest cron + email template — deliberately deferred, needs its own scoping pass
+5. Weekly-summary digest cron + email template — deliberately deferred, needs its own scoping pass
    (what the digest actually contains) before it's built.
-4. Carried from 07-15/07-14: `pnpm run deploy` + full walkthrough (now several sessions of
-   undeployed work), Storyline "Paul" gate decision, real question pool, Stripe live mode, Resend
-   domain verification.
+6. `pnpm run deploy` + full walkthrough — the shell-floor fix and Settings page were verified via
+   `pnpm dev` + browser automation this session, not against a real deploy yet.
+7. Carried from 07-15/07-14: Storyline "Paul" gate decision, real question pool, Stripe live mode,
+   Resend domain verification, Admin 1102 blocker (still untested against recent changes).
 
 ---
 
