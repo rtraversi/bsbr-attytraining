@@ -44,21 +44,26 @@ export function DashboardShell({
   // panel. Full-bleed on purpose (no max-w cap, minimal padding): the grid owns
   // the whole viewport, side padding matches the pill's so cards line up with it.
   //
-  // At lg+ the shell is viewport-locked (h-[max(100vh,960px)] + overflow-y-auto):
+  // At lg+ the shell is viewport-locked (h-[max(100vh,880px)] + overflow-y-auto):
   // the pill takes its natural height and the content wrapper gets the rest
   // (flex-1 + min-h-0), so the dashboard grid inside fills it with fr rows and no
-  // page-level scroll — down to a 960px floor. Below that floor the shell holds
-  // at 960px instead of continuing to compress: admin-dashboard.tsx's fr rows
+  // page-level scroll — down to an 880px floor. Below that floor the shell holds
+  // at 880px instead of continuing to compress: admin-dashboard.tsx's fr rows
   // (lg:grid-rows-[minmax(0,19fr)_minmax(0,26fr)]) squeeze toward zero on a short
   // viewport, and per-card content (e.g. CertificationForecast's three stacked
-  // blocks, ~470px natural height, no overflow clipping of its own) starts
-  // overlapping instead of shrinking — 960px is comfortably above the tallest
-  // card's natural minimum at this column split. overflow-y-auto lets the shell
-  // itself scroll once it's pinned at the floor, rather than clipping/hiding the
-  // overflow the way lg:overflow-hidden did. Below lg it stays a normal
-  // min-h-screen scrolling page, unaffected by any of this.
+  // blocks) has no overflow clipping of its own, so it starts overlapping instead
+  // of shrinking. 880px is empirically measured, not guessed: with the shell
+  // forced to various heights and getBoundingClientRect() on the tightest pair
+  // (CertificationForecast's "Certification Forecast" heading vs. the
+  // "Projected Fully Certified" banner below it — the actual binding
+  // constraint; Quick actions and the left stack stayed clear throughout), the
+  // gap crosses zero at 868px. 880px adds ~12px of margin over that measured
+  // crossover for cross-browser font-rendering variance. overflow-y-auto lets
+  // the shell itself scroll once it's pinned at the floor, rather than
+  // clipping/hiding the overflow the way lg:overflow-hidden did. Below lg it
+  // stays a normal min-h-screen scrolling page, unaffected by any of this.
   return (
-    <div className="font-headline flex min-h-screen flex-col bg-[#CFDCE8] text-[#0A0A0A] transition-colors lg:h-[max(100vh,960px)] lg:overflow-y-auto dark:bg-[#050607] dark:text-[#F5F7FA]">
+    <div className="font-headline flex min-h-screen flex-col bg-[#CFDCE8] text-[#0A0A0A] transition-colors lg:h-[max(100vh,880px)] lg:overflow-y-auto dark:bg-[#050607] dark:text-[#F5F7FA]">
       <div className="px-4 py-3 md:px-6">{pill}</div>
       <ToastProvider>
         <div className="w-full px-4 pb-4 pt-1 md:px-6 lg:min-h-0 lg:flex-1">
