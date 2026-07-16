@@ -283,6 +283,8 @@ export type Database = {
           id: string
           max_seats: number
           name: string
+          notify_cert_earned: boolean
+          notify_weekly_summary: boolean
           onboarding_dismissed: boolean
           owner_id: string
           reminder_days: number
@@ -297,6 +299,8 @@ export type Database = {
           id?: string
           max_seats: number
           name: string
+          notify_cert_earned?: boolean
+          notify_weekly_summary?: boolean
           onboarding_dismissed?: boolean
           owner_id: string
           reminder_days?: number
@@ -311,6 +315,8 @@ export type Database = {
           id?: string
           max_seats?: number
           name?: string
+          notify_cert_earned?: boolean
+          notify_weekly_summary?: boolean
           onboarding_dismissed?: boolean
           owner_id?: string
           reminder_days?: number

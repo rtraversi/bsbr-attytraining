@@ -7,6 +7,7 @@ import { AccountMenu } from './account-menu'
 interface NavPillProps {
   email: string
   fullName: string | null
+  avatarUrl: string | null
   firmName: string | null
   role: string | null
 }
@@ -28,7 +29,7 @@ const TRAINING_ROUTES = ['/dashboard/overview', '/dashboard/training', '/dashboa
  * Separate from EmployeeTabBar: this switches app sections, that one navigates
  * within the training area.
  */
-export function NavPill({ email, fullName, firmName, role }: NavPillProps) {
+export function NavPill({ email, fullName, avatarUrl, firmName, role }: NavPillProps) {
   const pathname = usePathname()
   const isAdmin = role === 'admin'
 
@@ -66,7 +67,7 @@ export function NavPill({ email, fullName, firmName, role }: NavPillProps) {
   return (
     <nav className="flex max-w-full">
       <div className="relative inline-flex max-w-full items-center rounded-full bg-white p-1.5 shadow-[0_1px_2px_rgba(10,10,10,0.04)] transition-shadow hover:shadow-[0_6px_20px_rgba(10,10,10,0.10)] dark:bg-[#0D0F12] dark:shadow-none dark:hover:shadow-[0_6px_20px_rgba(0,0,0,0.5)]">
-        <AccountMenu email={email} fullName={fullName} anchor="left" />
+        <AccountMenu email={email} fullName={fullName} avatarUrl={avatarUrl} anchor="left" />
 
         {/* Always visible. min-w-0 + overflow-x-auto lets the row shrink and
             scroll within the pill on a narrow screen instead of pushing the whole

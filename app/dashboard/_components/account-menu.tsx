@@ -6,6 +6,7 @@ import { useTheme } from './theme'
 interface AccountMenuProps {
   email: string
   fullName: string | null
+  avatarUrl?: string | null
   /** Which side the dropdown panel aligns to. */
   anchor?: 'left' | 'right'
 }
@@ -19,7 +20,7 @@ interface AccountMenuProps {
  * corner would pop open every time the cursor crossed the profile circle on its
  * way to the nav links beside it.
  */
-export function AccountMenu({ email, fullName, anchor = 'left' }: AccountMenuProps) {
+export function AccountMenu({ email, fullName, avatarUrl, anchor = 'left' }: AccountMenuProps) {
   const themeCtx = useTheme()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -55,9 +56,14 @@ export function AccountMenu({ email, fullName, anchor = 'left' }: AccountMenuPro
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Account menu"
-        className="flex h-11 w-11 items-center justify-center rounded-full bg-[#32C7FF] text-base font-semibold text-white transition-shadow hover:shadow-[0_0_0_3px_rgba(50,199,255,0.3)] focus:outline-none focus-visible:shadow-[0_0_0_3px_rgba(50,199,255,0.45)]"
+        className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#32C7FF] text-base font-semibold text-white transition-shadow hover:shadow-[0_0_0_3px_rgba(50,199,255,0.3)] focus:outline-none focus-visible:shadow-[0_0_0_3px_rgba(50,199,255,0.45)]"
       >
-        {initial}
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- no next/image remote-pattern config in this project; plain <img> matches the codebase convention
+          <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          initial
+        )}
       </button>
 
       {open && (

@@ -2,18 +2,24 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { ReminderSettings } from '../_components/reminder-settings'
 import { NameSettings } from './_components/settings-client'
+import { AvatarUpload } from './_components/avatar-upload'
+import { OrganizationSettings } from './_components/organization-settings'
+import { NotificationSettings } from './_components/notification-settings'
+import { AppearanceSettings } from './_components/appearance-settings'
 
 export const metadata = {
   title: 'Settings — AI Staff Compliance Training',
 }
 
-const CARD = 'rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
-// Section headings sit ABOVE their card, sized to match training-client's
-// "Lesson Overview"/"Next Up" convention.
-const HEADING = 'font-headline text-2xl md:text-3xl xl:text-[2.5rem] font-bold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
+/* ── Shared tokens — same values the previous version of this page used ────── */
+const CARD = 'rounded-3xl bg-white p-6 xl:p-8 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
+const HEADING = 'font-headline font-bold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
+const SECTION_HEADING = `${HEADING} mb-4 text-2xl md:text-3xl xl:mb-5 xl:text-[2.5rem]`
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
+
+const NAV_LINK =
+  'flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-[#8A8A8A] transition-colors hover:bg-[#EAF8FF] hover:text-[#0094FF] dark:text-[#7A8189] dark:hover:bg-[#0094FF]/10 dark:hover:text-[#32C7FF]'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -26,56 +32,121 @@ export default async function SettingsPage() {
   if (!firmId) redirect('/login')
 
   const isAdmin = role === 'admin'
+  const fullName = (user.user_metadata?.full_name as string | undefined) ?? null
+  const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) ?? null
 
-  // Reminder cadence is a firm-level setting — admins only.
+  // Firm-level settings (Organization + Notifications) are admin-only.
+  let orgName = ''
   let reminderDays = 7
+  let notifyCertEarned = true
+  let notifyWeeklySummary = false
   if (isAdmin) {
     const admin = createAdminClient()
     const { data: firm } = await admin
       .from('firms')
-      .select('reminder_days')
+      .select('name, reminder_days, notify_cert_earned, notify_weekly_summary')
       .eq('id', firmId)
       .maybeSingle()
+    orgName = firm?.name ?? ''
     reminderDays = firm?.reminder_days ?? 7
+    notifyCertEarned = firm?.notify_cert_earned ?? true
+    notifyWeeklySummary = firm?.notify_weekly_summary ?? false
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 py-8 md:px-0">
-      <div className="flex flex-col gap-6">
-        <div>
-          <h2 className={`${HEADING} mb-3`}>Your account</h2>
-          <section className={CARD}>
-            <p className={`mb-5 text-xs ${MUTED}`}>Update how your name appears across the platform.</p>
-            <NameSettings email={user.email ?? ''} fullName={(user.user_metadata?.full_name as string | undefined) ?? null} />
+    <main className="mx-auto w-full max-w-[1600px] px-6 py-10 md:px-10 xl:px-14 xl:py-14">
+      <div className="mb-10">
+        <h1 className={`${HEADING} text-4xl`}>Settings</h1>
+        <p className={`mt-2 text-base ${MUTED}`}>
+          {isAdmin
+            ? 'Manage your account, organization, and notifications.'
+            : 'Manage your account and appearance.'}
+        </p>
+      </div>
 
-            <div className="mt-6 border-t border-[#E5EEF5] pt-4 dark:border-[#1F2429]">
-              <Link
-                href="/update-password"
-                className="text-xs font-semibold text-[#0094FF] hover:underline"
-              >
-                Change password
-              </Link>
-            </div>
-          </section>
-        </div>
+      <div className="flex flex-col gap-10 lg:flex-row lg:items-start">
+        {/* Left nav — sticky at lg+, plain top block below it */}
+        <aside className="lg:sticky lg:top-10 lg:w-64 lg:shrink-0">
+          <nav className="flex flex-row gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
+            <a href="#account" className={NAV_LINK}>
+              <svg className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="whitespace-nowrap">Account</span>
+            </a>
+            {isAdmin && (
+              <a href="#organization" className={NAV_LINK}>
+                <svg className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1m4 0h1m-6 4h1m4 0h1m-6 4h1m4 0h1" />
+                </svg>
+                <span className="whitespace-nowrap">Organization</span>
+              </a>
+            )}
+            {isAdmin && (
+              <a href="#notifications" className={NAV_LINK}>
+                <svg className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span className="whitespace-nowrap">Notifications</span>
+              </a>
+            )}
+            <a href="#appearance" className={NAV_LINK}>
+              <svg className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h14a2 2 0 012 2v7a4 4 0 01-4 4H9l-4 4z" />
+                <circle cx="8.5" cy="9.5" r="0.5" fill="currentColor" />
+                <circle cx="12" cy="7" r="0.5" fill="currentColor" />
+                <circle cx="15.5" cy="9.5" r="0.5" fill="currentColor" />
+              </svg>
+              <span className="whitespace-nowrap">Appearance</span>
+            </a>
+          </nav>
+        </aside>
 
-        {isAdmin && (
-          <div>
-            <h2 className={`${HEADING} mb-3`}>Auto-reminders</h2>
+        {/* Right content */}
+        <div className="flex flex-1 flex-col gap-12">
+          <div id="account">
+            <h2 className={SECTION_HEADING}>Your account</h2>
             <section className={CARD}>
-              <p className={`mb-5 text-xs ${MUTED}`}>
-                Automatically email staff who have not completed training after this many days.
-              </p>
-              <ReminderSettings initialDays={reminderDays} />
+              <AvatarUpload avatarUrl={avatarUrl} fullName={fullName} email={user.email ?? ''} />
+              <NameSettings email={user.email ?? ''} fullName={fullName} />
             </section>
           </div>
-        )}
 
-        <nav className={`flex flex-wrap gap-x-5 gap-y-1 px-1 text-xs ${MUTED}`}>
-          <Link href="/privacy" className="hover:text-[#0094FF]">Privacy Policy</Link>
-          <Link href="/terms" className="hover:text-[#0094FF]">Terms of Service</Link>
-          <Link href="/dpa" className="hover:text-[#0094FF]">Cookies</Link>
-        </nav>
+          {isAdmin && (
+            <div id="organization">
+              <h2 className={SECTION_HEADING}>Organization</h2>
+              <section className={CARD}>
+                <OrganizationSettings initialName={orgName} />
+              </section>
+            </div>
+          )}
+
+          {isAdmin && (
+            <div id="notifications">
+              <h2 className={SECTION_HEADING}>Notifications</h2>
+              <section className={CARD}>
+                <NotificationSettings
+                  reminderDays={reminderDays}
+                  notifyCertEarned={notifyCertEarned}
+                  notifyWeeklySummary={notifyWeeklySummary}
+                />
+              </section>
+            </div>
+          )}
+
+          <div id="appearance">
+            <h2 className={SECTION_HEADING}>Appearance</h2>
+            <section className={CARD}>
+              <AppearanceSettings />
+            </section>
+          </div>
+
+          <nav className={`flex flex-wrap gap-x-6 gap-y-1 px-1 pt-2 text-sm ${MUTED}`}>
+            <Link href="/privacy" className="hover:text-[#0094FF]">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-[#0094FF]">Terms of Service</Link>
+            <Link href="/dpa" className="hover:text-[#0094FF]">Cookies</Link>
+          </nav>
+        </div>
       </div>
     </main>
   )

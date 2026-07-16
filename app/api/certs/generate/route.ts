@@ -3,6 +3,7 @@ import { render } from '@react-email/render'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/resend'
 import { CertDeliveryEmail } from '@/emails/cert-delivery'
+import { CertEarnedAdminEmail } from '@/emails/cert-earned-admin'
 import { generateCertPdf } from '@/lib/cert-pdf'
 
 interface QueueRecord {
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
     }
 
     const [firmResult, courseResult, authResult] = await Promise.all([
-      admin.from('firms').select('name').eq('id', queue.firm_id).single(),
+      admin.from('firms').select('name, owner_id, notify_cert_earned').eq('id', queue.firm_id).single(),
       admin.from('courses').select('title').eq('id', enrollment.course_id).single(),
       admin.auth.admin.getUserById(enrollment.user_id),
     ])
@@ -96,6 +97,8 @@ export async function POST(req: NextRequest) {
     const firmName      = firmResult.data?.name   ?? 'Unknown Firm'
     const courseTitle   = courseResult.data?.title ?? 'Responsible Use of AI within the Legal Industry'
     const employeeEmail = authResult.data?.user?.email ?? 'Unknown'
+    const employeeName  =
+      (authResult.data?.user?.user_metadata?.full_name as string | undefined) || employeeEmail
 
     // ── Certificate number — DB sequence guarantees global uniqueness ────────────
     const { data: certNumberRaw, error: seqErr } = await admin.rpc('generate_certificate_number')
@@ -174,6 +177,37 @@ export async function POST(req: NextRequest) {
       } catch (emailErr) {
         // Non-fatal — cert is in Storage; employee can get a reprint from their dashboard
         console.error('[certs/generate] email send failed:', emailErr)
+      }
+    }
+
+    // ── Notify the firm admin (opt-out via Settings → Notifications) ────────────────
+    if (firmResult.data?.notify_cert_earned && firmResult.data.owner_id) {
+      try {
+        const ownerResult = await admin.auth.admin.getUserById(firmResult.data.owner_id)
+        const ownerEmail = ownerResult.data?.user?.email
+
+        if (ownerEmail && ownerEmail !== employeeEmail) {
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[dev] Admin cert-earned notification would send to:', ownerEmail)
+          } else {
+            const adminHtml = await render(
+              CertEarnedAdminEmail({
+                employeeName,
+                firmName,
+                dashboardUrl: `${appUrl}/dashboard`,
+              })
+            )
+            await sendEmail({
+              to: ownerEmail,
+              subject: `${employeeName} earned their AI Staff Compliance Certificate`,
+              html: adminHtml,
+            })
+          }
+        }
+      } catch (adminEmailErr) {
+        // Non-fatal — same reasoning as the employee email above
+        console.error('[certs/generate] admin notification failed:', adminEmailErr)
       }
     }
 

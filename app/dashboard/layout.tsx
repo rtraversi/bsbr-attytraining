@@ -12,6 +12,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const email = user?.email ?? ''
   const fullName = (user?.user_metadata?.full_name as string | undefined) ?? null
+  const avatarUrl = (user?.user_metadata?.avatar_url as string | undefined) ?? null
   const role = (user?.app_metadata?.role as string | undefined) ?? null
 
   // Firm name for the nav pill (same firm_id source as app/dashboard/training/page.tsx).
@@ -23,7 +24,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     firmName = firm?.name ?? null
   }
 
-  const pill = <NavPill email={email} fullName={fullName} firmName={firmName} role={role} />
+  const pill = <NavPill email={email} fullName={fullName} avatarUrl={avatarUrl} firmName={firmName} role={role} />
 
   // Shell choice is route-based (see DashboardShell): the training routes always
   // get the training shell + bottom tab bar regardless of role, so an admin can

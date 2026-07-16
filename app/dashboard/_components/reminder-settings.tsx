@@ -25,10 +25,7 @@ export function ReminderSettings({ initialDays }: { initialDays: number }) {
 
   return (
     <div className="flex items-center gap-3">
-      <label
-        className="whitespace-nowrap text-xs text-[#8A8A8A] dark:text-[#7A8189]"
-        htmlFor="reminder-days"
-      >
+      <label htmlFor="reminder-days" className="sr-only">
         Auto-reminder after
       </label>
       <select
