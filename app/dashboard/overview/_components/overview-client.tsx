@@ -118,7 +118,7 @@ export function OverviewClient({
                 </span>
                 <span className={`text-sm font-bold xl:text-base ${ACCENT}`}>{lessonsComplete}/5</span>
               </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#E5EEF5] xl:h-3.5 dark:bg-[#1F2429]">
+              <div className="h-3.5 w-full overflow-hidden rounded-full bg-[#E5EEF5] xl:h-5 dark:bg-[#1F2429]">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-[#32C7FF] to-[#0094FF] transition-[width] duration-500"
                   style={{ width: `${(lessonsComplete / 5) * 100}%` }}
