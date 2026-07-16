@@ -49,9 +49,10 @@ export default async function DashboardPage() {
   const members = membersRes.data ?? []
 
   const userIds = members.map(m => m.user_id)
+  const memberIds = members.map(m => m.id)
 
   // Batch-fetch auth users + training data in parallel — one query per table, not per member
-  const [authUsers, enrollmentsRes, attemptsRes, certsRes] = await Promise.all([
+  const [authUsers, enrollmentsRes, attemptsRes, certsRes, eventsRes] = await Promise.all([
     Promise.all(members.map(m => admin.auth.admin.getUserById(m.user_id))),
     userIds.length > 0
       ? admin.from('enrollments').select('user_id, status, completed_at').eq('firm_id', firmId).in('user_id', userIds)
@@ -62,6 +63,14 @@ export default async function DashboardPage() {
     userIds.length > 0
       ? admin.from('certificates').select('id, user_id, expires_at, issued_at, certificate_number').eq('firm_id', firmId).in('user_id', userIds)
       : Promise.resolve({ data: [] as { id: string; user_id: string; expires_at: string; issued_at: string; certificate_number: string }[] }),
+    // An `enrollments` row is only created at first quiz attempt (see
+    // /api/quiz/attempt) — everything before that (opening the course, lesson
+    // checks, lesson boundaries) is recorded in training_events keyed to the
+    // firm_member id. Without this, a member actively working through the
+    // course shows as "Not started" until they reach the quiz.
+    memberIds.length > 0
+      ? admin.from('training_events').select('firm_member_id').eq('firm_id', firmId).in('firm_member_id', memberIds)
+      : Promise.resolve({ data: [] as { firm_member_id: string }[] }),
   ])
 
   // Index by user_id — for attempts, ordered DESC so first hit per user is the latest passing attempt
@@ -77,6 +86,8 @@ export default async function DashboardPage() {
   const certByUser = Object.fromEntries(
     (certsRes.data ?? []).map(c => [c.user_id, c])
   )
+
+  const startedMemberIds = new Set((eventsRes.data ?? []).map(e => e.firm_member_id))
 
   const now = new Date()
 
@@ -96,7 +107,7 @@ export default async function DashboardPage() {
 
     let trainingStatus: TrainingStatus
     if (!enrollment) {
-      trainingStatus = 'not_started'
+      trainingStatus = startedMemberIds.has(m.id) ? 'in_progress' : 'not_started'
     } else if (cert) {
       trainingStatus = new Date(cert.expires_at) > now ? 'passed' : 'expired'
     } else {

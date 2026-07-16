@@ -43,6 +43,8 @@ interface Props {
   /** Fired once, after the completion event has been durably recorded server-side. */
   onCompleted?: () => void
   onStarted?: () => void
+  /** Fired once, when the course calls LMSFinish (learner clicked the in-course Exit button). */
+  onExit?: () => void
   /** Fired live when Rise crosses into a new lesson (resolved 1–5), for the nag + progress bar. */
   onLessonChange?: (lessonNumber: number) => void
   className?: string
@@ -104,6 +106,7 @@ function parseScormTime(value: string): number | null {
 export function ScormContent({
   onCompleted,
   onStarted,
+  onExit,
   onLessonChange,
   className,
   frameClassName,
@@ -117,6 +120,7 @@ export function ScormContent({
   // so the listener closures always read the current value.
   const startedRef = useRef(false)
   const completedRef = useRef(false)
+  const exitedRef = useRef(false)
 
   // Last cmi.core.session_time we saw this mount, in seconds — we post the delta
   // between ticks, not the absolute. Captured in a ref so the once-registered
@@ -139,9 +143,11 @@ export function ScormContent({
   // Keep the latest callbacks reachable from listeners registered once on mount.
   const onCompletedRef = useRef(onCompleted)
   const onStartedRef = useRef(onStarted)
+  const onExitRef = useRef(onExit)
   const onLessonChangeRef = useRef(onLessonChange)
   useEffect(() => { onCompletedRef.current = onCompleted }, [onCompleted])
   useEffect(() => { onStartedRef.current = onStarted }, [onStarted])
+  useEffect(() => { onExitRef.current = onExit }, [onExit])
   useEffect(() => { onLessonChangeRef.current = onLessonChange }, [onLessonChange])
 
   useEffect(() => {
@@ -209,6 +215,15 @@ export function ScormContent({
         if (ok) onCompletedRef.current?.()
         else completedRef.current = false // allow a later retry
       })
+    })
+
+    // Exit: the course's in-frame Exit button calls LMSFinish to terminate the
+    // SCORM session. Nothing about that closes our fullscreen focus mode on its
+    // own, so surface it to the parent once.
+    api.on('LMSFinish', () => {
+      if (exitedRef.current) return
+      exitedRef.current = true
+      onExitRef.current?.()
     })
 
     // Per-lesson tracking: Rise writes lesson_location exactly at a lesson

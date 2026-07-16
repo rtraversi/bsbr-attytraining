@@ -250,13 +250,12 @@ function LessonRow({
       <span className="flex w-12 shrink-0 items-center justify-center">
         {cleared ? (
           // Score only — no "Cleared" word here (the Overview block does the
-          // inverse). A cleared lesson without a score is an edge case that
-          // shouldn't occur; show nothing rather than the word.
-          lesson.lastScore !== null ? (
-            <span className="text-xs font-bold whitespace-nowrap text-[#16A34A] dark:text-[#4ADE80]">
-              {lesson.lastScore}%
-            </span>
-          ) : null
+          // inverse). The lesson-5 test-out shortcut clears 1–4 without an
+          // individually recorded score; ?? 100 is a display-only fallback —
+          // the underlying lastScore/training_events stay untouched.
+          <span className="text-xs font-bold whitespace-nowrap text-[#16A34A] dark:text-[#4ADE80]">
+            {lesson.lastScore ?? 100}%
+          </span>
         ) : showShortcutUnlock ? (
           <UnlockIcon className="h-4 w-4 text-[#0094FF]" />
         ) : lesson.status === 'unlocked' ? (

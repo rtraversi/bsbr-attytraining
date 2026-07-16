@@ -8,10 +8,12 @@
 //
 // See load-tests/README.md for context, review date, and safety notes.
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- wired up once the TODOs below are filled in
 import http from 'k6/http'
 import { sleep } from 'k6'
 
 // TODO: set to STAGING url via env — never point this at production.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- wired up once the TODOs below are filled in
 const BASE_URL = __ENV.BASE_URL || 'https://staging.example.invalid'
 
 // Placeholder ramped VU profile — values are illustrative only.
@@ -25,7 +27,7 @@ export const options = {
   ],
 }
 
-export default function () {
+export default function trainingFlow() {
   // Step 1: login / obtain session
   // TODO: wire real auth — likely a Supabase session cookie obtained via a
   // dedicated test login endpoint or a pre-seeded staging credential set.

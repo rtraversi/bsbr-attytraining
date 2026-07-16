@@ -1,5 +1,79 @@
 # Session Handoff
 
+**Date:** 2026-07-16 (Thursday) — Max, desktop + terminal in parallel. Layered on top of 2026-07-15
+below, which is still current.
+
+## 🟢 What happened this session
+
+- **Storyline animation — Episode 2 ("The Perfect Brief," Attorney Jacqueline/Carlos) DALL-E prompts
+  finalized.** All 9 shot prompts locked in chat (character/style bible + single-device consistency
+  rule from 07-15, plus this session's additions: Shot 6 toned down from "stressed" to "confident,"
+  and a new Shot 9 — "Wait, but look. Let me ask it again so you can see how I verified" — the
+  transition line into the existing "verifying with Claude" animation). Also extracted
+  `storyboard AI-1.pdf` into PNGs, zipped to Max's Downloads — unrelated to the repo.
+- **Reassign-panel — merged the redundant notice cards.** The "Replacing X" callout and "Preserved
+  record" card were repeating the same email 3x and reading as two disconnected boxes — mocked up
+  in chat, Max picked the merged-single-card direction (icon + "Replacing" on the left, divider,
+  preserved-data fields on the right). Prompted to terminal; diff is in the working tree now,
+  uncommitted until this wrap-up.
+- **eslint fixed at the root cause, not just papered over.** It wasn't actually a memory-limit
+  problem — `eslint.config.mjs` had no ignore for `public/**`, so it was linting ~15MB of vendored
+  Rise/SCORM export JS as project source (that's what produced the earlier "186,848 problems" and
+  the OOM). Fixed: `public/**` + `.open-next/**` added to ignores, `lint` script bumped to
+  `NODE_OPTIONS=--max-old-space-size=4096` as a safety margin (this machine only has 8GB RAM). Real
+  lint surfaced two genuine warnings in `load-tests/training-flow.js`, fixed with eslint-disable
+  comments on TODO-placeholder code.
+- **"Cleared" vs "100%" — resolved, not a bug.** Some lessons showed "Cleared" instead of a score
+  because of the lesson-5 "test-out" shortcut (skips 1–4 entirely — those checks were never
+  actually taken, `lastScore` is genuinely `null`). Decision: show 100% to the employee regardless
+  of path (they don't care which path they took), but the fix is display-only — `lastScore` itself,
+  the average-score calc, and the admin dashboard's score column all stay based on real data. Fixed
+  in both `overview-client.tsx:604` and the equivalent spot in `quizzes-client.tsx` (which had the
+  same edge case, previously rendering nothing).
+- **SCORM exit button fixed.** The in-course Exit button (`LMSFinish`) had no handler — dead end.
+  Added a fire-once handler in `scorm-content.tsx` calling a new `onExit` prop; `training-client.tsx`
+  wires it to drop the user out of focus/fullscreen mode.
+- **Settings page rebuilt** — full redesign (sticky left nav, wide content area instead of the old
+  cramped `max-w-3xl` center column) plus real new scope: Organization name field, two new admin
+  notification toggles (team-member-certified email, weekly-summary — the digest cron itself is
+  explicitly NOT built yet, just the persisted preference), profile photo upload, and the
+  Appearance theme selector relocated out of the old account-menu dropdown. Went through a full
+  sketch→react→lock cycle in chat before the build prompt. **Committed** (`71bc60d`).
+- **Nav pill redesign — sketched and locked, prompt handed to terminal, not yet built.** New
+  direction from Max's SVGs: account-menu dropdown removed entirely (dark toggle → a real switch in
+  the pill itself; sign-out → moves to the end of Settings, not yet placed there); the old
+  admin-only "Dashboard" link merges with the profile circle + firm name into one pill; employees
+  (no dashboard) get a non-interactive identity display in the same slot instead. Sketch:
+  `/Users/maxlugo/Attorney training/nav-pill-v1.html`. **`nav-pill.tsx` shows no diff in the working
+  tree — this was not picked up this session, first thing to check next time.**
+- **Bonus fix found along the way (not prompted, terminal's own catch):** admin dashboard was
+  showing "Not started" for members actively mid-course, because `enrollments` rows only get
+  created at first quiz attempt — `training_events` now checked too so "in progress" shows
+  correctly before that point (`app/dashboard/page.tsx`).
+
+## Status
+
+Everything above is in the working tree and about to be committed+pushed at this wrap-up
+(`reassign-panel.tsx`, `overview-client.tsx`, `quizzes-client.tsx`, `scorm-content.tsx`,
+`training-client.tsx`, `eslint.config.mjs`, `package.json`, `load-tests/training-flow.js`,
+`app/dashboard/page.tsx` — plus `71bc60d` for Settings, already committed earlier this session).
+Diffs sanity-checked against what was actually asked for before committing — all clean.
+
+## Next steps
+
+1. **Nav pill rebuild** — prompt is fully specified in this session's chat and in the sketch file;
+   just needs a terminal session to actually pick it up and build it.
+2. **Sign out has no home yet** — it was removed from the account-menu plan but the "add it to the
+   end of Settings" part hasn't been built. Don't ship the nav-pill change (which deletes
+   `account-menu.tsx`) before this lands, or there's no way to sign out of the app.
+3. Weekly-summary digest cron + email template — deliberately deferred, needs its own scoping pass
+   (what the digest actually contains) before it's built.
+4. Carried from 07-15/07-14: `pnpm run deploy` + full walkthrough (now several sessions of
+   undeployed work), Storyline "Paul" gate decision, real question pool, Stripe live mode, Resend
+   domain verification.
+
+---
+
 **Date:** 2026-07-15 (Wednesday) — Max, two sessions: desktop (planning/content, no code) then
 terminal (built the reassign-panel fix planned below). Layered on top of 2026-07-14 below, which
 is still current.

@@ -306,6 +306,7 @@ export function TrainingClient({
         >
           <ScormContent
             onCompleted={() => router.refresh()}
+            onExit={() => setFocus(false)}
             onLessonChange={handleLessonChange}
             initialLocation={initialLocation}
             initialSuspendData={initialSuspendData}

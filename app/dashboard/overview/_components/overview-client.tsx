@@ -118,7 +118,7 @@ export function OverviewClient({
                 </span>
                 <span className={`text-sm font-bold xl:text-base ${ACCENT}`}>{lessonsComplete}/5</span>
               </div>
-              <div className="h-3.5 w-full overflow-hidden rounded-full bg-[#E5EEF5] xl:h-5 dark:bg-[#1F2429]">
+              <div className="h-4 w-full overflow-hidden rounded-full bg-[#E5EEF5] xl:h-6 dark:bg-[#1F2429]">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-[#32C7FF] to-[#0094FF] transition-[width] duration-500"
                   style={{ width: `${(lessonsComplete / 5) * 100}%` }}
@@ -601,7 +601,7 @@ function QuizRow({
 
       {cleared ? (
         <span className="shrink-0 text-sm font-bold whitespace-nowrap text-[#16A34A] xl:text-base dark:text-[#4ADE80]">
-          {lesson.lastScore !== null ? `${lesson.lastScore}%` : 'Cleared'}
+          {lesson.lastScore ?? 100}%
         </span>
       ) : locked ? (
         <LockIcon className={`h-4 w-4 shrink-0 ${MUTED}`} />
