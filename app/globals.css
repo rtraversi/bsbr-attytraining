@@ -264,18 +264,29 @@
   animation: nav-switch-squish 380ms cubic-bezier(.36,.07,.19,.97);
 }
 
-/* Dashboard shell background pattern — one full-bleed graphic (never tiled),
-   scaled uniformly via mask-size: contain. mask-image (not background-image)
-   so the shell's own background-color shows through the SVG shape — color is
-   set entirely in CSS via each usage's bg-[color] (see dashboard-shell.tsx),
-   never in the SVG file itself. */
+/* Dashboard shell background pattern — one full-bleed graphic (never tiled,
+   never distorted). Sized to width (100% auto), NOT `contain`: contain scales
+   to whichever dimension is tighter, and since the source SVG is now much
+   taller than wide (built tall on purpose, so it has enough height to reach
+   the bottom of a scrolled page instead of clipping), contain was scaling
+   down for height and leaving the width unfilled. `100% auto` always fills
+   the full width and lets height follow the aspect ratio; mask-position: top
+   anchors it to the top of the page rather than centering it vertically.
+   mask-image (not background-image) so the element's own background-color
+   shows through the SVG shape — color is set entirely in CSS via each usage's
+   bg-[rgba(...)] (see dashboard-shell.tsx), never in the SVG file itself. One
+   masked element per shell (not two overlapping ones): the light/dark cross-
+   fade is a background-color transition on that single element, with each
+   theme's opacity baked into its rgba alpha, so masking is only paid once. */
 .shell-pattern {
   mask-image: url('/nav-shell-pattern.svg');
   mask-repeat: no-repeat;
-  mask-size: contain;
+  mask-size: 100% auto;
+  mask-position: top;
   -webkit-mask-image: url('/nav-shell-pattern.svg');
   -webkit-mask-repeat: no-repeat;
-  -webkit-mask-size: contain;
+  -webkit-mask-size: 100% auto;
+  -webkit-mask-position: top;
 }
 
 /* ─── Stitch design system ───────────────────────────────────────── */

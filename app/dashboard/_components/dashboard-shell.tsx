@@ -26,13 +26,45 @@ export function DashboardShell({
   const showTrainingShell = !isAdminHome
 
   // Standard shell — light-by-default themed experience with the bottom tab bar.
-  // Background pattern: one full-bleed graphic, colored with the ADMIN shell's
-  // bg (#CFDCE8) — the two shells' pattern colors are deliberately cross-swapped
-  // from their own background. Light mode only; dark mode is untouched.
+  // Background pattern: ONE full-bleed masked graphic, colored with the ADMIN
+  // shell's bg (#CFDCE8) — the two shells' pattern colors are deliberately
+  // cross-swapped from their own background. In dark mode both shells collapse
+  // to the same flat #050607 (no cross-swap to make there), so the pattern
+  // goes whiteish and faint instead of the light-mode color — same treatment
+  // on both shells.
+  //
+  // The light/dark colors bake their opacity into the rgba alpha (light 0.6,
+  // dark 0.1) and cross-fade by TRANSITIONING background-color on this single
+  // masked element, rather than overlapping two separately-masked layers that
+  // fade via opacity. Masking a full-viewport 10667-unit SVG is the real cost
+  // here, and two always-mounted masked elements paid it twice per shell; one
+  // element halves that persistent compositing cost. The trade is that the
+  // theme toggle now repaints the mask over its 300ms transition instead of a
+  // free GPU opacity fade — acceptable because the mask is viewport-sized (see
+  // below, not content-tied) and the SVG was run through svgo (~700KB → ~230KB,
+  // integer coords), so that repaint is far cheaper than it once was.
+  //
+  // position: fixed + h-screen (NOT absolute/inset-0, and NOT a large fixed
+  // vh value either — both were tried and both broke something). inset-0
+  // ties the pattern's size to the page's live content height, so any
+  // height-animating accordion on the page (e.g. Quizzes' "Jump back in" card
+  // expanding) forces this large mask to resize/re-rasterize every animation
+  // frame — that was the "super mega lag" on hover/expand. A large fixed
+  // height (e.g. 300vh) fixes THAT but creates a new bug: on a short page
+  // (e.g. Settings) that oversized box still creates real scrollable overflow
+  // past the actual content, leaving dead blank space below it. `fixed`
+  // sidesteps both — it's anchored to the viewport, not the document, so its
+  // size never depends on this page's content height (nothing to resize
+  // during an accordion animation) AND it never contributes scrollable area
+  // of its own (nothing dead to scroll into). It reads as a static backdrop
+  // the page scrolls over, which is the intended look anyway.
   if (showTrainingShell) {
     return (
       <div className="font-headline relative flex min-h-screen flex-col bg-[#F5F7FA] pb-16 text-[#0A0A0A] transition-colors dark:bg-[#050607] dark:text-[#F5F7FA]">
-        <div aria-hidden className="shell-pattern pointer-events-none absolute inset-0 bg-[#CFDCE8] dark:hidden" />
+        <div
+          aria-hidden
+          className="shell-pattern pointer-events-none fixed inset-x-0 top-0 h-screen bg-[rgba(207,220,232,0.6)] transition-colors duration-300 dark:bg-[rgba(245,247,250,0.1)]"
+        />
         <div className="relative z-10 px-4 py-3 md:px-6">{pill}</div>
         <ToastProvider>
           <div className="relative z-10 flex-1">{children}</div>
@@ -66,12 +98,19 @@ export function DashboardShell({
   // the shell itself scroll once it's pinned at the floor, rather than
   // clipping/hiding the overflow the way lg:overflow-hidden did. Below lg it
   // stays a normal min-h-screen scrolling page, unaffected by any of this.
-  // Background pattern: one full-bleed graphic, colored with the STANDARD
+  // Background pattern: single masked graphic, colored with the STANDARD
   // shell's bg (#F5F7FA) — cross-swapped from this shell's own #CFDCE8, same
-  // as above. Light mode only; dark mode is untouched.
+  // as above. Dark mode: same whiteish/faint treatment as the standard shell.
+  // Same one-element / background-color cross-fade / fixed + h-screen technique
+  // as the standard shell (see its comment above) — one masked element, opacity
+  // baked into the rgba alpha, anchored to the viewport rather than this shell's
+  // own (possibly internally scrolling) content height.
   return (
     <div className="font-headline relative flex min-h-screen flex-col bg-[#CFDCE8] text-[#0A0A0A] transition-colors lg:h-[max(100vh,880px)] lg:overflow-y-auto dark:bg-[#050607] dark:text-[#F5F7FA]">
-      <div aria-hidden className="shell-pattern pointer-events-none absolute inset-0 bg-[#F5F7FA] dark:hidden" />
+      <div
+        aria-hidden
+        className="shell-pattern pointer-events-none fixed inset-x-0 top-0 h-screen bg-[rgba(245,247,250,0.6)] transition-colors duration-300 dark:bg-[rgba(245,247,250,0.1)]"
+      />
       <div className="relative z-10 px-4 py-3 md:px-6">{pill}</div>
       <ToastProvider>
         <div className="relative z-10 w-full px-4 pb-4 pt-1 md:px-6 lg:min-h-0 lg:flex-1">
