@@ -146,6 +146,15 @@ export default async function SettingsPage() {
             <Link href="/terms" className="hover:text-[#0094FF]">Terms of Service</Link>
             <Link href="/dpa" className="hover:text-[#0094FF]">Cookies</Link>
           </nav>
+
+          <form action="/api/auth/logout" method="POST" className="px-1">
+            <button
+              type="submit"
+              className="text-sm font-semibold text-[#DC2626] transition-colors hover:text-[#B91C1C]"
+            >
+              Sign out
+            </button>
+          </form>
         </div>
       </div>
     </main>

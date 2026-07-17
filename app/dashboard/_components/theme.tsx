@@ -64,7 +64,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return <Ctx.Provider value={{ theme, toggle, setTheme }}>{children}</Ctx.Provider>
 }
 
-/** Returns the theme context, or null if used outside a ThemeProvider (e.g. admin shell). */
+/** Returns the theme context, or null if used outside a ThemeProvider. Every
+ * /dashboard/* page is wrapped by one (see app/dashboard/layout.tsx), so
+ * callers under that tree can treat it as always present. */
 export function useTheme(): ThemeCtx | null {
   return useContext(Ctx)
 }

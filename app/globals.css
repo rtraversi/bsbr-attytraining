@@ -252,6 +252,18 @@
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* Nav-pill theme-toggle — click-triggered squish/overshoot */
+@keyframes nav-switch-squish {
+  0%   { transform: scaleX(1); }
+  30%  { transform: scaleX(0.92) scaleY(1.05); }
+  55%  { transform: scaleX(1.06) scaleY(0.95); }
+  80%  { transform: scaleX(0.98); }
+  100% { transform: scaleX(1); }
+}
+.nav-switch-clicking {
+  animation: nav-switch-squish 380ms cubic-bezier(.36,.07,.19,.97);
+}
+
 /* ─── Stitch design system ───────────────────────────────────────── */
 
 /* Scrabble tile shadow — tactile depth */
