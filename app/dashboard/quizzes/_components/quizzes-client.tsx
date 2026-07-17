@@ -6,11 +6,22 @@ import { useEffect, useState } from 'react'
 import type { ClientQuestion } from '@/lib/training/questions'
 import type { LessonState, Progress } from '@/lib/training/progress'
 import { KnowledgeCheckModal } from '../../overview/_components/knowledge-check-modal'
+import { CertPreviewModal } from '../../_components/cert-preview-modal'
+
+/** Issued-certificate details — the Quizzes tab is the one place these live. */
+export interface CertInfo {
+  id: string
+  number: string | null
+  issuedAt: string | null
+  expiresAt: string | null
+}
 
 interface Props {
   progress: Progress
   questionsByLesson: Record<number, ClientQuestion[]>
-  certUrl: string | null
+  cert: CertInfo | null
+  /** For the cert preview modal's name line. */
+  employeeName: string
   firstName: string | null
   /** Real SCORM content completion (a video_completed event exists). */
   contentViewed: boolean
@@ -28,7 +39,8 @@ function canOpen(lesson: LessonState, fullyCleared: boolean): boolean {
 export function QuizzesClient({
   progress,
   questionsByLesson,
-  certUrl,
+  cert,
+  employeeName,
   firstName,
   contentViewed,
 }: Props) {
@@ -50,7 +62,7 @@ export function QuizzesClient({
   }
 
   const lesson5 = progress.lessons.find(l => l.isReadiness)!
-  const certUnlocked = certUrl !== null
+  const certUnlocked = cert !== null
 
   return (
     <>
@@ -61,7 +73,7 @@ export function QuizzesClient({
           <section className="flex flex-col gap-10 md:col-span-7 md:gap-12">
             <JumpBackInCard progress={progress} tryOpen={tryOpen} firstName={firstName} />
             <FinalTestCard progress={progress} contentViewed={contentViewed} />
-            <CertificateCard certUnlocked={certUnlocked} certUrl={certUrl} />
+            <CertificateCard cert={cert} employeeName={employeeName} />
           </section>
 
           {/* ── Right column: the S-curve path map ────────────────────────────── */}
@@ -112,6 +124,9 @@ function useExpand() {
 
 const PILL =
   'rounded-[28px] border border-[#E5EEF5] bg-[#F2F4F7] dark:border-[#1F2429] dark:bg-[#0D0F12] md:rounded-[36px]'
+// Same translucent glass treatment as the unlocked "Certificate Assessment" card.
+const GLASS =
+  'rounded-[28px] border border-[#32C7FF]/40 bg-[#32C7FF]/[0.06] md:rounded-[36px] dark:bg-[#32C7FF]/[0.08]'
 const HEADING = 'font-semibold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
 const BODY = 'font-extralight text-[#3D3D3D] dark:text-[#C4CBD2]'
 const MUTED = 'font-normal text-[#8A8A8A] dark:text-[#7A8189]'
@@ -146,7 +161,7 @@ function JumpBackInCard({
     <div className="qz-entrance qz-d2 group" {...hoverProps}>
       <h2 className={`mb-4 text-2xl md:text-3xl ${HEADING}`}>Jump back in</h2>
       <div
-        className={`${PILL} px-6 py-5 transition-[transform,box-shadow] duration-300 md:px-8 md:py-6 ${
+        className={`${GLASS} px-6 py-5 transition-[transform,box-shadow] duration-300 md:px-8 md:py-6 ${
           hovered ? '-translate-y-1 shadow-[0_14px_28px_rgba(50,199,255,0.18)]' : ''
         }`}
       >
@@ -336,7 +351,7 @@ function FinalTestCard({
       <div
         className={`px-6 py-5 transition-[transform,box-shadow] duration-300 md:px-8 md:py-6 ${
           unlocked
-            ? 'rounded-[28px] border border-[#32C7FF]/40 bg-[#32C7FF]/[0.06] md:rounded-[36px] dark:bg-[#32C7FF]/[0.08]'
+            ? GLASS
             : PILL
         } ${hovered ? '-translate-y-1 shadow-[0_14px_28px_rgba(50,199,255,0.18)]' : ''}`}
       >
@@ -429,40 +444,108 @@ function FinalTestCard({
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Card 3 — "Access certificate" (reward; keeps its gradient-glow logic)
+   Card 3 — "Access certificate" (reward; keeps its gradient-glow logic).
+   The one real home for certificate details: hovering the pill (or tapping
+   the summary, for touch devices where hover doesn't exist) reveals the
+   cert #, dates, and legal disclaimer; Download opens CertPreviewModal.
    ═══════════════════════════════════════════════════════════════════════════ */
+function fmtCertDate(iso: string | null): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 function CertificateCard({
-  certUnlocked,
-  certUrl,
+  cert,
+  employeeName,
 }: {
-  certUnlocked: boolean
-  certUrl: string | null
+  cert: CertInfo | null
+  employeeName: string
 }) {
+  const { open, toggle, hoverProps } = useExpand()
+  const [modalOpen, setModalOpen] = useState(false)
+
   return (
-    <div className="qz-entrance qz-d4">
+    <div className="qz-entrance qz-d4" {...hoverProps}>
       <h2 className={`mb-4 text-2xl md:text-3xl ${HEADING}`}>Access certificate</h2>
-      {certUnlocked ? (
-        <div className="rounded-[28px] bg-gradient-to-br from-[#32C7FF] to-[#0094FF] p-[1.5px] shadow-[0_0_44px_-10px_rgba(50,199,255,0.55)] md:rounded-[36px]">
-          <div className="flex items-center justify-between gap-4 rounded-[27px] bg-white px-6 py-5 md:rounded-[35px] md:px-8 md:py-6 dark:bg-[#0D0F12]">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#32C7FF]/15">
-                <CertIcon className="h-6 w-6 text-[#0094FF]" />
-              </span>
-              <div className="min-w-0">
-                <p className={`text-base ${HEADING}`}>Your certificate</p>
-                <p className={`truncate text-sm ${BODY}`}>Issued and ready to download.</p>
+      {cert ? (
+        <>
+          <div className="rounded-[28px] bg-gradient-to-br from-[#32C7FF] to-[#0094FF] p-[1.5px] shadow-[0_0_44px_-10px_rgba(50,199,255,0.55)] md:rounded-[36px]">
+            <div className="rounded-[27px] bg-white px-6 py-5 md:rounded-[35px] md:px-8 md:py-6 dark:bg-[#0D0F12]">
+              <div className="flex items-center justify-between gap-4">
+                {/* Summary doubles as the tap-toggle for touch devices, where
+                    the hover reveal can't fire. */}
+                <button
+                  type="button"
+                  onClick={toggle}
+                  aria-expanded={open}
+                  className="flex min-w-0 cursor-pointer items-center gap-3 text-left"
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#32C7FF]/15">
+                    <CertIcon className="h-6 w-6 text-[#0094FF]" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className={`block text-base ${HEADING}`}>Your certificate</span>
+                    <span className={`block truncate text-sm ${BODY}`}>
+                      Issued and ready to download.
+                    </span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(true)}
+                  className="shrink-0 cursor-pointer rounded-full bg-[#32C7FF] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                >
+                  Download
+                </button>
+              </div>
+
+              {/* Hover/tap-revealed details */}
+              <div
+                className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                  open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div className="mt-4 border-t border-[#E5EEF5] pt-4 dark:border-[#1F2429]">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+                      <div>
+                        <p className={`text-xs ${MUTED}`}>Certificate</p>
+                        <p className="mt-0.5 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">#{cert.number ?? '—'}</p>
+                      </div>
+                      <div>
+                        <p className={`text-xs ${MUTED}`}>Issued</p>
+                        <p className="mt-0.5 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
+                          {fmtCertDate(cert.issuedAt)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className={`text-xs ${MUTED}`}>Expires</p>
+                        <p className="mt-0.5 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
+                          {fmtCertDate(cert.expiresAt)}
+                        </p>
+                      </div>
+                    </div>
+                    <p className={`mt-4 text-xs leading-relaxed ${MUTED}`}>
+                      This certificate documents completion of training. It is not legal advice and
+                      does not constitute accreditation by the ABA or any state bar.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-            <a
-              href={certUrl ?? '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 cursor-pointer rounded-full bg-[#32C7FF] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
-            >
-              Download
-            </a>
           </div>
-        </div>
+
+          {modalOpen && (
+            <CertPreviewModal
+              certId={cert.id}
+              certNumber={cert.number}
+              employeeName={employeeName}
+              issuedAt={cert.issuedAt}
+              expiresAt={cert.expiresAt}
+              onClose={() => setModalOpen(false)}
+            />
+          )}
+        </>
       ) : (
         <div
           className={`${PILL} flex items-center justify-between gap-4 px-6 py-5 opacity-80 md:px-8 md:py-6`}

@@ -8,7 +8,6 @@ import { LESSONS } from '@/lib/training/lessons'
 import { QuizComponent, type QuizQuestion } from './quiz-component'
 import { ScormContent } from './scorm-content'
 import { KnowledgeCheckModal } from '@/app/dashboard/overview/_components/knowledge-check-modal'
-import { CertPreviewModal } from '@/app/dashboard/_components/cert-preview-modal'
 
 type TrainingPhase =
   | 'not_started'
@@ -38,12 +37,6 @@ interface Props {
    * design pass (intentionally not destructured below, so it isn't a dead binding).
    */
   totalTrainingSeconds?: number
-  certId?: string
-  certNumber?: string
-  issuedAt?: string
-  expiresAt?: string
-  certUrl?: string
-  employeeName?: string
 }
 
 /* ── Tokens ────────────────────────────────────────────────────────────────── */
@@ -65,16 +58,10 @@ export function TrainingClient({
   currentLessonNumber,
   initialLocation,
   initialSuspendData,
-  certId,
-  certNumber,
-  issuedAt,
-  expiresAt,
-  employeeName,
 }: Props) {
   const router = useRouter()
   const [phase, setPhase] = useState(initialPhase)
   const [attemptKey, setAttemptKey] = useState(0)
-  const [certModalOpen, setCertModalOpen] = useState(false)
   // Set only when the employee explicitly exits the assessment overlay. The gate
   // itself is never re-locked — this just lets them get back to the course content.
   const [quizDismissed, setQuizDismissed] = useState(false)
@@ -192,16 +179,6 @@ export function TrainingClient({
         />
       )}
 
-      {certModalOpen && certId && (
-        <CertPreviewModal
-          certId={certId}
-          certNumber={certNumber ?? null}
-          employeeName={employeeName ?? ''}
-          issuedAt={issuedAt ?? null}
-          expiresAt={expiresAt ?? null}
-          onClose={() => setCertModalOpen(false)}
-        />
-      )}
 
       {/* Soft-nag quiz — the exact same KnowledgeCheckModal used on Quizzes/Overview.
           Closing it (pass, fail, or backing out) dismisses the nag for good. */}
@@ -487,35 +464,19 @@ export function TrainingClient({
           </div>
         )}
 
+        {/* Cert details + download live on the Quizzes tab now — this is just
+            a pointer, matching Overview's minimal treatment. */}
         {!focus && phase === 'certified' && (
-          <div className={`${CARD} mt-6 p-6`}>
-            <div className="flex items-start gap-4">
-              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EAF8FF] dark:bg-[#0094FF]/15">
-                <CheckIcon />
-              </div>
-              <div className="flex-1">
-                <p className={`${HEADING} mb-1 text-sm`}>Certified</p>
-                <p className={`mb-3 text-xs ${MUTED}`}>
-                  Certificate #{certNumber} &nbsp;·&nbsp; Issued{' '}
-                  {issuedAt ? new Date(issuedAt).toLocaleDateString() : '—'} &nbsp;·&nbsp; Expires{' '}
-                  {expiresAt ? new Date(expiresAt).toLocaleDateString() : '—'}
-                </p>
-                {certId ? (
-                  <button
-                    onClick={() => setCertModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#0094FF] px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
-                  >
-                    Download Certificate (PDF)
-                  </button>
-                ) : (
-                  <p className={`text-xs ${MUTED}`}>Certificate PDF is being finalized.</p>
-                )}
-              </div>
-            </div>
-            <p className={`mt-5 border-t border-[#E5EEF5] pt-4 text-xs leading-relaxed ${MUTED} dark:border-[#1F2429]`}>
-              This certificate documents completion of training. It is not legal advice and does not
-              constitute accreditation by the ABA or any state bar.
+          <div className={`${CARD} mt-6 flex items-center justify-between gap-4 p-6`}>
+            <p className={`text-sm ${MUTED}`}>
+              Certified — your certificate is issued and ready to download.
             </p>
+            <Link
+              href="/dashboard/quizzes"
+              className="shrink-0 cursor-pointer rounded-full bg-[#32C7FF] px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+            >
+              Go
+            </Link>
           </div>
         )}
       </main>
@@ -571,10 +532,3 @@ function ClockIcon() {
   )
 }
 
-function CheckIcon() {
-  return (
-    <svg className="h-4 w-4 text-[#0094FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
-  )
-}

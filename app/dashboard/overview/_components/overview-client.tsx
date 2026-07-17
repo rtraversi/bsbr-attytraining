@@ -379,41 +379,33 @@ function timeAgo(iso: string): string {
   return `${years} year${years === 1 ? '' : 's'} ago`
 }
 
-/* ── Your certificate — bottom, quiet, no hover-expand ─────────────────────── */
+/* ── Your certificate — one quiet line; the full cert detail + download
+      experience lives on the Quizzes tab now ─────────────────────────────── */
 function CertificateCard({ certUrl }: { certUrl: string | null }) {
   const unlocked = certUrl !== null
 
+  if (!unlocked) {
+    return (
+      <section className={`${CARD} ${CARD_PAD} flex items-center gap-4 opacity-70`}>
+        <LockIcon className={`h-6 w-6 shrink-0 xl:h-7 xl:w-7 ${MUTED}`} />
+        <p className={`text-base italic xl:text-lg ${MUTED}`}>
+          Complete Lesson 5 and the Certificate Assessment to unlock…
+        </p>
+      </section>
+    )
+  }
+
   return (
-    <section>
-      <h2 className={SECTION_HEADING}>Your certificate</h2>
-      {unlocked ? (
-        <div className={`${CARD} ${CARD_PAD} flex items-center justify-between gap-4`}>
-          <div className="flex min-w-0 items-center gap-3 xl:gap-4">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#32C7FF]/15 xl:h-14 xl:w-14">
-              <CertIcon className="h-6 w-6 text-[#0094FF] xl:h-7 xl:w-7" />
-            </span>
-            <div className="min-w-0">
-              <p className={`text-lg xl:text-xl ${HEADING}`}>Your certificate</p>
-              <p className={`truncate text-base xl:text-lg ${MUTED}`}>Issued and ready to download.</p>
-            </div>
-          </div>
-          <a
-            href={certUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 cursor-pointer rounded-full bg-[#32C7FF] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 xl:px-7 xl:py-3 xl:text-base"
-          >
-            Download
-          </a>
-        </div>
-      ) : (
-        <div className={`${CARD} ${CARD_PAD} flex items-center gap-4 opacity-70`}>
-          <LockIcon className={`h-6 w-6 shrink-0 xl:h-7 xl:w-7 ${MUTED}`} />
-          <p className={`text-base italic xl:text-lg ${MUTED}`}>
-            Complete Lesson 5 and the Certificate Assessment to unlock…
-          </p>
-        </div>
-      )}
+    <section className="flex items-center justify-between gap-4 px-1">
+      <p className={`text-base xl:text-lg ${MUTED}`}>
+        Your certificate is issued and ready to download.
+      </p>
+      <Link
+        href="/dashboard/quizzes"
+        className="shrink-0 cursor-pointer rounded-full bg-[#32C7FF] px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+      >
+        Go
+      </Link>
     </section>
   )
 }
@@ -639,15 +631,6 @@ function LockIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
       />
-    </svg>
-  )
-}
-
-function CertIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <circle cx="12" cy="9" r="5" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 13.5L7 21l5-2.5L17 21l-1.5-7.5" />
     </svg>
   )
 }

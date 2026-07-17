@@ -73,9 +73,11 @@ export default async function QuizzesPage() {
   const progress = deriveProgress(events, contentViewed)
 
   // Real certificate state drives the Certificate block's locked/unlocked look.
-  // (The final assessment itself is a later stage; until it exists, an issued
-  //  certificate is the authoritative "passed" signal.)
-  let certUrl: string | null = null
+  // The Quizzes tab is now the one place cert details + the download modal
+  // live, so fetch the full cert row (no signed URL here — CertPreviewModal
+  // fetches one on demand via /api/certificates/[id]/url).
+  let cert: { id: string; number: string | null; issuedAt: string | null; expiresAt: string | null } | null =
+    null
   const { data: course } = await admin.from('courses').select('id').limit(1).maybeSingle()
   if (course) {
     const { data: enrollment } = await admin
@@ -88,29 +90,33 @@ export default async function QuizzesPage() {
       .maybeSingle()
 
     if (enrollment) {
-      const { data: cert } = await admin
+      const { data: certRow } = await admin
         .from('certificates')
-        .select('storage_path')
+        .select('id, certificate_number, issued_at, expires_at')
         .eq('enrollment_id', enrollment.id)
         .maybeSingle()
 
-      if (cert?.storage_path) {
-        const { data: signed } = await admin.storage
-          .from('certificates')
-          .createSignedUrl(cert.storage_path, 60 * 60 * 24 * 7)
-        certUrl = signed?.signedUrl ?? null
+      if (certRow) {
+        cert = {
+          id: certRow.id,
+          number: certRow.certificate_number,
+          issuedAt: certRow.issued_at,
+          expiresAt: certRow.expires_at,
+        }
       }
     }
   }
 
   const firstName =
     ((user.user_metadata?.full_name as string | undefined) ?? '').trim().split(' ')[0] || null
+  const employeeName = (user.user_metadata?.full_name as string | undefined) || user.email || ''
 
   return (
     <QuizzesClient
       progress={progress}
       questionsByLesson={clientQuestionsByLesson()}
-      certUrl={certUrl}
+      cert={cert}
+      employeeName={employeeName}
       firstName={firstName}
       contentViewed={contentViewed}
     />

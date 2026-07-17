@@ -194,20 +194,15 @@ export default async function TrainingPage() {
     )
   }
 
-  // Check for issued certificate
+  // Check for issued certificate. Only existence matters here — the cert
+  // details + download modal live on the Quizzes tab now.
   const { data: cert } = await admin
     .from('certificates')
-    .select('id, certificate_number, issued_at, expires_at, storage_path')
+    .select('id')
     .eq('enrollment_id', enrollment.id)
     .maybeSingle()
 
-  const employeeName = (user.user_metadata?.full_name as string | undefined) || user.email || ''
-
   if (cert) {
-    const { data: signedUrlData } = await admin.storage
-      .from('certificates')
-      .createSignedUrl(cert.storage_path, 60 * 60 * 24 * 7)
-
     return (
       <TrainingClient
         phase="certified"
@@ -221,12 +216,6 @@ export default async function TrainingPage() {
         initialLocation={initialLocation}
         initialSuspendData={initialSuspendData}
         totalTrainingSeconds={totalTrainingSeconds}
-        certId={cert.id}
-        certNumber={cert.certificate_number}
-        issuedAt={cert.issued_at}
-        expiresAt={cert.expires_at}
-        certUrl={signedUrlData?.signedUrl ?? ''}
-        employeeName={employeeName}
       />
     )
   }
