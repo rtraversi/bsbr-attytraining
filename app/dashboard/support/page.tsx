@@ -1,17 +1,18 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { SupportClient } from './_components/support-client'
+
 export const metadata = {
   title: 'Support — AI Staff Compliance Training',
 }
 
-export default function SupportPage() {
-  return (
-    <main className="mx-auto w-full max-w-3xl px-6 py-8 md:px-0">
-      <h1 className="font-headline mb-6 text-2xl font-bold tracking-tight text-[#0A0A0A] md:text-3xl xl:text-[2.5rem] dark:text-[#F5F7FA]">
-        Support
-      </h1>
+export default async function SupportPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-      <section className="rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]">
-        <p className="text-sm text-[#8A8A8A] dark:text-[#7A8189]">Support — coming soon.</p>
-      </section>
-    </main>
-  )
+  if (!user) redirect('/login')
+
+  // The contact form's confirmation shows where the reply will go — the real
+  // signed-in email, fetched server-side (never client-supplied).
+  return <SupportClient userEmail={user.email ?? ''} />
 }
