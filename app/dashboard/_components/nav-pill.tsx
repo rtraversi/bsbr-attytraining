@@ -108,10 +108,10 @@ function ThemeToggle() {
       aria-checked={isDark}
       aria-label="Toggle dark mode"
       onClick={handleClick}
-      className={`relative h-10 w-[88px] shrink-0 rounded-full bg-[#0A0A0A] dark:bg-[#131A20] ${clicking ? 'nav-switch-clicking' : ''}`}
+      className={`relative h-10 w-[88px] shrink-0 rounded-full bg-[#0A0A0A] dark:bg-[#F5F7FA] ${clicking ? 'nav-switch-clicking' : ''}`}
     >
       <span
-        className={`absolute top-1 h-8 w-10 rounded-full bg-white transition-[left] duration-[380ms] ease-[cubic-bezier(.34,1.56,.64,1)] ${
+        className={`absolute top-1 h-8 w-10 rounded-full bg-white transition-[left] duration-[380ms] ease-[cubic-bezier(.34,1.56,.64,1)] dark:bg-[#0A0A0A] ${
           isDark ? 'left-11' : 'left-1'
         }`}
       />
@@ -175,7 +175,7 @@ export function NavPill({ firmName, role }: NavPillProps) {
 
   return (
     <nav className="flex max-w-full">
-      <div className="relative inline-flex max-w-full items-center gap-2 rounded-full bg-white p-1.5 shadow-[0_1px_2px_rgba(10,10,10,0.04)] transition-shadow hover:shadow-[0_6px_20px_rgba(10,10,10,0.10)] dark:bg-[#0D0F12] dark:shadow-none dark:hover:shadow-[0_6px_20px_rgba(0,0,0,0.5)]">
+      <div className="relative flex w-full items-center justify-between gap-2 rounded-full bg-white p-1.5 shadow-[0_1px_2px_rgba(10,10,10,0.04)] transition-shadow hover:shadow-[0_6px_20px_rgba(10,10,10,0.10)] dark:bg-[#0D0F12] dark:shadow-none dark:hover:shadow-[0_6px_20px_rgba(0,0,0,0.5)]">
         {isAdmin ? (
           <Link
             href="/dashboard"
@@ -196,21 +196,25 @@ export function NavPill({ firmName, role }: NavPillProps) {
           </span>
         )}
 
-        {/* Always visible. min-w-0 + overflow-x-auto lets the row shrink and
-            scroll within the pill on a narrow screen instead of pushing the
-            whole page sideways. */}
-        <div className="flex min-w-0 items-center gap-2 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {links.map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              aria-current={link.active ? 'page' : undefined}
-              className={`${pillBase} shrink-0 ${link.active ? pillActive : pillIdle}`}
-            >
-              {link.icon}
-              {link.label}
-            </Link>
-          ))}
+        <div className="flex min-w-0 items-center gap-2">
+          {/* Always visible. min-w-0 + overflow-x-auto lets the row shrink and
+              scroll within the pill on a narrow screen instead of pushing the
+              whole page sideways. ThemeToggle lives outside this scroller —
+              its click-animation overshoot would otherwise get clipped by
+              overflow-x-auto. */}
+          <div className="flex min-w-0 items-center gap-2 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {links.map(link => (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={link.active ? 'page' : undefined}
+                className={`${pillBase} shrink-0 ${link.active ? pillActive : pillIdle}`}
+              >
+                {link.icon}
+                {link.label}
+              </Link>
+            ))}
+          </div>
 
           <ThemeToggle />
         </div>
