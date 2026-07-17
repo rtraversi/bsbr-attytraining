@@ -157,7 +157,7 @@ export function OverviewClient({
 
         {/* ── Right: real course-content outline, quiz progress demoted below. */}
         <aside className="lg:col-span-5">
-          <CourseOutlineCard currentLessonNumber={currentLessonNumber} contentViewed={contentViewed} />
+          <CourseOutlineCard currentLessonNumber={currentLessonNumber} progress={progress} />
           <QuizProgressCard progress={progress} focus={focus} tryOpen={tryOpen} />
         </aside>
       </div>
@@ -426,15 +426,26 @@ function CertificateCard({ certUrl }: { certUrl: string | null }) {
    ═══════════════════════════════════════════════════════════════════════════ */
 function CourseOutlineCard({
   currentLessonNumber,
-  contentViewed,
+  progress,
 }: {
   currentLessonNumber: number | null
-  contentViewed: boolean
+  progress: Progress
 }) {
   const current = currentLessonNumber ?? 1
 
+  // The final lesson's done-ness comes from the quiz system's real cleared
+  // state (deriveProgress), NOT the SCORM video_completed signal — that flag
+  // structurally never fires for this course (ungraded knowledge checks +
+  // "passed-incomplete" reporting), so gating on it meant lesson 5 could
+  // never show as done. Lessons 1–4 stay purely positional: Rise blocks
+  // skipping ahead, so any lesson below the highest boundary reached is done.
+  const finalCleared = progress.lessons.find(l => l.isReadiness)?.status === 'cleared'
+
   function statusOf(n: number): 'done' | 'current' | 'locked' {
-    if (contentViewed) return 'done'
+    if (n === LESSONS.length) {
+      if (finalCleared) return 'done'
+      return n === current ? 'current' : 'locked'
+    }
     if (n < current) return 'done'
     if (n === current) return 'current'
     return 'locked'

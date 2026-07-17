@@ -39,18 +39,16 @@ export default async function SettingsPage() {
   let orgName = ''
   let reminderDays = 7
   let notifyCertEarned = true
-  let notifyWeeklySummary = false
   if (isAdmin) {
     const admin = createAdminClient()
     const { data: firm } = await admin
       .from('firms')
-      .select('name, reminder_days, notify_cert_earned, notify_weekly_summary')
+      .select('name, reminder_days, notify_cert_earned')
       .eq('id', firmId)
       .maybeSingle()
     orgName = firm?.name ?? ''
     reminderDays = firm?.reminder_days ?? 7
     notifyCertEarned = firm?.notify_cert_earned ?? true
-    notifyWeeklySummary = firm?.notify_weekly_summary ?? false
   }
 
   return (
@@ -128,7 +126,6 @@ export default async function SettingsPage() {
                 <NotificationSettings
                   reminderDays={reminderDays}
                   notifyCertEarned={notifyCertEarned}
-                  notifyWeeklySummary={notifyWeeklySummary}
                 />
               </section>
             </div>

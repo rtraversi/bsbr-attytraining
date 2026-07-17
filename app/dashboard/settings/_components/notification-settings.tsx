@@ -9,7 +9,7 @@ function NotificationToggle({
   initialChecked,
   label,
 }: {
-  field: 'notifyCertEarned' | 'notifyWeeklySummary'
+  field: 'notifyCertEarned'
   initialChecked: boolean
   label: string
 }) {
@@ -58,11 +58,9 @@ function NotificationToggle({
 export function NotificationSettings({
   reminderDays,
   notifyCertEarned,
-  notifyWeeklySummary,
 }: {
   reminderDays: number
   notifyCertEarned: boolean
-  notifyWeeklySummary: boolean
 }) {
   return (
     <>
@@ -78,7 +76,10 @@ export function NotificationSettings({
         <ReminderSettings initialDays={reminderDays} />
       </Row>
 
-      <Row>
+      {/* No Weekly summary toggle: the notify_weekly_summary column exists but
+          nothing reads it yet (no digest cron/email) — don't show a setting
+          that does nothing. Re-add the row when the digest gets built. */}
+      <Row last>
         <div>
           <span className="block text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">
             Team member certified
@@ -91,22 +92,6 @@ export function NotificationSettings({
           field="notifyCertEarned"
           initialChecked={notifyCertEarned}
           label="Team member certified notifications"
-        />
-      </Row>
-
-      <Row last>
-        <div className="flex items-center gap-2">
-          <span className="block text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">
-            Weekly summary
-          </span>
-          <span className="rounded-md bg-[#EAF8FF] px-1.5 py-0.5 text-[10px] font-bold text-[#0094FF] dark:bg-[#0094FF]/15 dark:text-[#32C7FF]">
-            New
-          </span>
-        </div>
-        <NotificationToggle
-          field="notifyWeeklySummary"
-          initialChecked={notifyWeeklySummary}
-          label="Weekly summary notifications"
         />
       </Row>
     </>
