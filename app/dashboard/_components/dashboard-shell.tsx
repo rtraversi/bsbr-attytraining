@@ -26,12 +26,16 @@ export function DashboardShell({
   const showTrainingShell = !isAdminHome
 
   // Standard shell — light-by-default themed experience with the bottom tab bar.
+  // Background pattern: one full-bleed graphic, colored with the ADMIN shell's
+  // bg (#CFDCE8) — the two shells' pattern colors are deliberately cross-swapped
+  // from their own background. Light mode only; dark mode is untouched.
   if (showTrainingShell) {
     return (
-      <div className="font-headline flex min-h-screen flex-col bg-[#F5F7FA] pb-16 text-[#0A0A0A] transition-colors dark:bg-[#050607] dark:text-[#F5F7FA]">
-        <div className="px-4 py-3 md:px-6">{pill}</div>
+      <div className="font-headline relative flex min-h-screen flex-col bg-[#F5F7FA] pb-16 text-[#0A0A0A] transition-colors dark:bg-[#050607] dark:text-[#F5F7FA]">
+        <div aria-hidden className="shell-pattern pointer-events-none absolute inset-0 bg-[#CFDCE8] dark:hidden" />
+        <div className="relative z-10 px-4 py-3 md:px-6">{pill}</div>
         <ToastProvider>
-          <div className="flex-1">{children}</div>
+          <div className="relative z-10 flex-1">{children}</div>
         </ToastProvider>
         <EmployeeTabBar />
       </div>
@@ -62,11 +66,15 @@ export function DashboardShell({
   // the shell itself scroll once it's pinned at the floor, rather than
   // clipping/hiding the overflow the way lg:overflow-hidden did. Below lg it
   // stays a normal min-h-screen scrolling page, unaffected by any of this.
+  // Background pattern: one full-bleed graphic, colored with the STANDARD
+  // shell's bg (#F5F7FA) — cross-swapped from this shell's own #CFDCE8, same
+  // as above. Light mode only; dark mode is untouched.
   return (
-    <div className="font-headline flex min-h-screen flex-col bg-[#CFDCE8] text-[#0A0A0A] transition-colors lg:h-[max(100vh,880px)] lg:overflow-y-auto dark:bg-[#050607] dark:text-[#F5F7FA]">
-      <div className="px-4 py-3 md:px-6">{pill}</div>
+    <div className="font-headline relative flex min-h-screen flex-col bg-[#CFDCE8] text-[#0A0A0A] transition-colors lg:h-[max(100vh,880px)] lg:overflow-y-auto dark:bg-[#050607] dark:text-[#F5F7FA]">
+      <div aria-hidden className="shell-pattern pointer-events-none absolute inset-0 bg-[#F5F7FA] dark:hidden" />
+      <div className="relative z-10 px-4 py-3 md:px-6">{pill}</div>
       <ToastProvider>
-        <div className="w-full px-4 pb-4 pt-1 md:px-6 lg:min-h-0 lg:flex-1">
+        <div className="relative z-10 w-full px-4 pb-4 pt-1 md:px-6 lg:min-h-0 lg:flex-1">
           {children}
         </div>
       </ToastProvider>

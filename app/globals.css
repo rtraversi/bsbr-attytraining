@@ -264,6 +264,20 @@
   animation: nav-switch-squish 380ms cubic-bezier(.36,.07,.19,.97);
 }
 
+/* Dashboard shell background pattern — one full-bleed graphic (never tiled),
+   scaled uniformly via mask-size: contain. mask-image (not background-image)
+   so the shell's own background-color shows through the SVG shape — color is
+   set entirely in CSS via each usage's bg-[color] (see dashboard-shell.tsx),
+   never in the SVG file itself. */
+.shell-pattern {
+  mask-image: url('/nav-shell-pattern.svg');
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-image: url('/nav-shell-pattern.svg');
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
+
 /* ─── Stitch design system ───────────────────────────────────────── */
 
 /* Scrabble tile shadow — tactile depth */
