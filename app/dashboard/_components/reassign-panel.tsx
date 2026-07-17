@@ -73,39 +73,49 @@ export function ReassignPanel({ member, onClose, onSuccess }: ReassignPanelProps
 
   if (phase === 'success') {
     return (
-      <div className="flex w-full max-w-2xl flex-col gap-6">
-        <div className="flex items-start gap-4 rounded-2xl bg-[#F5F7FA] p-5 dark:bg-[#131A20]">
-          <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#32C7FF]/15">
-            <svg
-              className="h-5 w-5 text-[#0094FF] dark:text-[#32C7FF]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
+      // Same two-column width as the form below — no max-w cap here either, so
+      // the panel doesn't shrink back down once it succeeds. Column 2 reuses
+      // the real preserved-record summary (still true/relevant post-reassign)
+      // instead of leaving that half empty.
+      <div className="w-full">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="flex flex-col justify-between gap-6">
+            <div className="flex items-start gap-4 rounded-2xl bg-[#F5F7FA] p-5 dark:bg-[#131A20]">
+              <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#32C7FF]/15">
+                <svg
+                  className="h-5 w-5 text-[#0094FF] dark:text-[#32C7FF]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-base font-semibold text-[#0094FF] dark:text-[#32C7FF]">Invite sent</p>
+                <p className="mt-1 text-base text-[#3D3D3D] dark:text-[#C4C9CE]">
+                  {confirmedName && <span className="font-semibold">{confirmedName}</span>}
+                  {confirmedName && confirmedEmail && ' '}
+                  {confirmedEmail && (
+                    <span className="text-[#8A8A8A] dark:text-[#7A8189]">({confirmedEmail})</span>
+                  )}
+                </p>
+                <p className="mt-1 text-sm text-[#8A8A8A] dark:text-[#7A8189]">
+                  They&apos;ll receive an email to set their password and start training.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => onSuccess(member.id)}
+              className="self-end rounded-xl bg-black px-7 py-3 text-base font-bold text-white transition-colors hover:bg-gray-800 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+              Done
+            </button>
           </div>
-          <div>
-            <p className="text-base font-semibold text-[#0094FF] dark:text-[#32C7FF]">Invite sent</p>
-            <p className="mt-1 text-base text-[#3D3D3D] dark:text-[#C4C9CE]">
-              {confirmedName && <span className="font-semibold">{confirmedName}</span>}
-              {confirmedName && confirmedEmail && ' '}
-              {confirmedEmail && (
-                <span className="text-[#8A8A8A] dark:text-[#7A8189]">({confirmedEmail})</span>
-              )}
-            </p>
-            <p className="mt-1 text-sm text-[#8A8A8A] dark:text-[#7A8189]">
-              They&apos;ll receive an email to set their password and start training.
-            </p>
-          </div>
+
+          <ReplacementSummary member={member} />
         </div>
-        <button
-          onClick={() => onSuccess(member.id)}
-          className="self-end rounded-xl bg-black px-7 py-3 text-base font-bold text-white transition-colors hover:bg-gray-800 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
-        >
-          Done
-        </button>
       </div>
     )
   }

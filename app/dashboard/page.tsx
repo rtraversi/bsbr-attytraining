@@ -100,6 +100,7 @@ export default async function DashboardPage() {
     const authUser = authUsers[i].data?.user
     const email = authUser?.email ?? '(unknown)'
     const name = (authUser?.user_metadata?.full_name as string | undefined) || email
+    const avatarUrl = (authUser?.user_metadata?.avatar_url as string | undefined) ?? null
 
     const enrollment = enrollmentByUser[m.user_id]
     const attempt = attemptByUser[m.user_id]
@@ -118,6 +119,7 @@ export default async function DashboardPage() {
       ...m,
       email,
       name,
+      avatarUrl,
       trainingStatus,
       score: attempt?.score ?? null,
       completedAt: enrollment?.completed_at ?? null,

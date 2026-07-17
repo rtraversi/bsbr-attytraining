@@ -100,6 +100,12 @@ export function TrainingClient({
     }
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    // The bottom tab bar (EmployeeTabBar) is rendered by DashboardShell, outside
+    // this component's tree, and sits in a higher stacking layer than the focus
+    // player can reach (the player is z-50 but trapped inside the shell's z-10
+    // content wrapper, so it can't paint over the z-40 tab bar). Rather than lift
+    // focus state up to the shell, flag it on <html> and let CSS hide the bar.
+    document.documentElement.classList.add('training-focus')
 
     let idleTimer: ReturnType<typeof setTimeout>
     const arm = () => {
@@ -115,6 +121,7 @@ export function TrainingClient({
     window.addEventListener('keydown', onKey)
     return () => {
       document.body.style.overflow = prevOverflow
+      document.documentElement.classList.remove('training-focus')
       clearTimeout(idleTimer)
       window.removeEventListener('mousemove', arm)
       window.removeEventListener('keydown', onKey)
@@ -213,17 +220,31 @@ export function TrainingClient({
           onMouseEnter={() => setChromeIdle(false)}
           className={
             focus
-              ? // Rise's own content is light, so white chrome would vanish against it —
-                // the scrim keeps the bar legible over whatever slide is on screen.
-                'fixed inset-x-0 top-0 z-[60] flex items-center justify-between bg-gradient-to-b from-black/60 via-black/25 to-transparent px-6 pb-12 pt-5 md:px-10'
+              ? 'fixed inset-x-0 top-0 z-[60] flex items-center justify-between px-6 pb-12 pt-5 md:px-10'
               : 'mb-6 flex items-center justify-between gap-4'
           }
         >
-          <div className="flex items-center gap-3">
+          {/* Focus scrim — Rise's own content is light, so white chrome would
+              vanish against it. It's its OWN layer (not the bar's background) so
+              it can fade out alongside the title + progress on idle, leaving only
+              the self-legible exit button behind. Sits behind the bar's content
+              (both groups are `relative`, so they paint above this absolute one). */}
+          {focus && (
+            <div
+              aria-hidden
+              className={`pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-black/25 to-transparent transition-opacity duration-500 ${
+                chromeIdle ? 'opacity-0' : 'opacity-100'
+              }`}
+            />
+          )}
+
+          <div className="relative flex items-center">
+            {/* Collapse width (not just opacity) on idle so the exit button slides
+                to the left edge instead of holding the title's old position. */}
             <h1
-              className={`${HEADING} text-2xl transition-opacity duration-500 md:text-3xl xl:text-[2.5rem] ${
+              className={`${HEADING} overflow-hidden whitespace-nowrap text-2xl transition-all duration-500 md:text-3xl xl:text-[2.5rem] ${
                 focus ? 'text-white dark:text-white' : ''
-              } ${focus && chromeIdle ? 'opacity-0' : 'opacity-100'}`}
+              } ${focus && chromeIdle ? 'mr-0 max-w-0 opacity-0' : 'mr-3 max-w-[70vw] opacity-100'}`}
             >
               Your Training
             </h1>
@@ -244,7 +265,7 @@ export function TrainingClient({
           </div>
 
           <div
-            className={`flex shrink-0 items-center gap-3 rounded-full px-4 py-2 transition-opacity duration-500 ${
+            className={`relative flex shrink-0 items-center gap-3 rounded-full px-4 py-2 transition-opacity duration-500 ${
               focus ? 'bg-black/50 backdrop-blur-sm' : CARD
             } ${focus && chromeIdle ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
           >

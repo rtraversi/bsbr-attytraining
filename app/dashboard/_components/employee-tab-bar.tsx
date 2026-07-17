@@ -16,7 +16,10 @@ export function EmployeeTabBar() {
   const pathname = usePathname()
 
   return (
-    <nav className="font-headline fixed inset-x-0 bottom-0 z-40 border-t border-[#E5EEF5] bg-white/95 backdrop-blur dark:border-[#1F2429] dark:bg-[#0D0F12]/95">
+    <nav
+      data-employee-tab-bar
+      className="font-headline fixed inset-x-0 bottom-0 z-40 border-t border-[#E5EEF5] bg-white/95 backdrop-blur dark:border-[#1F2429] dark:bg-[#0D0F12]/95"
+    >
       <div className="mx-auto flex max-w-2xl">
         {TABS.map(tab => {
           const active =

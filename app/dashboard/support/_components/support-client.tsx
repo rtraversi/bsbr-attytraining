@@ -17,22 +17,18 @@ const guides = [
   {
     title: 'Getting started',
     description: 'Invite your staff and launch their first training.',
-    icon: SparkleIcon,
   },
   {
     title: 'Manage your team',
     description: 'Invite staff, reassign seats, and track completion.',
-    icon: UsersIcon,
   },
   {
     title: 'Reminders',
     description: 'Automate follow-ups for staff who haven’t finished.',
-    icon: BellIcon,
   },
   {
     title: 'Certificates & records',
     description: 'Download certificates and compliance records.',
-    icon: BadgeIcon,
   },
 ]
 
@@ -141,7 +137,6 @@ export function SupportClient({ userEmail }: Props) {
     <main className="mx-auto w-full max-w-[1600px] px-6 py-10 md:px-10 xl:px-14 xl:py-14">
       {/* ── Header — left-aligned, no status chrome ─────────────────────────── */}
       <section className="border-b border-[#E5EEF5] pb-10 dark:border-[#1F2429]">
-        <p className={`mb-3 text-sm font-semibold ${ACCENT}`}>Support center</p>
         <h1 className={`${HEADING} text-4xl md:text-5xl`}>What can we help you solve?</h1>
         <p className={`mt-4 max-w-xl text-base ${MUTED}`}>
           Find a quick answer, browse the guides, or send our team a message.
@@ -199,24 +194,19 @@ export function SupportClient({ userEmail }: Props) {
                 )}
               </div>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {filteredGuides.map(({ title, description, icon: Icon }) => (
+                {filteredGuides.map(({ title, description }) => (
                   <a
                     key={title}
                     href="#questions"
                     className={`${CARD} group flex min-h-40 flex-col justify-between border border-transparent transition-colors hover:border-[#32C7FF]/60`}
                   >
                     <div className="flex items-start justify-between gap-4">
-                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#EAF8FF] text-[#0094FF] dark:bg-[#0094FF]/15 dark:text-[#32C7FF]">
-                        <Icon className="h-5 w-5" />
-                      </span>
+                      <h3 className={`${HEADING} text-lg xl:text-xl`}>{title}</h3>
                       <ArrowRightIcon
-                        className={`h-4 w-4 ${MUTED} transition-transform group-hover:translate-x-1 motion-reduce:transition-none`}
+                        className={`mt-1.5 h-4 w-4 shrink-0 ${MUTED} transition-transform group-hover:translate-x-1 motion-reduce:transition-none`}
                       />
                     </div>
-                    <div className="mt-6">
-                      <h3 className={`${HEADING} text-base`}>{title}</h3>
-                      <p className={`mt-1 text-sm leading-relaxed ${MUTED}`}>{description}</p>
-                    </div>
+                    <p className={`mt-6 text-base leading-relaxed ${MUTED}`}>{description}</p>
                   </a>
                 ))}
               </div>
@@ -231,8 +221,7 @@ export function SupportClient({ userEmail }: Props) {
             >
               <div className="grid gap-8 md:grid-cols-[0.7fr_1.3fr] md:gap-12">
                 <div>
-                  <p className={`text-sm font-medium ${ACCENT}`}>Quick answers</p>
-                  <h2 id="questions-heading" className={`${HEADING} mt-2 text-2xl md:text-3xl`}>
+                  <h2 id="questions-heading" className={`${HEADING} text-2xl md:text-3xl`}>
                     Common questions
                   </h2>
                   <p className={`mt-4 text-sm leading-relaxed ${MUTED}`}>
@@ -267,11 +256,10 @@ export function SupportClient({ userEmail }: Props) {
         aria-labelledby="contact-heading"
       >
         <div className={CARD}>
-          <MailIcon className={`h-6 w-6 ${ACCENT}`} />
-          <h2 id="contact-heading" className={`${HEADING} mt-6 text-xl`}>
+          <h2 id="contact-heading" className={`${HEADING} text-2xl`}>
             Still need a hand?
           </h2>
-          <p className={`mt-2 max-w-sm text-sm leading-relaxed ${MUTED}`}>
+          <p className={`mt-3 max-w-md text-base leading-relaxed ${MUTED}`}>
             Tell us what you&apos;re trying to do. Include the details and we&apos;ll get you to the
             right person.
           </p>
@@ -283,14 +271,13 @@ export function SupportClient({ userEmail }: Props) {
           </button>
         </div>
         <div className={CARD}>
-          <ShieldCheckIcon className={`h-6 w-6 ${ACCENT}`} />
-          <h2 className={`${HEADING} mt-6 text-xl`}>Report a technical issue</h2>
-          <p className={`mt-2 max-w-sm text-sm leading-relaxed ${MUTED}`}>
+          <h2 className={`${HEADING} text-2xl`}>Report a technical issue</h2>
+          <p className={`mt-3 max-w-md text-base leading-relaxed ${MUTED}`}>
             Something broken or behaving unexpectedly? Send a report with the steps that led to it.
           </p>
           <button
             onClick={() => openContact('Technical issue')}
-            className={`mt-6 inline-flex cursor-pointer items-center gap-2 text-sm font-bold ${ACCENT} hover:underline`}
+            className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#32C7FF] px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
           >
             File an issue <ArrowRightIcon className="h-4 w-4" />
           </button>
@@ -473,15 +460,6 @@ function CheckIcon({ className }: { className?: string }) {
   )
 }
 
-function MailIcon({ className }: { className?: string }) {
-  return (
-    <svg {...iconProps(className)}>
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-      <path d="M3 7l9 6 9-6" />
-    </svg>
-  )
-}
-
 function XIcon({ className }: { className?: string }) {
   return (
     <svg {...iconProps(className)}>
@@ -498,15 +476,6 @@ function SendIcon({ className }: { className?: string }) {
   )
 }
 
-function ShieldCheckIcon({ className }: { className?: string }) {
-  return (
-    <svg {...iconProps(className)}>
-      <path d="M12 3l8 3v5c0 4.9-3.4 8.5-8 10-4.6-1.5-8-5.1-8-10V6l8-3z" />
-      <path d="M9 12l2 2 4-4" />
-    </svg>
-  )
-}
-
 function HelpCircleIcon({ className }: { className?: string }) {
   return (
     <svg {...iconProps(className)}>
@@ -517,38 +486,3 @@ function HelpCircleIcon({ className }: { className?: string }) {
   )
 }
 
-function SparkleIcon({ className }: { className?: string }) {
-  return (
-    <svg {...iconProps(className)} strokeWidth={1.8}>
-      <path d="M12 3l2.1 6.9L21 12l-6.9 2.1L12 21l-2.1-6.9L3 12l6.9-2.1L12 3z" />
-    </svg>
-  )
-}
-
-function UsersIcon({ className }: { className?: string }) {
-  return (
-    <svg {...iconProps(className)} strokeWidth={1.8}>
-      <circle cx="9" cy="7" r="4" />
-      <path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2" />
-      <path d="M16 3.13a4 4 0 010 7.75" />
-      <path d="M21 21v-2a4 4 0 00-3-3.87" />
-    </svg>
-  )
-}
-
-function BellIcon({ className }: { className?: string }) {
-  return (
-    <svg {...iconProps(className)} strokeWidth={1.8}>
-      <path d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-    </svg>
-  )
-}
-
-function BadgeIcon({ className }: { className?: string }) {
-  return (
-    <svg {...iconProps(className)} strokeWidth={1.8}>
-      <circle cx="12" cy="8" r="5" />
-      <path d="M8.2 12l-1.2 9 5-3 5 3-1.2-9" />
-    </svg>
-  )
-}

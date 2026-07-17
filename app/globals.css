@@ -252,6 +252,14 @@
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* Training focus mode hides the bottom tab bar. The focus player is z-50 but
+   lives inside the shell's z-10 content wrapper, so it can't paint over the
+   z-40 tab bar (a sibling of that wrapper). training-client.tsx flags <html>
+   while focus is active; hiding the bar outright sidesteps the stacking trap. */
+html.training-focus [data-employee-tab-bar] {
+  display: none;
+}
+
 /* Nav-pill theme-toggle — click-triggered squish/overshoot */
 @keyframes nav-switch-squish {
   0%   { transform: scaleX(1); }

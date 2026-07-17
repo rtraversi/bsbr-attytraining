@@ -11,6 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   } = await supabase.auth.getUser()
 
   const role = (user?.app_metadata?.role as string | undefined) ?? null
+  const avatarUrl = (user?.user_metadata?.avatar_url as string | undefined) ?? null
 
   // Firm name for the nav pill (same firm_id source as app/dashboard/training/page.tsx).
   const firmId = user?.app_metadata?.firm_id as string | undefined
@@ -21,7 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     firmName = firm?.name ?? null
   }
 
-  const pill = <NavPill firmName={firmName} role={role} />
+  const pill = <NavPill firmName={firmName} role={role} avatarUrl={avatarUrl} />
 
   // Shell choice is route-based (see DashboardShell): the training routes always
   // get the training shell + bottom tab bar regardless of role, so an admin can

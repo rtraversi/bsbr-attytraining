@@ -143,7 +143,7 @@ export function AdminDashboard({
               {/* Plan subtext reveals beside the heading on hover, not below it. */}
               <div className="group flex min-w-0 items-baseline gap-2.5">
                 <h2 className={`${HEADING} whitespace-nowrap`}>Billing and seats</h2>
-                <p className={`truncate text-xs opacity-0 transition-opacity group-hover:opacity-100 ${MUTED}`}>
+                <p className="truncate text-xl font-semibold text-[#0094FF] opacity-0 transition-opacity group-hover:opacity-100 dark:text-[#32C7FF]">
                   {planName} Plan &middot; Annual billing
                 </p>
               </div>
