@@ -1,0 +1,1 @@
+window.globalLoadJsAsset('story_content/6ZhZXp1uoE5_captions.js', {"captions":[{"langCode":"es-419","data":"WEBVTT%0D%0A%0D%0ANOTE%0D%0AKind%3A%20captions%0D%0ASource%3A%20Articulate%20Closed%20Captions%20Editor%0D%0ASource%20Version%3A%203.120.37241.0%0D%0A%0D%0A00%3A00%3A00.385%20--%3E%2000%3A00%3A03.390%0D%0AHey%2C%20Carlos%21%20Do%20you%20have%20a%20moment%3F%0D%0A%0D%0A"}]})

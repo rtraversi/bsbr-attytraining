@@ -21,8 +21,14 @@ const LAUNCH_URL = '/training-content/scorm-v1/scormdriver/indexAPI.html'
  * driver finds no API and reports "LMS not found".
  *
  * Completion signal: the package's __DRIVER_CONFIG__ declares
- * `"reporting":"passed-incomplete"`, so on completion it sets
- * `cmi.core.lesson_status` to **"passed"**, not "completed". We accept either.
+ * `"reporting":"completed-incomplete"` with `"completionPercentage":90`, so the
+ * course sets `cmi.core.lesson_status` to **"completed"** once 90% of the content
+ * has been viewed — no graded interaction required. (The prior export used
+ * `"passed-incomplete"`, which only ever set "passed" via an internal graded
+ * quiz; since this course's knowledge checks are ungraded, that signal could
+ * never fire — the re-export to completed-incomplete is what fixes it.) We still
+ * accept either status in COMPLETE_STATUSES so a future revert can't silently
+ * break completion.
  *
  * scorm-again defaults `autocommit:false` and `lmsCommitUrl:false`, so it makes
  * no network calls of its own — every request to our API is made explicitly here.
