@@ -1,0 +1,14 @@
+# Cloudflare Workers static-assets headers.
+#
+# Cloudflare serves static assets with `Cache-Control: public, max-age=0,
+# must-revalidate` by default, which forces the browser to revalidate every
+# asset (a 304 network round-trip) on every navigation — even the content-hashed
+# files under _next/static that can never change without their filename changing.
+# That default was adding ~2.8s per navigation (9 fonts / 749kB revalidating each
+# time). Overriding it for _next/static/* only — those are the immutable,
+# content-addressed build outputs (JS, CSS, next/font woff2/ttf under media/) —
+# is safe: a real change produces a new filename, so a year-long immutable cache
+# can never serve stale content. Deliberately NOT applied to other public assets
+# (images, the pattern SVG) since those keep stable names across edits.
+/_next/static/*
+  Cache-Control: public,max-age=31536000,immutable
