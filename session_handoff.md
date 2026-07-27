@@ -30,9 +30,23 @@ Netlify site = single page, six sections, no internal routes: hero "Your staff i
 Layers 1 + 2 (the Athena→Iurix string sweep, 16 files; Built-Smart-by-Rob removal, 9 files) are
 also unblocked and can land alongside this. Leave domain strings alone until the zone is live.
 
-**Still blocked on Rob:** logo artwork; whether the course keeps the name "AI Staff Compliance
-Training"; new contact email + phone (Netlify publishes `info@aistaffcompliance.com` /
-`+1 919-609-2808`).
+### Two more decisions landed 2026-07-27 (later in the same session)
+
+- ✅ **"AI Staff Compliance Training" is retired — use "Iurix Accreditation" everywhere.** Rob chose
+  the single-brand story over keeping the descriptive course name. This is a **wider sweep than
+  Layers 1 + 2** (22 files: cert PDF, all five email templates, legal pages, dashboard, training)
+  and includes two things a string sweep will miss: the DB `courses.title` row and the **Stripe
+  product name** (shows on invoices and receipts).
+- ⚠️ **Logo delivered but not production-final.** Staged at **`public/brand/`** — read
+  `public/brand/README.md` before wiring anything. Short version: the two files Rob designated are
+  *different artwork* (certified vs no-certified), so there's **no transparent version of the
+  designated primary**; the only transparent file is a 525×475 remove.bg free preview; and all
+  three high-res files have the marble background **baked in** (`A=255` at every edge pixel).
+  Still needed: full-res transparent cutout, a simplified small-size variant (the mark is
+  unreadable at nav ~32px and favicon sizes), and an "Iurix Accreditation" wordmark lockup.
+
+**Still blocked on Rob:** the logo gaps above; new contact email + phone (Netlify publishes
+`info@aistaffcompliance.com` / `+1 919-609-2808`).
 
 ## 🔵 Cloudflare audit (via MCP)
 

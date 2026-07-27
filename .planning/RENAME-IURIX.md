@@ -30,9 +30,12 @@ only the head-office address → Stripe Tax activation → state registration / 
 
 1. ~~The actual domain name.~~ ✅ **RESOLVED 2026-07-27: `iurixaccreditation.com`.** Rob is
    setting the zone up on Cloudflare. Layer 4 is unblocked once the zone is live.
-2. **Logo assets.** The current mark is an "atc" monogram + "athena." wordmark. Three files need
-   new artwork (see Layer 5). Max cannot generate these.
-3. **Decision on Layer 3** — does the course keep the name "AI Staff Compliance Training"?
+2. **Logo assets** — ⚠️ **partially delivered 2026-07-27.** Mark staged at `public/brand/`, but not
+   production-final: still needs a full-res transparent cutout of the *designated* artwork, a
+   simplified small-size variant, and a wordmark lockup. See `public/brand/README.md` and Layer 5.
+3. ~~Decision on Layer 3~~ ✅ **RESOLVED 2026-07-27: replace "AI Staff Compliance Training" with
+   "Iurix Accreditation" everywhere**, including the DB `courses.title` row and the Stripe product
+   name.
 4. **New contact details** — the Netlify site publishes `info@aistaffcompliance.com` and
    `+1 919-609-2808`. Confirm the Iurix replacements before the port (Layer 8).
 
@@ -89,16 +92,16 @@ Legal pages (`terms`, `privacy`, `dpa`) get the entity treatment from decision #
 
 ---
 
-## Layer 3 — "AI Staff Compliance Training" — DECISION NEEDED
+## Layer 3 — "AI Staff Compliance Training" → "Iurix Accreditation" ✅ DECIDED
 
-22 files. This is the *course/product descriptor*, distinct from the company name.
+**Decision (Rob, 2026-07-27): replace it everywhere.** "AI Staff Compliance Training" is retired
+as a name; "Iurix Accreditation" is used throughout. *(This overrides the earlier recommendation
+to keep it — Rob chose the single-brand story.)*
 
-**Recommendation: keep it.** "Iurix Accreditation" is the platform/company; "AI Staff Compliance
-Training" is the course being certified. Keeping it avoids ~22 files of churn, stays descriptive
-for search, and matches the Stripe product name already in use. If Rob wants it renamed, it also
-means a DB `UPDATE` (below) and a Stripe product-name change.
+22 files. Note this is a **wider sweep than Layers 1 and 2** — it reaches the cert PDF, all five
+email templates, the legal pages, and both dashboard and training surfaces.
 
-Not just code — two data-layer instances:
+Not just code — two data-layer instances that a string sweep will miss:
 - `courses.title` row: `"AI Staff Compliance Training — Annual Certification"`, written at
   `app/api/onboarding/complete/route.ts:81`. Existing rows need an `UPDATE`, not just a code edit.
 - Stripe product `prod_...` display name — appears on invoices and receipts.
@@ -142,15 +145,27 @@ worth blocking on, but decide deliberately.
 
 ---
 
-## Layer 5 — Assets Rob owes
+## Layer 5 — Logo assets ⚠️ partially delivered 2026-07-27
 
-| File | What it is |
-|---|---|
-| `public/atc-athena-logo.svg` | Primary "atc" monogram vector |
-| `public/athena-logo-email.png` | Email header logo — served from an absolute URL, so it must exist on the **new** domain |
-| `lib/cert-pdf.ts:18` `LOGO_B64` | Base64 JPEG on the certificate. Already a known placeholder ("swap for final SVG/PNG before launch"). Now it also has to be the Iurix mark. |
+**Rob delivered the mark on 2026-07-27.** Staged in the repo at **`public/brand/`** (Max is on a
+different machine and can't reach Rob's Downloads). **Read `public/brand/README.md` first — the
+files are not production-final.**
 
-Also check favicon / OG images.
+Designated correct by Rob: `iurix-logo-primary.png` (1024×1024) + the transparent cutout.
+
+**Blocking gaps** (detail in `public/brand/README.md`):
+1. The two designated files are **different artwork** — the primary is the *certified* variant; the
+   transparent cutout was made from the *no-certified* variant. **No transparent version of the
+   designated primary exists.**
+2. The transparent file is a **remove.bg free preview at 525×475** — too small for the cert PDF,
+   and likely damaged around the soft glow and crescent tips. Needs a full-res re-cut.
+3. All three high-res files have the **marble background baked in** (`A=255` at every edge pixel).
+4. No **simplified small-size variant** — the mark is unreadable at nav (~32px) and favicon sizes.
+5. **No wordmark** — this is a mark only; the nav needs an "Iurix Accreditation" lockup.
+6. **Dark mode unverified** — the white outer glow may halo on dark backgrounds.
+
+**Targets:** `lib/cert-pdf.ts:18` `LOGO_B64`, `public/athena-logo-email.png`,
+`public/atc-athena-logo.svg`, `app/_components/atc-logo.tsx`, favicon / OG images.
 
 ---
 
