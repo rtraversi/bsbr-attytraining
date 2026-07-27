@@ -52,7 +52,7 @@ const kapakana = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Athena — AI Staff Compliance Training | Built Smart by Rob",
+  title: "IURIX",
   description:
     "Certify your staff on proper AI use under ABA Model Rule 5.3. One annual fee, instant certificates.",
 };

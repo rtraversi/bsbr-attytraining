@@ -18,7 +18,7 @@ export function DashboardFooter() {
           </Link>
         </nav>
         <p className="text-xs text-[#8A8A8A] dark:text-[#7A8189]">
-          © {new Date().getFullYear()} Athena. All rights reserved.
+          © {new Date().getFullYear()} IURIX. All rights reserved.
         </p>
       </div>
     </footer>
