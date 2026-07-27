@@ -9,7 +9,7 @@ import { NotificationSettings } from './_components/notification-settings'
 import { AppearanceSettings } from './_components/appearance-settings'
 
 export const metadata = {
-  title: 'Settings — AI Staff Compliance Training',
+  title: 'Settings — IURIX',
 }
 
 /* ── Shared tokens — same values the previous version of this page used ────── */

@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { SupportClient } from './_components/support-client'
 
 export const metadata = {
-  title: 'Support — AI Staff Compliance Training',
+  title: 'Support — IURIX',
 }
 
 export default async function SupportPage() {

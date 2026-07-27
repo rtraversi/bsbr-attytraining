@@ -8,7 +8,7 @@ import { TrainingClient } from './_components/training-client'
 import type { QuizQuestion } from './_components/quiz-component'
 
 export const metadata = {
-  title: 'Training — AI Staff Compliance Training',
+  title: 'Training — IURIX',
 }
 
 const QUESTIONS_PER_ATTEMPT = 8

@@ -7,7 +7,7 @@ import { READINESS_LESSON } from '@/lib/training/lessons'
 import { OverviewClient, type ActivityItem } from './_components/overview-client'
 
 export const metadata = {
-  title: 'Overview — AI Staff Compliance Training',
+  title: 'Overview — IURIX',
 }
 
 // Recent activity surfaces both halves of the training: the knowledge checks and

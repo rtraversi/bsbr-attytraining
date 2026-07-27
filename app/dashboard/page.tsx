@@ -5,7 +5,7 @@ import { AdminDashboard } from './_components/admin-dashboard'
 import type { TrainingStatus } from './_components/team-table'
 
 export const metadata = {
-  title: 'Dashboard — AI Staff Compliance Training',
+  title: 'Dashboard — IURIX',
 }
 
 const STATUS_SORT: Record<TrainingStatus, number> = {

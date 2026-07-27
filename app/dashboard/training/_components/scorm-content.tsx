@@ -295,7 +295,7 @@ export function ScormContent({
       <div className={frameClassName ?? DEFAULT_FRAME}>
         {apiReady ? (
           <iframe
-            title="AI Staff Compliance Certificate — course content"
+            title="IURIX — course content"
             src={LAUNCH_URL}
             className="absolute inset-0 h-full w-full"
             allowFullScreen
