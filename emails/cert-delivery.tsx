@@ -24,7 +24,7 @@ export function CertDeliveryEmail({
   validUntil,
 }: CertDeliveryEmailProps) {
   return (
-    <EmailShell preview="Your AI Staff Compliance certificate is ready to download">
+    <EmailShell preview="Your IURIX certificate is ready to download">
       <Section style={badgeRow}>
         <Text style={badge}>✓ Training Complete</Text>
       </Section>
@@ -34,8 +34,8 @@ export function CertDeliveryEmail({
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        Congratulations, {employeeName}. You&apos;ve completed AI Staff Compliance Training on behalf
-        of <strong>{firmName}</strong> and passed the certification quiz.
+        Congratulations, {employeeName}. You&apos;ve completed IURIX training on behalf of{' '}
+        <strong>{firmName}</strong> and passed the certification quiz.
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>

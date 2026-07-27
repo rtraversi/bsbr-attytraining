@@ -4,7 +4,6 @@ import {
   Head,
   Hr,
   Html,
-  Img,
   Link,
   Preview,
   Section,
@@ -13,20 +12,16 @@ import {
 import * as React from 'react'
 
 /**
- * Shared chrome (Head + dark-mode <style>, centered logo lockup header, black
+ * Shared chrome (Head + dark-mode <style>, centered wordmark header, black
  * footer) for every transactional email. Templates render their body content as
  * `children`; keep per-element className hooks (see EMAIL_CLASS) on themed
  * elements so the dark-mode media query below can override the inline styles.
  *
- * Absolute production URL — email clients cannot resolve relative paths.
+ * The header is a text-only IURIX wordmark — there is no IURIX logo image yet,
+ * and shipping the old Athena mark would put the retired brand in every email.
+ * When the real artwork lands, reinstate an <Img> lockup here (it will need an
+ * absolute URL; email clients cannot resolve relative paths).
  */
-const LOGO_URL =
-  'https://bsbr-attytraining.aistaffcompliance.workers.dev/athena-logo-email.png'
-
-// Real logo aspect ratio is 104:70 — scale proportionally, never square.
-const LOGO_WIDTH = 32
-const LOGO_HEIGHT = 21
-
 const FONT_STACK = "'Stack Sans Headline', Arial, Helvetica, sans-serif"
 
 /** className hooks the dark-mode media query targets (inline styles can't be). */
@@ -37,7 +32,6 @@ export const EMAIL_CLASS = {
   text: 'atc-text',
   muted: 'atc-muted',
   callout: 'atc-callout',
-  logo: 'atc-logo',
   wordmark: 'atc-wordmark',
 } as const
 
@@ -53,7 +47,6 @@ const darkModeCss = `
     .${EMAIL_CLASS.muted} { color: #7A8189 !important; }
     .${EMAIL_CLASS.callout} { background-color: #131A20 !important; }
     .${EMAIL_CLASS.wordmark} { color: #F5F7FA !important; }
-    .${EMAIL_CLASS.logo} { filter: brightness(0) invert(1) !important; }
   }
 `
 
@@ -73,43 +66,18 @@ export function EmailShell({ preview, children }: EmailShellProps) {
       <Preview>{preview}</Preview>
       <Body className={EMAIL_CLASS.body} style={body}>
         <Container className={EMAIL_CLASS.card} style={container}>
-          {/* Centered logo lockup: image + wordmark as one tight unit */}
+          {/* Centered text wordmark (no logo image yet — see file header note) */}
           <Section style={header}>
-            <table
-              role="presentation"
-              cellPadding={0}
-              cellSpacing={0}
-              border={0}
-              align="center"
-              style={lockupTable}
-            >
-              <tbody>
-                <tr>
-                  <td style={lockupLogoCell}>
-                    <Img
-                      className={EMAIL_CLASS.logo}
-                      src={LOGO_URL}
-                      width={LOGO_WIDTH}
-                      height={LOGO_HEIGHT}
-                      alt="Athena"
-                      style={logoImg}
-                    />
-                  </td>
-                  <td style={lockupTextCell}>
-                    <span className={EMAIL_CLASS.wordmark} style={wordmark}>
-                      athena.
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <Text className={EMAIL_CLASS.wordmark} style={wordmark}>
+              IURIX
+            </Text>
           </Section>
 
           <Section style={content}>{children}</Section>
 
           {/* Footer — always black, in both light and dark modes */}
           <Section style={footer}>
-            <Text style={footerWordmark}>athena.</Text>
+            <Text style={footerWordmark}>IURIX</Text>
             <Text style={footerDisclaimer}>
               This certificate documents completion of training. It is not legal advice and does not
               constitute accreditation by the ABA or any state bar.
@@ -128,7 +96,7 @@ export function EmailShell({ preview, children }: EmailShellProps) {
               </Link>
             </Text>
             <Hr style={footerHr} />
-            <Text style={footerCopyright}>© 2026 Athena. All rights reserved.</Text>
+            <Text style={footerCopyright}>© 2026 IURIX. All rights reserved.</Text>
           </Section>
         </Container>
       </Body>
@@ -234,31 +202,17 @@ const header: React.CSSProperties = {
   padding: '28px 40px 4px',
 }
 
-const lockupTable: React.CSSProperties = {
-  margin: '0 auto',
-}
-
-const lockupLogoCell: React.CSSProperties = {
-  paddingRight: '7px',
-  verticalAlign: 'middle',
-}
-
-const lockupTextCell: React.CSSProperties = {
-  verticalAlign: 'middle',
-}
-
-const logoImg: React.CSSProperties = {
-  display: 'block',
-  border: '0',
-}
-
+// All-caps wordmark: positive tracking, where the old lowercase "athena."
+// lockup used negative. Caps need the extra letter-spacing to breathe.
 const wordmark: React.CSSProperties = {
   color: '#0A0A0A',
   fontFamily: FONT_STACK,
   fontSize: '22px',
   fontWeight: 300,
-  letterSpacing: '-0.01em',
+  letterSpacing: '0.12em',
   lineHeight: '1',
+  margin: '0',
+  textAlign: 'center',
 }
 
 const content: React.CSSProperties = {
@@ -275,7 +229,7 @@ const footerWordmark: React.CSSProperties = {
   fontFamily: FONT_STACK,
   fontSize: '18px',
   fontWeight: 300,
-  letterSpacing: '-0.01em',
+  letterSpacing: '0.12em',
   margin: '0 0 12px',
 }
 

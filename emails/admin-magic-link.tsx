@@ -23,8 +23,8 @@ export function AdminMagicLinkEmail({ firmName, actionLink }: AdminMagicLinkEmai
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        Your firm has been enrolled in AI Staff Compliance Training. You can now access your
-        dashboard to invite staff, track their progress, and download compliance certificates.
+        Your firm has been enrolled in IURIX. You can now access your dashboard to invite staff,
+        track their progress, and download compliance certificates.
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
@@ -39,7 +39,7 @@ export function AdminMagicLinkEmail({ firmName, actionLink }: AdminMagicLinkEmai
       </Section>
 
       <Text style={mutedText} className={EMAIL_CLASS.muted}>
-        If you didn&apos;t purchase AI Staff Compliance Training, you can safely ignore this email.
+        If you didn&apos;t purchase IURIX, you can safely ignore this email.
       </Text>
     </EmailShell>
   )

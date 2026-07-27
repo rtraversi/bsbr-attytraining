@@ -26,8 +26,8 @@ export function EmployeeInviteEmail({ firmName, actionLink }: EmployeeInviteEmai
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        <strong>{firmName}</strong> has enrolled you in AI Staff Compliance Training — a required
-        certification program covering proper AI usage under ABA Model Rule 5.3.
+        <strong>{firmName}</strong> has enrolled you in IURIX — a required certification program
+        covering proper AI usage under ABA Model Rule 5.3.
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>

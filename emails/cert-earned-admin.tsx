@@ -28,7 +28,7 @@ export function CertEarnedAdminEmail({
   dashboardUrl,
 }: CertEarnedAdminEmailProps) {
   return (
-    <EmailShell preview={`${employeeName} just earned their AI Staff Compliance Certificate`}>
+    <EmailShell preview={`${employeeName} just earned their IURIX certificate`}>
       <Section style={badgeRow}>
         <Text style={badge}>✓ Team Member Certified</Text>
       </Section>
@@ -38,8 +38,8 @@ export function CertEarnedAdminEmail({
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        A member of your team at <strong>{firmName}</strong> just completed AI Staff Compliance
-        Training and passed the certification quiz.
+        A member of your team at <strong>{firmName}</strong> just completed IURIX training and
+        passed the certification quiz.
       </Text>
 
       <Section style={buttonContainer}>

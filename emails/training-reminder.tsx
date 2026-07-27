@@ -23,9 +23,8 @@ export function TrainingReminderEmail({ firmName, actionLink }: TrainingReminder
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        <strong>{firmName}</strong> has asked us to remind you that your AI Staff Compliance Training
-        is still outstanding. Completing it earns you a compliance certificate under ABA Model Rule
-        5.3.
+        <strong>{firmName}</strong> has asked us to remind you that your IURIX training is still
+        outstanding. Completing it earns you a compliance certificate under ABA Model Rule 5.3.
       </Text>
 
       <Section style={buttonContainer}>
