@@ -1,5 +1,54 @@
 # Session Handoff
 
+**Date:** 2026-07-27 — **Rob**, terminal. Scoping + Cloudflare audit. **No app code changed.**
+
+## 🟢 Decisions locked
+
+- **Domain: `iurixaccreditation.com`.** Rob is setting the zone up on Cloudflare now.
+  `aistaffcompliance.com` is retired. This unblocks Layer 4 of the rename.
+- **The website moves off Netlify onto Cloudflare** — served by the existing `bsbr-attytraining`
+  Worker under the new domain. No new worker; no separate static site.
+- **The Netlify site's design is canonical.** The Athena-branded homepage in the app is retired.
+  **Build the new site fresh in the Next.js app**, using the Netlify version as the reference.
+
+## 🟡 MAX — start here
+
+**Task: build the new marketing site** (`.planning/RENAME-IURIX.md` → **Layer 8**).
+
+Nothing infrastructural is needed to leave Netlify — the Worker already serves marketing + app in
+one deploy. This is a page build, not a migration.
+
+⚠️ **The one trap:** the Netlify site is a **pre-launch "coming soon" page with a waitlist and no
+checkout.** The app has a real one wired to `/api/checkout`. Take the Netlify structure/design/copy
+but **replace sections 5 ("coming soon") and 6 ("Be first in line" email capture) with the real
+checkout CTA** — following it literally would ship a coming-soon page over a finished product.
+
+Netlify site = single page, six sections, no internal routes: hero "Your staff is using AI." /
+"What we do" (3 value props) / "Why Rule 5.3 just changed" (*Mata v. Avianca*, *In re Crabill*,
+*Wadsworth v. Walmart*) / "Simple annual pricing" / coming-soon / waitlist.
+
+Layers 1 + 2 (the Athena→Iurix string sweep, 16 files; Built-Smart-by-Rob removal, 9 files) are
+also unblocked and can land alongside this. Leave domain strings alone until the zone is live.
+
+**Still blocked on Rob:** logo artwork; whether the course keeps the name "AI Staff Compliance
+Training"; new contact email + phone (Netlify publishes `info@aistaffcompliance.com` /
+`+1 919-609-2808`).
+
+## 🔵 Cloudflare audit (via MCP)
+
+`bsbr-attytraining` (last deploy 07-20, covers all code commits) and `bsbr-cert-worker` — **both
+active, both stay.** `aistaffcompliancetraining` is a literal `Hello world` worker created 06-11
+and never touched — safe to delete. `kc-assets` is unrelated (Katy's signature assets).
+
+⚠️ **Verify:** `bsbr-cert-worker`'s **cron** handler is real and load-bearing (expiry / inactivity /
+renewal reminders + the queue drain). Its **`fetch` handler is a no-op stub** — it validates the
+secret, parses the payload, then discards it and returns 200. Cert generation lives in the app at
+`/api/certs/generate`. **Confirm the Supabase DB webhook targets the app, not the worker** — if it's
+aimed at the worker, certificates silently never generate and the webhook still returns a clean 200.
+Re-check after the domain cutover, since that URL changes.
+
+---
+
 **Date:** 2026-07-26 — **Rob**, terminal. **SCOPING ONLY — no code changed.**
 Full detail: `.planning/sessions/20260726-rob-summary.md`. Deliverable: `.planning/RENAME-IURIX.md`.
 
