@@ -1,7 +1,7 @@
 import { Footer } from '@/app/_components/footer'
 
 export const metadata = {
-  title: 'Data Processing Addendum — AI Staff Compliance Training',
+  title: 'Data Processing Addendum — IURIX',
 }
 
 export default function DpaPage() {
@@ -9,7 +9,7 @@ export default function DpaPage() {
     <>
       <main className="min-h-screen bg-zinc-950 px-6 py-16">
         <div className="max-w-3xl mx-auto">
-          <p className="text-xs uppercase tracking-widest text-zinc-500 mb-2">Built Smart by Rob</p>
+          <p className="text-xs uppercase tracking-widest text-zinc-500 mb-2">IURIX</p>
           <h1 className="text-3xl text-white mb-2" style={{ fontFamily: 'var(--font-gyrotrope)' }}>
             Data Processing Addendum
           </h1>
@@ -19,8 +19,7 @@ export default function DpaPage() {
             <Section title="1. Scope and Purpose">
               <p>[ATTORNEY TO COMPLETE — describe the scope of this DPA: it governs the processing
               of personal data by Built Smart by Rob (as data processor) on behalf of the subscribing
-              law firm (as data controller) in connection with the AI Staff Compliance Training
-              platform.]</p>
+              law firm (as data controller) in connection with the IURIX platform.]</p>
             </Section>
 
             <Section title="2. Data Processor Obligations">

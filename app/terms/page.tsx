@@ -1,7 +1,7 @@
 import { Footer } from '@/app/_components/footer'
 
 export const metadata = {
-  title: 'Terms of Service — AI Staff Compliance Training',
+  title: 'Terms of Service — IURIX',
 }
 
 export default function TermsPage() {
@@ -9,7 +9,7 @@ export default function TermsPage() {
     <>
       <main className="min-h-screen bg-zinc-950 px-6 py-16">
         <div className="max-w-3xl mx-auto">
-          <p className="text-xs uppercase tracking-widest text-zinc-500 mb-2">Built Smart by Rob</p>
+          <p className="text-xs uppercase tracking-widest text-zinc-500 mb-2">IURIX</p>
           <h1 className="text-3xl text-white mb-2" style={{ fontFamily: 'var(--font-gyrotrope)' }}>
             Terms of Service
           </h1>
