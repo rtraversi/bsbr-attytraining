@@ -13,7 +13,9 @@
 | 2 | **Corporate structure:** BSBR Holdings, LLC is the *parent*. **Iurix**, **IurisIQ**, and **Built Smart by Rob** are three separate companies under it. |
 | 3 | **Consequence of #2 — "Built Smart by Rob" must be REMOVED from this product.** It is a sibling brand, not the publisher. This is the part that makes the sweep bigger than a wordmark swap: BSBR currently appears as the publisher line on the cert PDF, email footers, legal pages, and the site footer. |
 | 4 | **Legal entity = BSBR Holdings, LLC; Iurix is a DBA.** Legal pages read "BSBR Holdings, LLC d/b/a Iurix". |
-| 5 | **Domain moves to an Iurix domain.** Away from `aistaffcompliance.com`. |
+| 5 | **Domain: `iurixaccreditation.com`** (locked 2026-07-27). Rob is setting it up on Cloudflare. `aistaffcompliance.com` is retired. |
+| 6 | **The marketing site moves off Netlify onto Cloudflare**, served by the existing `bsbr-attytraining` Worker under the new domain. |
+| 7 | **The Netlify site's design is canonical.** The Athena-branded homepage currently in the Next.js app is retired, not the other way round. |
 
 ### Why #4 is good news
 
@@ -26,11 +28,13 @@ only the head-office address → Stripe Tax activation → state registration / 
 
 ## 🔴 Blocking — Rob owes these before Max can finish
 
-1. **The actual domain name.** "An Iurix domain" was decided; the specific domain was not.
-   Everything in Layer 4 is blocked on this. Register it before Max starts the cutover.
+1. ~~The actual domain name.~~ ✅ **RESOLVED 2026-07-27: `iurixaccreditation.com`.** Rob is
+   setting the zone up on Cloudflare. Layer 4 is unblocked once the zone is live.
 2. **Logo assets.** The current mark is an "atc" monogram + "athena." wordmark. Three files need
    new artwork (see Layer 5). Max cannot generate these.
 3. **Decision on Layer 3** — does the course keep the name "AI Staff Compliance Training"?
+4. **New contact details** — the Netlify site publishes `info@aistaffcompliance.com` and
+   `+1 919-609-2808`. Confirm the Iurix replacements before the port (Layer 8).
 
 ---
 
@@ -172,6 +176,78 @@ Also check favicon / OG images.
 
 ---
 
+## Layer 8 — Marketing site: Netlify → Cloudflare (added 2026-07-27)
+
+### The situation
+
+This is **not a normal migration** — nothing needs to be built to leave Netlify. The
+`bsbr-attytraining` Worker **already serves a full marketing site** (`/` renders a homepage,
+`/pricing` returns 200). There are simply two competing marketing sites:
+
+| | Netlify (`aistaffcompliance.com`) | Worker (`bsbr-attytraining`) |
+|---|---|---|
+| Title | "AI Staff Compliance Training — Rule 5.3 AI Certification for Law Firm Staff" | "Athena — AI Staff Compliance Training \| Built Smart by Rob" |
+| Hero | "Your staff is using AI." | Athena landing |
+| Status | **CANONICAL — this design wins** | **Retired** |
+
+There is also a third variant at `/mockup` (Rob's v0 concept, quick task `260703-g7x`) — decide
+whether to delete it during this pass.
+
+**DNS note:** `aistaffcompliance.com` runs on **Netlify DNS** (NS1 nameservers,
+`dns1–4.p07.nsone.net`), not Cloudflare. Irrelevant now that the domain is being retired —
+`iurixaccreditation.com` goes onto Cloudflare nameservers from the start.
+
+### Approach: build fresh in the Next.js app, using the Netlify site as the reference
+
+**Decision (Rob, 2026-07-27): build the new website in Cloudflare** — i.e. as pages in the existing
+Next.js app served by the `bsbr-attytraining` Worker, not as a separate static site. The Netlify
+site is the **design and content reference**, not something to copy file-for-file.
+
+⚠️ **The Netlify site is a pre-launch "coming soon" page with a waitlist** — it has no working
+checkout. The Next.js app has a *real* pricing page wired to `/api/checkout`. Following the Netlify
+version too literally would ship a coming-soon page over a finished product.
+
+Take its structure, design language, and copy; wire the real purchase flow in place of the
+waitlist. Two sections are the ones that change:
+- "The training platform is coming soon" → remove, or repurpose
+- "Be first in line" (email capture) → replace with the real checkout CTA
+
+### Netlify site structure (single page, no internal routes)
+
+1. **Hero** — "Your staff is using AI."
+2. **"What we do"** — 3 value props: structured AI training for nonlawyer staff / a scored
+   assessment with a pass gate / a defensible paper trail for the supervising attorney
+3. **"Why Rule 5.3 just changed"** — 3 case callouts: *Mata v. Avianca*, *In re Crabill*,
+   *Wadsworth v. Walmart*
+4. **"Simple annual pricing"**
+5. **"The training platform is coming soon"** → replace
+6. **"Be first in line"** (email capture) → replace with real checkout
+
+Contact details in the footer: `info@aistaffcompliance.com`, `+1 919-609-2808` — both need Iurix
+replacements (see Blocking #4).
+
+> **Content note:** *In re Crabill* is the standout case from Katy's AI-ethics research
+> (2026-07-24 session) — the attorney who realized his citations were fake the morning of the
+> hearing, didn't withdraw, and drew a 1yr+1day suspension. Worth keeping the section grounded in
+> that research rather than rewriting it from scratch.
+
+### Cutover steps
+
+1. Rob: register `iurixaccreditation.com` → add as a Cloudflare zone → registrar nameservers → CF.
+2. Max: port the Netlify design into the Next.js app, replacing the Athena homepage; wire the real
+   checkout in place of the waitlist.
+3. Workers → `bsbr-attytraining` → Settings → Domains & Routes → **Add custom domain**
+   (Custom Domain, *not* Route — CF auto-provisions the cert and DNS record).
+4. Update `NEXT_PUBLIC_APP_URL` (Worker secret **and** `wrangler.jsonc:9`) and the cert worker's
+   `APP_URL` (`workers/cert-worker/wrangler.toml:14`); redeploy **both** workers.
+5. Resend: verify `iurixaccreditation.com` (SPF/DKIM/DMARC); update both `FROM` constants.
+6. Stripe: register the live webhook on the new domain (see Layer 6 — do this *after* step 3).
+7. Supabase Auth: redirect allow-list + hosted email templates.
+8. Decide `aistaffcompliance.com`'s fate — 301 redirect to the new domain, or drop it. It can stay
+   on Netlify purely as a redirect at no cost.
+
+---
+
 ## Layer 7 — Records risk
 
 **Confirm no real certificates have been issued** before the rename. Certificates are the
@@ -190,6 +266,37 @@ reissue vs. leave.
 3. **Domain cutover:** DNS → Worker custom domain → Resend verify → secrets → redeploy.
 4. **Stripe live:** Tax activation → live objects → `PRICE_ID` → webhook on the new domain.
 5. **Legal pages:** entity treatment, ideally with the reviewing attorney's eyes on it.
+
+---
+
+## Cloudflare account audit (2026-07-27, via MCP)
+
+| Worker | Created / last deployed | Verdict |
+|---|---|---|
+| `bsbr-attytraining` | 06-12 / **07-20** | **Keep** — the app. Live deploy covers all code commits (last code commit 07-17; everything after is docs). |
+| `bsbr-cert-worker` | 06-12 / 06-24 | **Keep** — crons are load-bearing. See caveat below. |
+| `aistaffcompliancetraining` | 06-11 / **06-11** | **Delete.** Literal `return new Response("Hello world")`, never modified since creation, its `workers.dev` URL 404s. |
+| `kc-assets` | 07-24 | Unrelated (Katy Chavez signature assets). Leave alone. |
+
+### ⚠️ Verify: cert-worker's HTTP handler is a no-op stub
+
+`bsbr-cert-worker`'s **`scheduled` (cron) handler is real** — expiry reminders (90/30/7),
+inactivity reminders, renewal reminders (30/14/3), and the 5-minute `cert_generation_queue` drain.
+That part is load-bearing; do not remove it.
+
+Its **`fetch` (HTTP) handler is not.** It validates `X-Webhook-Secret`, parses the payload,
+confirms it's a passed `quiz_attempts` INSERT — and then discards everything and returns 200:
+
+```js
+void { attemptId, firm_id, enrollment_id, user_id, score };
+return new Response("OK", { status: 200 });
+```
+
+Cert generation actually lives in the app at `/api/certs/generate`, which is what
+`DEPLOY-CHECKLIST.md` step 6 points the Supabase DB webhook at. **Confirm the Supabase Database
+Webhook targets the app URL, not the cert worker.** If it's aimed at the cert worker, certificates
+silently never generate and nothing raises an error — the webhook gets a clean 200 every time.
+Re-check this after the domain cutover, since the webhook URL changes.
 
 ---
 
