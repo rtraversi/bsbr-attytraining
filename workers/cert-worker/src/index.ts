@@ -145,7 +145,10 @@ function fmtDate(dateStr: string): string {
 
 // ── Email helpers ─────────────────────────────────────────────────────────────
 
-const FROM = 'AI Staff Compliance <info@aistaffcompliance.com>'
+// Display name only — the aistaffcompliance.com address stays until the new
+// domain is verified in Resend (Phase B). Sending from an unverified domain
+// silently fails, so the address must not move ahead of that.
+const FROM = 'IURIX <info@aistaffcompliance.com>'
 
 async function sendEmail(env: Env, to: string, subject: string, html: string): Promise<void> {
   const res = await fetch('https://api.resend.com/emails', {
@@ -166,7 +169,7 @@ function expiryEmployeeHtml(name: string, days: number, dateStr: string, appUrl:
 <p style="font-size:14px">Renew your certification now to maintain your firm's compliance record under ABA Model Rule 5.3.</p>
 <p><a href="${appUrl}/dashboard/training" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Renew certification</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
-<p style="font-size:12px;color:#6b7280">AI Staff Compliance Training — Built Smart by Rob</p>
+<p style="font-size:12px;color:#6b7280">IURIX</p>
 </body></html>`
 }
 
@@ -175,7 +178,7 @@ function expiryAdminHtml(empName: string, firmName: string, days: number, dateSt
 <p style="font-size:14px"><strong>${empName}</strong>'s AI compliance training certificate for ${firmName} <strong>expires in ${days} days</strong> — on ${dateStr}.</p>
 <p style="font-size:14px">They will need to re-certify to maintain your firm's Rule 5.3 compliance record. A reminder has been sent directly to ${empName}.</p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
-<p style="font-size:12px;color:#6b7280">AI Staff Compliance Training — Built Smart by Rob</p>
+<p style="font-size:12px;color:#6b7280">IURIX</p>
 </body></html>`
 }
 
@@ -185,7 +188,7 @@ function inactivityHtml(name: string, firmName: string, appUrl: string): string 
 <p style="font-size:14px">${firmName} has enrolled you in AI compliance training. Please complete your training to earn your compliance certificate under ABA Model Rule 5.3.</p>
 <p><a href="${appUrl}/dashboard/training" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Complete training</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
-<p style="font-size:12px;color:#6b7280">AI Staff Compliance Training — Built Smart by Rob</p>
+<p style="font-size:12px;color:#6b7280">IURIX</p>
 </body></html>`
 }
 
@@ -413,7 +416,7 @@ function renewalReminderHtml(
 ${pending > 0 ? `<p style="font-size:14px">You have <strong>${pending} staff member${pending !== 1 ? 's' : ''}</strong> who ${pending !== 1 ? 'have' : 'has'} not yet completed this year's training. Reach out to them before your renewal date to close out your firm's Rule 5.3 compliance record.</p>` : `<p style="font-size:14px">Great news — all of your staff have completed their training for this certification period.</p>`}
 <p><a href="${appUrl}/dashboard" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">View dashboard &amp; manage subscription</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
-<p style="font-size:12px;color:#6b7280">AI Staff Compliance Training — Built Smart by Rob<br>To manage your subscription or update your billing details, click the button above and select "Manage Subscription" from your dashboard.</p>
+<p style="font-size:12px;color:#6b7280">IURIX<br>To manage your subscription or update your billing details, click the button above and select "Manage Subscription" from your dashboard.</p>
 </body></html>`
 }
 
