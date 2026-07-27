@@ -62,26 +62,18 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
     x: 32, y: HEADER_Y, width: W - 64, height: HEADER_H, color: NEAR_BLACK,
   })
 
-  const headerLabel = 'AI Staff Compliance Training'
-  const headerLabelSize = 14
+  // Single centered wordmark. This was a two-line lockup — the course name
+  // over "BUILT SMART BY ROB" — but the descriptor and the publisher line are
+  // both retired, so one label is left and it sits centered in the band.
+  const headerLabel = 'IURIX'
+  const headerLabelSize = 18
   const headerLabelW = sansBold.widthOfTextAtSize(headerLabel, headerLabelSize)
   page.drawText(headerLabel, {
     x: (W - headerLabelW) / 2,
-    y: HEADER_Y + 26,
+    y: HEADER_Y + (HEADER_H - headerLabelSize) / 2 + 3,
     size: headerLabelSize,
     font: sansBold,
     color: CREAM,
-  })
-
-  const brandLabel = 'BUILT SMART BY ROB'
-  const brandLabelSize = 8
-  const brandLabelW = sans.widthOfTextAtSize(brandLabel, brandLabelSize)
-  page.drawText(brandLabel, {
-    x: (W - brandLabelW) / 2,
-    y: HEADER_Y + 10,
-    size: brandLabelSize,
-    font: sans,
-    color: AMBER,
   })
 
   // ── Logo ─────────────────────────────────────────────────────────────────────
