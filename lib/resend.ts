@@ -1,5 +1,8 @@
 const RESEND_API_URL = 'https://api.resend.com/emails'
-const FROM_ADDRESS = 'AI Staff Compliance <info@aistaffcompliance.com>'
+// Display name only — the aistaffcompliance.com address stays until the new
+// domain is verified in Resend (Phase B). Sending from an unverified domain
+// silently fails, so the address must not move ahead of that.
+const FROM_ADDRESS = 'IURIX <info@aistaffcompliance.com>'
 
 export async function sendEmail({
   to,
