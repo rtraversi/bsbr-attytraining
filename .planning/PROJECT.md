@@ -1,8 +1,8 @@
-# AI Compliance Training Platform
+# IURIX
 
 ## What This Is
 
-A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay a one-time annual fee to certify their staff on proper AI usage under ABA Model Rule 5.3 (Vendor Supervision / attorney ethics compliance). Staff complete a 20–30 minute video course with embedded quizzes, pass with a score-gate (unlimited retakes), and receive a downloadable PDF certificate. Attorneys get a dashboard to audit staff completion, scores, and certificate status, and to issue reminders or reprints. The product is published under the **Built Smart by Rob** brand.
+A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay a one-time annual fee to certify their staff on proper AI usage under ABA Model Rule 5.3 (Vendor Supervision / attorney ethics compliance). Staff complete a 20–30 minute video course with embedded quizzes, pass with a score-gate (unlimited retakes), and receive a downloadable PDF certificate. Attorneys get a dashboard to audit staff completion, scores, and certificate status, and to issue reminders or reprints. The product is published under the **IURIX** brand.
 
 ## Core Value
 
@@ -48,7 +48,7 @@ An attorney can pay, invite their staff, see them complete the training, and pro
 
 ## Context
 
-- **Brand:** Built Smart by Rob — existing brand identity, logo and color assets are ready and can be applied to this product
+- **Brand:** IURIX — brand identity in progress; the mark is staged at `public/brand/` but is not yet production-final (see `public/brand/README.md`)
 - **Operator infrastructure:**
   - Netlify PRO account active — design around PRO features (server-side functions, branch deploys), not free-tier limits
   - Supabase free tier (2 active project cap) — flag if approaching limits before adding more environments
@@ -88,7 +88,7 @@ An attorney can pay, invite their staff, see them complete the training, and pro
 | ABA Model Rule 5.3 generic, national scope (no state variants in v1) | Single course → single content production track → fastest path to launch | — Pending |
 | Solo/small firms (1–15 staff), self-serve only | Per-seat volume pricing fits self-serve; no sales motion; one-page checkout → onboarding | — Pending |
 | Curriculum produced in parallel, not gating platform build | Platform can scaffold with placeholder content; final video drops in before launch | — Pending |
-| Built Smart by Rob branding (existing brand assets) | BSBR brand exists with logo and colors; apply to this product rather than create new identity | — Pending |
+| IURIX branding | Product renamed to IURIX (2026-07); "Built Smart by Rob" is a sibling brand under BSBR Holdings, not this product's publisher, and is retired from this product | — Pending |
 
 ## Launch Timeline
 
