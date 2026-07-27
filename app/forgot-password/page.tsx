@@ -2,7 +2,7 @@ import { ForgotForm } from './_components/forgot-form'
 import { AtcLogo } from '@/app/_components/atc-logo'
 
 export const metadata = {
-  title: 'Reset password — Athena',
+  title: 'Reset password — IURIX',
 }
 
 export default function ForgotPasswordPage() {

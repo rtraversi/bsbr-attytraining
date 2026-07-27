@@ -3,7 +3,7 @@ import { OnboardingClient } from './_components/onboarding-client'
 import { AtcLogo } from '@/app/_components/atc-logo'
 
 export const metadata = {
-  title: 'Set up your account — Athena',
+  title: 'Set up your account — IURIX',
 }
 
 export default async function OnboardingPage({

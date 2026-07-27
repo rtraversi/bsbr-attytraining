@@ -5,7 +5,7 @@ import { CustomCursor } from "@/app/_components/custom-cursor";
 import { PricingSlider } from "./_components/pricing-slider";
 
 export const metadata: Metadata = {
-  title: "Pricing — Athena",
+  title: "Pricing — IURIX",
   description:
     "One annual fee per staff member. Volume pricing from $28/user. Flat on renewal.",
 };

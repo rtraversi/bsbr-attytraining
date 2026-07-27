@@ -4,7 +4,7 @@ import { SignInBackground } from './_components/sign-in-background'
 import { AtcLogo } from '@/app/_components/atc-logo'
 
 export const metadata = {
-  title: 'Sign in — Athena',
+  title: 'Sign in — IURIX',
 }
 
 export default async function LoginPage({

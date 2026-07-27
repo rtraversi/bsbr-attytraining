@@ -3,7 +3,7 @@ import { AtcLogo } from '@/app/_components/atc-logo'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata = {
-  title: 'Set your password — Athena',
+  title: 'Set your password — IURIX',
 }
 
 export default async function UpdatePasswordPage() {
