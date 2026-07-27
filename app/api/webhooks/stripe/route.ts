@@ -126,7 +126,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   <li><strong>Error:</strong> ${createUserError.message}</li>
 </ul>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
-<p style="font-size:12px;color:#6b7280">AI Staff Compliance Training — Built Smart by Rob</p>
+<p style="font-size:12px;color:#6b7280">IURIX</p>
 </body></html>`
 
     try {
@@ -362,7 +362,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
 <p style="font-size:14px">${firm.name} has renewed its annual AI compliance training certification. You have been re-enrolled and need to complete your training to maintain your compliance record under ABA Model Rule 5.3.</p>
 <p><a href="${appUrl}/dashboard/training" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Complete training</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
-<p style="font-size:12px;color:#6b7280">AI Staff Compliance Training — Built Smart by Rob</p>
+<p style="font-size:12px;color:#6b7280">IURIX</p>
 </body></html>`,
         })
       } catch (err) {

@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
         )
         await sendEmail({
           to: employeeEmail,
-          subject: 'Your AI Staff Compliance Certificate is Ready',
+          subject: 'Your IURIX certificate is ready',
           html,
         })
       } catch (emailErr) {
@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
             )
             await sendEmail({
               to: ownerEmail,
-              subject: `${employeeName} earned their AI Staff Compliance Certificate`,
+              subject: `${employeeName} earned their IURIX certificate`,
               html: adminHtml,
             })
           }

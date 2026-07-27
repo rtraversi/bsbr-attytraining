@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       const { data: newCourse } = await supabase
         .from('courses')
         .insert({
-          title: 'AI Staff Compliance Training — Annual Certification',
+          title: 'IURIX — Annual Certification',
           description: 'Certify your staff on proper AI use under ABA Model Rule 5.3.',
           cloudflare_stream_video_id: 'stub-not-yet-uploaded',
           pass_threshold: 80,
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
     const html = await render(AdminMagicLinkEmail({ firmName, actionLink: actionLink ?? '' }))
     await sendEmail({
       to: email,
-      subject: 'Your AI Staff Compliance account is ready',
+      subject: 'Your IURIX account is ready',
       html,
     })
   } catch (err) {
