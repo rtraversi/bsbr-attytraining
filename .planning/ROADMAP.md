@@ -21,12 +21,12 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
 
 ## Phases
 
-- [ ] **Phase 0: Foundations** — CF Workers scaffold, privacy/TOS/DPA published, RLS-enforced schema with cross-tenant isolation test, audit log, sending domain, Supabase Pro
-- [ ] **Phase 1: Hello-cert end-to-end stub** — Paid Stripe checkout → admin invite → employee invite → "Mark Pass" button → trivial PDF cert emailed and downloadable
-- [ ] **Phase 2: Articulate Rise 360 content + custom React certification quiz** — Rise 360 interactive web export embedded via iframe (learning layer), custom React quiz with server-side scoring and identity attestation (certifiable layer), replaces "Mark Pass" stub
-- [ ] **Phase 3: Firm admin dashboard** — Single-table employee status view, CSV upload, reminders, seat reassignment, audit-log CSV export, firm-level attestation PDF
-- [ ] **Phase 4: Automation hardening** — Real branded cert template, expiry-reminder cron (CF Workers Cron Trigger), UptimeRobot alerts, Supabase PITR verified, shared-secret header on the Supabase→Worker webhook
-- [ ] **Phase 5: Renewal flow + launch polish** — Stripe renewal at the same flat annual price, 30/14/3-day reminder cadence, 30-day grace period, marketing landing final copy, iPad Safari + Chromebook QA, attorney-reviewed launch
+- [x] **Phase 0: Foundations** — CF Workers scaffold, privacy/TOS/DPA published, RLS-enforced schema with cross-tenant isolation test, audit log, sending domain, Supabase Pro
+- [x] **Phase 1: Hello-cert end-to-end stub** — Paid Stripe checkout → admin invite → employee invite → "Mark Pass" button → trivial PDF cert emailed and downloadable
+- [x] **Phase 2: Articulate Rise 360 content + custom React certification quiz** — Rise 360 interactive web export embedded via iframe (learning layer), custom React quiz with server-side scoring and identity attestation (certifiable layer), replaces "Mark Pass" stub *(question pool still placeholder)*
+- [x] **Phase 3: Firm admin dashboard** — Single-table employee status view, CSV upload, reminders, seat reassignment, audit-log CSV export, firm-level attestation PDF
+- [x] **Phase 4: Automation hardening** — Real branded cert template, expiry-reminder cron (CF Workers Cron Trigger), UptimeRobot alerts, Supabase PITR verified, shared-secret header on the Supabase→Worker webhook *(monitor + PITR + branded logo outstanding)*
+- [x] **Phase 5: Renewal flow + launch polish** — Stripe renewal at the same flat annual price, 30/14/3-day reminder cadence, 30-day grace period, marketing landing final copy, iPad Safari + Chromebook QA, attorney-reviewed launch *(attorney review + device QA outstanding)*
 
 ---
 
@@ -135,14 +135,21 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
 
 ## Progress
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 0. Foundations | 0/0 | Not started | — |
-| 1. Hello-cert end-to-end stub | 0/0 | Not started | — |
-| 2. Real video + custom React quiz | 0/0 | Not started | — |
-| 3. Firm admin dashboard | 0/0 | Not started | — |
-| 4. Automation hardening | 0/0 | Not started | — |
-| 5. Renewal flow + launch polish | 0/0 | Not started | — |
+> **Updated 2026-07-26.** This table read "Not started" for all six phases until now, while the
+> phases were in fact built and deployed. Status below is verified against the codebase.
+> Authoritative detail lives in `.planning/STATE.md`.
+
+| Phase | Status | Deployed | Remaining |
+|-------|--------|----------|-----------|
+| 0. Foundations | ✅ Code complete | Yes | Resend sending-domain verification (must target the new Iurix domain); Supabase Pro upgrade |
+| 1. Hello-cert end-to-end stub | ✅ Code complete | Yes | — (superseded by Phase 2; the "Mark Pass" stub is gone) |
+| 2. Rise 360 + custom React quiz | ⚠️ Content-incomplete | Yes | Question pool is 8 items with **no randomization** (pool == attempt size); criterion 3 unmet. Katy: legal-accuracy pass. Rob: pool size |
+| 3. Firm admin dashboard | ✅ Code complete | Yes | — |
+| 4. Automation hardening | ⚠️ Ops-incomplete | Yes | External uptime monitor never picked; PITR needs Pro tier; cert PDF logo still a placeholder |
+| 5. Renewal flow + launch polish | ⚠️ Launch-incomplete | Yes | Attorney review of cert + landing + TOS; iPad Safari / Chromebook QA |
+
+**Not launched.** Stripe has never run in live mode; no real customer has paid. The critical path is
+now the Iurix rename + domain move + Stripe live mode — see `.planning/RENAME-IURIX.md`.
 
 ---
 

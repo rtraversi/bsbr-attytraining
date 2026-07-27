@@ -1,146 +1,155 @@
-# STATE — AI Compliance Training Platform
+# STATE — Iurix Accreditation (formerly "Athena")
 
-**Last updated:** 2026-06-12 (code migrated to correct repo + verified; Monday smoke-test runbook ready)
+**Last updated:** 2026-07-26 — refreshed against the actual codebase after sitting stale since
+2026-06-12. The prior version claimed "Phase 0, 0% complete" while Phases 0–5 were built and
+deployed; it misled the opening of at least two sessions. Verified by reading code, not notes.
+
+> **Naming:** the product is **Iurix Accreditation** ("Iurix"). The rename is scoped but **not yet
+> executed** — the codebase still says "Athena" and "Built Smart by Rob" throughout. See
+> `.planning/RENAME-IURIX.md`. Katy has also referred to this project as "Aegix"; that name is dead.
 
 ---
 
 ## Project Reference
 
-- **Project:** AI Compliance Training Platform (Built Smart by Rob)
-- **Mode:** mvp
-- **Granularity:** standard
-- **Core value:** An attorney can pay, invite their staff, see them complete the training, and produce certificates that demonstrate Rule 5.3 supervision compliance — without operator intervention.
-- **Current focus:** Phase 0 — Foundations
+- **Product:** Iurix Accreditation — AI staff compliance training + certification under ABA Model Rule 5.3
+- **Company:** Iurix — one of three companies under **BSBR Holdings, LLC** (alongside IurisIQ and
+  Built Smart by Rob). Iurix is a **DBA** of BSBR Holdings, LLC.
+- **Mode:** mvp | **Granularity:** standard
+- **Core value:** An attorney can pay, invite their staff, see them complete the training, and
+  produce certificates demonstrating Rule 5.3 supervision compliance — without operator intervention.
+- **Live (sandbox):** `https://bsbr-attytraining.aistaffcompliance.workers.dev`
+- **Cert Worker:** `https://bsbr-cert-worker.aistaffcompliance.workers.dev`
+- **Supabase dev:** `ndmzvtuywcufvkxtkjhg` (under Max's account) | **Stripe sandbox:** `acct_1ThDpr6ZCSojEKRr`
 
 ---
 
 ## Current Position
 
-- **Phase:** 0 of 5
-- **Phase name:** Foundations
-- **Plan:** None (not yet planned)
-- **Status:** Infrastructure prerequisites complete; Phase 0 code not yet started
-- **Progress:** `[░░░░░░░░░░░░░░░░░░░░] 0% — 0 of 6 phases complete`
+- **Status:** **All six phases are code-complete and deployed to the sandbox environment.**
+  The remaining work is not feature development — it is the **rename, the domain move, Stripe live
+  mode, real content, and pre-launch ops hardening.**
+- **Progress:** `[████████████████████] Phases 0–5 built & deployed (sandbox)`
+- **Not launched.** Stripe has never run in live mode; no real customer has ever paid.
 
-### Infrastructure Prerequisites Completed (pre-Phase 0)
+### Phase status — honest assessment
 
-| Item | Status | Owner | Notes |
-|------|--------|-------|-------|
-| Cloudflare account | Done | Rob | Connected to GitHub |
-| Supabase (dev + prod projects) | Done ⚠️ | Rob/Max | Dev project `ndmzvtuywcufvkxtkjhg` ownership CONFIRMED under Max's Supabase account (2026-06-12). ⚠️ Open: decide whether the prod project should live under Rob's account + Pro tier before launch |
-| Resend account | Done | Rob | Sending domain config not yet verified |
-| GitHub repo (`rtraversi/bsbr-attytraining`) | Done | Max | — |
-| Node.js | Done | Max | ⚠️ Installed v24; spec calls for v22 LTS |
-| pnpm | Done | Max | — |
-| Wrangler CLI | Done | Max | — |
-| Supabase CLI | Done | Max | — |
-| Stripe account | Done | Rob | — |
-| Stripe CLI | Done | Rob | v1.42.11 via winget; logged in 2026-06-12, CLI session valid to 2026-09-10 |
-
-### Phase 0 Requirements Status (FND-01..07, AUDIT-01..03)
-
-All 10 Phase 0 requirements are **not yet started** — none require accounts alone; they require running code, migrations, and live pages. All account/CLI prerequisites are now **Done** (Stripe CLI completed 2026-06-12) — Phase 0 work can begin (see `.planning/NEXT-10-STEPS.md`).
-
-⚠️ **Branding note:** FND-04 references `builtsmartbyrob.com` as the sending domain. Domain decision has moved to `aistaffcompliance.com` — sending domain config should target `noreply@aistaffcompliance.com`.
+| Phase | Name | Code | Notes on what is NOT done |
+|---|---|---|---|
+| 0 | Foundations | ✅ Deployed | Legal pages live (`/terms`, `/privacy`, `/dpa`); `tests/rls-isolation.test.ts` exists; migrations `0001`–`0013` applied. **Open:** Resend sending-domain verification (and it must target the *new* Iurix domain); Supabase still on free tier — **Pro required before launch**. |
+| 1 | Hello-cert end-to-end stub | ✅ Deployed | Checkout, 373-line webhook w/ `processed_stripe_events` idempotency + 5 handlers, cert PDF via `pdf-lib`, `cert_generation_queue` + 5-min drain, `/api/certificates/[id]/url` signed URLs. Superseded by Phase 2 (the "Mark Pass" stub is gone). |
+| 2 | Rise 360 content + custom React quiz | ⚠️ Deployed, content-incomplete | Rise/SCORM export embedded and working; server-side scoring, identity attestation, unlimited retakes all built. **Open:** the question pool is a placeholder — 8 questions with **pool size == attempt size, so there is no randomization**. Roadmap criterion 3 (pool ≥ 3× per-attempt) is unmet. Content-blocked, not code-blocked. |
+| 3 | Firm admin dashboard | ✅ Deployed | Verified present: `/api/firm/attestation`, `/api/firm/audit-log`, `/api/invite/bulk`, `csv-upload-form.tsx`, reminders, seat reassignment, member delete/redact. |
+| 4 | Automation hardening | ⚠️ Deployed, ops-incomplete | Cert Worker crons live (`*/5` queue drain + `0 9` daily reminders); `X-Webhook-Secret` enforced; `/api/health` + secret-gated `/api/metrics` exist. **Open:** external uptime monitor never picked (UptimeRobot vs BetterStack); Supabase PITR needs Pro tier; **cert PDF logo is still a placeholder** (`lib/cert-pdf.ts:18`). |
+| 5 | Renewal flow + launch polish | ⚠️ Deployed, launch-incomplete | Renewal re-enrollment, grace-vs-lapsed logic (30-day grace), reminder cadence, and expiry handling are all built in `invoice.payment_succeeded`. **Open:** attorney review of cert + landing copy + TOS never completed; iPad Safari / Chromebook QA not run. |
 
 ---
 
-## Performance Metrics
+## 🔴 What actually stands between here and launch
 
-- **Requirements total (v1):** 63
-- **Requirements mapped:** 63 (100%)
-- **Phases planned:** 0 / 6
-- **Phases completed:** 0 / 6
-- **Estimated MVP duration:** ~5–6 weeks of solo work
+### Blocked on Rob
+1. **Pick + register the Iurix domain.** Blocks the URL sweep, Resend verification, and the Stripe
+   live webhook registration.
+2. **Logo artwork** — 3 files carry the "atc"/"athena." mark, incl. the base64 blob printed on the
+   certificate (`lib/cert-pdf.ts:18`).
+3. **Decide** whether the course keeps the name "AI Staff Compliance Training" (recommend: keep).
+4. **Question pool size** — the ~24–32 target has been unresolved since 2026-06-12.
+5. **Attorney review** of cert template + landing copy + TOS ($500–$1,500). Hard gate on launch.
+6. **CPA consult** on SaaS sales tax + home-state registration (~$300–$500).
+
+### Blocked on Katy
+- Legal-accuracy pass on both question sets (`supabase/migrations/0003_quiz_questions.sql` — the
+  certifying quiz; `lib/training/questions.ts` — 15 ungraded knowledge checks).
+
+### Engineering (Max)
+- **The rename** — see `.planning/RENAME-IURIX.md`. Layers 1 + 2 (25 files) are unblocked and can
+  start now; Layers 4–6 wait on the domain.
+- **Stripe live mode** — head-office address → Stripe Tax → live product/price → swap the hardcoded
+  `PRICE_ID` at `app/api/checkout/route.ts:17` → register the webhook **on the new domain**.
+  ⚠️ `app/api/checkout/route.ts:68` already sets `automatic_tax: { enabled: true }`, so **live
+  checkout hard-fails until Stripe Tax is enabled.**
+- **Auth performance** — ~5s per dashboard route. **Zero `getClaims()` usage repo-wide** despite
+  CLAUDE.md mandating it; three serialized `getUser()` round-trips per navigation
+  (`middleware.ts:36` → `app/dashboard/layout.tsx:11` → page) plus a `getUserById` fan-out at
+  `app/dashboard/page.tsx:56`. ~7 files. **Awaiting Max's go-ahead since 2026-07-17.**
+- **Supabase Pro upgrade** ($25/mo) — free tier pauses after 7 days idle and has no PITR.
+- **Pick an external uptime monitor.**
 
 ---
 
-## Phase Summary
+## Locked Decisions
 
-| Phase | Name | Requirements | UI hint | Status |
-|-------|------|--------------|---------|--------|
-| 0 | Foundations | 10 (FND-01..07, AUDIT-01..03) | no | Not started |
-| 1 | Hello-cert end-to-end stub | 23 (AUTH-01..05, PAY-01..07, CERT-01..09, AUTO-01..02) | yes | Not started |
-| 2 | Real video + custom React quiz | 11 (COURSE-01..11) | yes | Not started |
-| 3 | Firm admin dashboard | 9 (DASH-01..09) | yes | Not started |
-| 4 | Automation hardening | 4 (AUTO-03..06) | no | Not started |
-| 5 | Renewal flow + launch polish | 6 (RENEW-01..06) | yes | Not started |
+### 2026-07-26 (Rob) — naming + corporate structure
+- **Product name: "Iurix Accreditation"** ("Iurix" for the company). Replaces "Athena".
+- **BSBR Holdings, LLC is the parent.** Iurix, IurisIQ, and Built Smart by Rob are three separate
+  companies under it. **Therefore "Built Smart by Rob" is a sibling brand, not this product's
+  publisher, and must be removed from the product entirely** — not kept as a footer line.
+- **Iurix is a DBA of BSBR Holdings, LLC.** Legal pages → "BSBR Holdings, LLC d/b/a Iurix".
+  **This resolves the LLC/EIN half of the Stripe live-mode blocker** carried since 2026-06-12:
+  Stripe activates on BSBR Holdings' existing EIN. No new entity, no new EIN.
+- **Domain moves to an Iurix domain** (specific domain not yet chosen).
+
+### Stack (carried)
+- Next.js 15.5 LTS (App Router, Node runtime via `nodejs_compat`) on **Cloudflare Workers** via
+  `@opennextjs/cloudflare`. No `runtime = 'edge'` anywhere.
+- Supabase (Auth/Postgres/Storage); RLS via `firm_id`/`role` in `app_metadata`.
+- Stripe webhook in a Next.js Route Handler; raw body via `req.text()`; idempotency table
+  `processed_stripe_events(event_id PK)`.
+- `pdf-lib` in a CF Worker for cert PDFs. `jose` (never `jsonwebtoken`).
+- **Course content (2026-06-18, Rob — LOCKED):** Articulate Rise 360 web export as the learning
+  layer, embedded via iframe, reporting no scores. The custom React quiz is the only certifiable
+  layer. Cloudflare Stream is NOT used.
+- **Pricing (2026-06-12, Rob):** per-seat volume — $35 (1–9) / $32 (10–24) / $28 (25+) per user/yr,
+  all seats at the band rate, FLAT on renewal. ONE product + ONE volume-tiered price; Checkout
+  `quantity` = seats; seat enforcement = subscription `quantity`.
 
 ---
 
-## Accumulated Context
+## ⚠️ Known-stale references in other docs
 
-### Locked Decisions (carried from PROJECT.md + research)
+- **CLAUDE.md Stripe IDs are wrong.** It names `price_1ThbLNCzT2268ei9nkadS8kD` /
+  `prod_UgzKT3NrGNAvDA`. The code uses **`price_1TjNHc6ZCSojEKRrKs79ToJ0`**, hardcoded at
+  `app/api/checkout/route.ts:17`, on sandbox `acct_1ThDpr6ZCSojEKRr`. Fix during the rename pass.
+- **`.planning/ROADMAP.md` Progress table still reads "Not started" for all six phases** and its
+  Phase 4 fallback still references Puppeteer-in-n8n (n8n is out of scope). Cosmetic; low priority.
+- **`.planning/DEPLOY-CHECKLIST.md`** is a 2026-06-17 artifact describing the first deploy. Its
+  Stripe/Resend/domain steps must be redone against the new domain.
+- **`cloudflare_stream_video_id`** is vestigial — only ever written
+  (`app/api/onboarding/complete/route.ts:82`), never read by any app code. A `NOT NULL` leftover
+  from the pre-Rise Cloudflare Stream era. Drop it someday; not a gap.
 
-- **Stack (adapter re-locked 2026-06-12):** Next.js 15.5 LTS (App Router, Node.js runtime via `nodejs_compat`) on **Cloudflare Workers** via `@opennextjs/cloudflare` (OpenNext adapter; supersedes the 2026-06-11 choice of `@cloudflare/next-on-pages`, which is deprecated — re-locked after doc verification), Supabase (Auth/Postgres/Storage) Pro tier, Cloudflare Stream, Stripe (`2025-09-30.acacia`), CF Workers for all automation, Resend (REST from CF Workers). No n8n. No VPS. No Netlify.
-- **Stripe webhook lands in a Next.js Route Handler running in the Worker (Node runtime).** Raw body via `await req.text()`; HMAC via Stripe SDK v17 — `constructEventAsync` recommended but `constructEvent` works (Node crypto available under nodejs_compat). Idempotency table `processed_stripe_events(event_id PK)`, transactional Postgres write, fire-and-forget POST to the cert Worker for async work.
-- **PDF generation lives in a CF Worker** using `pdf-lib` (pure JS, no headless browser, no VPS). Triggered by Supabase Database Webhook → authenticated POST to the Worker.
-- **JWT signing for Cloudflare Stream:** use `jose` library (web-standard JWT library; works in plain CF Workers (cert Worker) and the Next.js Worker alike), NOT `jsonwebtoken` (heavier, Node-only assumptions, unnecessary).
-- **Certification quiz is custom React** (~150–200 lines): server-side scoring, identity attestation, audit logging — this is the certifiable layer and does not change regardless of content format.
-- **Course content format (2026-06-18, Rob — LOCKED):** **Articulate Rise 360 interactive web export** is the learning layer — flip cards, scenarios, click-to-reveal, ungraded knowledge checks — authored by Rob + Katy (attorney co-author). Hosted on CF R2 or Articulate's hosting; embedded via iframe on the training page. Rise reports no scores to the app — acceptable because all certifiable events live in the custom React certification quiz. Cloudflare Stream is NOT required at launch; defer unless video clips are needed within Rise. No fallback — this decision is locked.
-- **Data model:** single `firm_members(firm_id, user_id, role)` table; `role ∈ {firm_admin, employee}`. `employees` may be exposed as a VIEW for UI clarity.
-- **Cert downloads:** routed through `/api/certificates/[id]/url` (auth-checked) → 60-second Supabase signed URL. No raw storage URLs in emails.
-- **Cloudflare Stream:** signed playback URLs minted server-side on every page load (4–8h TTL); Allowed Origins locked to production domain.
-- **Auth:** magic-link invite + password on first visit; password + magic-link backup for repeat logins.
-- **Environments:** two Supabase projects (`attytraining-dev`, `attytraining-prod`). Free-tier 2-project cap forces this.
-- **Note:** `research/STACK.md` was written for the original Netlify + n8n stack. The CF Workers architecture supersedes any Netlify/n8n guidance in that file.
-- **Pricing — per-seat volume (2026-06-12, Rob):** annual per-seat volume pricing — $35/user/yr (1–9 users), $32/user/yr (10–24), $28/user/yr (25+); all seats billed at the band rate the firm's headcount lands in; FLAT on renewal — no renewal discount. Supersedes BOTH prior same-day models (the original $199/$349/$499 tier bands AND the flat-tier variant) — there are NO fixed-price tiers. Stripe model: ONE product `prod_UgzKT3NrGNAvDA` + ONE volume-tiered Price `price_1ThbLNCzT2268ei9nkadS8kD` (lookup_key `per_seat_annual`, `billing_scheme=tiered`, `tiers_mode=volume`: up_to 9 → $35 / up_to 24 → $32 / inf → $28, `tax_behavior=exclusive`, `tax_code=txcd_20060058`). Checkout `quantity` = seats (Stripe computes the band rate); seat enforcement = subscription `quantity`. Source: live marketing site aistaffcompliance.com. Old test-mode objects archived (active=false, lookup keys released): products `prod_UgyZjCbV9uJdzX`/`prod_UgyZ7rqNgXZYao`/`prod_UgyZ30zgvigsd6`, prices `price_1ThachCzT2268ei9HlR1YivD`/`price_1ThaciCzT2268ei9tooaKk8j`/`price_1ThaciCzT2268ei9MRI94R1i`. Live-mode creation deferred pending Stripe Tax.
+---
 
-### Open Decisions (from research/SUMMARY.md "Decisions Needed Before Phase 1")
+## Resolved / closed
 
-- [ ] Reviewing attorney identified + engaged (cert + landing + TOS review, $500–$1,500)
-- [ ] Sending domain transactional email config (`noreply@builtsmartbyrob.com` + SPF/DKIM/DMARC)
-- [ ] Quiz pass threshold (recommend 80%) hardcoded into `courses.pass_threshold`
-- [ ] Question pool size + per-attempt count (recommend ~24–32 pool / 8–10 per attempt)
-- [x] Stripe Price IDs confirmed — 1 Product × 1 volume-tiered Price = single Price ID `price_1ThbLNCzT2268ei9nkadS8kD` (per_seat_annual), created TEST mode 2026-06-12. Live-mode recreation pending Stripe Tax.
-- [ ] Reconcile marketing pricing bands (extend to 25+ users) vs. target-market framing (docs describe 1–15 staff) — positioning vs. pricing-band mismatch to resolve at some point.
-- [ ] Stripe Tax enabled + home-state sales-tax registration completed — IN PROGRESS: `tax_code` (`txcd_20060058`) + `tax_behavior` (`exclusive`) set on all test-mode objects; still missing head_office address (BSBR Holdings LLC) to activate Stripe Tax; state registrations + CPA consult still open.
-- [ ] External uptime monitor for CF Worker health endpoint picked (UptimeRobot vs BetterStack)
-- [x] Articulate 360 trial outcome — LOCKED 2026-06-18 (Rob). Rise 360 is the course content format. COURSE-01..05 and ROADMAP Phase 2 rewritten accordingly.
-- [ ] CPA consult on SaaS sales tax (~$300–$500)
-
-### Todos (carried)
-
-(populated by `/gsd:plan-phase` per phase)
-
-### Blockers
-
-(none currently — see ROADMAP.md "External Blockers" for phase-level blockers)
-
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 260612-dzf | Propagate CF Pages + Workers stack pivot through CLAUDE.md, research docs, and STATE.md | 2026-06-12 | a31e15d | [260612-dzf-propagate-cf-pages-workers-stack-pivot-t](./quick/260612-dzf-propagate-cf-pages-workers-stack-pivot-t/) |
-| 260612-efr | Re-lock hosting adapter to @opennextjs/cloudflare on Workers; add NEXT-10-STEPS.md for Max | 2026-06-12 | 728fab3 | [260612-efr-switch-locked-adapter-decision-to-openne](./quick/260612-efr-switch-locked-adapter-decision-to-openne/) |
-| 260612-kqe | Mark Stripe CLI install + login done in NEXT-10-STEPS.md | 2026-06-12 | 583dc57 | [260612-kqe-mark-stripe-cli-install-login-done-in-ne](./quick/260612-kqe-mark-stripe-cli-install-login-done-in-ne/) |
-| 260612-ky5 | Record Max's progress report (steps 4–7) in NEXT-10-STEPS.md as unverified + Verification Gaps section | 2026-06-12 | 98289da | [260612-ky5-record-max-s-progress-report-in-next-10-](./quick/260612-ky5-record-max-s-progress-report-in-next-10-/) |
-| 260612-lg8 | Create Stripe test-mode products/prices (flat annual pricing) + propagate pricing change through docs | 2026-06-12 | d612d53 | [260612-lg8-record-stripe-products-prices-created-fl](./quick/260612-lg8-record-stripe-products-prices-created-fl/) |
-| 260612-mdv | Switch to per-seat volume pricing ($35/$32/$28 from aistaffcompliance.com); redo Stripe objects; propagate through docs | 2026-06-12 | 27d799f | [260612-mdv-switch-pricing-model-to-per-seat-volume-](./quick/260612-mdv-switch-pricing-model-to-per-seat-volume-/) |
-| 260612-pg6 | Verify Max's code post-migration, record step statuses, add Monday smoke-test runbook | 2026-06-12 | 08f080d | [260612-pg6-record-verified-step-statuses-post-code-](./quick/260612-pg6-record-verified-step-statuses-post-code-/) |
-| 260703-g7x | Mock up Rob's v0 homepage concept at /mockup (light palette, real pricing bands, wired to /api/checkout); Athena homepage untouched | 2026-07-03 | 2ac2575 | [260703-g7x-mock-up-v0-homepage-concept-as-mockup-ro](./quick/260703-g7x-mock-up-v0-homepage-concept-as-mockup-ro/) |
-| 260703-fast | Fix hero typewriter Strict Mode crash (impure setState updaters double-firing in dev) | 2026-07-03 | 31c7ade | (inline /gsd:fast — no directory) |
-| 260709-aeh | Fix double-billing / silent-provisioning gap: block second checkout for active-firm admins + operator alert on webhook provisioning collision | 2026-07-09 | 52cf9f5 | [260709-aeh-fix-double-billing-silent-provisioning-f](./quick/260709-aeh-fix-double-billing-silent-provisioning-f/) |
-| 260709-b6w | Observability groundwork: deep /api/health (Supabase ping), secret-gated /api/metrics concurrency endpoint, dormant k6 skeleton, .planning/MONITORING.md capacity-alert roadmap | 2026-07-09 | 6414647 | [260709-b6w-observability-groundwork-deep-health-che](./quick/260709-b6w-observability-groundwork-deep-health-che/) |
-
-### Decisions to Log
-
-(populated as decisions are made; promoted to PROJECT.md Key Decisions on phase transitions)
+- ✅ Stripe Price IDs confirmed (sandbox). Live-mode recreation pending Stripe Tax.
+- ✅ Articulate 360 outcome — Rise 360 locked 2026-06-18.
+- ✅ LLC/EIN for Stripe activation — resolved 2026-07-26 via the DBA decision.
+- ✅ Team-status "not started" bug — closed 2026-07-24, was a stale pre-deploy build, no bug.
+- ✅ CF Error 1102 — dropped from tracking 2026-07-24; never recurred.
+- ✅ Cert Worker is **not** dead code — ~500 lines running the queue drain + daily crons. Do not
+  propose removing it.
 
 ---
 
 ## Session Continuity
 
-- **Last activity:** 2026-07-09 — Completed quick task 260709-b6w: observability groundwork (deep /api/health, secret-gated /api/metrics concurrency endpoint, dormant k6 skeleton, .planning/MONITORING.md capacity-alert roadmap). Pending: METRICS_SECRET Worker secret, BetterStack wiring, GitHub-submission example, iurisdesk hub design spike. Prior: quick task 260709-aeh closed the double-billing / silent-provisioning gap.
-- **Last action:** Completed quick task 260612-pg6 (2026-06-12) — migrated Max's app code to the correct repo (efc3214, secret-free squash; aistaffcompliance reset to marketing-only + private; leaked dev Supabase key rotated by Max), verified Steps 3/5/9 (adapter config, schema+RLS+types, cert-worker stub), found Step 6 auth wiring NOT done (0-byte stubs — Max's top priority), and wrote the Monday Smoke-Test Runbook into NEXT-10-STEPS.md.
-- **Next action (Monday):** pre-flight per the runbook (Max: clone reset via `git reset --hard`, Step 6 auth wiring, migration 0002 for training_events + cert_generation_queue, rotated key into .dev.vars, Workers Builds repo check; Rob: collaborator invite), then run the 7-check smoke test.
-- **Next action:** `/gsd:plan-phase 0` to decompose Phase 0 (Foundations) into executable plans.
-- **Branch:** none (git branching_strategy = `none` per config)
-- **Files of record:**
-  - `.planning/PROJECT.md` — project context, brand, constraints, key decisions
-  - `.planning/REQUIREMENTS.md` — 63 v1 REQ-IDs with traceability to phases
-  - `.planning/ROADMAP.md` — 6-phase MVP build order, success criteria
-  - `.planning/research/SUMMARY.md` — locked stack, anti-features, critical pitfalls, recommended build order
-  - `.planning/research/PITFALLS.md` — detailed pitfalls with phase mapping
-  - `.planning/research/ARCHITECTURE.md` — component boundaries, data flows, RLS pattern
-  - `.planning/STATE.md` — this file
+- **2026-07-26 (Rob):** Scoping session, no code. Locked the Iurix name + corporate structure;
+  produced `.planning/RENAME-IURIX.md`; corrected the "payment backend is unfinished" premise (it
+  is built and deployed — the gap is live mode); refreshed this file. Commit `26729d3`.
+- **2026-07-24 (Max, desktop):** Verification pass, no code. Deploy landed; closed the team-status
+  bug, CF 1102, and the cert-worker suspicion.
+- **2026-07-17 (Max):** Dashboard UI/polish + perf pass — nav pill, shell backgrounds, Support page,
+  cert consolidation, training focus-mode fixes.
+- **Full history:** `.planning/sessions/` (2026-06-15 → present), oldest-first.
+- **Branch:** `main` only (`branching_strategy = none`).
+
+### Files of record
+| File | What it holds |
+|---|---|
+| `session_handoff.md` | **Primary cross-person sync point.** Read first, every session. |
+| `.planning/sessions/` | Full per-session history. |
+| `.planning/RENAME-IURIX.md` | The active work item — Iurix rename scope. |
+| `.planning/STATE.md` | This file — current position + locked decisions. |
+| `.planning/REQUIREMENTS.md` | 63 v1 REQ-IDs. |
+| `.planning/ROADMAP.md` | 6-phase build order (Progress table is stale). |
