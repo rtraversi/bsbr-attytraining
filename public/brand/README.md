@@ -1,55 +1,74 @@
 # Iurix brand assets
 
-Staged 2026-07-27 from Rob's originals so Max has access. **None of these is production-final yet
-— read the gap section before wiring anything up.**
+Staged from Rob's originals so Max has access. Updated 2026-07-27 after Rob supplied a **vector**
+and a full-res raster of the primary mark.
 
-| File | Source | Size | Background |
+## Use these
+
+| File | Size | Background | Use for |
 |---|---|---|---|
-| `iurix-logo-primary.png` | `Iurix logo - small.png` | 1024×1024 | ❌ **Opaque marble** |
-| `iurix-logo-transparent-INTERIM.png` | `Iurix_logo_no_crtified-removebg-preview.png` | 525×475 | ✅ Transparent |
-| `iurix-logo-source-hires.png` | `Iurix logo no crtified.png` | 2154×1952 | ❌ **Opaque marble** |
+| **`iurix-logo.svg`** | 1095×1095 viewBox, 3.4 MB | ✅ **Transparent** | **Primary web asset**: nav, favicon, site. Optimize before shipping — see #4. |
+| **`iurix-logo-2048-white.png`** | 2048×2048, 1.5 MB | **Solid white** (not alpha) | Cert PDF and email — anywhere the backdrop is already white |
 
-Rob designated `iurix-logo-primary.png` + the transparent file as the correct logo (2026-07-27).
+> **`iurix-logo.svg` was prepared here, not supplied as-is.** Rob provided two auto-trace exports;
+> the second (`...no background(1).svg`, 29 paths) was the cleaner one — it had already dropped a
+> stray `#eaede9` marble band present in the first. Both still carried a full-canvas white plate as
+> path 1 (`fill="#ffffff"`, `M0.25 0.25 … 1094.75 1094.75`) despite the "no background" filename.
+> That single line was removed. Result: **28 paths, first fill `#eafbf5`, valid XML, transparent.**
+> Reproduce with `sed '3d' "<source>.svg"`.
 
-## ⚠️ Gaps to close before launch
+## Archive / reference only
 
-1. **The two designated files are different artwork.** `iurix-logo-primary.png` is the 1024×1024
-   *certified* variant; the transparent cutout was made from the *no-certified* variant
-   (1024×928 / 2154×1952). **There is currently no transparent version of the designated primary.**
-   Resolve which single artwork is canonical, then cut that one out.
+| File | Size | Background | Note |
+|---|---|---|---|
+| `iurix-logo-primary.png` | 1024×1024 | Opaque marble | Rob's originally designated primary; superseded by the two above |
+| `iurix-logo-source-hires.png` | 2154×1952 | Opaque marble | The *no-certified* variant — **different artwork** from the primary |
 
-2. **The transparent file is a remove.bg free preview** — 525×475, downscaled from a 2154×1952
-   original. Too small for the certificate PDF, and remove.bg's edge detection tends to damage
-   exactly what this mark has a lot of: the soft outer glow and the thin tapered crescent tips.
-   **Re-cut at full resolution** (paid remove.bg, Photoshop, or Affinity) from
-   `iurix-logo-source-hires.png` or the certified equivalent.
+*(The earlier 525×475 `-INTERIM` remove.bg preview has been deleted — superseded and misleading.)*
 
-3. **The three high-res files have the marble baked in.** They report a 32-bit alpha channel, but
-   every edge pixel is fully opaque (`A=255`). Dropping them into the nav or the certificate
-   produces a visible marble square, not a logo.
+## ✅ Resolved 2026-07-27
 
-4. **A simplified small-size variant is needed.** The brushed-metal gradients, outer glow, and fine
-   crescent tapers turn to mush in the nav pill (~32px) and are unreadable as a favicon (16–32px).
-   Needs a flatter, higher-contrast reduction — possibly just the scales-and-`I` element without
-   the crescents.
+- **The variant mismatch is closed.** The new SVG (1095×1095) and PNG (2048×2048) are both **square**,
+  matching the designated primary (`iurix logo - small.png`, 1024×1024) rather than the non-square
+  *no-certified* variant (1024×928 / 2154×1952). These are full-res versions of the right artwork.
+- **A true vector exists.** `iurix-logo.svg` is genuine vector — 30 `<path>` elements, zero
+  `<image>`, zero embedded base64. Not a raster wrapped in an SVG shell.
 
-5. **No wordmark exists.** This is a mark only. The component it replaces (`app/_components/atc-logo.tsx`)
-   is a *lockup* — mark + wordmark — so the nav needs a horizontal "Iurix Accreditation" lockup and
-   a typeface decision.
+## ⚠️ Still to handle
 
-6. **Dark mode unverified.** The app has a dark-mode toggle. The metallic should read on dark, but
-   the white outer glow may halo badly. May need a second variant.
+1. **The PNG is white-matted, not transparent.** Despite the filename ("no background"), it has
+   **no alpha anywhere** — 16,384 sampled pixels returned zero transparent and zero partially
+   transparent; the corner is pure `#ffffff` at `A=255`. It works on white backgrounds (email,
+   light-mode pages, a white certificate) and **will show a white box on dark mode** or over any
+   colored panel.
 
-**Vector (SVG) would close 1, 3, 4, and 5 at once** if the original design file can produce one. If
-the mark was AI-generated with no vector source, raster is workable — `lib/cert-pdf.ts` already
-embeds a raster blob — but each variant has to be produced separately.
+2. ~~The SVG has a white background plate.~~ ✅ **Removed** — see the note above.
+
+3. **Render transparent PNGs from the SVG at whatever sizes are needed** — cert PDF, email,
+   favicon, OG. This closes the dark-mode and cert gaps without another asset request to Rob.
+
+4. **The SVG is 3.4 MB — far too large to ship as-is.** It's an auto-trace: 28 flat-filled paths
+   with very dense node counts and no gradients. Run SVGO (same approach as the nav-shell pattern,
+   702 KB → 229 KB) *and* simplify paths. At nav size (~32px) most of those 30 colour bands are
+   invisible anyway — a hand-built 2–4 colour version will look better and weigh almost nothing.
+
+5. **The trace is flat, not metallic.** No `linearGradient` anywhere; the brushed-metal look is
+   posterized into 30 flat bands (whites/greys, teals, and the rose-gold crescents). Good for small
+   sizes, but the SVG will **not** match the raster's metallic finish at large sizes. Use the PNG
+   where the full rendering matters and the SVG where crispness matters.
+
+6. **No wordmark.** This is a mark only. The component it replaces (`app/_components/atc-logo.tsx`)
+   is a *lockup* — mark + wordmark — so the nav still needs an "Iurix Accreditation" wordmark and a
+   typeface decision.
+
+7. **Dark mode unverified.** The soft white outer glow may halo against dark backgrounds.
 
 ## Where these get used
 
 | Target | Current placeholder | Needs |
 |---|---|---|
-| `lib/cert-pdf.ts:18` `LOGO_B64` | base64 JPEG placeholder | Full-res transparent PNG, base64-encoded |
-| `public/athena-logo-email.png` | Athena email header | Transparent or solid-bg PNG, served from an absolute URL on `iurixaccreditation.com` |
-| `public/atc-athena-logo.svg` | "atc" monogram vector | Primary site mark |
-| `app/_components/atc-logo.tsx` | mark + "athena." wordmark | Full Iurix lockup |
-| favicon / OG images | — | Simplified small-size variant |
+| `lib/cert-pdf.ts:18` `LOGO_B64` | base64 JPEG placeholder | `iurix-logo-2048-white.png` base64-encoded (fine if the cert backdrop is white), else a transparent render from the SVG |
+| `public/athena-logo-email.png` | Athena email header | White-matted PNG is fine here; must be served from an absolute URL on `iurixaccreditation.com` |
+| `public/atc-athena-logo.svg` | "atc" monogram vector | `iurix-logo.svg`, plate removed + optimized |
+| `app/_components/atc-logo.tsx` | mark + "athena." wordmark | Full Iurix lockup (mark + wordmark) |
+| favicon / OG images | — | Simplified small-size variant rendered from the SVG |
