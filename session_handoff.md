@@ -1,5 +1,84 @@
 # Session Handoff
 
+**Date:** 2026-07-26 — **Rob**, terminal. **SCOPING ONLY — no code changed.**
+Full detail: `.planning/sessions/20260726-rob-summary.md`. Deliverable: `.planning/RENAME-IURIX.md`.
+
+## 🟢 What happened this session
+
+**1. Corrected a wrong premise.** Rob came in believing the payment backend was the one unfinished
+piece. It isn't — it's built and deployed. Verified in code: `app/api/checkout/route.ts` (seats as
+`quantity`, `adjustable_quantity`, `automatic_tax`, double-purchase guard),
+`app/api/webhooks/stripe/route.ts` (373 lines — raw-body signature verify, `processed_stripe_events`
+idempotency, five handlers incl. grace-vs-lapsed renewal re-enrollment), `app/api/portal/route.ts`.
+**The gap is Stripe LIVE MODE, not code.** Everything runs on sandbox `acct_1ThDpr6ZCSojEKRr`.
+
+**2. The project has a name: "Iurix Accreditation" ("Iurix" for the company).** Replaces "Athena".
+
+**3. Corporate structure locked — and it changes the rename's shape.** BSBR Holdings, LLC is the
+*parent*; **Iurix, IurisIQ, and Built Smart by Rob are three separate companies under it.** So
+"Built Smart by Rob" is a **sibling brand, not this product's publisher** — it must be removed
+entirely (9 files, 15 refs: cert PDF, cert Worker cron emails, all three legal pages, site footer).
+
+**4. Legal entity = BSBR Holdings, LLC; Iurix is a DBA.** → **This half-kills the Stripe live-mode
+blocker** carried since 06-12 as "LLC/EIN + Stripe Tax." Stripe activates on BSBR Holdings' existing
+EIN — no new entity, no new EIN. Remaining: head-office address → Stripe Tax → state reg / CPA.
+
+**5. Domain moves to an Iurix domain** — specific domain **not yet chosen**.
+
+## Status
+
+Nothing deployed, nothing broken, working tree otherwise clean. `.planning/RENAME-IURIX.md` has the
+full 7-layer inventory with file:line detail — **Max should work from that file, not this summary.**
+
+## 🔴 Blocked on Rob (blocks Max)
+
+1. **Pick + register the actual Iurix domain.** Blocks all URL/secret/Resend/Stripe-webhook work.
+2. **Logo artwork** — 3 files carry the "atc" monogram + "athena." wordmark, incl. the base64 blob
+   printed on the certificate (`lib/cert-pdf.ts:18`). Max can't generate these.
+3. **Decide whether the course keeps the name "AI Staff Compliance Training."** Recommend keeping
+   (Iurix = company, that = the course); renaming costs ~22 files + a DB `UPDATE` + a Stripe
+   product-name change.
+
+## 🟡 Max can start immediately (no dependencies)
+
+Layers 1 + 2 of the rename — the Athena→Iurix string sweep (16 files) and the Built-Smart-by-Rob
+removal (9 files) — **leaving every domain string untouched.** Safe, no infra, independently
+deployable. The `athena-*` CSS class rename is cosmetic; do it as its own commit or skip it.
+
+## ⚠️ Sequencing traps
+
+- **Domain cutover BEFORE registering the Stripe live webhook**, or it gets registered twice.
+- `app/api/checkout/route.ts:68` already has `automatic_tax: { enabled: true }` — **live checkout
+  hard-fails until Stripe Tax is on.**
+- Verify the **new** domain in Resend, not `aistaffcompliance.com`.
+
+## Doc corrections found while scoping
+
+- **CLAUDE.md Stripe IDs are stale.** Code actually uses `price_1TjNHc6ZCSojEKRrKs79ToJ0`
+  (hardcoded, `app/api/checkout/route.ts:17`), not the `price_1Thb...`/`prod_Ugz...` pair in the doc.
+- **`.planning/STATE.md` still says "Phase 0, 0% complete."** Phases 1–5 are done and deployed.
+  Flagged on 07-24, still not fixed, has now misled the start of two sessions. Refresh or delete it.
+- **`cloudflare_stream_video_id` is NOT a real gap** (contra the 07-24 notes). Only ever written
+  (`app/api/onboarding/complete/route.ts:82`), never read by app code — vestigial `NOT NULL` from
+  the pre-Rise CF Stream era. Drop the column someday; not a blocker.
+
+## Long-carried (unchanged)
+
+Auth perf ~5s/route — zero `getClaims()` repo-wide, 3 serialized `getUser()` round-trips
+(`middleware.ts:36` → `app/dashboard/layout.tsx:11` → page) + `getUserById` fan-out
+(`app/dashboard/page.tsx:56`); ~7 files, **still awaiting Max's go-ahead since 07-17.** Real question
+pool (Katy: legal accuracy; Rob: pool size, open since 06-12). Cert PDF logo placeholder. Storyline
+"Paul" false-positive gate (Rob/Katy). Max's unset `git config --global user.email`.
+
+---
+
+**Date:** 2026-07-24 — Max, **desktop Claude** (not this repo's terminal). No code changed. Multi-project
+session; only Section 1 applies here. Detail: `.planning/sessions/20260724-max-desktop-summary.md`.
+Closed: the deploy (everything since `61b152d` is live), the team-status bug (no bug — stale build),
+CF Error 1102 (dropped from tracking), cert-worker (**not** dead code — don't propose removing it).
+
+---
+
 **Date:** 2026-07-17 (Friday) — Max, terminal. Ran alongside a separate agent (that agent landed
 the final Rise export, `4ee94fa`). Full detail: `.planning/sessions/20260717-max-summary.md`.
 
