@@ -88,10 +88,11 @@ export async function POST(req: NextRequest) {
       throw new Error(`Enrollment not found: ${queue.enrollment_id}`)
     }
 
-    const [firmResult, courseResult, authResult] = await Promise.all([
+    const [firmResult, courseResult, authResult, attemptResult] = await Promise.all([
       admin.from('firms').select('name, owner_id, notify_cert_earned').eq('id', queue.firm_id).single(),
       admin.from('courses').select('title').eq('id', enrollment.course_id).single(),
       admin.auth.admin.getUserById(enrollment.user_id),
+      admin.from('quiz_attempts').select('score').eq('id', queue.quiz_attempt_id).single(),
     ])
 
     const firmName      = firmResult.data?.name   ?? 'Unknown Firm'
@@ -99,6 +100,9 @@ export async function POST(req: NextRequest) {
     const employeeEmail = authResult.data?.user?.email ?? 'Unknown'
     const employeeName  =
       (authResult.data?.user?.user_metadata?.full_name as string | undefined) || employeeEmail
+    // quiz_attempts.score is `int not null check (score between 0 and 100)`, so the
+    // fallback only covers the row being unreadable, not a genuinely absent score.
+    const score         = attemptResult.data?.score ?? 0
 
     // ── Certificate number — DB sequence guarantees global uniqueness ────────────
     const { data: certNumberRaw, error: seqErr } = await admin.rpc('generate_certificate_number')
@@ -114,10 +118,12 @@ export async function POST(req: NextRequest) {
 
     // ── Generate PDF ─────────────────────────────────────────────────────────────
     const pdfBytes = await generateCertPdf({
+      employeeName,
       employeeEmail,
       firmName,
       courseTitle,
       certNumber,
+      score,
       completedAt,
       expiresAt,
     })

@@ -3,10 +3,13 @@ import { PDFDocument, rgb } from 'pdf-lib'
 import { STACK_SANS_BOLD_B64, STACK_SANS_REGULAR_B64 } from './cert-fonts'
 
 interface CertPdfOptions {
+  employeeName: string
   employeeEmail: string
   firmName: string
   courseTitle: string
   certNumber: string
+  /** Passing score, 0–100. `quiz_attempts.score` is a non-null int in that range. */
+  score: number
   completedAt: Date
   expiresAt: Date
 }
@@ -32,7 +35,7 @@ function fitText(text: string, maxWidth: number, preferredSize: number, font: { 
 }
 
 export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array> {
-  const { employeeEmail, firmName, courseTitle, certNumber, completedAt, expiresAt } = opts
+  const { employeeName, employeeEmail, firmName, courseTitle, certNumber, score, completedAt, expiresAt } = opts
 
   const doc  = await PDFDocument.create()
   doc.registerFontkit(fontkit)
