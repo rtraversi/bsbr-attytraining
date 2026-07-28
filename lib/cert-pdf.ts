@@ -185,7 +185,7 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
     thickness: 0.75,
     color: NEAR_BLACK,
   })
-  page.drawText('Authorized by Built Smart by Rob', {
+  page.drawText('Reviewed and signed by', {
     x: LABEL_X,
     y: SIG_Y - 15,
     size: 9,
