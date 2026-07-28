@@ -30,6 +30,22 @@ Netlify site = single page, six sections, no internal routes: hero "Your staff i
 Layers 1 + 2 (the Athena→Iurix string sweep, 16 files; Built-Smart-by-Rob removal, 9 files) are
 also unblocked and can land alongside this. Leave domain strings alone until the zone is live.
 
+### 2026-07-28 — marketing site: source located + design direction set
+
+- **Source found: `rtraversi/aistaffcompliance`** (private; local clone `C:\sites\aistaffcompliance`).
+  Three files — `index.html`, `thanks.html`, `README.md`. `index.html` is **434 lines of plain HTML
+  with one inline `<style>` block** — no framework, no Tailwind, semantic class names. Easy to read
+  copy and structure off. ⚠️ **Max may not have repo access** — private, invite outstanding since June.
+- ✅ **Design fresh for Iurix (Rob).** The Netlify site is a **content/structure reference only** —
+  do NOT inherit its visual identity (Fraunces/Newsreader serif, brick red `#912d1f`, "5.3" seal).
+  Build a new look around the **Iurix logo's palette — teal + rose-gold metallics**. This also
+  retires the app's existing Athena landing design. **Neither existing identity survives.**
+- **Build it in this repo** (`C:\sites\attytraining`) as Next.js pages on the `bsbr-attytraining`
+  Worker — not a separate site, not a second Worker.
+- ⚠️ **The waitlist can't migrate** — it's Netlify Forms (`data-netlify="true"` → `/thanks.html`),
+  platform-specific with no CF equivalent. Being replaced by real checkout anyway, but **export any
+  captured signups from the Netlify dashboard before tearing the old site down.**
+
 ### Two more decisions landed 2026-07-27 (later in the same session)
 
 - ✅ **"AI Staff Compliance Training" is retired — use "Iurix Accreditation" everywhere.** Rob chose

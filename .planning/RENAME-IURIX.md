@@ -212,18 +212,45 @@ whether to delete it during this pass.
 `dns1–4.p07.nsone.net`), not Cloudflare. Irrelevant now that the domain is being retired —
 `iurixaccreditation.com` goes onto Cloudflare nameservers from the start.
 
-### Approach: build fresh in the Next.js app, using the Netlify site as the reference
+### Approach — decided
 
-**Decision (Rob, 2026-07-27): build the new website in Cloudflare** — i.e. as pages in the existing
-Next.js app served by the `bsbr-attytraining` Worker, not as a separate static site. The Netlify
-site is the **design and content reference**, not something to copy file-for-file.
+- **Build it in this repo** (`C:\sites\attytraining`) as pages in the existing Next.js app served
+  by the `bsbr-attytraining` Worker. Not a separate static site, not a second Worker.
+  *(Rob, 2026-07-27.)*
+- **Design fresh for Iurix.** *(Rob, 2026-07-28.)* The Netlify site is a **content and structure
+  reference only** — do **not** inherit its visual identity. Build a new look around the Iurix
+  logo's palette (teal + rose-gold metallics) rather than the Netlify site's editorial brick-red
+  treatment. This also supersedes the app's existing Athena landing design.
+
+### Source located
+
+**`rtraversi/aistaffcompliance`** (private) — local clone at `C:\sites\aistaffcompliance`.
+Three files: `index.html`, `thanks.html`, `README.md`.
+
+`index.html` is **434 lines / 24 KB of plain HTML with one inline `<style>` block** — no framework,
+no build step, no Tailwind; hand-written CSS with semantic class names (`hero`, `wrap`, `seal-mark`,
+`cta`, `bar`, `brand`). Copy is easy to lift; the CSS is **not** being lifted (see design decision).
+
+⚠️ **Max may not have access** — the repo is private and a collaborator invite for him has been an
+open to-do since June. Confirm before he needs it.
+
+### What the Netlify site's visual identity was (for reference, NOT to copy)
+
+Fraunces + Newsreader serifs, IBM Plex Mono, brick red `#912d1f`, inline-SVG "5.3" seal favicon.
+The app's current identity is Stack Sans Headline + teal `#14b8a6` on a dark shell. **Neither
+survives** — Iurix gets its own.
 
 ⚠️ **The Netlify site is a pre-launch "coming soon" page with a waitlist** — it has no working
-checkout. The Next.js app has a *real* pricing page wired to `/api/checkout`. Following the Netlify
-version too literally would ship a coming-soon page over a finished product.
+checkout. The Next.js app has a *real* pricing page wired to `/api/checkout`. Carrying its
+structure over too literally would ship a coming-soon page over a finished product.
 
-Take its structure, design language, and copy; wire the real purchase flow in place of the
-waitlist. Two sections are the ones that change:
+⚠️ **The waitlist form cannot migrate.** It uses **Netlify Forms** (`data-netlify="true"`,
+`netlify-honeypot="bot-field"`, POST → `/thanks.html`) — platform-specific, with no Cloudflare
+equivalent. It's being replaced by the real checkout anyway, but **export any captured signups from
+the Netlify dashboard before tearing the site down**, and decide `thanks.html`'s fate.
+
+Take the structure and copy; wire the real purchase flow in place of the waitlist. Two sections are
+the ones that change:
 - "The training platform is coming soon" → remove, or repurpose
 - "Be first in line" (email capture) → replace with the real checkout CTA
 
