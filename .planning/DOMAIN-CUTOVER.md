@@ -161,9 +161,11 @@ New signing secret → `wrangler secret put STRIPE_WEBHOOK_SECRET --name bsbr-at
 
 ### E5. Old domain  *(Rob)*
 
-**Export the Netlify Forms waitlist signups before touching anything** — they exist only in the
-Netlify dashboard and are unrecoverable once the site is gone. Then 301
-`aistaffcompliance.com` → `iurixaccreditation.com` (it can stay on Netlify purely as a redirect).
+301 `aistaffcompliance.com` → `iurixaccreditation.com`. It can stay on Netlify purely as a
+redirect at no cost, or be dropped entirely.
+
+> ✅ **The Netlify Forms waitlist is empty** (Rob confirmed 2026-07-28) — nothing to export, and
+> no irreversible step here. Tear the old site down whenever convenient.
 
 ---
 
@@ -190,10 +192,10 @@ Then walk it as a human:
 
 ## Rollback
 
-Nothing here is destructive if taken in order. If the new domain misbehaves, the `*.workers.dev`
-URL still serves the same Worker — revert `wrangler.jsonc:9` and
-`workers/cert-worker/wrangler.toml:14`, redeploy both, and repoint E2/E3/E4 back. The only
-one-way steps are **E5 (the Netlify signup export)** and the registrar nameserver change.
+Nothing here is destructive. If the new domain misbehaves, the `*.workers.dev` URL still serves the
+same Worker — revert `wrangler.jsonc:9` and `workers/cert-worker/wrangler.toml:14`, redeploy both,
+and repoint E2/E3/E4 back. The only one-way step is the registrar nameserver change, and even that
+is reversible by pointing the nameservers back.
 
 ---
 
