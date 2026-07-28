@@ -210,9 +210,12 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
     size: 9, font: regular, color: MID_GREY,
   })
 
-  const domain = 'aistaffcompliance.com'
-  page.drawText(domain, {
-    x: W - 60 - regular.widthOfTextAtSize(domain, 9),
+  // Placeholder — the retired aistaffcompliance.com had to come off the cert, but
+  // no real contact address exists yet (still blocked on Rob). Note this does not
+  // match the registered zone, iurixaccreditation.com.
+  const contact = 'accreditation@iurix.com'
+  page.drawText(contact, {
+    x: W - 60 - regular.widthOfTextAtSize(contact, 9),
     y: 64,
     size: 9, font: regular, color: MID_GREY,
   })
