@@ -1,6 +1,68 @@
 # Session Handoff
 
+**Date:** 2026-07-28 — **Rob**, terminal. Planning + infra audit. **No app code written.**
+Detail: `.planning/sessions/20260728-rob-summary.md`. *(All app-code commits on `main` today are
+Max's rebrand sweep, landed in parallel.)*
+
+## 🟢 Decisions locked — these SUPERSEDE the 07-27 entry below
+
+1. **Design fresh for Iurix.** The Netlify site is a **content/structure reference ONLY** — its
+   visual identity is *not* inherited. Build around the **Iurix logo's palette (teal + rose-gold
+   metallics)**, not the Netlify editorial look (Fraunces/Newsreader serif, brick red `#912d1f`).
+   **This also retires the app's Athena landing design — neither existing identity survives.**
+   ⚠️ *Supersedes the 07-27 line saying the Netlify design was canonical.*
+2. **Rob owns the marketing redesign**, in a new session, working in `C:\sites\attytraining`.
+   ⚠️ *Supersedes the 07-27 "MAX — start here: build the new marketing site" item below.*
+3. **The Netlify waitlist is empty** — nothing to export; the cutover has no irreversible step.
+
+## 🟡 MAX — your list
+
+1. **Continue the rename sweep** — `.planning/RENAME-IURIX.md` Layers 1–3. (You're well into this.)
+2. **The domain cutover** — 📘 **`.planning/DOMAIN-CUTOVER.md`**, the new step-by-step runbook.
+   Split by owner: Rob takes registrar + dashboards, you take repo + CLI. Blocked on Rob finishing
+   Phase A (zone setup).
+3. **NOT the marketing site** — Rob has it now (decision 2).
+
+**Two traps in the runbook, each worth a day if hit:**
+- `NEXT_PUBLIC_APP_URL` is **inlined at build time** — changing the var without rebuilding does
+  nothing to built bundles and reads exactly like a caching bug.
+- A Worker **secret silently overrides** a `vars` entry. Run
+  `wrangler secret list --name bsbr-attytraining` before editing `wrangler.jsonc:9`.
+
+**Also:** the cert worker needs its own redeploy (separate `APP_URL`, separate step, last shipped
+06-24), and the Supabase DB webhook must point at the **app** `/api/certs/generate` — if it ever
+targets the cert worker, certs silently never generate and every delivery still returns 200.
+
+## 🔴 Coordinate before the redesign starts
+
+**Rob and Max are on the same branch.** `branching_strategy = none`, and Max landed 10+ commits to
+`main` today touching `app/layout.tsx`, `app/_components/footer.tsx`, page titles, and
+`emails/_components/email-shell.tsx`. The redesign hits those same files plus `globals.css`.
+
+**Recommended: run the redesign on a branch** (`redesign-iurix`). `preview_urls: true` is already
+set, so if Workers Builds is connected the branch gets its own preview URL — worth confirming.
+Alternative: split by file, Max staying out of `app/_components/*` and `globals.css`.
+
+## 🔵 Still blocked on Rob
+
+Zone setup (Phase A); an **"Iurix Accreditation" wordmark** (none exists — Max used *text*
+wordmarks as an interim in the email shell and cert header, so those want a second pass once a real
+asset lands); a simplified small-size logo variant; new contact email + phone.
+
+## Notes
+
+- **Marketing source:** `rtraversi/aistaffcompliance` (private; clone at `C:\sites\aistaffcompliance`)
+  — `index.html` is 434 lines of plain HTML, one inline `<style>` block, no framework. Only copy +
+  structure are needed from it now. ⚠️ Max may lack access — invite outstanding since June.
+- **Rob's machine is dev-ready:** Node 24.15, pnpm 11.9, wrangler 4.99, `node_modules` + `.env.local`
+  present. **`.dev.vars` MISSING** → `pnpm run preview` (workerd) won't run until Max supplies it;
+  not needed for design work. `pnpm dev` = local Node; `preview` = workerd; `deploy` = live Worker.
+
+---
+
 **Date:** 2026-07-27 — **Rob**, terminal. Scoping + Cloudflare audit. **No app code changed.**
+⚠️ **Two items below are superseded by the 07-28 entry above** — the "Netlify design is canonical"
+decision, and the assignment of the marketing site to Max.
 
 ## 🟢 Decisions locked
 
