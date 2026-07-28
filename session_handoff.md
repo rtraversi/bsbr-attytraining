@@ -1,5 +1,68 @@
 # Session Handoff
 
+**Date:** 2026-07-28 (later) — **Max**, terminal. Rename cleanup + the **certificate PDF rebuild**.
+7 commits, all pushed. Detail: `.planning/sessions/20260728-max-summary.md`.
+
+## 🟢 What landed
+
+**Rename cleanup (Plan A):** cert numbers are now **`IX-YYYYMMDD-####`** (new migration `0014`,
+replacing the `CERT-` sequence) — **verified live**, real cert issued as `IX-20260728-4289`. Cert PDF
+signature line → "Reviewed and signed by" (name blank). DPA processor → **BSBR Holdings, LLC d/b/a
+Iurix**.
+
+**Certificate PDF rebuild (Plan B):** landscape 792×612, **the real Iurix mark** + an `IURIX`
+wordmark top-left, `Name @ Firm` banner, `IURIX ACCREDITATION` headline, a
+`SCORE / COMPLETED ON / EXPIRES` row, signature block, and a bordered **QR placeholder**. Stack Sans
+Headline replaces Times/Helvetica throughout. **Monochrome** per Max — teal/rose-gold waits for a
+locked palette.
+
+Two real bugs fixed on the way: certificates printed the employee's **email** instead of their name
+(the route computed the name and never passed it), and the cert **delivery email** did the same thing.
+
+## 🔴 NOTHING IS DEPLOYED
+
+Every change from **both** plans is live-unverified — including the DPA and signature-line edits.
+One `pnpm run deploy` covers all of it.
+
+**Two traps when verifying the cert PDF live — each one reads like a bug:**
+1. Cert generation fires from the **Supabase DB webhook → the deployed app**. `pnpm dev` never sees
+   it. There is no local path to test the real flow.
+2. The PDF is **rendered once and stored**, never re-rendered on read. `IX-20260728-4289` will show
+   the old design forever. With the `already_exists` short-circuit and the `unique (enrollment_id)`
+   constraint, redoing the training on that enrollment regenerates nothing — **provision a new
+   employee** to see the new layout.
+
+For layout work specifically, skip the deploy loop: a throwaway harness calls `generateCertPdf`
+directly with sample data and writes a PDF locally. Details in the session summary.
+
+## ⚠️ Resolve before a real certificate goes out
+
+**`accreditation@iurix.com` is printed on the certificate footer, and the registered zone is
+`iurixaccreditation.com`** — the project may not own `iurix.com`. Max asked for it knowingly as a
+placeholder; flagging it so it isn't forgotten.
+
+## 🟡 Next
+
+Deploy + walk it (new employee → fresh cert). Then: real disclaimer copy from **Katy**; an attorney
+name for the signature line; the decorative half of the cert design (seal, wave field, real QR,
+metallic finish) — **blocked on Rob's art + a locked palette**, and the QR additionally needs a
+verification endpoint that doesn't exist yet.
+
+Smaller: `LEGAL-DOCS-ATTORNEY-CHECKLIST.txt` now contradicts the DPA on entity naming (`:19`) and
+seeds `@builtsmartbyrob.com` contacts (`:16-17`); the 3.4MB brand SVG still needs SVGO; there is
+still **no wordmark asset** (the cert sets `IURIX` in Stack Sans as a stand-in);
+`certificate_number_seq` is now dead and could be dropped.
+
+## ⚠️ Two process notes
+
+- **Desktop overwrote the plan file at the same path mid-session** — same filename, completely
+  different plan. Caught only by checking its mtime. If a plan path was already used this session,
+  re-read it rather than assuming.
+- **`supabase db reset` is not this repo's workflow.** A plan recommended it; Max caught it.
+  `--linked` would drop the hosted DB **including every login**. Use **`supabase db push`**.
+
+---
+
 **Date:** 2026-07-28 — **Rob**, terminal. Planning + infra audit. **No app code written.**
 Detail: `.planning/sessions/20260728-rob-summary.md`. *(All app-code commits on `main` today are
 Max's rebrand sweep, landed in parallel.)*
