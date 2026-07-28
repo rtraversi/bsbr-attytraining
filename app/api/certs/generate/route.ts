@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
       try {
         const html = await render(
           CertDeliveryEmail({
-            employeeName: employeeEmail,
+            employeeName,
             firmName,
             certUrl,
             validUntil: formatDate(expiresAt),
