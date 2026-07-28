@@ -18,7 +18,7 @@ export default function DpaPage() {
           <div className="space-y-10 text-sm text-zinc-400 leading-relaxed">
             <Section title="1. Scope and Purpose">
               <p>[ATTORNEY TO COMPLETE — describe the scope of this DPA: it governs the processing
-              of personal data by Built Smart by Rob (as data processor) on behalf of the subscribing
+              of personal data by BSBR Holdings, LLC d/b/a Iurix (as data processor) on behalf of the subscribing
               law firm (as data controller) in connection with the IURIX platform.]</p>
             </Section>
 
