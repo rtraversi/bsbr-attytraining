@@ -30,6 +30,24 @@ Netlify site = single page, six sections, no internal routes: hero "Your staff i
 Layers 1 + 2 (the Athena→Iurix string sweep, 16 files; Built-Smart-by-Rob removal, 9 files) are
 also unblocked and can land alongside this. Leave domain strings alone until the zone is live.
 
+### 2026-07-28 — 📘 NEW: `.planning/DOMAIN-CUTOVER.md`
+
+**Full step-by-step runbook for putting `iurixaccreditation.com` on the `bsbr-attytraining`
+Worker.** Supersedes `DEPLOY-CHECKLIST.md` (06-17, stale). Split by owner — Rob does registrar +
+dashboards, Max does repo + CLI. Includes exact `file:line` edits, verification commands, and a
+rollback path.
+
+**Two traps documented up front, both of which cost a day if hit:**
+1. `NEXT_PUBLIC_APP_URL` is inlined at **build** time — changing the var without a rebuild does
+   nothing to already-built client bundles, and reads as a caching bug.
+2. A Worker **secret silently overrides** a `vars` entry. `DEPLOY-CHECKLIST` step 4 told Rob to
+   `wrangler secret put NEXT_PUBLIC_APP_URL`; if that secret exists it wins and the
+   `wrangler.jsonc` edit is ignored. Run `wrangler secret list --name bsbr-attytraining` first.
+
+**Also:** the cert worker needs a redeploy too (own `APP_URL`, own deploy step, last shipped 06-24),
+and the Supabase DB webhook must be repointed to the **app** at `/api/certs/generate` — if it ever
+points at the cert worker, certs silently never generate and every delivery still returns 200.
+
 ### 2026-07-28 — marketing site: source located + design direction set
 
 - **Source found: `rtraversi/aistaffcompliance`** (private; local clone `C:\sites\aistaffcompliance`).
