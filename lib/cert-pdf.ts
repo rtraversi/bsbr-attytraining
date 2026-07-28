@@ -1,4 +1,6 @@
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import fontkit from '@pdf-lib/fontkit'
+import { PDFDocument, rgb } from 'pdf-lib'
+import { STACK_SANS_BOLD_B64, STACK_SANS_REGULAR_B64 } from './cert-fonts'
 
 interface CertPdfOptions {
   employeeEmail: string
@@ -33,14 +35,17 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
   const { employeeEmail, firmName, courseTitle, certNumber, completedAt, expiresAt } = opts
 
   const doc  = await PDFDocument.create()
+  doc.registerFontkit(fontkit)
+
   const page = doc.addPage([612, 792])
   const W = 612
   const H = 792
 
-  const serif     = await doc.embedFont(StandardFonts.TimesRoman)
-  const serifBold = await doc.embedFont(StandardFonts.TimesRomanBoldItalic)
-  const sans      = await doc.embedFont(StandardFonts.Helvetica)
-  const sansBold  = await doc.embedFont(StandardFonts.HelveticaBold)
+  // Stack Sans replaces the four StandardFonts embeds (Times/Helvetica). Two
+  // weights carry the whole certificate: bold for headings and values, regular
+  // for labels and body. subset:true keeps each PDF to the glyphs it uses.
+  const bold    = await doc.embedFont(Buffer.from(STACK_SANS_BOLD_B64,    'base64'), { subset: true })
+  const regular = await doc.embedFont(Buffer.from(STACK_SANS_REGULAR_B64, 'base64'), { subset: true })
 
   // ── Background ──────────────────────────────────────────────────────────────
   page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: CREAM })
@@ -67,12 +72,12 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
   // both retired, so one label is left and it sits centered in the band.
   const headerLabel = 'IURIX'
   const headerLabelSize = 18
-  const headerLabelW = sansBold.widthOfTextAtSize(headerLabel, headerLabelSize)
+  const headerLabelW = bold.widthOfTextAtSize(headerLabel, headerLabelSize)
   page.drawText(headerLabel, {
     x: (W - headerLabelW) / 2,
     y: HEADER_Y + (HEADER_H - headerLabelSize) / 2 + 3,
     size: headerLabelSize,
-    font: sansBold,
+    font: bold,
     color: CREAM,
   })
 
@@ -89,12 +94,12 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
   const TITLE_Y = Math.round(logoY - 28)
   const titleText = 'Certificate of Completion'
   const titleSize = 28
-  const titleW = serifBold.widthOfTextAtSize(titleText, titleSize)
+  const titleW = bold.widthOfTextAtSize(titleText, titleSize)
   page.drawText(titleText, {
     x: (W - titleW) / 2,
     y: TITLE_Y,
     size: titleSize,
-    font: serifBold,
+    font: bold,
     color: NEAR_BLACK,
   })
 
@@ -108,54 +113,54 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
 
   // ── "This certifies that" ────────────────────────────────────────────────────
   const certifiesText = 'This certifies that'
-  const certifiesW = serif.widthOfTextAtSize(certifiesText, 12)
+  const certifiesW = regular.widthOfTextAtSize(certifiesText, 12)
   page.drawText(certifiesText, {
     x: (W - certifiesW) / 2,
     y: TITLE_Y - 52,
     size: 12,
-    font: serif,
+    font: regular,
     color: MID_GREY,
   })
 
   // ── Employee name / email ────────────────────────────────────────────────────
-  const { size: nameSize, width: nameW } = fitText(employeeEmail, 480, 20, serifBold)
+  const { size: nameSize, width: nameW } = fitText(employeeEmail, 480, 20, bold)
   page.drawText(employeeEmail, {
     x: (W - nameW) / 2,
     y: TITLE_Y - 84,
     size: nameSize,
-    font: serifBold,
+    font: bold,
     color: NEAR_BLACK,
   })
 
   // ── "has successfully completed" ─────────────────────────────────────────────
   const completedText = 'has successfully completed'
-  const completedW = serif.widthOfTextAtSize(completedText, 12)
+  const completedW = regular.widthOfTextAtSize(completedText, 12)
   page.drawText(completedText, {
     x: (W - completedW) / 2,
     y: TITLE_Y - 118,
     size: 12,
-    font: serif,
+    font: regular,
     color: MID_GREY,
   })
 
   // ── Course title ─────────────────────────────────────────────────────────────
-  const { size: courseSize, width: courseW } = fitText(courseTitle, 480, 15, serifBold)
+  const { size: courseSize, width: courseW } = fitText(courseTitle, 480, 15, bold)
   page.drawText(courseTitle, {
     x: (W - courseW) / 2,
     y: TITLE_Y - 148,
     size: courseSize,
-    font: serifBold,
+    font: bold,
     color: NEAR_BLACK,
   })
 
   // ── ABA Rule note ────────────────────────────────────────────────────────────
   const ruleNote = 'demonstrating required competency in AI usage under ABA Model Rule 5.3'
-  const ruleNoteW = serif.widthOfTextAtSize(ruleNote, 10)
+  const ruleNoteW = regular.widthOfTextAtSize(ruleNote, 10)
   page.drawText(ruleNote, {
     x: (W - ruleNoteW) / 2,
     y: TITLE_Y - 174,
     size: 10,
-    font: serif,
+    font: regular,
     color: MID_GREY,
   })
 
@@ -172,9 +177,9 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
 
   details.forEach(({ label, value, valueColor }, i) => {
     const y = DETAILS_Y - i * 26
-    page.drawText(label, { x: LABEL_X, y, size: 10, font: sans, color: MID_GREY })
-    const { size: vSize } = fitText(value, 320, 11, sansBold)
-    page.drawText(value, { x: VALUE_X, y, size: vSize, font: sansBold, color: valueColor ?? NEAR_BLACK })
+    page.drawText(label, { x: LABEL_X, y, size: 10, font: regular, color: MID_GREY })
+    const { size: vSize } = fitText(value, 320, 11, bold)
+    page.drawText(value, { x: VALUE_X, y, size: vSize, font: bold, color: valueColor ?? NEAR_BLACK })
   })
 
   // ── Signature line ───────────────────────────────────────────────────────────
@@ -189,7 +194,7 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
     x: LABEL_X,
     y: SIG_Y - 15,
     size: 9,
-    font: sans,
+    font: regular,
     color: MID_GREY,
   })
 
@@ -202,23 +207,23 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
 
   page.drawText(`Certificate No: ${certNumber}`, {
     x: 60, y: 64,
-    size: 9, font: sans, color: MID_GREY,
+    size: 9, font: regular, color: MID_GREY,
   })
 
   const domain = 'aistaffcompliance.com'
   page.drawText(domain, {
-    x: W - 60 - sans.widthOfTextAtSize(domain, 9),
+    x: W - 60 - regular.widthOfTextAtSize(domain, 9),
     y: 64,
-    size: 9, font: sans, color: MID_GREY,
+    size: 9, font: regular, color: MID_GREY,
   })
 
   // ── Disclaimer ───────────────────────────────────────────────────────────────
   const disclaimer = 'This certificate documents completion of training. It is not legal advice and does not constitute accreditation by the ABA or any state bar.'
-  const disclaimerW = sans.widthOfTextAtSize(disclaimer, 7)
+  const disclaimerW = regular.widthOfTextAtSize(disclaimer, 7)
   page.drawText(disclaimer, {
     x: (W - disclaimerW) / 2,
     y: 46,
-    size: 7, font: sans, color: RULE_LINE,
+    size: 7, font: regular, color: RULE_LINE,
   })
 
   return doc.save()
