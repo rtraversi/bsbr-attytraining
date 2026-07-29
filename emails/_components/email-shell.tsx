@@ -83,15 +83,15 @@ export function EmailShell({ preview, children }: EmailShellProps) {
               constitute accreditation by the ABA or any state bar.
             </Text>
             <Text style={footerLinksRow}>
-              <Link href="https://bsbr-attytraining.aistaffcompliance.workers.dev/privacy" style={footerLink}>
+              <Link href="https://iurixaccreditation.com/privacy" style={footerLink}>
                 Privacy Policy
               </Link>
               <span style={footerDot}> · </span>
-              <Link href="https://bsbr-attytraining.aistaffcompliance.workers.dev/terms" style={footerLink}>
+              <Link href="https://iurixaccreditation.com/terms" style={footerLink}>
                 Terms of Service
               </Link>
               <span style={footerDot}> · </span>
-              <Link href="https://bsbr-attytraining.aistaffcompliance.workers.dev/dpa" style={footerLink}>
+              <Link href="https://iurixaccreditation.com/dpa" style={footerLink}>
                 Data Processing Addendum
               </Link>
             </Text>
