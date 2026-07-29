@@ -171,6 +171,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     user_id: userId,
     role: 'admin',
     status: 'invited',   // → 'active' once they complete onboarding
+    // The admin has not chosen whether to train yet. Defaulting to true would
+    // consume a paid seat the firm never agreed to; onboarding flips this to
+    // true only if they opt in.
+    occupies_seat: false,
   })
 }
 
