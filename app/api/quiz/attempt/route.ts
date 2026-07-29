@@ -2,6 +2,7 @@ import { after } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchSeatAccess, hasTrainingAccess } from '@/lib/seats'
 
 interface AnswerPayload {
   questionId: string
@@ -64,6 +65,19 @@ export async function POST(req: NextRequest) {
   }
 
   const admin = createAdminClient()
+
+  // ── Seat entitlement ─────────────────────────────────────────────────────────
+  // The certifying path. Being signed in with a firm_id is not enough — without
+  // this, an admin who declined training (and so occupies no seat) could pass the
+  // quiz and have a real certificate issued against a seat nobody paid for.
+  // Checked before any write, so a refusal leaves no enrollment behind.
+  const seatAccess = await fetchSeatAccess(admin, userId, firmId)
+  if (!hasTrainingAccess(seatAccess)) {
+    return NextResponse.json(
+      { error: 'You are not enrolled in this training.' },
+      { status: 403 }
+    )
+  }
 
   // ── Fetch course + pass threshold ────────────────────────────────────────────
   const { data: course, error: courseErr } = await admin

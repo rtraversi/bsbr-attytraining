@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { deriveProgress, type KnowledgeCheckEvent } from '@/lib/training/progress'
 import { clientQuestionsByLesson } from '@/lib/training/questions'
 import { READINESS_LESSON } from '@/lib/training/lessons'
+import { SEAT_ACCESS_COLUMNS, hasTrainingAccess, type SeatAccessRow } from '@/lib/seats'
+import { NoSeatNotice } from '../_components/no-seat-notice'
 import { OverviewClient, type ActivityItem } from './_components/overview-client'
 
 export const metadata = {
@@ -40,10 +42,15 @@ export default async function OverviewPage() {
 
   const { data: member } = await admin
     .from('firm_members')
-    .select('id')
+    .select(`id, ${SEAT_ACCESS_COLUMNS}`)
     .eq('user_id', user.id)
     .eq('firm_id', firmId)
     .maybeSingle()
+
+  // Seat gate — see lib/seats.ts. Same predicate as the seat-count trigger.
+  if (!hasTrainingAccess(member as SeatAccessRow | null)) {
+    return <NoSeatNotice />
+  }
 
   let events: KnowledgeCheckEvent[] = []
   let activity: ActivityItem[] = []
