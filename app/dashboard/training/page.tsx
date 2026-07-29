@@ -5,7 +5,7 @@ import { deriveProgress, type KnowledgeCheckEvent } from '@/lib/training/progres
 import { READINESS_LESSON } from '@/lib/training/lessons'
 import { clientQuestionsByLesson } from '@/lib/training/questions'
 import { SEAT_ACCESS_COLUMNS, hasTrainingAccess } from '@/lib/seats'
-import { NoSeatNotice } from '../_components/no-seat-notice'
+import { SeatGate } from '../_components/no-seat-notice'
 import { TrainingClient } from './_components/training-client'
 import type { QuizQuestion } from './_components/quiz-component'
 
@@ -70,7 +70,7 @@ export default async function TrainingPage() {
   // Seat gate — a firm_id alone is not entitlement. Mirrors the same predicate
   // the seat-count trigger uses, so access and billing can't drift apart.
   if (!hasTrainingAccess(member)) {
-    return <NoSeatNotice />
+    return <SeatGate member={member} />
   }
 
   const courseTitle = course?.title ?? 'Responsible Use of AI within the Legal Industry'

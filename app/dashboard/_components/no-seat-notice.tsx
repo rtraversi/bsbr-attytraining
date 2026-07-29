@@ -5,6 +5,9 @@
 // employee shell's own tabs, so redirecting to /dashboard would bounce an
 // unentitled employee between two pages neither of which explains anything.
 
+import { canSelfEnroll, type SeatAccessRow } from '@/lib/seats'
+import { EnrollSelfButton } from './enroll-self-button'
+
 const HEADING = 'font-semibold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
 const BODY = 'font-extralight text-[#3D3D3D] dark:text-[#C4CBD2]'
 const CARD =
@@ -12,12 +15,12 @@ const CARD =
 
 export function NoSeatNotice({
   title = 'You’re not enrolled in the training',
-  body = 'Your account doesn’t currently hold a training seat, so the course and the certification assessment aren’t available. Your firm’s administrator can enrol you from their Team page.',
+  body = 'Your account doesn’t currently hold a training seat, so the course and the certification assessment aren’t available. Your firm’s administrator can enroll you from their Team page.',
   children,
 }: {
   title?: string
   body?: string
-  /** Optional action — e.g. the admin self-enrol button. */
+  /** Optional action — e.g. the admin self-enrollment button. */
   children?: React.ReactNode
 }) {
   return (
@@ -29,4 +32,24 @@ export function NoSeatNotice({
       </div>
     </main>
   )
+}
+
+/**
+ * The seat gate's whole failure branch. An admin who declined training at
+ * onboarding gets a way back in; everyone else gets the explanation. Kept in one
+ * place so the three training pages can't drift on which case says what.
+ */
+export function SeatGate({ member }: { member: SeatAccessRow | null }) {
+  if (canSelfEnroll(member)) {
+    return (
+      <NoSeatNotice
+        title="You’re not enrolled in the training"
+        body="You chose not to take the training when you set up your firm, so you don’t hold a seat. You can claim one now — it counts against your firm’s purchased seats, the same as any team member."
+      >
+        <EnrollSelfButton />
+      </NoSeatNotice>
+    )
+  }
+
+  return <NoSeatNotice />
 }

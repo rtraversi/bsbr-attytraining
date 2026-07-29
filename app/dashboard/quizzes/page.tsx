@@ -5,7 +5,7 @@ import { deriveProgress, type KnowledgeCheckEvent } from '@/lib/training/progres
 import { clientQuestionsByLesson } from '@/lib/training/questions'
 import { READINESS_LESSON } from '@/lib/training/lessons'
 import { SEAT_ACCESS_COLUMNS, hasTrainingAccess, type SeatAccessRow } from '@/lib/seats'
-import { NoSeatNotice } from '../_components/no-seat-notice'
+import { SeatGate } from '../_components/no-seat-notice'
 import { QuizzesClient } from './_components/quizzes-client'
 
 export const metadata = {
@@ -38,7 +38,7 @@ export default async function QuizzesPage() {
 
   // Seat gate — see lib/seats.ts. Same predicate as the seat-count trigger.
   if (!hasTrainingAccess(member as SeatAccessRow | null)) {
-    return <NoSeatNotice />
+    return <SeatGate member={member} />
   }
 
   let events: KnowledgeCheckEvent[] = []
