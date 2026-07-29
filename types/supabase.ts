@@ -236,6 +236,7 @@ export type Database = {
           firm_id: string
           id: string
           invited_at: string
+          occupies_seat: boolean
           role: string
           scorm_lesson_location: string | null
           scorm_suspend_data: string | null
@@ -248,6 +249,7 @@ export type Database = {
           firm_id: string
           id?: string
           invited_at?: string
+          occupies_seat?: boolean
           role?: string
           scorm_lesson_location?: string | null
           scorm_suspend_data?: string | null
@@ -260,6 +262,7 @@ export type Database = {
           firm_id?: string
           id?: string
           invited_at?: string
+          occupies_seat?: boolean
           role?: string
           scorm_lesson_location?: string | null
           scorm_suspend_data?: string | null
