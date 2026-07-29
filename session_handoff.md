@@ -1,5 +1,80 @@
 # Session Handoff
 
+**Date:** 2026-07-29 — **Max**, terminal. Domain/cert cleanup + the **seat double-count fix**
+(billing correctness). 5 commits, all pushed. A **parallel session (Opus 4.8) landed 4 more** late in
+the day. Detail: `.planning/sessions/20260729-max-summary.md`.
+
+## 🟢 What landed
+
+**Seat double-count fix — the big one.** Every employee consumed **two** seats, and an admin who
+declined training silently consumed one. Seats are the Stripe billing unit, so this under-delivered
+paid capacity. Migration **`0015`** adds `firm_members.occupies_seat` and rewrites `sync_used_seats()`
+around one predicate — a row occupies a seat when `occupies_seat AND status IN ('invited','active')`.
+`invited → active` is now occupying→occupying and stays silent; that silence removes the double count.
+The three manual `used_seats` increments are gone (`invite`, `invite/bulk`, `onboarding/complete`);
+`reassign`/`delete` were already correct and untouched. Admin is created `occupies_seat: false` and
+flipped true only on `enrollSelf`. Applied to **IURIX STAGING**, types regenerated.
+*(`21c6ae9`, `c78df3d`, `1e3814e`)*
+
+**Domain/cert cleanup.** Cert footer → `accreditation@iurixaccreditation.com`; cert-worker `APP_URL`
+→ `https://iurixaccreditation.com`. Both deployed and verified. *(`f3db0c3`, `a070030`)*
+
+**`iurixaccreditation.com` is LIVE** — `/api/health` returns `{"status":"ok","db":"ok"}`. Rob's
+Phase A landed.
+
+**Parallel session (Opus 4.8), 19:07Z — not the terminal session:** `d593123` domain cutover Phase C
+(`wrangler.jsonc` + email shell); `fda2b70` Resend from → `noreply@iurixaccreditation.com`;
+`d4acfc4` favicon → `app/icon.png`; `2bf56d7` rename-plan doc. **Resend had been 403ing on every
+send** — onboarding, invites, cert delivery and reminders were all silently down until `fda2b70`.
+
+## 🔴 The seat E2E walkthrough was NEVER RUN
+
+Designed, then the session wrapped. **Both predictions remain untested against the real routes:**
+(1) `used_seats = 0` after onboarding with **enroll-self unticked**; (2) `used_seats` **unchanged**
+when an invited employee sets their password. DB-layer evidence is strong (11/11 trigger assertions;
+14 firms, 0 reconciliation mismatches) but no app route was exercised. **No test firms were created —
+nothing to clean up.**
+
+**Two traps when running it:**
+- **Inviting alone cannot detect the bug.** The old double fired at *activation*, not invite. Invite
+  5 without anyone setting a password and buggy and fixed code both read 5.
+- **A 5-seat firm with an enrolled admin is admin + 4 employees**, so the 5th employee is *correctly*
+  refused — which looks exactly like the bug. Onboard with enroll-self unticked to avoid this.
+
+A ready-made read-only reporting query is at `<scratchpad>/seat-report.mjs` (firm fragment or uuid →
+`used_seats`/`max_seats`, recomputed count, every member row with `role`/`status`/`occupies_seat`).
+
+## ⚠️ Deploy state is uncertain
+
+Last deploys — main app `da2270b8` @ 18:38:22Z, cert-worker `32f6fd00` @ 18:39:10Z — **predate the
+final commits** (`2bf56d7` @ 19:08:24Z). Probably the usual deploy-then-commit pattern, but it cannot
+be proven from timestamps. **A fresh `pnpm run deploy` from clean `main` settles it**; the cert-worker
+needs its own (`fda2b70` changed its source, and it requires `--config wrangler.toml`).
+
+## 🟡 Next
+
+1. **Run the seat E2E walkthrough** (top item).
+2. **Fresh deploy from clean HEAD**, both workers.
+3. **Supabase DB webhook target — still unverified.** Needs the dashboard; no `psql` here. Lower
+   stakes than it reads: the primary cert trigger is the in-app `after()` call at
+   `app/api/quiz/attempt/route.ts:226` (proven by `IX-20260728-4289` issuing live), so a misaimed
+   webhook is a redundant no-op, not a silent outage.
+4. **`info@aistaffcompliance.com` still hardcoded in 5 places** — `privacy:65-66`, `terms:78-79`,
+   `dpa:80-81`, `login:62`, and the operator fallback at `webhooks/stripe/route.ts:116`. Live on the
+   deployed `/login` footer. Cutover item C4, blocked on Rob's new address.
+5. **`accreditation@iurixaccreditation.com` mailbox does not exist** — it is printed on every cert.
+
+## ⚠️ Three traps worth carrying
+
+- **`NEXT_PUBLIC_APP_URL` is inlined from `.env.local` AND `.env.production` (both gitignored)**, not
+  just `wrangler.jsonc` — editing the jsonc alone changes the runtime value but not the client bundle
+  (three deploys produced an identical chunk hash). **Rob's machine needs the same local edit.**
+- **The cert-worker duplicates the Resend from-address constant** — the two must stay in sync.
+- **`wrangler deploy` from `workers/cert-worker/` needs `--config wrangler.toml`** or it picks up the
+  root `wrangler.jsonc` and redeploys the main app.
+
+---
+
 **Date:** 2026-07-28 (later) — **Max**, terminal. Rename cleanup + the **certificate PDF rebuild**.
 7 commits, all pushed. Detail: `.planning/sessions/20260728-max-summary.md`.
 
