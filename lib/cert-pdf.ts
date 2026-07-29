@@ -182,9 +182,10 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
   })
 
   // Placeholder — the retired aistaffcompliance.com had to come off the cert, but
-  // no real contact address exists yet (still blocked on Rob). Note this does not
-  // match the registered zone, iurixaccreditation.com.
-  const contact = 'accreditation@iurix.com'
+  // no real contact address exists yet (still blocked on Rob). The domain now matches
+  // the registered zone; the mailbox itself still needs to be created and verified
+  // before a real certificate ships with it printed on.
+  const contact = 'accreditation@iurixaccreditation.com'
   page.drawText(contact, {
     x: W - M - regular.widthOfTextAtSize(contact, 9), y: 60,
     size: 9, font: regular, color: MID_GREY,
