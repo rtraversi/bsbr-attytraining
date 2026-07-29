@@ -145,10 +145,11 @@ function fmtDate(dateStr: string): string {
 
 // ── Email helpers ─────────────────────────────────────────────────────────────
 
-// Display name only — the aistaffcompliance.com address stays until the new
-// domain is verified in Resend (Phase B). Sending from an unverified domain
-// silently fails, so the address must not move ahead of that.
-const FROM = 'IURIX <info@aistaffcompliance.com>'
+// iurixaccreditation.com is verified in Resend (Rob, 2026-07-29) — DKIM, SPF and
+// DMARC all confirmed live. noreply@ is deliberate: the zone has no inbound MX,
+// so replies would bounce; don't imply a reply is possible. Must stay in sync
+// with FROM_ADDRESS in lib/resend.ts — this is a duplicate, not a shared import.
+const FROM = 'IURIX <noreply@iurixaccreditation.com>'
 
 async function sendEmail(env: Env, to: string, subject: string, html: string): Promise<void> {
   const res = await fetch('https://api.resend.com/emails', {
