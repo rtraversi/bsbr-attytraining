@@ -104,20 +104,6 @@ export async function POST(req: NextRequest) {
           firm_id: firm.id,
           status: 'not_started',
         })
-
-        // Consume one seat
-        const { data: seat } = await supabase
-          .from('seats')
-          .select('used_seats')
-          .eq('firm_id', firm.id)
-          .single()
-
-        if (seat) {
-          await supabase
-            .from('seats')
-            .update({ used_seats: seat.used_seats + 1 })
-            .eq('firm_id', firm.id)
-        }
       }
     }
   }

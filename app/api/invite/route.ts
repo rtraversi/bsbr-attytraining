@@ -88,11 +88,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to create team member.' }, { status: 500 })
   }
 
-  // Increment used_seats
-  await admin
-    .from('seats')
-    .update({ used_seats: seat.used_seats + 1 })
-    .eq('firm_id', firmId)
+  // used_seats is maintained by the sync_used_seats trigger — the row insert
+  // above already counted this seat. Incrementing here too would double it.
 
   // Generate invite magic link — goes through /auth/callback for PKCE code exchange
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'

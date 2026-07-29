@@ -129,13 +129,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Single seat count update at the end
-  if (invited > 0) {
-    await admin
-      .from('seats')
-      .update({ used_seats: initialUsedSeats + invited })
-      .eq('firm_id', firmId)
-  }
+  // No seat count update here — the sync_used_seats trigger already counted
+  // each firm_members insert above. `seatsAvailable` is the in-loop capacity
+  // guard (seeded from the pre-loop read, decremented per successful invite),
+  // so the cap is still enforced without a manual write.
 
   return NextResponse.json({ invited, skipped, invalid })
 }
