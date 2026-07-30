@@ -36,7 +36,7 @@ export function EmployeeInviteEmail({ firmName, actionLink }: EmployeeInviteEmai
 
       <Section style={calloutBox} className={EMAIL_CLASS.callout}>
         <Text style={calloutItem} className={EMAIL_CLASS.text}>
-          <span style={bullet}>→</span> A short video course (~20–30 minutes)
+          <span style={bullet}>→</span> A short interactive course (~20–30 minutes)
         </Text>
         <Text style={calloutItem} className={EMAIL_CLASS.text}>
           <span style={bullet}>→</span> A brief quiz to confirm your understanding

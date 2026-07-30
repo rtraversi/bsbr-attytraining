@@ -32,8 +32,8 @@ export function Footer() {
         <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
           {/* Brand + disclaimer */}
           <div className="max-w-md space-y-4">
-            <p className="font-headline text-lg font-extralight lowercase tracking-tight">
-              athena.
+            <p className="font-headline text-lg font-extralight uppercase tracking-tight">
+              IURIX
             </p>
             <p className="text-xs leading-relaxed text-white/40">
               This certificate documents completion of training. It is not legal advice

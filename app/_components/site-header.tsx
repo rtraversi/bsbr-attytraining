@@ -16,7 +16,7 @@ export function SiteHeader() {
     <header className="fixed top-0 left-0 right-0 z-50">
       <nav className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-5 md:px-10">
         {/* Logo */}
-        <Link href="/" aria-label="Athena home">
+        <Link href="/" aria-label="IURIX home">
           <AtcLogo />
         </Link>
 
