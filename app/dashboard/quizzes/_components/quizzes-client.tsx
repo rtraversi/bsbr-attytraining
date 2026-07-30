@@ -73,7 +73,13 @@ export function QuizzesClient({
           <section className="flex flex-col gap-10 md:col-span-7 md:gap-12">
             <JumpBackInCard progress={progress} tryOpen={tryOpen} firstName={firstName} />
             <FinalTestCard progress={progress} contentViewed={contentViewed} />
-            <CertificateCard cert={cert} employeeName={employeeName} />
+            <CertificateCard
+              cert={cert}
+              employeeName={employeeName}
+              progress={progress}
+              contentViewed={contentViewed}
+              tryOpen={tryOpen}
+            />
           </section>
 
           {/* ── Right column: the S-curve path map ────────────────────────────── */}
@@ -432,7 +438,12 @@ function FinalTestCard({
                     </div>
                   ))}
                   {average !== null && (
-                    <div className={`text-sm ${MUTED}`}>
+                    // Forced to the last column and right-aligned so it always
+                    // brackets the row against the per-lesson figure on the left,
+                    // instead of floating at the 50% gridline. col-start-2 also
+                    // keeps it hard right when an even number of scores would
+                    // otherwise drop it into column 1 of a new row.
+                    <div className={`col-start-2 text-right text-sm ${MUTED}`}>
                       Average: <span className={`font-bold ${HEADING}`}>{average}%</span>
                     </div>
                   )}
@@ -460,12 +471,52 @@ function fmtCertDate(iso: string | null): string {
 function CertificateCard({
   cert,
   employeeName,
+  progress,
+  contentViewed,
+  tryOpen,
 }: {
   cert: CertInfo | null
   employeeName: string
+  progress: Progress
+  contentViewed: boolean
+  tryOpen: (l: LessonState | number) => void
 }) {
   const { open, toggle, hoverProps } = useExpand()
   const [modalOpen, setModalOpen] = useState(false)
+
+  // The locked pill used to be an inert div — it told the learner they were
+  // blocked and gave them nowhere to go. It still READS as locked (same muted
+  // styling, same padlock); this only adds a way onward.
+  //
+  // "→ Quizzes" from the plan can't be a route: this card is already ON the
+  // Quizzes page, so navigating here would be a no-op. The equivalent useful
+  // destination is the outstanding check itself, which tryOpen already knows how
+  // to open (and which respects the same canOpen gate as every other entry point).
+  const nextUncleared = progress.lessons.find(l => l.status !== 'cleared')
+  const lockedAction: { kind: 'content' } | { kind: 'check'; lesson: LessonState } | null =
+    !contentViewed
+      ? { kind: 'content' }
+      : nextUncleared && canOpen(nextUncleared, progress.fullyCleared)
+        ? { kind: 'check', lesson: nextUncleared }
+        : null
+
+  const lockedPillClass = `${PILL} flex w-full items-center justify-between gap-4 px-6 py-5 text-left opacity-80 transition-opacity md:px-8 md:py-6`
+  const lockedBody = (
+    <>
+      <span className={`text-sm italic md:text-base ${MUTED}`}>
+        {lockedAction?.kind === 'content'
+          ? 'Finish the training content to unlock your certificate — go to Content'
+          : lockedAction?.kind === 'check'
+            ? `Clear your remaining checks to unlock your certificate — start ${
+                lockedAction.lesson.isReadiness
+                  ? 'the Final Review'
+                  : `Lesson ${lockedAction.lesson.number}`
+              }`
+            : 'Complete Lesson 5 and the Certificate Assessment to unlock…'}
+      </span>
+      <LockIcon className="h-6 w-6 shrink-0 text-[#8A8A8A]" />
+    </>
+  )
 
   return (
     <div className="qz-entrance qz-d4" {...hoverProps}>
@@ -549,15 +600,22 @@ function CertificateCard({
             />
           )}
         </>
-      ) : (
-        <div
-          className={`${PILL} flex items-center justify-between gap-4 px-6 py-5 opacity-80 md:px-8 md:py-6`}
+      ) : lockedAction?.kind === 'content' ? (
+        <Link href="/dashboard/training" className={`${lockedPillClass} hover:opacity-100`}>
+          {lockedBody}
+        </Link>
+      ) : lockedAction?.kind === 'check' ? (
+        <button
+          type="button"
+          onClick={() => tryOpen(lockedAction.lesson)}
+          className={`${lockedPillClass} cursor-pointer hover:opacity-100`}
         >
-          <span className={`text-sm italic md:text-base ${MUTED}`}>
-            Complete Lesson 5 and the Certificate Assessment to unlock…
-          </span>
-          <LockIcon className="h-6 w-6 shrink-0 text-[#8A8A8A]" />
-        </div>
+          {lockedBody}
+        </button>
+      ) : (
+        // No route worth offering (e.g. every check cleared but the assessment
+        // not yet passed) — stays inert rather than pointing nowhere.
+        <div className={lockedPillClass}>{lockedBody}</div>
       )}
     </div>
   )
@@ -613,7 +671,19 @@ function PathMap({
   return (
     <div className="qz-entrance qz-d2">
       <div className={`${PILL} p-5 sm:p-7 md:p-6 lg:p-8`}>
-        <div className="relative mx-auto aspect-[4/7] w-full max-w-[380px]">
+        {/* Two separate faults, one container.
+            CLIPPING: the side labels hang off each dot by a fixed gap, so the
+            left label needs `0.25·W − gap − labelWidth ≥ 0`. At the old fixed
+            18px gap that means W ≥ ~292px, and inside this card on a narrow
+            phone W falls below that — the labels ran off the edge. The gap is
+            now a custom property that tightens below `sm`, which drops the
+            requirement to ~232px and clears the narrowest real case.
+            NOT SCALING: max-w was a flat 380px while this column is ~610px at
+            1920px, stranding the remainder. It now grows at lg/xl. Everything
+            inside is either viewBox units or a % of this box, so the whole map
+            scales with it — only the fixed-px text and icons need their own
+            step-up, below. */}
+        <div className="relative mx-auto aspect-[4/7] w-full max-w-[380px] [--lbl-gap:10px] sm:[--lbl-gap:18px] lg:max-w-[440px] xl:max-w-[520px]">
           {/* Single coordinate space: connectors + dots share this viewBox */}
           <svg
             className="absolute inset-0 h-full w-full"
@@ -667,7 +737,7 @@ function PathMap({
               className="qz-flag pointer-events-none absolute"
               style={{ left: `${node.leftPct}%`, top: `${node.topPct}%` }}
             >
-              <ClearedFlagIcon className="h-6 w-6" />
+              <ClearedFlagIcon className="h-6 w-6 xl:h-8 xl:w-8" />
             </div>
           ))}
 
@@ -691,7 +761,7 @@ function PathMap({
                   className="pointer-events-none absolute"
                   style={{ left: `${node.leftPct}%`, top: `${node.topPct}%`, transform: 'translate(-50%,-190%)' }}
                 >
-                  <span className={`text-[11px] font-bold whitespace-nowrap md:text-xs ${color5}`}>
+                  <span className={`text-[11px] font-bold whitespace-nowrap md:text-xs xl:text-sm ${color5}`}>
                     Final Review
                   </span>
                 </div>
@@ -707,12 +777,14 @@ function PathMap({
                   top: `${node.topPct}%`,
                   // Fixed-px gap from the dot — %-based offsets scale with the
                   // label's own width, so spacing drifted from label to label.
+                  // --lbl-gap tightens below `sm` so the labels still clear the
+                  // container edge on a narrow phone (see the container above).
                   transform: onLeft
-                    ? 'translate(calc(-100% - 18px),-50%)'
-                    : 'translate(18px,-50%)',
+                    ? 'translate(calc(-100% - var(--lbl-gap)),-50%)'
+                    : 'translate(var(--lbl-gap),-50%)',
                 }}
               >
-                <span className={`text-[11px] font-bold whitespace-nowrap md:text-xs ${color}`}>
+                <span className={`text-[11px] font-bold whitespace-nowrap md:text-xs xl:text-sm ${color}`}>
                   Lesson {node.n}
                 </span>
               </div>
@@ -725,14 +797,14 @@ function PathMap({
             style={{ left: `${CASTLE.leftPct}%`, top: `${CASTLE.topPct}%` }}
           >
             <CastleIcon
-              className={`mx-auto h-16 w-16 ${
+              className={`mx-auto h-16 w-16 xl:h-20 xl:w-20 ${
                 goalReached
                   ? 'text-[#0094FF] drop-shadow-[0_0_16px_rgba(0,148,255,0.55)]'
                   : 'text-[#9AA1A9] dark:text-[#5C636B]'
               }`}
             />
             <span
-              className={`mt-1 block text-[11px] font-bold md:text-xs ${
+              className={`mt-1 block text-[11px] font-bold md:text-xs xl:text-sm ${
                 goalReached ? 'text-[#0094FF]' : 'text-[#9AA1A9] dark:text-[#5C636B]'
               }`}
             >
@@ -853,16 +925,26 @@ function CastleIcon({ className }: { className?: string }) {
 }
 
 /* ── Line icons ──────────────────────────────────────────────────────────── */
+/* The padlocks read as sitting low against the play chip and the score badge in
+   the status column. It isn't the layout — every status element is centred in
+   the same w-12 slot — it's the artwork: both padlock paths span y=7..21, so
+   their optical centre is y=14 while the 0 0 24 24 box centres on y=12. At h-4
+   that is ~1.3px of drop, which is exactly enough to look wrong in a vertical
+   stack. Shifting the viewBox window down 2 units re-centres the window on the
+   artwork (y 2..26 → centre 14) without touching the path data, so the icons
+   now share a true axis with the play button above them. */
+const PADLOCK_VIEWBOX = '0 2 24 24'
+
 function LockIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className={className} fill="none" viewBox={PADLOCK_VIEWBOX} stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
     </svg>
   )
 }
 function UnlockIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className={className} fill="none" viewBox={PADLOCK_VIEWBOX} stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0M6 11h12a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6a2 2 0 012-2z" />
     </svg>
   )
