@@ -43,7 +43,9 @@ export async function sendTrainingReminder(
     const html = await render(TrainingReminderEmail({ firmName, actionLink: actionLink ?? '' }))
     await sendEmail({
       to: email,
-      subject: 'Reminder: Complete your AI compliance training',
+      // Matches the template's headline and the cert-worker cron's subject —
+      // all three carry the same all-or-none framing (Max, 2026-07-30).
+      subject: 'Your firm can’t be certified until everyone completes their training',
       html,
     })
   } catch (err) {
