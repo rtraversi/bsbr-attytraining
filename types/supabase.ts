@@ -235,6 +235,7 @@ export type Database = {
           created_at: string
           firm_id: string
           id: string
+          invite_email_failed: boolean
           invited_at: string
           occupies_seat: boolean
           role: string
@@ -248,6 +249,7 @@ export type Database = {
           created_at?: string
           firm_id: string
           id?: string
+          invite_email_failed?: boolean
           invited_at?: string
           occupies_seat?: boolean
           role?: string
@@ -261,6 +263,7 @@ export type Database = {
           created_at?: string
           firm_id?: string
           id?: string
+          invite_email_failed?: boolean
           invited_at?: string
           occupies_seat?: boolean
           role?: string

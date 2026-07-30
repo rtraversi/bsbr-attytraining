@@ -37,7 +37,7 @@ export default async function DashboardPage() {
     admin.from('seats').select('used_seats, max_seats').eq('firm_id', firmId).single(),
     admin
       .from('firm_members')
-      .select('id, user_id, role, status, invited_at, activated_at')
+      .select('id, user_id, role, status, invited_at, activated_at, invite_email_failed')
       .eq('firm_id', firmId)
       .neq('status', 'deleted')
       .neq('status', 'reassigned')

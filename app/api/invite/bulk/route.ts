@@ -68,6 +68,9 @@ export async function POST(req: NextRequest) {
   let invited = 0
   let skipped = 0
   let invalid = 0
+  // Rows that were created but whose invite email didn't send. They are counted
+  // in `invited` — the seat is real — so this is reported alongside, not instead.
+  const emailFailed: string[] = []
 
   for (const row of rows) {
     const email = typeof row.email === 'string' ? row.email.trim().toLowerCase() : ''
@@ -117,6 +120,9 @@ export async function POST(req: NextRequest) {
       ? `${appUrl}/auth/confirm?token_hash=${hashedToken}&type=magiclink&next=/update-password`
       : linkData?.properties?.action_link
 
+    // Per-row: the member and the seat are real, so this row still counts as
+    // invited — but the admin has to be told the email didn't land, and the
+    // failure has to outlive the toast. See /api/invite for the same handling.
     try {
       const html = await render(EmployeeInviteEmail({ firmName, actionLink: actionLink ?? '' }))
       await sendEmail({
@@ -126,6 +132,13 @@ export async function POST(req: NextRequest) {
       })
     } catch (err) {
       console.error('[invite/bulk] sendEmail error:', err)
+      emailFailed.push(email)
+      const { error: flagError } = await admin
+        .from('firm_members')
+        .update({ invite_email_failed: true })
+        .eq('user_id', employeeId)
+        .eq('firm_id', firmId)
+      if (flagError) console.error('[invite/bulk] invite_email_failed flag failed:', flagError)
     }
   }
 
@@ -134,5 +147,5 @@ export async function POST(req: NextRequest) {
   // guard (seeded from the pre-loop read, decremented per successful invite),
   // so the cap is still enforced without a manual write.
 
-  return NextResponse.json({ invited, skipped, invalid })
+  return NextResponse.json({ invited, skipped, invalid, emailFailed })
 }

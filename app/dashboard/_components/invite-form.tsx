@@ -12,7 +12,7 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
   const router = useRouter()
   const { addToast } = useToast()
   const [email, setEmail] = useState('')
-  const [phase, setPhase] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const [phase, setPhase] = useState<'idle' | 'loading' | 'done' | 'email_failed' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [devLink, setDevLink] = useState<string | undefined>()
 
@@ -28,7 +28,7 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
       body: JSON.stringify({ email }),
     })
 
-    const data = (await res.json()) as { error?: string; devLink?: string }
+    const data = (await res.json()) as { error?: string; devLink?: string; emailSent?: boolean }
 
     if (!res.ok) {
       setErrorMsg(data.error ?? 'Something went wrong.')
@@ -36,12 +36,21 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
       return
     }
 
+    // A 200 with emailSent: false means the member and their seat are real but
+    // the invite email didn't go out. Saying "Invite sent" there is how a broken
+    // Resend key stayed invisible for days — say both halves. The row is badged
+    // "Invite not delivered" on the team table until a resend succeeds.
     const sentEmail = email
+    const emailSent = data.emailSent !== false
     setDevLink(data.devLink)
     setEmail('')
-    setPhase('done')
+    setPhase(emailSent ? 'done' : 'email_failed')
     router.refresh() // Re-fetch server component data so member list + seat count update
-    addToast(`Invite sent to ${sentEmail}`)
+    addToast(
+      emailSent
+        ? `Invite sent to ${sentEmail}`
+        : `${sentEmail} was added, but the invite email couldn’t be sent.`
+    )
   }
 
   // Seats-full: the disabled affordance stays visible so the action is still
@@ -80,6 +89,12 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
       </form>
 
       {phase === 'done' && <p className="text-sm font-semibold text-[#0094FF]">Invite sent.</p>}
+      {phase === 'email_failed' && (
+        <p className="text-sm font-semibold text-[#B45309] dark:text-[#F0B357]">
+          Member added, but the invite email couldn’t be sent. Use the bell in the team table to
+          resend it.
+        </p>
+      )}
       {phase === 'error' && <p className="text-sm text-[#DC2626]">{errorMsg}</p>}
 
       {devLink && (

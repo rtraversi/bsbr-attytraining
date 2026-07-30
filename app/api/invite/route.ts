@@ -108,6 +108,11 @@ export async function POST(req: NextRequest) {
     ? `${appUrl}/auth/confirm?token_hash=${hashedToken}&type=magiclink&next=/update-password`
     : linkData?.properties?.action_link
 
+  // The member and the seat are real by this point, so a send failure is not a
+  // failed request — but it is not a plain success either. Report both halves
+  // and persist the failure so it survives the toast: without that, the only
+  // record of a broken email channel was a console.error nobody reads.
+  let emailSent = true
   try {
     const html = await render(EmployeeInviteEmail({ firmName, actionLink: actionLink ?? '' }))
     await sendEmail({
@@ -117,7 +122,17 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     console.error('[invite] sendEmail error:', err)
+    emailSent = false
+    const { error: flagError } = await admin
+      .from('firm_members')
+      .update({ invite_email_failed: true })
+      .eq('user_id', employeeId)
+      .eq('firm_id', firmId)
+    if (flagError) console.error('[invite] invite_email_failed flag failed:', flagError)
   }
 
-  return NextResponse.json({ success: true })
+  // Deliberately 200, not 4xx/5xx — an error status invites a retry that would
+  // just fail on "an account already exists with this email". /api/invite/resend
+  // is the recovery path.
+  return NextResponse.json({ success: true, emailSent })
 }
