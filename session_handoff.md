@@ -66,6 +66,53 @@ Also open: whether an admin may swap an employee's seat for their **own** traini
 security half shipped; this half did not), and the **onboarding walkthrough** — the one substantial
 piece of unbuilt product left, and a launch requirement.
 
+## 🟠 Late-session run-through: 16 more findings
+
+Max ran the product again after the three batches deployed. **The batches held**, but a second pass
+surfaced this. All logged in the brief.
+
+**Bugs**
+- **Skip cascade between checks.** Clearing a later lesson check auto-marks an *earlier skipped* check
+  as cleared. Same mechanism the final-review shortcut uses, firing where it should not.
+- **The quiz is still fixed-width.** P0's full-screen work did not fully land; the question card and
+  top bar do not fill the viewport.
+- **"Your path" got bigger, not smaller.** P2 Task 1a did not achieve its goal and it is still clipped.
+- **Sign-in footer.** "Terms" and "Cookies" are plain `<span>` elements, not links, so both are dead.
+  Only Privacy works. "Contact support" is a `mailto:` to the retired `info@aistaffcompliance.com`.
+- **Footer social icons point at `linkedin.com` and `x.com`**, the platform homepages, not accounts.
+
+**Verified as already done** (asked and checked): the rename sweep is complete, only two historical
+code comments mention the old wordmark. The employee name prompt is live at set-password. Support
+email correctly reaches `solarsaiko@gmail.com`. "Remember me" is wired to a 30-day vs session cookie,
+though it has not been tested by logging in.
+
+**Not an action.** The "Auto-reminders" quick action is a `QuickAction` linking to
+`/dashboard/settings` (`admin-dashboard.tsx:88`). It navigates. It looks like a button that does
+something. Needs replanning.
+
+**Design.** The new lesson-cleared card is liked, but its outer glow and contour read as generic AI
+styling. Depth is wanted without that look. Same principle applies wherever the glow is reused.
+
+**Content that is placeholder and must not ship as-is:** the FAQ, the support page, the firm
+attestation PDF and the audit-log CSV export. The last two also need Katy's confirmation once drafted.
+
+## 🟣 Katy: two corrections and her real blockers
+
+**Her all-or-none objection was about the PRICING PAGE, and it was misapplied to the reminder emails.**
+The emails were worth fixing, but `pricing/page.tsx:29` still reads *"The more of your team you
+certify, the lower the per-seat rate"*, which is precisely the framing she objected to. Still live.
+
+**Katy has handed the legal pages back** as outside her area. She does legal ethics, not commercial or
+privacy. **We draft, she reviews.** Now **four** documents, not three: Privacy, Terms, DPA, and a
+**Cookies page that does not exist at all** (which is why those links are dead).
+
+**What Katy actually needs to do**, and neither was on anyone's list:
+1. **The question pool.** Still placeholder: 8 questions, no randomisation. Required before launch.
+2. **Approve the certificate design.** It has never had a go-ahead.
+
+Also worth telling her: **the product does not do self-enrollment**, which answers her earlier
+confusion about there being no "create account" button.
+
 ## 📋 Next session — suggested order
 
 1. **Deploy `d28576d`**, then run the **seat-gate E2E walkthrough** — shipped in P0 but never proven
