@@ -1,5 +1,92 @@
 # Session Handoff
 
+**Date:** 2026-07-30 (afternoon) — **Max**, desktop planning + two terminal sessions. Ran a full
+end-to-end walkthrough of the product as a real firm, then shipped the findings as **three prioritised
+batches**: P0, P1, P2. **25 commits today**, all pushed. Plans live at
+`~/.claude/plans/iurix-p0-unblock-learner.md`, `-p1-correctness.md`, `-p2-ux-layout.md`.
+
+## 🟢 The three batches
+
+**P0 — the product was not completable.** The walkthrough found a learner literally could not finish
+the course. The quiz **continue button rendered behind the bottom tab bar**; Lesson 3's check
+**rejected at submit time** after every question was answered; and the nav stayed visible during a
+quiz so a mis-click **abandoned the attempt**. Also fixed two dishonest counts: the certification
+denominator included an opted-out admin (so a firm could **never reach 100%**, fatal under the
+all-or-none rule), and reassignment had no progress lock (a firm could **rotate staff forever on one
+seat**). *Decisions: sequential lesson ordering dropped entirely — each lesson stands alone, and the
+lesson-5 test-out keeps its `contentViewed` gate. Reassignment blocks at **4+ content lessons
+reached**, escalation via support, no override mechanism.* *(`5c1b76b` → `2bf048f`)*
+
+**P1 — wrong or misleading behaviour.** "Next Up" pointed at the **locked certificate** — the last
+thing in the course, presented as the next thing. The activity feed repeated *"Started the training
+content"* on every navigation. Reminder emails said *"outstanding"*, which reads as praise. Employees
+were **never asked their name**, so certificates printed raw email addresses. *(`8d799c6` → `ff9765b`)*
+
+**P2 — UX and layout.** Path map scaling, the dead locked-certificate pill, alignment, the
+lesson-cleared celebration, takeaway markers, the reassign panel, out-of-seats copy, removal of the
+quiz "?" icon, and nav scoping/order. *(`486d698` → `ba04fc3`)*
+
+## 🔴 Three findings worth carrying forward
+
+**`!contentViewed` can structurally never be true.** Rise reports `passed-incomplete`, so any logic
+keyed on it silently never fires — it would have pinned "Next Up" on *resume content* forever and
+looked like working code. `gatesOpen` already ignores it for the same reason.
+
+**The repeated `video_started` rows are deliberate, not a bug.** `content-progress/route.ts:193-195`
+documents them as audit signal, and `audit-log/export/route.ts` reads them — with `ip_address` and
+`user_agent` — to produce the Rule 5.3 paper trail. The feed was fixed at the **display layer only**;
+deduping at source would quietly damage what this product exists to produce.
+
+**Two symptoms were not what they looked like.** The clipped reassign name field was the *parent's*
+`overflow-y-auto` (CSS forces the other axis to auto, clipping the focus ring). The off-centre
+padlocks were *artwork*, not layout — paths span y=7..21 so optical centre is y=14 while the 24×24
+viewBox centres on y=12.
+
+## ⚠️ Status — one commit is NOT deployed
+
+**`d28576d`** ("make the out-of-seats notice calm at rest") is committed and pushed but landed
+**three minutes after** the last deploy. Everything else is live. Fix: `pnpm run deploy` from the repo
+root. *(Note: a bare `wrangler deploy` run from `workers/cert-worker/` earlier picked up the root
+config and redeployed the app instead — it only uploads, it does not build. Always deploy the app from
+the root.)*
+
+## 🔵 Open — decisions needed from Max before more code
+
+The P1 reminder audit (`.planning/REMINDER-SYSTEM-AUDIT.md`) produced four findings, none yet acted on:
+
+1. **The manual "Remind" button writes no `training_events` row** — so it is invisible to the Rule 5.3
+   audit export. *"We reminded this employee on this date"* is exactly the evidence a firm needs.
+   Ranked highest: it is a hole in the product's stated purpose.
+2. **Renewal reminders can double-send** — 24h dedupe window against a 24h cron is a race, and this is
+   the email aimed at the paying admin.
+3. **Nothing can switch expiry or renewal reminders off** — `reminder_days` only changes the interval.
+4. **Expiry reminders don't filter on firm status**, so lapsed firms still receive them.
+
+Also open: whether an admin may swap an employee's seat for their **own** training access (the
+security half shipped; this half did not), and the **onboarding walkthrough** — the one substantial
+piece of unbuilt product left, and a launch requirement.
+
+## 📋 Next session — suggested order
+
+1. **Deploy `d28576d`**, then run the **seat-gate E2E walkthrough** — shipped in P0 but never proven
+   end-to-end. Decisive checks: opted-out admin hits the gate on `/dashboard/training`; a direct
+   `POST /api/quiz/attempt` returns **403**; "Enroll me" raises `used_seats` by exactly 1; an invited
+   employee setting their password does **not** move the count.
+2. **Work the four reminder-audit findings into decisions**, then a batch.
+3. **Onboarding walkthrough** — the remaining large build.
+4. Finish the rename sweep (~halfway) and the favicon trace.
+
+**Blocked on Rob:** Stripe live mode · "Iurix Accreditation" wordmark · business contact address
+(`info@aistaffcompliance.com` is still hardcoded in 5 files) · final entity name · marketing redesign.
+**Blocked on Katy:** two Pentagon citation corrections. *Katy has handed the legal pages (Terms,
+Privacy, DPA — 25 sections) back as outside her area; drafting them is on us, and they should get a
+commercial/privacy review before launch.*
+
+**Master to-do:** https://claude.ai/code/artifact/fd19e15d-9757-4e0d-9433-b78348329075 — 73 items,
+46 done. Reconciled today; it is current.
+
+---
+
 **Date:** 2026-07-30 — **Max**, terminal. Executed the access/visibility/brand plan: **7 commits, all
 pushed**. Detail: `.planning/sessions/20260730-max-summary.md`.
 
