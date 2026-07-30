@@ -1,5 +1,81 @@
 # Session Handoff
 
+**Date:** 2026-07-30 — **Max**, terminal. Executed the access/visibility/brand plan: **7 commits, all
+pushed**. Detail: `.planning/sessions/20260730-max-summary.md`.
+
+## 🟢 What landed
+
+**Seat occupancy was enforced NOWHERE — that's now closed.** `occupies_seat` (added by `0015`
+yesterday) was written in two places and read as a gate in **zero**. An **admin who declined training
+could pass the certifying quiz and get a real certificate** against capacity nobody paid for, and a
+**reassigned employee kept working credentials** (one paid seat, two logins). New **`lib/seats.ts`**
+holds one predicate — `occupies_seat AND status IN ('invited','active')` — deliberately the *same* one
+`sync_used_seats()` uses, so access and billing can't drift. Applied to all four surfaces;
+`api/quiz/attempt` returns **403 before any write**. ⚠️ **Not gated on `role`** — an opted-in admin is
+legitimately entitled. *(`ef31d84`)*
+
+**Admin self-enroll** — `POST /api/firm/enroll-self`; trigger does the `+1`, no manual arithmetic.
+Also creates the `enrollments` row (a missing one is what reads as "Not started"). *(`c77c100`)*
+
+**Reassign now revokes access** — clears `app_metadata` only. **Max's call: no email redaction** —
+that's irreversible and a reassignment is a seat transfer, not a deletion. All records preserved.
+Placed *after* the swap commits so the two rollback paths stay untouched. *(`4634512`)*
+
+**Invite email failures are no longer swallowed** — both routes returned `success: true` after a send
+threw, with the member and **the seat** already real. *That is how the Resend 403 went unnoticed for
+days.* Now `emailSent` / `emailFailed[]`, still 200 (a 4xx invites a doomed retry). **Migration
+`0016`** adds `invite_email_failed`; team table badges "Invite not delivered"; a successful resend
+clears it. *(`e8c1864`)*
+
+**Retired branding gone from rendered UI** — `athena.` wordmark → `IURIX` (monogram deliberately
+unchanged, mark isn't final); invite email no longer promises a "video course". *(`56f58dd`)*
+
+**Cutover runbook corrected** — §C1 (`NEXT_PUBLIC_APP_URL` inlines from **gitignored** `.env.local` /
+`.env.production`, not `wrangler.jsonc`) and §E2 (**two** webhooks; `cert-worker-quiz-pass` is
+**permanently inert** — documented so nobody deletes it blind). *(`b30b2a6`)*
+
+## 🔴 The app is ONE DEPLOY BEHIND — and the missing bit is a live brand bug
+
+**`de04d35` is pushed but NOT deployed.** It removes `© 2026 Built Smart by Rob` from the homepage
+and `/pricing` (BSBR is a **sibling brand**, not this product's publisher — locked decision #3).
+**Confirmed still broken in production at wrap-up: 2 occurrences on `/`, 2 on `/pricing`.**
+
+```bash
+pnpm run deploy
+curl -s https://iurixaccreditation.com/ | grep -c "Built Smart by Rob"   # must be 0
+curl -s https://iurixaccreditation.com/pricing | grep -c "Built Smart by Rob"
+```
+
+⚠️ **Verify the homepage and `/pricing`, not just `/login`.** These files were being treated as the
+redesign branch's territory, which is why the earlier sweep missed them — **that branch hasn't
+landed, so this is the code actually serving traffic.**
+
+## 🟢 Already verified live (not assumed)
+
+- **Migration `0016` IS applied** — probed staging directly. This was the one silent-breakage risk:
+  `dashboard/page.tsx` selects that column, and without it the admin team table renders **empty**.
+- `/login` returns **zero** "athena"; `/api/firm/enroll-self` → 401 while a bogus path → 404.
+- **Cert-worker redeployed** — `ca2183d1`, `noreply@iurixaccreditation.com`. **The 07-29 deploy
+  ambiguity is settled.**
+
+## 🟡 Next
+
+1. **`pnpm run deploy`** + the grep above.
+2. **The seat E2E walkthrough — still never run**, now with more to prove: opted-out admin sees the
+   enroll offer not the course; direct `POST /api/quiz/attempt` → **403**; "Enroll me" moves
+   `used_seats` by **exactly 1**; a reassigned user loses the dashboard while their cert/quiz/event
+   rows survive. *07-29's two traps still apply — inviting alone can't detect a double-count, and a
+   5-seat firm with an enrolled admin is admin + 4.*
+3. **Re-run `supabase gen types`** — `types/supabase.ts` was **hand-patched** for `0016` so `tsc`
+   would pass. The push is applied, so it should be a no-op diff; **if it isn't, the patch was wrong.**
+4. **Live negative test for Task 4** — break `RESEND_API_KEY`, invite, confirm the UI reports the
+   failure, the badge survives a reload, and a resend clears it.
+5. `info@aistaffcompliance.com` in 5 places (C4, blocked on Rob's address — `noreply@` can't
+   substitute, these are "contact us" links); `accreditation@iurixaccreditation.com` mailbox still
+   doesn't exist and is printed on every cert.
+
+---
+
 **Date:** 2026-07-29 — **Max**, terminal. Domain/cert cleanup + the **seat double-count fix**
 (billing correctness). 5 commits, all pushed. A **parallel session (Opus 4.8) landed 4 more** late in
 the day. Detail: `.planning/sessions/20260729-max-summary.md`.
