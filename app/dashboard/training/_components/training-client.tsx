@@ -464,7 +464,7 @@ export function TrainingClient({
                     <ul className="space-y-2">
                       {overviewLesson.keyTakeaways.map(t => (
                         <li key={t} className="flex gap-2 text-sm text-[#3D3D3D] dark:text-[#C4C9CE]">
-                          <CircleIcon />
+                          <TakeawayDot />
                           {t}
                         </li>
                       ))}
@@ -632,12 +632,17 @@ function FocusIcon() {
   )
 }
 
-function CircleIcon() {
-  return (
-    <svg className="mt-0.5 shrink-0" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0094FF" strokeWidth={2}>
-      <circle cx="12" cy="12" r="9" />
-    </svg>
-  )
+/**
+ * Marker for a key takeaway.
+ *
+ * Was a 15px hollow ring, which reads as an unticked checkbox — an unfinished
+ * checklist, the exact opposite of "here is what you should now know". A small
+ * solid dot is a bullet: it introduces a statement instead of inviting one to be
+ * ticked off. mt-2 optically centres it on the first line of `text-sm
+ * leading-relaxed` copy rather than hanging it from the cap height.
+ */
+function TakeawayDot() {
+  return <span aria-hidden className="mt-2 h-[6px] w-[6px] shrink-0 rounded-full bg-[#0094FF]" />
 }
 
 function ClockIcon() {
