@@ -261,20 +261,18 @@ export function QuizRunner({
               {/* The question is the hero — it outranks the answer text by a full
                   step at every breakpoint (3xl vs lg at md), where the two used
                   to sit one notch apart and read as the same level. */}
+              {/* No icon tile. A "?" chip labelled something already
+                  unmistakably a question and cost the text ~60px of width on
+                  every breakpoint. With it gone the flex row had a single child,
+                  so the wrapper went too rather than leaving a one-item flex —
+                  the heading now runs the full width of the card. */}
               <div className="mb-8 rounded-3xl border border-[#E5EEF5] bg-white p-6 shadow-[0_4px_20px_rgba(0,148,255,0.08)] md:mb-10 md:p-9 dark:border-[#1F2429] dark:bg-[#0D0F12]">
-                <div className="flex items-start gap-4 md:gap-5">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EAF8FF] text-[#0094FF] md:h-12 md:w-12 dark:bg-[#0E2430] dark:text-[#5FC8FF]">
-                    <QuestionIcon />
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="text-2xl leading-snug font-bold text-[#0A0A0A] md:text-3xl lg:text-4xl dark:text-[#F5F7FA]">
-                      {currentQ.question_text}
-                    </h2>
-                    <p className="mt-3 text-sm text-[#6D7980] md:text-base dark:text-[#7A8189]">
-                      Select the most appropriate answer from the options below.
-                    </p>
-                  </div>
-                </div>
+                <h2 className="text-2xl leading-snug font-bold text-[#0A0A0A] md:text-3xl lg:text-4xl dark:text-[#F5F7FA]">
+                  {currentQ.question_text}
+                </h2>
+                <p className="mt-3 text-sm text-[#6D7980] md:text-base dark:text-[#7A8189]">
+                  Select the most appropriate answer from the options below.
+                </p>
               </div>
 
               {/* One answer per row rather than the old 2-up grid: answers are
@@ -395,18 +393,6 @@ function TimerPill({ label }: { label: string }) {
       </svg>
       {label}
     </span>
-  )
-}
-
-function QuestionIcon() {
-  return (
-    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
   )
 }
 
