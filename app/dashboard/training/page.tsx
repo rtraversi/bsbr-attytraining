@@ -175,7 +175,17 @@ export default async function TrainingPage() {
     .filter(e => Number.isInteger(e.lesson) && e.lesson >= 1 && e.lesson <= READINESS_LESSON)
 
   const contentViewed = contentResult.data !== null
-  const checksCleared = deriveProgress(kcEvents, contentViewed).quizzesUnlocked
+  const progress = deriveProgress(kcEvents, contentViewed)
+  const checksCleared = progress.quizzesUnlocked
+
+  // The check the learner should take next, for the "Next Up" card.
+  //
+  // P0 removed sequential lesson ordering, so "next" no longer means "the one
+  // after the last one cleared" — every uncleared check is equally available.
+  // The lowest-numbered uncleared lesson is therefore just a stable, predictable
+  // choice rather than a structural requirement. null = all checks cleared,
+  // which is exactly when the assessment becomes legitimately next.
+  const nextUnclearedLesson = progress.lessons.find(l => l.status !== 'cleared')?.number ?? null
 
   // Cast and shuffle — correct_index is never sent to the client
   type RawQuestion = { id: string; question_text: string; answers: unknown }
@@ -196,6 +206,7 @@ export default async function TrainingPage() {
         questions={questions}
         questionsByLesson={questionsByLesson}
         checksCleared={checksCleared}
+        nextUnclearedLesson={nextUnclearedLesson}
         contentViewed={contentViewed}
         currentLessonNumber={currentLessonNumber}
         initialLocation={initialLocation}
