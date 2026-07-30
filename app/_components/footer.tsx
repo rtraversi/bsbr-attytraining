@@ -70,7 +70,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 border-t border-white/5 pt-6 text-xs text-white/40">
-          © {new Date().getFullYear()} Built Smart by Rob. All rights reserved.
+          © {new Date().getFullYear()} IURIX. All rights reserved.
         </div>
       </div>
     </footer>
