@@ -10,6 +10,12 @@ import { useState } from 'react'
  * was being blocked visibly — this is the reason, and it is now tucked behind a
  * short trigger instead of shouting continuously.
  *
+ * Deliberately NOT styled as a warning at rest (Max): grey text, no danger icon.
+ * Being at your seat limit is a normal state of a healthy account, not a fault,
+ * and a permanent amber alert reads as something having gone wrong. It warms to
+ * amber only once the notice is opened — i.e. at the moment someone is actually
+ * trying to invite and needs to know the limit is what stopped them.
+ *
  * ⚠️ Not hover-only. Hover is unavailable to keyboard and touch users entirely,
  * and what is hidden here is billing information plus the only route to fixing
  * the problem — making that hover-gated would put it out of reach rather than
@@ -33,16 +39,24 @@ export function OutOfSeatsNotice() {
     >
       {/* The trigger carries the first half of the sentence, so nothing is
           duplicated when the rest is revealed and the permanent footprint is one
-          short phrase rather than a paragraph. */}
+          short phrase rather than a paragraph.
+
+          Colour is driven off `open` rather than a :hover class so all three
+          entry points agree — a keyboard focus or a tap warms it exactly like a
+          pointer hover does, instead of leaving those users on the grey resting
+          state while the panel is open. */}
       <button
         type="button"
         onClick={() => setPinned(p => !p)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         aria-expanded={open}
-        className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg py-1 text-[11px] font-bold text-[#B45309] transition-colors hover:text-[#92400E] focus-visible:ring-2 focus-visible:ring-[#B45309]/40 focus-visible:outline-none dark:text-[#F0B357] dark:hover:text-[#FFCE7A]"
+        className={`flex w-full cursor-pointer items-center justify-center rounded-lg py-1 text-[11px] font-bold transition-colors focus-visible:ring-2 focus-visible:ring-[#8A8A8A]/40 focus-visible:outline-none ${
+          open
+            ? 'text-[#B45309] dark:text-[#F0B357]'
+            : 'text-[#8A8A8A] dark:text-[#7A8189]'
+        }`}
       >
-        <WarnIcon />
         Out of seats!
       </button>
 
@@ -68,24 +82,5 @@ export function OutOfSeatsNotice() {
         </div>
       </div>
     </div>
-  )
-}
-
-function WarnIcon() {
-  return (
-    <svg
-      aria-hidden
-      className="h-3.5 w-3.5 shrink-0"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={2.2}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-      />
-    </svg>
   )
 }
