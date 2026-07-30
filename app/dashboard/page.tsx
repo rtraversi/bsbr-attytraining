@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { hasTrainingAccess } from '@/lib/seats'
 import { AdminDashboard } from './_components/admin-dashboard'
 import type { TrainingStatus } from './_components/team-table'
 
@@ -37,7 +38,7 @@ export default async function DashboardPage() {
     admin.from('seats').select('used_seats, max_seats').eq('firm_id', firmId).single(),
     admin
       .from('firm_members')
-      .select('id, user_id, role, status, invited_at, activated_at, invite_email_failed')
+      .select('id, user_id, role, status, occupies_seat, invited_at, activated_at, invite_email_failed')
       .eq('firm_id', firmId)
       .neq('status', 'deleted')
       .neq('status', 'reassigned')
@@ -132,8 +133,18 @@ export default async function DashboardPage() {
 
   memberDetails.sort((a, b) => STATUS_SORT[a.trainingStatus] - STATUS_SORT[b.trainingStatus])
 
-  const certifiedCount = memberDetails.filter(m => m.trainingStatus === 'passed').length
-  const totalCount = memberDetails.length
+  // Only seat-holders can ever be certified, so only they belong in the
+  // denominator. An admin who declined training at onboarding holds no seat and
+  // is gated out of the course entirely — counting them made 100% unreachable
+  // for that firm, which under the all-or-none accreditation rule (Katy, legal
+  // read 2026-07-30) would mean it could never be accredited at all.
+  //
+  // hasTrainingAccess is the same predicate the seat trigger (0015) and the
+  // training gate use. Reused, not re-derived: a third copy of this rule
+  // drifting out of sync is exactly how the original seat double-count happened.
+  const certifiableMembers = memberDetails.filter(hasTrainingAccess)
+  const certifiedCount = certifiableMembers.filter(m => m.trainingStatus === 'passed').length
+  const totalCount = certifiableMembers.length
   const complianceScore = totalCount > 0 ? Math.round((certifiedCount / totalCount) * 100) : 0
 
   const seatsUsed = seats?.used_seats ?? 0

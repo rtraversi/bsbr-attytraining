@@ -1,6 +1,7 @@
 'use client'
 
 import { useTeam } from './team-table'
+import { hasTrainingAccess } from '@/lib/seats'
 
 const CARD = 'rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
 const HEADING = 'font-headline text-2xl md:text-3xl font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
@@ -16,18 +17,33 @@ const AVATAR_COLORS = ['#6FB8F2', '#B45309', '#8A8A8A']
  * there updates this card live; no extra query. When there's no recent pace it
  * falls back to a flat "not enough activity" state rather than fabricating a
  * date (and never divides by zero).
+ *
+ * Every figure here — the "X of Y" readout, the progress bar and the "who's
+ * left" avatar stack — is computed over seat-holders only, NOT over the full
+ * roster the table renders. See the filter below.
  */
 export function CertificationForecast() {
   const { visible } = useTeam()
 
   const now = Date.now()
-  const total = visible.length
-  const remainingMembers = visible.filter(m => m.trainingStatus !== 'passed')
+
+  // Forecast only over members who can actually BE certified. `visible` is the
+  // team roster and rightly still lists an admin who declined training, but they
+  // hold no seat, are gated out of the course, and can never pass — so counting
+  // them inflated "Certified so far — X of Y" and left `remainingSeats` with a
+  // floor it could never clear, which is a projection that never completes.
+  //
+  // hasTrainingAccess is the same predicate the seat trigger (0015) and the
+  // training gate use — reused rather than re-derived here.
+  const certifiable = visible.filter(hasTrainingAccess)
+
+  const total = certifiable.length
+  const remainingMembers = certifiable.filter(m => m.trainingStatus !== 'passed')
   const remainingSeats = remainingMembers.length
   const certifiedCount = total - remainingSeats
   const fullyCertified = total > 0 && remainingSeats === 0
 
-  const certifiedLast7Days = visible.filter(m => {
+  const certifiedLast7Days = certifiable.filter(m => {
     if (!m.certIssuedAt) return false
     const age = now - new Date(m.certIssuedAt).getTime()
     return age >= 0 && age <= 7 * DAY_MS
@@ -49,7 +65,7 @@ export function CertificationForecast() {
       day: 'numeric',
       year: 'numeric',
     })
-    const issuedTimes = visible
+    const issuedTimes = certifiable
       .map(m => (m.certIssuedAt ? new Date(m.certIssuedAt).getTime() : null))
       .filter((t): t is number => t !== null)
     flexActual = Math.max(1, Math.round((now - Math.min(...issuedTimes)) / DAY_MS))
