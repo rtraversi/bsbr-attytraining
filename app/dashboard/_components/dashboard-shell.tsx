@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { EmployeeTabBar } from './employee-tab-bar'
+import { EmployeeTabBar, isTrainingRoute } from './employee-tab-bar'
 import { ToastProvider } from './toast-provider'
 
 /**
@@ -24,6 +24,18 @@ export function DashboardShell({
   const pathname = usePathname()
   const isAdminHome = role === 'admin' && pathname === '/dashboard'
   const showTrainingShell = !isAdminHome
+
+  // The bar is Overview/Content/Quizzes — it meant nothing on Settings and
+  // Support, which share this same shell. Scoped by pathname, following the
+  // isAdminHome pattern above rather than adding state, and off the tab bar's
+  // own route list so the two can't disagree about where it belongs.
+  //
+  // This is independent of the <html>.quiz-active rule that hides the bar
+  // mid-quiz (see app/globals.css): that one hides a bar that IS rendered,
+  // whereas this decides whether to render it at all. Both must hold — on a
+  // training route mid-quiz the bar is rendered here and hidden by the CSS,
+  // and returns when the quiz unmounts and drops the class.
+  const showTabBar = showTrainingShell && isTrainingRoute(pathname)
 
   // Standard shell — light-by-default themed experience with the bottom tab bar.
   // Background pattern: ONE full-bleed masked graphic, colored with the ADMIN
@@ -60,7 +72,12 @@ export function DashboardShell({
   // the page scrolls over, which is the intended look anyway.
   if (showTrainingShell) {
     return (
-      <div className="font-headline relative flex min-h-screen flex-col bg-[#F5F7FA] pb-16 text-[#0A0A0A] transition-colors dark:bg-[#050607] dark:text-[#F5F7FA]">
+      // pb-16 only clears the tab bar — without the bar it is dead space.
+      <div
+        className={`font-headline relative flex min-h-screen flex-col bg-[#F5F7FA] text-[#0A0A0A] transition-colors dark:bg-[#050607] dark:text-[#F5F7FA] ${
+          showTabBar ? 'pb-16' : ''
+        }`}
+      >
         <div
           aria-hidden
           className="shell-pattern pointer-events-none fixed inset-x-0 top-0 h-screen bg-[rgba(207,220,232,0.6)] transition-colors duration-300 dark:bg-[rgba(245,247,250,0.1)]"
@@ -69,7 +86,7 @@ export function DashboardShell({
         <ToastProvider>
           <div className="relative z-10 flex-1">{children}</div>
         </ToastProvider>
-        <EmployeeTabBar />
+        {showTabBar && <EmployeeTabBar />}
       </div>
     )
   }

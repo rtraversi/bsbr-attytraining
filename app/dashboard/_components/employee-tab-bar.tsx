@@ -12,6 +12,22 @@ const TABS = [
   { href: '/dashboard/quizzes', label: 'Quizzes', icon: QuizzesIcon },
 ] as const
 
+/**
+ * The routes this bar belongs on — derived from TABS so it can't drift from
+ * what the bar actually links to.
+ *
+ * Exported because two other places need the same answer: DashboardShell, to
+ * decide whether to render the bar at all (it has no business on Settings or
+ * Support), and NavPill, to light up its "Training" entry. That list previously
+ * existed as a hand-copied duplicate in nav-pill.tsx.
+ */
+export const TRAINING_ROUTES: readonly string[] = TABS.map(t => t.href)
+
+/** True when the employee tab bar belongs on `pathname`. */
+export function isTrainingRoute(pathname: string): boolean {
+  return TRAINING_ROUTES.some(r => pathname.startsWith(r))
+}
+
 export function EmployeeTabBar() {
   const pathname = usePathname()
 
