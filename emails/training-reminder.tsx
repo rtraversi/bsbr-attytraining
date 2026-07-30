@@ -17,14 +17,25 @@ interface TrainingReminderEmailProps {
 
 export function TrainingReminderEmail({ firmName, actionLink }: TrainingReminderEmailProps) {
   return (
-    <EmailShell preview={`Complete your AI compliance training for ${firmName}`}>
+    <EmailShell
+      preview={`${firmName} can’t be certified until everyone completes their training`}
+    >
+      {/* Framing is deliberate (Max, 2026-07-30). The previous headline used
+          "outstanding" to mean unfinished, which reads as praise — the opposite
+          of the intent — and framed this as a personal to-do. There is a second
+          copy of this wording in the cert-worker's inactivityHtml (the cron
+          reminder); the two must stay in sync. Accreditation is all-or-none (Katy's
+          legal read): a firm is not accredited unless every member certifies. So
+          this states the consequence for the firm rather than nagging the
+          individual, and nothing here should imply that one person finishing is
+          sufficient. */}
       <Text style={heading} className={EMAIL_CLASS.heading}>
-        You have outstanding compliance training
+        Your firm can’t be certified until everyone completes their training
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        <strong>{firmName}</strong> has asked us to remind you that your IURIX training is still
-        outstanding. Completing it earns you a compliance certificate under ABA Model Rule 5.3.
+        <strong>{firmName}</strong> can’t be certified under ABA Model Rule 5.3 until every member
+        of the firm has completed their training — and yours is still to do.
       </Text>
 
       <Section style={buttonContainer}>

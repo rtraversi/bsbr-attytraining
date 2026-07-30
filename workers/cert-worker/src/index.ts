@@ -183,10 +183,19 @@ function expiryAdminHtml(empName: string, firmName: string, days: number, dateSt
 </body></html>`
 }
 
+// The cron's inactivity reminder. This is a SECOND copy of the reminder wording
+// — emails/training-reminder.tsx carries the app-side one (the admin's manual
+// "Remind" button). The two must stay in sync; they are worded from the same
+// approved line (Max, 2026-07-30).
+//
+// Framing is deliberate: accreditation is all-or-none (Katy's legal read), so
+// this states the consequence for the FIRM rather than nagging the individual.
+// Nothing here should imply one person finishing is sufficient.
 function inactivityHtml(name: string, firmName: string, appUrl: string): string {
   return `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:14px">Hi ${name},</p>
-<p style="font-size:14px">${firmName} has enrolled you in AI compliance training. Please complete your training to earn your compliance certificate under ABA Model Rule 5.3.</p>
+<p style="font-size:14px"><strong>Your firm can't be certified until everyone completes their training.</strong></p>
+<p style="font-size:14px">${firmName} can't be certified under ABA Model Rule 5.3 until every member of the firm has completed their training — and yours is still to do.</p>
 <p><a href="${appUrl}/dashboard/training" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Complete training</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
 <p style="font-size:12px;color:#6b7280">IURIX</p>
@@ -372,7 +381,7 @@ async function runInactivityReminders(env: Env): Promise<void> {
           await sendEmail(
             env,
             empUser.email,
-            'Reminder: Complete your AI compliance training',
+            "Your firm can't be certified until everyone completes their training",
             inactivityHtml(empName, firm.name, env.APP_URL),
           )
 
