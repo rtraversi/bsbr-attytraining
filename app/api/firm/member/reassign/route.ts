@@ -96,7 +96,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to create team member.' }, { status: 500 })
   }
 
-  // 5. Generate magic link and send invite — no seat table changes (this is a swap)
+  // 5. Revoke the departing person's access. Without this the seat transfers but
+  // the login doesn't: their app_metadata.firm_id survives, and every gate in the
+  // app reads firm_id from there — one paid seat, two people still able to sign
+  // in. Runs only once the swap is committed, so the rollback paths above never
+  // have to put access back.
+  //
+  // Only app_metadata is cleared. The delete route additionally rewrites the
+  // email to deleted-{uuid}@redacted.invalid, but that is irreversible and a
+  // reassignment is a seat transfer, not a deletion request (Max, 2026-07-29).
+  // Every record — firm_members, enrollments, quiz_attempts, certificates,
+  // training_events — is left exactly as it was; this revokes the login only.
+  const { error: revokeError } = await admin.auth.admin.updateUserById(member.user_id, {
+    app_metadata: {},
+  })
+
+  if (revokeError) {
+    // The swap already happened — don't fail the request. The consequence is a
+    // departing user who can still sign in, so it is worth logging loudly.
+    console.error('[firm/member/reassign] access revocation failed:', revokeError)
+  }
+
+  // 6. Generate magic link and send invite — no seat table changes (this is a swap)
   const { data: firm } = await admin.from('firms').select('name').eq('id', firmId).single()
   const firmName = firm?.name ?? 'Your firm'
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
