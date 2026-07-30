@@ -121,16 +121,21 @@ export function ReassignPanel({ member, onClose, onSuccess }: ReassignPanelProps
   }
 
   return (
-    // No max-w cap — fills the full width of the parent table card. Two
-    // columns (form+actions / replacement summary) share that width instead
-    // of leaving it empty; grid's default items-stretch makes the summary
-    // card match the form column's height, so there's no dead space under it.
-    <div className="w-full">
+    // No max-w cap — fills the full width of the parent table card.
+    //
+    // p-1 is load-bearing, not spacing: the parent cross-fade container is
+    // `overflow-y-auto`, and per CSS a non-visible overflow on one axis forces
+    // the other to compute to `auto` too — so it clips horizontally as well.
+    // The inputs' 2px focus ring sits outside their border box and was landing
+    // exactly on that clip edge, which is what read as the name field being cut
+    // off. 4px of breathing room keeps the ring inside.
+    //
+    // The <form> now wraps the WHOLE grid rather than just column 1, because
+    // Confirm moved into column 2 and a submit button has to stay inside it.
+    <form onSubmit={handleSubmit} className="w-full p-1">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        {/* Column 1 — inputs on top, actions pinned to the bottom so the
-            column uses the full stretched height instead of clumping at the top. */}
-        <form onSubmit={handleSubmit} className="flex flex-col justify-between gap-6">
-          <div className="flex flex-col gap-5">
+        {/* Column 1 — purely the form now (Max's steer). */}
+        <div className="flex flex-col gap-5">
             <div>
               <label className="mb-2 block text-sm font-semibold text-[#8A8A8A] dark:text-[#7A8189]">
                 New employee name
@@ -142,7 +147,7 @@ export function ReassignPanel({ member, onClose, onSuccess }: ReassignPanelProps
                 value={name}
                 onChange={e => setName(e.target.value)}
                 disabled={phase === 'loading'}
-                className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-3.5 text-base text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[#32C7FF] focus:ring-2 focus:ring-[#32C7FF]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
+                className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-3.5 text-base text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[#32C7FF] dark:placeholder:text-[#454C54] focus:ring-2 focus:ring-[#32C7FF]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
               />
             </div>
 
@@ -157,15 +162,19 @@ export function ReassignPanel({ member, onClose, onSuccess }: ReassignPanelProps
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 disabled={phase === 'loading'}
-                className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-3.5 text-base text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[#32C7FF] focus:ring-2 focus:ring-[#32C7FF]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
+                className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-3.5 text-base text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[#32C7FF] dark:placeholder:text-[#454C54] focus:ring-2 focus:ring-[#32C7FF]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
               />
             </div>
 
             {error && <p className="text-sm text-[#DC2626]">{error}</p>}
-          </div>
+        </div>
 
-          {/* Stacked full-width Confirm + quiet centered Cancel — the pair no
-              longer needs to fit on one line now that the column is narrower. */}
+        {/* Column 2 — who's being replaced, then the actions. Confirm/Cancel
+            moved here so column 1 is nothing but the form (Max's steer), which
+            also shortens the panel enough to stop it scrolling. */}
+        <div className="flex flex-col gap-5">
+          <ReplacementSummary member={member} />
+
           <div className="flex flex-col gap-3">
             <button
               type="submit"
@@ -183,15 +192,9 @@ export function ReassignPanel({ member, onClose, onSuccess }: ReassignPanelProps
               Cancel
             </button>
           </div>
-        </form>
-
-        {/* Column 2 — merged notice + preserved-record card. Left half restates
-            who's being replaced (icon-chip + "Replacing [email]"); right half
-            makes "training history and certificates will be preserved"
-            concrete via status + whichever fields actually have values. */}
-        <ReplacementSummary member={member} />
+        </div>
       </div>
-    </div>
+    </form>
   )
 }
 
@@ -207,44 +210,52 @@ function ReplacementSummary({ member }: { member: MemberDetail }) {
   if (member.certIssuedAt) rows.push(['Issued', fmt(member.certIssuedAt)])
   if (member.certExpiresAt) rows.push(['Expires', fmt(member.certExpiresAt)])
 
+  // Stacked, never side-by-side. Splitting "Replacing <person>" from their
+  // training status into two columns implied the two were separate facts; they
+  // are one statement about one person, and the split was also what forced this
+  // card wide enough to make the whole panel scroll.
+  //
+  // The preamble is trimmed to the outgoing person's name plus their status
+  // (Max's steer). The paragraph promising history would be preserved is gone —
+  // the Preserved block below states the same thing concretely, with the actual
+  // values, which is more convincing than the sentence was.
   return (
-    <div className="flex h-full flex-col gap-5 rounded-2xl bg-[#F5F7FA] p-5 dark:bg-[#131A20] lg:flex-row lg:gap-6">
-      {/* Left half — icon-chip + notice copy. min-w-0 lets the flex item shrink
-          below its content size so a long email wraps (break-words) instead of
-          forcing this half wider and squeezing the fields grid on the right. */}
-      <div className="flex min-w-0 items-start gap-4 lg:flex-1 lg:items-center">
+    <div className="flex flex-col gap-4 rounded-2xl bg-[#F5F7FA] p-5 dark:bg-[#131A20]">
+      <div className="flex min-w-0 items-center gap-4">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EAF8FF] text-[#0094FF] dark:bg-[#0094FF]/15 dark:text-[#32C7FF]">
           <SwapIcon className="h-5 w-5" />
         </div>
+        {/* min-w-0 lets this shrink below its content width so a long name or
+            email wraps instead of widening the card. */}
         <div className="min-w-0">
-          <p className="break-words text-base font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">
-            Replacing{' '}
-            <span className="text-[#0094FF] dark:text-[#32C7FF]">{member.email}</span>
+          <p className="text-xs font-semibold tracking-wide text-[#8A8A8A] uppercase dark:text-[#7A8189]">
+            Replacing
           </p>
-          <p className="mt-1 text-sm text-[#8A8A8A] dark:text-[#7A8189]">
-            Their training history and certificates will be preserved — only the seat&apos;s
-            owner changes.
+          <p className="mt-0.5 break-words text-base font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">
+            {member.name}
           </p>
         </div>
       </div>
 
-      {/* Divider: horizontal border-top when stacked, vertical rule at lg+ */}
-      <div className="flex min-w-0 flex-col gap-3 border-t border-[#E5EEF5] pt-5 dark:border-[#1F2429] lg:flex-1 lg:justify-center lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-        <TrainingStatusBadge status={member.trainingStatus} />
+      <TrainingStatusBadge status={member.trainingStatus} />
 
-        {rows.length > 0 && (
+      {rows.length > 0 && (
+        <div className="border-t border-[#E5EEF5] pt-4 dark:border-[#1F2429]">
+          <p className="mb-3 text-xs font-semibold tracking-wide text-[#8A8A8A] uppercase dark:text-[#7A8189]">
+            Preserved
+          </p>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
             {rows.map(([label, value]) => (
               <div key={label}>
                 <dt className="text-xs text-[#8A8A8A] dark:text-[#7A8189]">{label}</dt>
-                <dd className="mt-0.5 break-words text-sm font-bold leading-snug text-[#0A0A0A] dark:text-[#F5F7FA]">
+                <dd className="mt-0.5 break-words text-sm leading-snug font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
                   {value}
                 </dd>
               </div>
             ))}
           </dl>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
