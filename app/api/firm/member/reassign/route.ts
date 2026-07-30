@@ -5,6 +5,20 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/resend'
 import { EmployeeInviteEmail } from '@/emails/employee-invite'
 
+/**
+ * Reaching this CONTENT lesson makes a member's seat non-transferable.
+ *
+ * Reassignment is a seat transfer, so without a lock a firm could rotate staff
+ * through a single seat indefinitely. Nobody would get certified that way, but
+ * the per-seat economics — the thing being billed — would be defeated.
+ *
+ * The threshold is CONTENT lessons reached, NOT knowledge checks (Max,
+ * 2026-07-30). Content position is what "meaningfully through the course"
+ * means; a learner can be most of the way through without having taken a
+ * single check, and checks are the easier signal to avoid tripping.
+ */
+const REASSIGN_BLOCK_LESSON = 4
+
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -44,6 +58,51 @@ export async function POST(req: NextRequest) {
 
   if (!member) {
     return NextResponse.json({ error: 'Member not found in this firm' }, { status: 404 })
+  }
+
+  // Progress lock — refuse before anything is mutated (see REASSIGN_BLOCK_LESSON).
+  //
+  // Signal: the 'lesson_location_changed' events /api/training/content-progress
+  // writes, deduped at each lesson boundary. Already-existing tracking; nothing
+  // new to record. Highest lesson number REACHED rather than distinct lessons
+  // visited — it matches what the activity feed already shows the admin
+  // ("Reached Lesson 5"), so a refusal lines up with what they can see, and
+  // Rise blocks skipping ahead, which makes the high-water mark truthful.
+  //
+  // Rows are deduped per boundary, so this is a handful of rows per member.
+  const { data: locationEvents, error: progressError } = await admin
+    .from('training_events')
+    .select('metadata')
+    .eq('firm_member_id', memberId)
+    .eq('event_type', 'lesson_location_changed')
+
+  if (progressError) {
+    // Fail CLOSED. Proceeding on a failed lookup would turn any transient error
+    // into a way around the lock.
+    console.error('[firm/member/reassign] progress lookup failed:', progressError)
+    return NextResponse.json(
+      { error: 'Could not verify this person’s training progress. Please try again.' },
+      { status: 500 }
+    )
+  }
+
+  const highestLesson = (locationEvents ?? []).reduce((max, row) => {
+    const n = Number((row.metadata as Record<string, unknown> | null)?.lessonNumber)
+    return Number.isInteger(n) && n > max ? n : max
+  }, 0)
+
+  if (highestLesson >= REASSIGN_BLOCK_LESSON) {
+    // Not a dead end — support escalates to a human decision. Deliberately no
+    // override mechanism in the product.
+    return NextResponse.json(
+      {
+        error:
+          `This person has already reached Lesson ${highestLesson} of the training, so their ` +
+          `seat can no longer be reassigned. If they have left the firm, contact support from ` +
+          `the Support page and we will review the seat with you.`,
+      },
+      { status: 409 }
+    )
   }
 
   // 1. Soft-delete existing member — preserves all cert/quiz/audit history
