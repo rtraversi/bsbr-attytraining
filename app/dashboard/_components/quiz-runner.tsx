@@ -188,12 +188,26 @@ export function QuizRunner({
           : 'Submit'
         : 'Next Question'
 
+  /* Layout: a three-band column that owns the whole viewport — header / scrolling
+     body / action bar. Previously the whole surface was one scroll container with
+     a `fixed bottom-0` action bar and `pb-40` of clearance under the content,
+     which left the quiz sitting as a small block at the top of a mostly-empty
+     screen. As flex bands the body takes exactly the leftover height, so the
+     action bar is always on screen without reserving dead space for it, and the
+     content can centre itself in whatever room remains.
+
+     `justify-center-safe` rather than `justify-center`: plain centring inside a
+     scroll container makes overflow past the TOP unreachable, so a long question
+     would have its opening lines cut off with no way to scroll up to them. The
+     `safe` keyword (justify-content: safe center) falls back to start-alignment
+     exactly when the content would overflow. Browsers that don't parse it drop
+     the whole declaration and get start-alignment — the safe way to fail. */
   return (
-    <div className="font-headline fixed inset-0 z-[70] overflow-y-auto bg-[#F5F7FA] dark:bg-[#0A0A0A]">
-      <main className="mx-auto max-w-4xl px-5 pt-8 pb-40 md:px-6 md:pt-10">
-        {/* Header + progress — shown while answering */}
-        {answering && (
-          <div className="mb-8 flex flex-col gap-4">
+    <div className="font-headline fixed inset-0 z-[70] flex flex-col bg-[#F5F7FA] dark:bg-[#0A0A0A]">
+      {/* Header band — title, progress, exit. Never scrolls away. */}
+      {answering && (
+        <header className="shrink-0 border-b border-[#E5EEF5] bg-white px-5 pt-6 pb-5 md:px-8 dark:border-[#1F2429] dark:bg-[#0D0F12]">
+          <div className="mx-auto flex max-w-4xl flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div className="min-w-0">
                 <h1 className="text-2xl font-bold text-[#0A0A0A] md:text-3xl dark:text-[#F5F7FA]">
@@ -226,108 +240,124 @@ export function QuizRunner({
               />
             </div>
           </div>
-        )}
+        </header>
+      )}
 
-        {/* Question phase */}
-        {phase === 'quiz' && currentQ && (
-          <>
-            {showReadinessBanner && (
-              <div className="mb-6 rounded-2xl border border-[#32C7FF]/30 bg-[#32C7FF]/[0.08] px-4 py-3 text-sm font-medium text-[#0094FF] dark:text-[#5FC8FF]">
-                This is the readiness check — you need {readinessThreshold}% to clear it.
-              </div>
-            )}
-
-            <div className="mb-8 rounded-3xl border border-[#E5EEF5] bg-white p-6 shadow-[0_4px_20px_rgba(0,148,255,0.08)] md:p-8 dark:border-[#1F2429] dark:bg-[#0D0F12]">
-              <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EAF8FF] text-[#0094FF] dark:bg-[#0E2430] dark:text-[#5FC8FF]">
-                  <QuestionIcon />
+      {/* Body band — takes all remaining height and scrolls only if it must.
+          Padding lives on the inner wrapper, not here: min-h-full is measured
+          against this element's height, so padding out here would push the
+          wrapper past it and manufacture a scrollbar on a page that fits. */}
+      <main className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col justify-center-safe px-5 py-8 md:px-8 md:py-10">
+          {/* Question phase */}
+          {phase === 'quiz' && currentQ && (
+            <>
+              {showReadinessBanner && (
+                <div className="mb-6 rounded-2xl border border-[#32C7FF]/30 bg-[#32C7FF]/[0.08] px-4 py-3 text-sm font-medium text-[#0094FF] dark:text-[#5FC8FF]">
+                  This is the readiness check — you need {readinessThreshold}% to clear it.
                 </div>
-                <div>
-                  <h2 className="mb-2 text-lg font-bold leading-snug text-[#0A0A0A] md:text-xl dark:text-[#F5F7FA]">
-                    {currentQ.question_text}
-                  </h2>
-                  <p className="text-sm text-[#6D7980] dark:text-[#7A8189]">
-                    Select the most appropriate answer from the options below.
-                  </p>
+              )}
+
+              {/* The question is the hero — it outranks the answer text by a full
+                  step at every breakpoint (3xl vs lg at md), where the two used
+                  to sit one notch apart and read as the same level. */}
+              <div className="mb-8 rounded-3xl border border-[#E5EEF5] bg-white p-6 shadow-[0_4px_20px_rgba(0,148,255,0.08)] md:mb-10 md:p-9 dark:border-[#1F2429] dark:bg-[#0D0F12]">
+                <div className="flex items-start gap-4 md:gap-5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EAF8FF] text-[#0094FF] md:h-12 md:w-12 dark:bg-[#0E2430] dark:text-[#5FC8FF]">
+                    <QuestionIcon />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-2xl leading-snug font-bold text-[#0A0A0A] md:text-3xl lg:text-4xl dark:text-[#F5F7FA]">
+                      {currentQ.question_text}
+                    </h2>
+                    <p className="mt-3 text-sm text-[#6D7980] md:text-base dark:text-[#7A8189]">
+                      Select the most appropriate answer from the options below.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-              {currentQ.answers.map((answer, i) => {
-                const isSelected = selected === i
-                return (
-                  <button
-                    key={i}
-                    onClick={() => setSelected(i)}
-                    className={`flex items-center gap-4 rounded-2xl border-2 p-5 text-left transition-all active:scale-[0.98] md:p-6 ${
-                      isSelected
-                        ? 'border-[#32C7FF] bg-[#32C7FF]/[0.08] shadow-[0_0_0_4px_rgba(50,199,255,0.15)]'
-                        : 'border-[#E5EEF5] bg-white hover:border-[#32C7FF] hover:bg-[#32C7FF]/[0.05] dark:border-[#1F2429] dark:bg-[#0D0F12] dark:hover:border-[#32C7FF]'
-                    }`}
-                  >
-                    <span
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 font-bold transition-all ${
+              {/* One answer per row rather than the old 2-up grid: answers are
+                  full sentences, and a single column gives each one the full
+                  measure plus an unambiguous top-to-bottom reading order. */}
+              <div className="flex flex-col gap-4 md:gap-5">
+                {currentQ.answers.map((answer, i) => {
+                  const isSelected = selected === i
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setSelected(i)}
+                      className={`flex items-center gap-4 rounded-2xl border-2 p-6 text-left transition-all active:scale-[0.99] md:gap-5 md:p-7 ${
                         isSelected
-                          ? 'border-[#32C7FF] bg-[#32C7FF] text-white'
-                          : 'border-[#BCC8D0] text-[#6D7980] dark:border-[#3A4249] dark:text-[#7A8189]'
+                          ? 'border-[#32C7FF] bg-[#32C7FF]/[0.08] shadow-[0_0_0_4px_rgba(50,199,255,0.15)]'
+                          : 'border-[#E5EEF5] bg-white hover:border-[#32C7FF] hover:bg-[#32C7FF]/[0.05] dark:border-[#1F2429] dark:bg-[#0D0F12] dark:hover:border-[#32C7FF]'
                       }`}
                     >
-                      {LETTERS[i] ?? i + 1}
-                    </span>
-                    <span className="text-base font-semibold text-[#0A0A0A] md:text-lg dark:text-[#F5F7FA]">
-                      {answer}
-                    </span>
-                  </button>
-                )
-              })}
+                      <span
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 font-bold transition-all md:h-12 md:w-12 md:text-lg ${
+                          isSelected
+                            ? 'border-[#32C7FF] bg-[#32C7FF] text-white'
+                            : 'border-[#BCC8D0] text-[#6D7980] dark:border-[#3A4249] dark:text-[#7A8189]'
+                        }`}
+                      >
+                        {LETTERS[i] ?? i + 1}
+                      </span>
+                      <span className="text-base font-semibold text-[#0A0A0A] md:text-lg dark:text-[#F5F7FA]">
+                        {answer}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {error && <p className="mt-6 text-sm font-medium text-red-500">{error}</p>}
+            </>
+          )}
+
+          {/* Attestation phase */}
+          {phase === 'attestation' && (
+            <div className="w-full rounded-3xl border border-[#E5EEF5] bg-white p-6 shadow-[0_4px_20px_rgba(0,148,255,0.08)] md:p-9 dark:border-[#1F2429] dark:bg-[#0D0F12]">
+              <h2 className="mb-1 text-xl font-bold text-[#0A0A0A] md:text-2xl dark:text-[#F5F7FA]">
+                Almost done
+              </h2>
+              <p className="mb-6 text-sm text-[#6D7980] md:text-base dark:text-[#7A8189]">
+                You have answered all {questions.length} questions. Confirm below to submit for
+                scoring.
+              </p>
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#E5EEF5] bg-[#F5F7FA] p-5 transition-colors hover:border-[#32C7FF] md:p-6 dark:border-[#1F2429] dark:bg-[#0D0F12] dark:hover:border-[#32C7FF]">
+                <input
+                  type="checkbox"
+                  checked={attested}
+                  onChange={e => setAttested(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[#32C7FF]"
+                />
+                <span className="text-sm leading-relaxed text-[#0A0A0A] md:text-base dark:text-[#F5F7FA]">
+                  {attestationLabel}
+                </span>
+              </label>
+              {error && <p className="mt-5 text-sm font-medium text-red-500">{error}</p>}
             </div>
+          )}
 
-            {error && <p className="mt-6 text-sm font-medium text-red-500">{error}</p>}
-          </>
-        )}
+          {/* Submitting phase */}
+          {phase === 'submitting' && (
+            <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+              <Spinner />
+              <p className="text-sm text-[#6D7980] dark:text-[#7A8189]">Submitting your answers…</p>
+            </div>
+          )}
 
-        {/* Attestation phase */}
-        {phase === 'attestation' && (
-          <div className="rounded-3xl border border-[#E5EEF5] bg-white p-6 shadow-[0_4px_20px_rgba(0,148,255,0.08)] md:p-8 dark:border-[#1F2429] dark:bg-[#0D0F12]">
-            <h2 className="mb-1 text-lg font-bold text-[#0A0A0A] md:text-xl dark:text-[#F5F7FA]">
-              Almost done
-            </h2>
-            <p className="mb-6 text-sm text-[#6D7980] dark:text-[#7A8189]">
-              You have answered all {questions.length} questions. Confirm below to submit for scoring.
-            </p>
-            <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#E5EEF5] bg-[#F5F7FA] p-5 transition-colors hover:border-[#32C7FF] dark:border-[#1F2429] dark:bg-[#0D0F12] dark:hover:border-[#32C7FF]">
-              <input
-                type="checkbox"
-                checked={attested}
-                onChange={e => setAttested(e.target.checked)}
-                className="mt-0.5 h-5 w-5 shrink-0 accent-[#32C7FF]"
-              />
-              <span className="text-sm leading-relaxed text-[#0A0A0A] dark:text-[#F5F7FA]">
-                {attestationLabel}
-              </span>
-            </label>
-            {error && <p className="mt-5 text-sm font-medium text-red-500">{error}</p>}
-          </div>
-        )}
-
-        {/* Submitting phase */}
-        {phase === 'submitting' && (
-          <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center">
-            <Spinner />
-            <p className="text-sm text-[#6D7980] dark:text-[#7A8189]">Submitting your answers…</p>
-          </div>
-        )}
-
-        {/* Result phase — caller owns the copy */}
-        {phase === 'result' && result && (
-          <div className="pt-6">{renderResult({ result, retry, exit })}</div>
-        )}
+          {/* Result phase — caller owns the copy */}
+          {phase === 'result' && result && (
+            <div className="w-full">{renderResult({ result, retry, exit })}</div>
+          )}
+        </div>
       </main>
 
-      {/* Sticky bottom bar — Previous / Next|Submit while answering */}
+      {/* Action band — Previous / Next|Submit. A flex sibling rather than a
+          `fixed` overlay, so it can never cover the content it sits under. */}
       {answering && (
-        <div className="fixed bottom-0 left-0 z-[70] w-full border-t border-[#E5EEF5] bg-white px-5 py-4 md:px-6 dark:border-[#1F2429] dark:bg-[#0D0F12]">
+        <footer className="shrink-0 border-t border-[#E5EEF5] bg-white px-5 py-4 md:px-8 dark:border-[#1F2429] dark:bg-[#0D0F12]">
           <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
             {allowBack && phase === 'quiz' && qIndex > 0 ? (
               <button
@@ -349,7 +379,7 @@ export function QuizRunner({
               {phase === 'quiz' && !isLast && <ArrowRightIcon />}
             </button>
           </div>
-        </div>
+        </footer>
       )}
     </div>
   )
