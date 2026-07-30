@@ -260,6 +260,24 @@ html.training-focus [data-employee-tab-bar] {
   display: none;
 }
 
+/* An open quiz hides the bar for the SAME stacking reason — QuizRunner is
+   fixed z-[70] but is still rendered inside that z-10 content wrapper, so the
+   z-40 tab bar painted over its sticky footer and buried the Next/Submit
+   button. Reaching for a higher z-index cannot fix this; the wrapper's
+   stacking context caps everything inside it. quiz-runner.tsx flags <html>
+   on mount and clears it on unmount.
+
+   Beyond legibility this is data loss prevention: with the bar visible, a
+   mis-click on Overview or Content navigates away mid-attempt and the
+   answers are gone.
+
+   Deliberately its own class rather than reusing .training-focus — the two
+   features are independent (a quiz can open outside focus mode) and stay
+   separately debuggable. Both rules do the same thing on purpose. */
+html.quiz-active [data-employee-tab-bar] {
+  display: none;
+}
+
 /* Nav-pill theme-toggle — click-triggered squish/overshoot */
 @keyframes nav-switch-squish {
   0%   { transform: scaleX(1); }

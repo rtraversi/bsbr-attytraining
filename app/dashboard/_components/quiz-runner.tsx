@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 /* ═══════════════════════════════════════════════════════════════════════════
    QuizRunner — the shared question-taking surface used by BOTH the per-lesson
@@ -87,6 +87,28 @@ export function QuizRunner({
   const [phase, setPhase] = useState<Phase>('quiz')
   const [result, setResult] = useState<QuizResult | null>(null)
   const [error, setError] = useState('')
+
+  // Hide the employee bottom tab bar for as long as a quiz is open.
+  //
+  // This surface is fixed z-[70], but it renders inside the dashboard shell's
+  // z-10 content wrapper, so it can never paint over the z-40 tab bar — a
+  // sibling of that wrapper. The bar sat on top of the sticky footer and buried
+  // the Next/Submit button, making a check impossible to complete. A bigger
+  // z-index cannot fix that; the wrapper's stacking context caps everything
+  // inside it. Training focus mode hit this exact wall and solved it by
+  // flagging <html> and hiding the bar in CSS (see app/globals.css) — same
+  // pattern here, with its own class so the two stay independent.
+  //
+  // It also stops a mis-click on Overview/Content from navigating away
+  // mid-attempt and discarding the answers.
+  //
+  // Cleanup on unmount, not on a phase change: the bar must come back however
+  // the quiz ends — submitted, exited, or the parent unmounting it outright —
+  // so no path can strand the class on <html>.
+  useEffect(() => {
+    document.documentElement.classList.add('quiz-active')
+    return () => document.documentElement.classList.remove('quiz-active')
+  }, [])
 
   const currentQ = questions[qIndex]
   const isLast = qIndex === questions.length - 1
