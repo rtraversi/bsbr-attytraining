@@ -1,6 +1,9 @@
 // The real lesson structure, confirmed from the actual Rise 360 export (not a
-// guess). Order is load-bearing: sequential gating unlocks lesson N only after
-// lesson N-1 is cleared. Lesson 5 is the readiness gate (needs a passing score).
+// guess). Knowledge checks 1–4 are NOT sequentially gated — each stands alone
+// (Max, 2026-07-30; see lib/training/progress.ts). Order still matters for the
+// content path (Rise blocks skipping ahead, and lesson position drives the
+// course outline) and lesson 5 remains the readiness gate (needs a passing
+// score).
 
 export interface Lesson {
   number: number

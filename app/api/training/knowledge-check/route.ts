@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       .order('event_timestamp', { ascending: true }),
     // Same existence check as content-progress/route.ts: a driver-reported
     // video_completed event means the training content is verifiably finished.
-    // Gates the lesson-5 shortcut only — the sequential 1–4 path is unaffected.
+    // Gates the lesson-5 shortcut only — checks 1–4 are unaffected.
     admin
       .from('training_events')
       .select('id')
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
 
   const contentViewed = contentRow !== null
 
-  // ── Gate: sequential unlock, shortcut lock, attempt limits (server-side) ────
+  // ── Gate: lesson-5 shortcut lock + attempt limits (server-side) ─────────────
   const gate = canAttempt(events, lesson, contentViewed)
   if (!gate.allowed) {
     return NextResponse.json({ error: gate.reason ?? 'Not allowed' }, { status: 403 })

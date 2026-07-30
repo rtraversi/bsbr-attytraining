@@ -145,8 +145,11 @@ function JumpBackInCard({
 }) {
   const { open, hovered, toggle, hoverProps } = useExpand()
 
-  // The current actionable lesson = earliest unlocked one (sequential gating
-  // guarantees ordering). When fully cleared, fall back to the last lesson for review.
+  // The current actionable lesson = the earliest still-'unlocked' one. Checks
+  // 1–4 are no longer sequentially gated, so this is now "earliest UNCLEARED"
+  // rather than "the next one in the chain" — a cleared lesson reports
+  // 'cleared', not 'unlocked', so it still resolves to a sensible suggestion.
+  // When fully cleared, fall back to the last lesson for review.
   const focus =
     progress.lessons.find(l => l.status === 'unlocked') ??
     progress.lessons[progress.lessons.length - 1]
