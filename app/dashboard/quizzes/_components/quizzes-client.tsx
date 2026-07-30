@@ -7,6 +7,7 @@ import type { ClientQuestion } from '@/lib/training/questions'
 import type { LessonState, Progress } from '@/lib/training/progress'
 import { KnowledgeCheckModal } from '../../overview/_components/knowledge-check-modal'
 import { CertPreviewModal } from '../../_components/cert-preview-modal'
+import { ClearedFlagIcon } from '../../_components/cleared-flag-icon'
 
 /** Issued-certificate details — the Quizzes tab is the one place these live. */
 export interface CertInfo {
@@ -875,21 +876,6 @@ function QuizStyles() {
 /* ── Extracted assets ────────────────────────────────────────────────────────
    Reference SVG markup pulled out of quizzes-tab-v2.html as reusable components. */
 
-function ClearedFlagIcon({ className }: { className?: string }) {
-  // Green pennant on a pole (green = a cleared level).
-  return (
-    <svg className={className} viewBox="0 0 1080 1080" fill="none">
-      <g transform="matrix(2.95248,0,0,2.95248,-380.144,-1240.04)">
-        <g transform="matrix(0.607509,0,0,0.737262,-36.3326,470.984)">
-          <rect x="489" y="90" width="102" height="337" fill="#9CA3AF" />
-        </g>
-        <g transform="matrix(2.43552,0,0,1.38838,-1178.65,295.046)">
-          <path d="M591,90L687,169L591,263.991L591,90Z" fill="#22C55E" />
-        </g>
-      </g>
-    </svg>
-  )
-}
 
 function CastleIcon({ className }: { className?: string }) {
   // Monochrome castle (currentColor) so it themes cleanly in light + dark.
