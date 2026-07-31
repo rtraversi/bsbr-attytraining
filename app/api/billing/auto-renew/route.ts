@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { render } from '@react-email/render'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sendEmail } from '@/lib/resend'
+import { AutoRenewCancelledEmail } from '@/emails/auto-renew-cancelled'
 
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
@@ -89,8 +92,31 @@ export async function POST(req: NextRequest) {
     // here would revoke access early, which is the same bug as calling
     // .cancel() just spelled differently.
 
-    // The cancel-confirmation email is wired in here by the next commit — kept
-    // separate so this one stands alone and compiles.
+    // Confirmation email on CANCEL only. Resuming is not destructive and a
+    // receipt for it would be noise.
+    //
+    // A failed send must not fail the request: the change is already committed
+    // at Stripe, so returning an error would tell the admin their cancellation
+    // did not happen and invite them to repeat an action that already
+    // succeeded. Logged instead. No operator alert — Rob stays out of normal
+    // customer flows by design, and a cancellation is a normal flow.
+    if (!enabled && user.email) {
+      try {
+        const html = await render(
+          AutoRenewCancelledEmail({
+            firmName: firm.name ?? 'Your firm',
+            accessEndsAt: periodEnd,
+          })
+        )
+        await sendEmail({
+          to: user.email,
+          subject: 'Auto-renewal is off — what happens next',
+          html,
+        })
+      } catch (err) {
+        console.error('[billing/auto-renew] confirmation email failed:', err)
+      }
+    }
 
     return NextResponse.json({
       autoRenew: !sub.cancel_at_period_end,
