@@ -37,6 +37,9 @@ interface FirmRow {
   name: string
   owner_id: string
   reminder_days: number
+  /** Optional because only runExpiryReminders selects it — runInactivityReminders
+   *  filters on status=eq.active instead and never reads the column back. */
+  status?: string
 }
 
 interface FirmRenewalRow {
@@ -183,6 +186,35 @@ function expiryAdminHtml(empName: string, firmName: string, days: number, dateSt
 </body></html>`
 }
 
+// The lapsed-firm variant of the above. Two things differ, both deliberate.
+//
+// It does NOT say "a reminder has been sent to <name>" — on this path the
+// employee is not emailed at all, because a lapsed firm's staff cannot sign in.
+// Claiming otherwise would be false.
+//
+// ⚠ It must NOT link to checkout. The win-back destination is blocked on
+// ix-doublebill: a returning customer whose email already has an account gets
+// charged and provisioned nothing. Until that is fixed, the only safe
+// destination is the existing Stripe portal, which is where an existing
+// customer's subscription actually lives. Do not "improve" this into a
+// checkout CTA before ix-doublebill lands.
+function expiryAdminLapsedHtml(
+  empName: string,
+  firmName: string,
+  days: number,
+  dateStr: string,
+  appUrl: string,
+): string {
+  return `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
+<p style="font-size:14px"><strong>${empName}</strong>'s AI compliance training certificate for ${firmName} <strong>expires in ${days} days</strong> — on ${dateStr}.</p>
+<p style="font-size:14px">Your IURIX subscription is not currently active, so ${empName} cannot re-certify and your firm's Rule 5.3 record will not be renewed.</p>
+<p style="font-size:14px">You can review your subscription and billing details in the customer portal.</p>
+<p><a href="${appUrl}/api/portal" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Manage subscription</a></p>
+<hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
+<p style="font-size:12px;color:#6b7280">IURIX</p>
+</body></html>`
+}
+
 // The cron's inactivity reminder. This is a SECOND copy of the reminder wording
 // — emails/training-reminder.tsx carries the app-side one (the admin's manual
 // "Remind" button). The two must stay in sync; they are worded from the same
@@ -204,7 +236,10 @@ function inactivityHtml(name: string, firmName: string, appUrl: string): string 
 
 // ── Expiry reminders ─────────────────────────────────────────────────────────
 
+// Active firms get the full runway. A firm that is no longer active gets a
+// shorter, admin-only cadence — see the lapsed handling in runExpiryReminders.
 const EXPIRY_BUCKETS = [90, 30, 7] as const
+const EXPIRY_BUCKETS_LAPSED = [30, 7] as const
 
 async function runExpiryReminders(env: Env): Promise<void> {
   const now = new Date()
@@ -234,7 +269,7 @@ async function runExpiryReminders(env: Env): Promise<void> {
     try {
       firmData = await pgRest<FirmRow[]>(
         env, 'GET',
-        `/firms?select=id,name,owner_id,reminder_days&id=eq.${firmId}&limit=1`,
+        `/firms?select=id,name,owner_id,reminder_days,status&id=eq.${firmId}&limit=1`,
       ) ?? []
       if (!firmData[0]) continue
       adminUser = await authAdmin(env, firmData[0].owner_id)
@@ -245,6 +280,17 @@ async function runExpiryReminders(env: Env): Promise<void> {
 
     const { name: firmName, owner_id: ownerId } = firmData[0]
     void ownerId // used above
+
+    // firms.status is CHECK-constrained to ('active','payment_failed','cancelled')
+    // — verified against 0001_initial_schema.sql:45-46, not assumed. The
+    // generated type is a bare `string`, so it could not answer this.
+    //
+    // Tested for 'active' rather than against a list of the other two: a status
+    // added later should fall to the conservative lapsed path by default, and
+    // payment_failed — not cancelled — is the common case here, since Stripe
+    // Smart Retries exhausting a card lands there.
+    const isActive = firmData[0].status === 'active'
+    const buckets: readonly number[] = isActive ? EXPIRY_BUCKETS : EXPIRY_BUCKETS_LAPSED
 
     // Batch-fetch recent expiry events for this firm (last 8 days covers all buckets)
     const recentCutoff = addDays(now, -8).toISOString()
@@ -263,7 +309,7 @@ async function runExpiryReminders(env: Env): Promise<void> {
 
     for (const cert of firmCerts) {
       const daysLeft = diffDays(cert.expires_at, now)
-      const bucket = EXPIRY_BUCKETS.find(d => Math.abs(daysLeft - d) <= 1)
+      const bucket = buckets.find(d => Math.abs(daysLeft - d) <= 1)
       if (!bucket) continue
       if (alreadySent.has(`${cert.id}|${bucket}`)) continue
 
@@ -274,19 +320,39 @@ async function runExpiryReminders(env: Env): Promise<void> {
         const empName = (empUser.user_metadata?.full_name as string | undefined) ?? empUser.email
         const dateStr = fmtDate(cert.expires_at)
 
-        await sendEmail(
-          env,
-          empUser.email,
-          `Your AI compliance certificate expires in ${bucket} days`,
-          expiryEmployeeHtml(empName, bucket, dateStr, env.APP_URL),
-        )
+        // Employees of a lapsed firm are skipped entirely; only the admin is
+        // contacted.
+        //
+        // Note the reason, because it is NOT "they cannot sign in" — nothing in
+        // the app currently blocks that. handleSubscriptionDeleted only flips
+        // firms.status, and no middleware or layout gates on it, so a lapsed
+        // firm's staff can still log in today. The reason is that re-certifying
+        // is impossible while the firm is not paying, so chasing the employee
+        // puts the burden on the one person who cannot resolve it, and reads as
+        // nagging. The admin is the only one who can act.
+        if (isActive) {
+          await sendEmail(
+            env,
+            empUser.email,
+            `Your AI compliance certificate expires in ${bucket} days`,
+            expiryEmployeeHtml(empName, bucket, dateStr, env.APP_URL),
+          )
+        }
 
-        if (adminUser?.email && adminUser.email !== empUser.email) {
+        // On the active path the admin is skipped when they ARE the employee,
+        // to avoid sending the same person two emails. On the lapsed path the
+        // employee send was skipped above, so that guard must not apply or an
+        // owner-only firm would be told nothing at all.
+        if (adminUser?.email && (!isActive || adminUser.email !== empUser.email)) {
           await sendEmail(
             env,
             adminUser.email,
-            `${empName}'s AI compliance certificate expires in ${bucket} days`,
-            expiryAdminHtml(empName, firmName, bucket, dateStr),
+            isActive
+              ? `${empName}'s AI compliance certificate expires in ${bucket} days`
+              : `${empName}'s certificate expires in ${bucket} days — your subscription is not active`,
+            isActive
+              ? expiryAdminHtml(empName, firmName, bucket, dateStr)
+              : expiryAdminLapsedHtml(empName, firmName, bucket, dateStr, env.APP_URL),
           )
         }
 
