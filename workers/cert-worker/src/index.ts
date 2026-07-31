@@ -481,6 +481,16 @@ async function runInactivityReminders(env: Env): Promise<void> {
 
 const RENEWAL_BUCKETS = [30, 14, 3] as const
 
+// ⚠ Deliberately states NO dollar amount. The worker cannot compute a reliable
+// figure — volume bands mean the per-seat rate moves with headcount, seats can
+// change mid-term, and tax is applied by Stripe at invoice time. A wrong number
+// on a billing notice is worse than no number, so the portal is the only place
+// the exact amount is quoted. Do not "helpfully" add one here.
+//
+// The charge disclosure leads, before the team-status table. This email exists
+// to warn about money leaving an account; burying that under a compliance
+// progress report is what made the old version read as a status update rather
+// than a billing notice.
 function renewalReminderHtml(
   firmName: string,
   days: number,
@@ -497,12 +507,15 @@ function renewalReminderHtml(
 
   return `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:14px">Hi ${firmName} Admin,</p>
-<p style="font-size:14px">Your AI compliance training subscription <strong>renews in ${days} days</strong> — on ${renewalDate}. Here's a quick look at where your team stands:</p>
+<p style="font-size:14px">Your AI compliance training subscription <strong>renews in ${days} days</strong> — on ${renewalDate}. <strong>The card on file will be charged automatically on that date</strong> unless you cancel before then.</p>
+<p style="font-size:14px">To see the exact renewal amount, update your payment method, or turn off auto-renewal, open the billing portal:</p>
+<p><a href="${appUrl}/api/portal" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Manage subscription &amp; billing</a></p>
+<p style="font-size:14px">Here's a quick look at where your team stands:</p>
 <table style="width:100%;border-collapse:collapse;margin:16px 0">${statusRows}</table>
 ${pending > 0 ? `<p style="font-size:14px">You have <strong>${pending} staff member${pending !== 1 ? 's' : ''}</strong> who ${pending !== 1 ? 'have' : 'has'} not yet completed this year's training. Reach out to them before your renewal date to close out your firm's Rule 5.3 compliance record.</p>` : `<p style="font-size:14px">Great news — all of your staff have completed their training for this certification period.</p>`}
-<p><a href="${appUrl}/dashboard" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">View dashboard &amp; manage subscription</a></p>
+<p><a href="${appUrl}/dashboard" style="font-size:14px;color:#0f766e">View your team dashboard</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
-<p style="font-size:12px;color:#6b7280">IURIX<br>To manage your subscription or update your billing details, click the button above and select "Manage Subscription" from your dashboard.</p>
+<p style="font-size:12px;color:#6b7280">IURIX</p>
 </body></html>`
 }
 
