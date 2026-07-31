@@ -6,6 +6,7 @@ import { NameSettings } from './_components/settings-client'
 import { AvatarUpload } from './_components/avatar-upload'
 import { OrganizationSettings } from './_components/organization-settings'
 import { NotificationSettings } from './_components/notification-settings'
+import { BillingSettings } from './_components/billing-settings'
 import { AppearanceSettings } from './_components/appearance-settings'
 
 export const metadata = {
@@ -57,7 +58,7 @@ export default async function SettingsPage() {
         <h1 className={`${HEADING} text-4xl`}>Settings</h1>
         <p className={`mt-2 text-base ${MUTED}`}>
           {isAdmin
-            ? 'Manage your account, organization, and notifications.'
+            ? 'Manage your account, organization, notifications, and billing.'
             : 'Manage your account and appearance.'}
         </p>
       </div>
@@ -86,6 +87,15 @@ export default async function SettingsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 <span className="whitespace-nowrap">Notifications</span>
+              </a>
+            )}
+            {isAdmin && (
+              <a href="#billing" className={NAV_LINK}>
+                <svg className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                  <path strokeLinecap="round" d="M2 10h20" />
+                </svg>
+                <span className="whitespace-nowrap">Billing</span>
               </a>
             )}
             <a href="#appearance" className={NAV_LINK}>
@@ -127,6 +137,15 @@ export default async function SettingsPage() {
                   reminderDays={reminderDays}
                   notifyCertEarned={notifyCertEarned}
                 />
+              </section>
+            </div>
+          )}
+
+          {isAdmin && (
+            <div id="billing">
+              <h2 className={SECTION_HEADING}>Billing</h2>
+              <section className={CARD}>
+                <BillingSettings />
               </section>
             </div>
           )}
