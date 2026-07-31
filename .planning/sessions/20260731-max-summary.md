@@ -138,21 +138,27 @@ design** — never `subscriptions.cancel()`, which would destroy paid-for access
 | `tsc --noEmit` | clean |
 | `eslint .` | clean |
 | production build | succeeds |
-| `origin/main` | `61965d7` — 17 commits pushed |
-| local `HEAD` | `612dc56` — **5 Batch-3 commits unpushed** |
-| deployed | **nothing this session** |
-| `0017` | **written, NOT applied** |
+| `origin/main` | `7f65a19` — all 22 commits pushed |
+| local `HEAD` | `7f65a19` — in sync, tree clean |
+| deployed | app `21:01:39Z` (`0c4e7ff8`) · cert-worker `19:48:34Z` |
+| `0017` | **applied** — confirmed local/remote/time via `supabase migration list --linked` |
+
+*The four rows above were written mid-wrap, when nothing was pushed or deployed and `0017` was
+recorded as unapplied. All of it completed minutes later; corrected in place 2026-07-31 21:05Z.*
 
 ---
 
-## Next steps
+## Next steps — all three closed at wrap
 
-1. **`supabase db push`** — until then the nudge audit row is silently rejected by the CHECK
-   and the cron's nudge-dedupe is a no-op. The nudge email still sends; only the evidence is
-   missing.
-2. **Push Batch 3** if wanted — held back per the batch instruction.
-3. **Deploy.** Nothing from this session is live, including `d28576d` from 07-30 which was
-   already outstanding.
+1. ~~`supabase db push`~~ — **done.** `0017` is applied; the nudge audit row writes and the cron's
+   nudge-dedupe is live. The earlier claim that it had not run was wrong.
+2. ~~Push Batch 3~~ — **done.** All 22 commits are on `origin/main` at `7f65a19`.
+3. ~~Deploy~~ — **done.** App at `21:01:39Z`; cert-worker at `19:48:34Z` and untouched by Batch 3
+   (`git diff 61965d7..7f65a19` returns no `workers/cert-worker` paths).
+
+**Live-verified after deploying:** `/api/health` ok · `GET /api/billing/summary` → 401 · `POST
+/api/billing/auto-renew` → 401 · `GET /api/billing/auto-renew` → 405 · bogus sibling → 404 ·
+`/cookies` 200.
 4. **Live-test the nudge** after the migration: nudge → `nudge_sent` row with `triggered_by` →
    second nudge returns 429 → row appears in the audit CSV export.
 5. **Eyeball the two layout fixes** (quiz width, path map) — geometry-derived, not measured.

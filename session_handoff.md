@@ -46,15 +46,26 @@ had also been keyed to viewport width, but the map is *widest* on mobile and *na
 does not make hand-editing safe; it was one boolean across three blocks. The Supabase CLI is
 linked to **STAGING** and working on this machine.
 
-## ⚠️ Status — three things are pending on Max
+## ✅ Status — all three closed at wrap (corrected 2026-07-31 21:05Z)
 
-1. **`supabase db push` has not run.** Until it does, `nudge_sent` is rejected by the CHECK
-   constraint: the nudge email sends but the audit row silently does not appear, and the cron's
-   nudge-dedupe is a no-op.
-2. **Batch 3's 5 commits are unpushed** (`origin/main` = `61965d7`, local `HEAD` = `612dc56`).
-   Held back because the batch instruction said no push, and that was never lifted.
-3. **Nothing deployed this session** — including `d28576d` from 07-30, which was already
-   outstanding before today.
+*The three items below were listed as pending when this file was first written. All three were
+completed minutes later. Corrected in place so the next reader is not misled.*
+
+1. **`supabase db push` HAS run — migration `0017` is applied.** Verified against the remote with
+   `supabase migration list --linked`: `0017` appears in the local, remote and time columns. The
+   nudge audit row writes correctly and the cron's nudge-dedupe is live. *(The original note here
+   said it had not run. That was wrong.)*
+2. **Everything is pushed.** `origin/main` = `7f65a19`, local `HEAD` = `7f65a19`, tree clean.
+   All 22 of the session's commits are on the remote, including Batch 3 and this handoff.
+3. **Everything is deployed.** App deployed **21:01:39Z** (version `0c4e7ff8`), cert-worker
+   **19:48:34Z**. Batch 3 touches no cert-worker code, so it needed no second deploy — `git diff
+   61965d7..7f65a19` returns zero `workers/cert-worker` paths. `d28576d` from 07-30 was already
+   live before today began.
+
+**Verified live after deploying:** `/api/health` ok · `GET /api/billing/summary` → 401 with
+`{"error":"Unauthorized"}` · `POST /api/billing/auto-renew` → 401 · `GET /api/billing/auto-renew`
+→ 405 (only POST exported) · a bogus sibling route → 404 · `/cookies` 200 · zero
+`info@aistaffcompliance.com` on `/login` · zero "Built Smart by Rob" on `/`.
 
 `tsc --noEmit` clean, `eslint .` clean, production build succeeds.
 
