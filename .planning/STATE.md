@@ -1,12 +1,18 @@
 # STATE — Iurix Accreditation (formerly "Athena")
 
-**Last updated:** 2026-07-26 — refreshed against the actual codebase after sitting stale since
-2026-06-12. The prior version claimed "Phase 0, 0% complete" while Phases 0–5 were built and
-deployed; it misled the opening of at least two sessions. Verified by reading code, not notes.
+**Last updated:** 2026-07-31 — doc-accuracy pass, every claim re-verified against the code by grep
+and file read. No app code changed. (Prior refresh 2026-07-26, itself a correction of a version that
+claimed "Phase 0, 0% complete" while Phases 0–5 were built and deployed.)
 
-> **Naming:** the product is **Iurix Accreditation** ("Iurix"). The rename is scoped but **not yet
-> executed** — the codebase still says "Athena" and "Built Smart by Rob" throughout. See
-> `.planning/RENAME-IURIX.md`. Katy has also referred to this project as "Aegix"; that name is dead.
+> **Naming:** the product is **Iurix Accreditation** ("Iurix"). **The rename is executed.**
+> `grep -ri "built smart by rob"` returns **zero hits in source** — it survives only in
+> `.planning/` history docs and `CLAUDE.md`. `grep -ri athena` in source returns **no user-visible
+> string**: six CSS class/keyframe names in `app/globals.css` (`athena-dotgrid`, `athena-columns`,
+> `athena-pill`, `athena-pill-solid`, `athena-custom-cursor`, `@keyframes athena-caret`) plus their
+> call sites, and five explanatory comments (`app/globals.css:147,165`, `app/layout.tsx:38`,
+> `emails/_components/email-shell.tsx:21,205`). The class names are cosmetic-only and deliberately
+> left. See `.planning/RENAME-IURIX.md` / `.planning/IURIX-RENAME-PLAN.md` for the executed scope.
+> Katy has also referred to this project as "Aegix"; that name is dead.
 
 ---
 
@@ -18,8 +24,13 @@ deployed; it misled the opening of at least two sessions. Verified by reading co
 - **Mode:** mvp | **Granularity:** standard
 - **Core value:** An attorney can pay, invite their staff, see them complete the training, and
   produce certificates demonstrating Rule 5.3 supervision compliance — without operator intervention.
-- **Live (sandbox):** `https://bsbr-attytraining.aistaffcompliance.workers.dev`
-- **Cert Worker:** `https://bsbr-cert-worker.aistaffcompliance.workers.dev`
+- **Live:** `https://iurixaccreditation.com` — set as `NEXT_PUBLIC_APP_URL` in `wrangler.jsonc:9`,
+  as `APP_URL` in `workers/cert-worker/wrangler.toml:14`, and in the email footers
+  (`emails/_components/email-shell.tsx`). `aistaffcompliance.com` is retired; no `workers.dev` URL
+  appears anywhere in source. The app still *deploys* to the Worker named `bsbr-attytraining`.
+- **Cert Worker:** `bsbr-cert-worker` — a Worker **name / deploy target**, not a URL the app calls.
+  It has no public route in source; it runs on its two crons and is invoked by the Supabase DB
+  webhook. Deploy it from `workers/cert-worker/`; deploy the **app** only from the repo root.
 - **Supabase dev:** `ndmzvtuywcufvkxtkjhg` (under Max's account) | **Stripe sandbox:** `acct_1ThDpr6ZCSojEKRr`
 
 ---
@@ -36,11 +47,11 @@ deployed; it misled the opening of at least two sessions. Verified by reading co
 
 | Phase | Name | Code | Notes on what is NOT done |
 |---|---|---|---|
-| 0 | Foundations | ✅ Deployed | Legal pages live (`/terms`, `/privacy`, `/dpa`); `tests/rls-isolation.test.ts` exists; migrations `0001`–`0013` applied. **Open:** Resend sending-domain verification (and it must target the *new* Iurix domain); Supabase still on free tier — **Pro required before launch**. |
+| 0 | Foundations | ✅ Deployed | Legal pages live (`/terms`, `/privacy`, `/dpa`); `tests/rls-isolation.test.ts` exists; migrations `0001`–`0016` applied. ✅ Resend sending-domain verification **closed** — Rob verified DKIM, SPF and DMARC on `iurixaccreditation.com` (2026-07-29); mail sends as `IURIX <noreply@iurixaccreditation.com>` from both `lib/resend.ts:6` and `workers/cert-worker/src/index.ts:152`. **Open:** Supabase still on free tier — **Pro required before launch**. |
 | 1 | Hello-cert end-to-end stub | ✅ Deployed | Checkout, 373-line webhook w/ `processed_stripe_events` idempotency + 5 handlers, cert PDF via `pdf-lib`, `cert_generation_queue` + 5-min drain, `/api/certificates/[id]/url` signed URLs. Superseded by Phase 2 (the "Mark Pass" stub is gone). |
 | 2 | Rise 360 content + custom React quiz | ⚠️ Deployed, content-incomplete | Rise/SCORM export embedded and working; server-side scoring, identity attestation, unlimited retakes all built. **Open:** the question pool is a placeholder — 8 questions with **pool size == attempt size, so there is no randomization**. Roadmap criterion 3 (pool ≥ 3× per-attempt) is unmet. Content-blocked, not code-blocked. |
 | 3 | Firm admin dashboard | ✅ Deployed | Verified present: `/api/firm/attestation`, `/api/firm/audit-log`, `/api/invite/bulk`, `csv-upload-form.tsx`, reminders, seat reassignment, member delete/redact. |
-| 4 | Automation hardening | ⚠️ Deployed, ops-incomplete | Cert Worker crons live (`*/5` queue drain + `0 9` daily reminders); `X-Webhook-Secret` enforced; `/api/health` + secret-gated `/api/metrics` exist. **Open:** external uptime monitor never picked (UptimeRobot vs BetterStack); Supabase PITR needs Pro tier; **cert PDF logo is still a placeholder** (`lib/cert-pdf.ts:18`). |
+| 4 | Automation hardening | ⚠️ Deployed, ops-incomplete | Cert Worker crons live (`*/5` queue drain + `0 9` daily reminders); `X-Webhook-Secret` enforced; `/api/health` + secret-gated `/api/metrics` exist. ✅ Cert PDF logo **is no longer a placeholder** — the certificate was rebuilt (`6c44493`) around the real Iurix mark, base64-encoded at `lib/cert-logo.ts` from `public/brand/iurix-logo-2048-white.png`. (`lib/cert-pdf.ts:18` is now just the comment on the pure-white paper color.) **Open:** external uptime monitor never picked (UptimeRobot vs BetterStack); Supabase PITR needs Pro tier. |
 | 5 | Renewal flow + launch polish | ⚠️ Deployed, launch-incomplete | Renewal re-enrollment, grace-vs-lapsed logic (30-day grace), reminder cadence, and expiry handling are all built in `invoice.payment_succeeded`. **Open:** attorney review of cert + landing copy + TOS never completed; iPad Safari / Chromebook QA not run. |
 
 ---
@@ -48,22 +59,35 @@ deployed; it misled the opening of at least two sessions. Verified by reading co
 ## 🔴 What actually stands between here and launch
 
 ### Blocked on Rob
-1. **Pick + register the Iurix domain.** Blocks the URL sweep, Resend verification, and the Stripe
-   live webhook registration.
-2. **Logo artwork** — 3 files carry the "atc"/"athena." mark, incl. the base64 blob printed on the
-   certificate (`lib/cert-pdf.ts:18`).
-3. **Decide** whether the course keeps the name "AI Staff Compliance Training" (recommend: keep).
-4. **Question pool size** — the ~24–32 target has been unresolved since 2026-06-12.
-5. **Attorney review** of cert template + landing copy + TOS ($500–$1,500). Hard gate on launch.
-6. **CPA consult** on SaaS sales tax + home-state registration (~$300–$500).
+1. **Logo artwork — narrowed 2026-07-31.** Most of this closed: the **certificate** prints the real
+   Iurix mark (`lib/cert-logo.ts`), the **favicon** is the Iurix icon (`app/icon.png`, `d4acfc4`),
+   and **emails** ship a text-only IURIX wordmark rather than the retired mark
+   (`emails/_components/email-shell.tsx:21`). What is genuinely still outstanding:
+   - **The retired monogram still ships in the web UI.** `app/_components/atc-logo.tsx` inlines path
+     geometry byte-identical to `public/atc-athena-logo.svg` — deliberately, per its own comment
+     (Max, 2026-07-29), to avoid churn before the mark is final. `AtcLogo` renders in
+     `site-header.tsx`, `login`, `onboarding`, `forgot-password`, `update-password`.
+   - **No "Iurix Accreditation" wordmark asset exists.** Three places use a text stand-in set in
+     Stack Sans Headline: `atc-logo.tsx`, `email-shell.tsx`, and the cert header. All three want a
+     second pass when Rob's asset lands.
+   - **`public/brand/README.md` "Still to handle"** — the 2048px PNG is white-matted (no alpha), and
+     there is no simplified small-size variant.
+   - *Cleanup, not blocked on Rob:* `public/atc-athena-logo.svg` and `public/athena-logo-email.png`
+     are now referenced by nothing and can be deleted.
+2. **Question pool size** — the ~24–32 target has been unresolved since 2026-06-12.
+3. **Attorney review** of cert template + landing copy + TOS ($500–$1,500). Hard gate on launch.
+4. **CPA consult** on SaaS sales tax + home-state registration (~$300–$500).
+
+*Closed 2026-07-31:* ~~Pick + register the Iurix domain~~ — `iurixaccreditation.com` is live and
+wired through the app, the cert Worker, and the email footers. ~~Decide whether the course keeps
+the name "AI Staff Compliance Training"~~ — retired; the phrase returns **zero** hits in source and
+the `courses.title` row was updated.
 
 ### Blocked on Katy
 - Legal-accuracy pass on both question sets (`supabase/migrations/0003_quiz_questions.sql` — the
   certifying quiz; `lib/training/questions.ts` — 15 ungraded knowledge checks).
 
 ### Engineering (Max)
-- **The rename** — see `.planning/RENAME-IURIX.md`. Layers 1 + 2 (25 files) are unblocked and can
-  start now; Layers 4–6 wait on the domain.
 - **Stripe live mode** — head-office address → Stripe Tax → live product/price → swap the hardcoded
   `PRICE_ID` at `app/api/checkout/route.ts:17` → register the webhook **on the new domain**.
   ⚠️ `app/api/checkout/route.ts:68` already sets `automatic_tax: { enabled: true }`, so **live
@@ -127,6 +151,12 @@ deployed; it misled the opening of at least two sessions. Verified by reading co
 - ✅ LLC/EIN for Stripe activation — resolved 2026-07-26 via the DBA decision.
 - ✅ Team-status "not started" bug — closed 2026-07-24, was a stale pre-deploy build, no bug.
 - ✅ CF Error 1102 — dropped from tracking 2026-07-24; never recurred.
+- ✅ **The Iurix rename is executed** (2026-07-28 → 07-30). Wordmark, publisher line, course name,
+  domain, email sender, favicon, and the certificate all carry Iurix. Only the monogram artwork and
+  the missing wordmark asset remain — see "Blocked on Rob" #1.
+- ✅ Domain — `iurixaccreditation.com` registered, live, and wired through app + Worker + emails.
+- ✅ Resend sending-domain verification — DKIM/SPF/DMARC confirmed by Rob 2026-07-29.
+- ✅ Cert PDF logo placeholder — closed by the cert rebuild (`6c44493`).
 - ✅ Cert Worker is **not** dead code — ~500 lines running the queue drain + daily crons. Do not
   propose removing it.
 
@@ -134,6 +164,12 @@ deployed; it misled the opening of at least two sessions. Verified by reading co
 
 ## Session Continuity
 
+- **2026-07-31 (Max):** Doc-accuracy pass on this file, **no app code changed**. Re-verified eight
+  claims against the codebase by grep and file read and corrected each: the rename is executed (not
+  pending); the live URL is `iurixaccreditation.com` (not the `workers.dev` sandbox); the domain
+  decision, the course-name decision, the Resend domain verification, and the cert-PDF logo
+  placeholder are all closed; the logo blocker is narrowed to the monogram in `atc-logo.tsx` plus
+  the still-missing wordmark asset; migration high-water mark corrected `0013` → `0016`.
 - **2026-07-26 (Rob):** Scoping session, no code. Locked the Iurix name + corporate structure;
   produced `.planning/RENAME-IURIX.md`; corrected the "payment backend is unfinished" premise (it
   is built and deployed — the gap is live mode); refreshed this file. Commit `26729d3`.
@@ -149,7 +185,7 @@ deployed; it misled the opening of at least two sessions. Verified by reading co
 |---|---|
 | `session_handoff.md` | **Primary cross-person sync point.** Read first, every session. |
 | `.planning/sessions/` | Full per-session history. |
-| `.planning/RENAME-IURIX.md` | The active work item — Iurix rename scope. |
+| `.planning/RENAME-IURIX.md` | Iurix rename scope — **executed**; kept as the record of what was swept. |
 | `.planning/STATE.md` | This file — current position + locked decisions. |
 | `.planning/REQUIREMENTS.md` | 63 v1 REQ-IDs. |
 | `.planning/ROADMAP.md` | 6-phase build order (Progress table is stale). |
