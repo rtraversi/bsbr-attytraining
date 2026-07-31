@@ -97,7 +97,7 @@ export function TeamProvider({
 
       if (res.ok) {
         setRemindStates(s => ({ ...s, [userId]: 'sent' }))
-        addToast(`Reminder sent to ${displayName}`)
+        addToast(`Nudge sent to ${displayName}`)
         return
       }
 
@@ -363,8 +363,8 @@ export function ManageTeamPanel() {
                               <button
                                 onClick={() => handleRemind(m.user_id, m.name)}
                                 className={ICON_ACTION_REMIND}
-                                title={`Send ${m.name} a reminder`}
-                                aria-label={`Remind ${m.name}`}
+                                title={`Nudge ${m.name}`}
+                                aria-label={`Nudge ${m.name}`}
                               >
                                 <BellIcon />
                               </button>
@@ -378,7 +378,7 @@ export function ManageTeamPanel() {
                               // title carries the reason so hovering explains it.
                               <span
                                 className={`text-sm ${MUTED}`}
-                                title={`${m.name} was reminded in the last 48 hours. You can send another after that.`}
+                                title={`${m.name} was nudged in the last 48 hours. You can send another after that.`}
                               >
                                 Sent recently
                               </span>
@@ -387,7 +387,7 @@ export function ManageTeamPanel() {
                                 onClick={() => handleRemind(m.user_id, m.name)}
                                 className={ICON_ACTION_DANGER}
                                 title="Sending failed — try again"
-                                aria-label={`Retry reminder for ${m.name}`}
+                                aria-label={`Retry nudge for ${m.name}`}
                               >
                                 <BellIcon />
                               </button>
