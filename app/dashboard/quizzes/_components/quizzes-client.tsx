@@ -672,19 +672,39 @@ function PathMap({
   return (
     <div className="qz-entrance qz-d2">
       <div className={`${PILL} p-5 sm:p-7 md:p-6 lg:p-8`}>
-        {/* Two separate faults, one container.
-            CLIPPING: the side labels hang off each dot by a fixed gap, so the
-            left label needs `0.25·W − gap − labelWidth ≥ 0`. At the old fixed
-            18px gap that means W ≥ ~292px, and inside this card on a narrow
-            phone W falls below that — the labels ran off the edge. The gap is
-            now a custom property that tightens below `sm`, which drops the
-            requirement to ~232px and clears the narrowest real case.
-            NOT SCALING: max-w was a flat 380px while this column is ~610px at
-            1920px, stranding the remainder. It now grows at lg/xl. Everything
-            inside is either viewBox units or a % of this box, so the whole map
-            scales with it — only the fixed-px text and icons need their own
-            step-up, below. */}
-        <div className="relative mx-auto aspect-[4/7] w-full max-w-[380px] [--lbl-gap:10px] sm:[--lbl-gap:18px] lg:max-w-[440px] xl:max-w-[520px]">
+        {/* Two separate faults; the previous pass got both backwards.
+
+            SIZE — why it grew instead of shrinking. This box is `aspect-[4/7]`,
+            so height is width × 1.75 and width is the ONLY size input. Reading
+            "doesn't scale" as "should get wider" therefore bought 1.75px of
+            height for every 1px of width: at the old xl:max-w-[520px] the map
+            stood 910px tall, taller than most laptop viewports, which is the
+            "it got bigger" report. The binding constraint on a wide screen was
+            never the column width — it is the vertical room the map has to sit
+            in. So from lg the cap is derived from viewport HEIGHT and converted
+            back through the same 4:7 ratio, which shrinks the map on a short
+            display and never exceeds the original 380px. Below lg the layout is
+            single-column and scrolls, so height costs nothing and the flat cap
+            stands.
+
+            Do NOT cap the height directly to do this. `aspect-[4/7]` is load-
+            bearing: the SVG viewBox is 400×700 and every label, flag and the
+            castle is positioned as a % of THIS box, so the two coordinate
+            spaces only agree while the box stays 4:7. A max-h would hold the
+            width, break the ratio, and slide every label off its dot.
+
+            CLIPPING — why tightening the gap missed. A left label needs
+            `0.25·W − gap − labelWidth ≥ 0`. That was right, but `--lbl-gap` was
+            keyed to the VIEWPORT (`sm:`), and this box's width is not monotonic
+            in viewport width: below `md` the grid is one column and the map is
+            at its WIDEST, then at exactly `md` the 12-column grid engages, the
+            aside drops to 5/12, and the map hits its NARROWEST (~222px inside
+            the card at 768px) — where `sm:` has already restored the wide 18px
+            gap. The tightening applied where it was not needed and switched off
+            where it was. `@container` fixes the category error: the gap and the
+            label size now respond to THIS BOX's width, the thing the geometry
+            actually depends on, at every breakpoint at once. */}
+        <div className="@container relative mx-auto aspect-[4/7] w-full max-w-[380px] [--lbl-gap:18px] @max-[300px]:[--lbl-gap:8px] lg:max-w-[min(380px,calc(60svh*4/7))]">
           {/* Single coordinate space: connectors + dots share this viewBox */}
           <svg
             className="absolute inset-0 h-full w-full"
@@ -738,7 +758,7 @@ function PathMap({
               className="qz-flag pointer-events-none absolute"
               style={{ left: `${node.leftPct}%`, top: `${node.topPct}%` }}
             >
-              <ClearedFlagIcon className="h-6 w-6 xl:h-8 xl:w-8" />
+              <ClearedFlagIcon className="h-6 w-6 @max-[300px]:h-5 @max-[300px]:w-5" />
             </div>
           ))}
 
@@ -762,7 +782,7 @@ function PathMap({
                   className="pointer-events-none absolute"
                   style={{ left: `${node.leftPct}%`, top: `${node.topPct}%`, transform: 'translate(-50%,-190%)' }}
                 >
-                  <span className={`text-[11px] font-bold whitespace-nowrap md:text-xs xl:text-sm ${color5}`}>
+                  <span className={`text-xs font-bold whitespace-nowrap @max-[300px]:text-[10px] ${color5}`}>
                     Final Review
                   </span>
                 </div>
@@ -785,7 +805,7 @@ function PathMap({
                     : 'translate(var(--lbl-gap),-50%)',
                 }}
               >
-                <span className={`text-[11px] font-bold whitespace-nowrap md:text-xs xl:text-sm ${color}`}>
+                <span className={`text-xs font-bold whitespace-nowrap @max-[300px]:text-[10px] ${color}`}>
                   Lesson {node.n}
                 </span>
               </div>
@@ -798,14 +818,14 @@ function PathMap({
             style={{ left: `${CASTLE.leftPct}%`, top: `${CASTLE.topPct}%` }}
           >
             <CastleIcon
-              className={`mx-auto h-16 w-16 xl:h-20 xl:w-20 ${
+              className={`mx-auto h-16 w-16 @max-[300px]:h-12 @max-[300px]:w-12 ${
                 goalReached
                   ? 'text-[#0094FF] drop-shadow-[0_0_16px_rgba(0,148,255,0.55)]'
                   : 'text-[#9AA1A9] dark:text-[#5C636B]'
               }`}
             />
             <span
-              className={`mt-1 block text-[11px] font-bold md:text-xs xl:text-sm ${
+              className={`mt-1 block text-xs font-bold @max-[300px]:text-[10px] ${
                 goalReached ? 'text-[#0094FF]' : 'text-[#9AA1A9] dark:text-[#5C636B]'
               }`}
             >
