@@ -67,8 +67,17 @@ and a full-res raster of the primary mark.
 
 | Target | Current placeholder | Needs |
 |---|---|---|
-| `lib/cert-pdf.ts:18` `LOGO_B64` | base64 JPEG placeholder | `iurix-logo-2048-white.png` base64-encoded (fine if the cert backdrop is white), else a transparent render from the SVG |
-| `public/athena-logo-email.png` | Athena email header | White-matted PNG is fine here; must be served from an absolute URL on `iurixaccreditation.com` |
-| `public/atc-athena-logo.svg` | "atc" monogram vector | `iurix-logo.svg`, plate removed + optimized |
-| `app/_components/atc-logo.tsx` | mark + "athena." wordmark | Full Iurix lockup (mark + wordmark) |
-| favicon / OG images | — | Simplified small-size variant rendered from the SVG |
+| `app/_components/atc-logo.tsx` | retired "atc" monogram, inlined, + a text "IURIX" wordmark | Full Iurix lockup (mark + wordmark) |
+| `emails/_components/email-shell.tsx` | text-only "IURIX" wordmark, no image | An `<Img>` lockup served from an absolute URL on `iurixaccreditation.com` |
+| OG images | — | Simplified small-size variant rendered from the SVG |
+
+### ✅ Done since this table was written
+
+- **`lib/cert-logo.ts` `LOGO_B64`** — real mark, base64-encoded from `iurix-logo-2048-white.png`.
+  (The old row pointed at `lib/cert-pdf.ts:18`, which is now just the paper-colour comment.)
+- **favicon** — `app/icon.png` is the Iurix icon.
+- **`public/athena-logo-email.png`** and **`public/atc-athena-logo.svg`** — **deleted 2026-07-31.**
+  Both were orphans: zero code references. Emails never used the PNG (the shell is text-only), and
+  `atc-logo.tsx` inlines its own copy of the SVG's path data rather than fetching the file, so
+  deleting them changed no rendering. The retired monogram still ships via that inlined copy —
+  see the `atc-logo.tsx` row above.
