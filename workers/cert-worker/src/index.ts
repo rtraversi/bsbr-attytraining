@@ -360,11 +360,21 @@ async function runInactivityReminders(env: Env): Promise<void> {
 
       if (targets.size === 0) continue
 
-      // Batch-fetch recent inactivity events for this firm
+      // Batch-fetch recent reminder events for this firm.
+      //
+      // Both types count. Deduping on inactivity_reminder_sent alone meant a
+      // manual nudge was invisible here, so an employee could be personally
+      // chased by their partner in the morning and auto-chased by the cron the
+      // same evening — two near-identical emails, one of which makes the firm
+      // look like it is nagging. From the employee's side the sender does not
+      // matter; what matters is that they were already contacted.
+      //
+      // Lookback duration and recipient are unchanged — that is the separate
+      // inactivity rewrite.
       const recentCutoff = addDays(now, -reminderDays).toISOString()
       const recentEvents = await pgRest<TrainingEventRow[]>(
         env, 'GET',
-        `/training_events?select=firm_member_id&firm_id=eq.${firm.id}&event_type=eq.inactivity_reminder_sent&event_timestamp=gte.${encodeURIComponent(recentCutoff)}`,
+        `/training_events?select=firm_member_id&firm_id=eq.${firm.id}&event_type=in.(inactivity_reminder_sent,nudge_sent)&event_timestamp=gte.${encodeURIComponent(recentCutoff)}`,
       ) ?? []
 
       const recentlySent = new Set(recentEvents.map(e => e.firm_member_id))
