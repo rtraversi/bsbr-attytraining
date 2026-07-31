@@ -460,11 +460,27 @@ async function runRenewalReminders(env: Env): Promise<void> {
     if (!bucket) continue
 
     try {
-      // Dedup: skip if we already sent this bucket for this firm in the last 24h
-      const cutoff24h = addDays(now, -1).toISOString()
+      // Dedup: skip if we already sent this bucket for this firm recently.
+      //
+      // The memory has to outlast the ELIGIBILITY WINDOW, not the gap between
+      // two runs. A bucket matches within ±1 day (see the find() above), so
+      // days 31, 30 and 29 all qualify as the "30-day" reminder — three
+      // consecutive days on which this firm is eligible. The old 24h window
+      // equalled the cron period exactly, so any run-to-run drift let the same
+      // notice send twice, and across the full 3-day window the admin could
+      // receive it up to 3 times.
+      //
+      // 8 days clears that window with room to spare and still sits well below
+      // the 11-day gap to the next bucket (30 → 14 → 3), so it cannot suppress
+      // a reminder that should legitimately fire. It also matches what
+      // runExpiryReminders already uses, for the same reason.
+      //
+      // An hour would not have been enough: it fixes drift between two runs but
+      // still lets day 31 forget day 30.
+      const dedupeCutoff = addDays(now, -8).toISOString()
       const recentEvents = await pgRest<{ metadata: Record<string, unknown> | null }[]>(
         env, 'GET',
-        `/training_events?select=metadata&firm_id=eq.${firm.id}&event_type=eq.renewal_reminder_sent&event_timestamp=gte.${encodeURIComponent(cutoff24h)}`,
+        `/training_events?select=metadata&firm_id=eq.${firm.id}&event_type=eq.renewal_reminder_sent&event_timestamp=gte.${encodeURIComponent(dedupeCutoff)}`,
       ) ?? []
 
       const alreadySent = recentEvents.some(e => {
