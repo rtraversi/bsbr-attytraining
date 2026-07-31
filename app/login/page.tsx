@@ -51,15 +51,25 @@ export default async function LoginPage({
           {/* Footer bar — translucent #00B9FF over the footage, right column only */}
           <div className="bg-[#00B9FF]/50 px-6 py-4">
             <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs font-extralight text-[#FFE5E5]">
-              {/* No page yet */}
-              <span className="opacity-90">Terms</span>
+              <Link href="/terms" className="transition-opacity hover:opacity-70">
+                Terms
+              </Link>
               <Link href="/privacy" className="transition-opacity hover:opacity-70">
                 Privacy
               </Link>
-              {/* No page yet */}
-              <span className="opacity-90">Cookies</span>
+              {/* Cookies is intentionally absent, not forgotten. The /cookies
+                  route now exists but is an empty shell — it carries no copy
+                  until Max drafts it and Katy or Rob approves it. Restore the
+                  <Link href="/cookies"> here, styled like its siblings, once
+                  that copy is approved. */}
+              {/* TEMPORARY — pending Rob's business address (cutover item C4).
+                  This pointed at info@aistaffcompliance.com, a RETIRED domain,
+                  so support mail sent from the sign-in page may have been
+                  silently dropped. solarsaiko@gmail.com is already the live
+                  support inbox (app/api/support/contact/route.ts:8), so this
+                  matches where the in-app support form already delivers. */}
               <a
-                href="mailto:info@aistaffcompliance.com"
+                href="mailto:solarsaiko@gmail.com"
                 className="transition-opacity hover:opacity-70"
               >
                 Contact support
