@@ -30,7 +30,11 @@ export interface MemberDetail {
   invite_email_failed: boolean
 }
 
-type RemindState = 'idle' | 'loading' | 'sent' | 'error'
+// 'rate_limited' is deliberately distinct from 'error'. A nudge blocked by the
+// 48h window is the system working correctly, and the attorney needs to be told
+// that — not shown a failure they might retry, and not shown a dead button that
+// reads as the feature having been taken away from them.
+type RemindState = 'idle' | 'loading' | 'sent' | 'error' | 'rate_limited'
 
 /**
  * Team state lives in a provider rather than the panel itself so other cards
@@ -90,8 +94,24 @@ export function TeamProvider({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
       })
-      setRemindStates(s => ({ ...s, [userId]: res.ok ? 'sent' : 'error' }))
-      if (res.ok) addToast(`Reminder sent to ${displayName}`)
+
+      if (res.ok) {
+        setRemindStates(s => ({ ...s, [userId]: 'sent' }))
+        addToast(`Reminder sent to ${displayName}`)
+        return
+      }
+
+      // 429 is the 48h nudge window, not a failure. Surface the server's own
+      // message — it names the time the next nudge becomes available, which is
+      // the only thing that makes the disabled state feel deliberate.
+      if (res.status === 429) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null
+        setRemindStates(s => ({ ...s, [userId]: 'rate_limited' }))
+        addToast(data?.error ?? `You already nudged ${displayName} in the last 48 hours.`)
+        return
+      }
+
+      setRemindStates(s => ({ ...s, [userId]: 'error' }))
     } catch {
       setRemindStates(s => ({ ...s, [userId]: 'error' }))
     }
@@ -352,6 +372,16 @@ export function ManageTeamPanel() {
                               <span className={`text-sm ${MUTED}`}>…</span>
                             ) : remindState === 'sent' ? (
                               <span className="text-sm font-semibold text-[#0094FF]">Sent ✓</span>
+                            ) : remindState === 'rate_limited' ? (
+                              // Not an error and not a dead control: the reminder
+                              // already went out. Muted rather than red, and the
+                              // title carries the reason so hovering explains it.
+                              <span
+                                className={`text-sm ${MUTED}`}
+                                title={`${m.name} was reminded in the last 48 hours. You can send another after that.`}
+                              >
+                                Sent recently
+                              </span>
                             ) : (
                               <button
                                 onClick={() => handleRemind(m.user_id, m.name)}
