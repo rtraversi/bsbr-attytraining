@@ -1,19 +1,17 @@
+import Link from 'next/link'
 import { Row } from './row'
 
 /**
- * Billing — a signpost to the Stripe Customer Portal, not a payment UI.
+ * Billing — a pointer to /dashboard/billing, nothing more.
  *
- * Deliberately builds nothing of its own. app/api/portal/route.ts already
- * creates a Customer Portal session (a GET that redirects), and the portal
- * handles the payment method, invoice history, and cancelling auto-renewal.
- * Re-implementing any of that here would mean holding card state we have no
- * reason to touch, and would drift from what Stripe shows.
+ * This used to render two rows that both deep-linked /api/portal, so "Cancel
+ * auto-renewal" was a second door to the same room with a different sign on it.
+ * The real page now owns subscription state, payment history and the renewal
+ * switch; this is just the signpost to it.
  *
- * It exists because the pricing page's auto-renewal disclosure promises a
- * cancellation path by name ("Settings → Billing"). Before this, the only route
- * to the portal was a button on the admin dashboard — a promise the product did
- * not keep. This is a server component: it renders links and static copy, so
- * there is no client JS to ship.
+ * The #billing anchor and its nav entry MUST stay. The pricing page's
+ * auto-renewal disclosure names "Settings → Billing" as the cancellation path,
+ * so that path is load-bearing — a legal disclosure points at it.
  *
  * NOTE the reminder_days control is NOT here and must not move here — it lives
  * under Notifications and runInactivityReminders still reads it. It becomes
@@ -21,44 +19,22 @@ import { Row } from './row'
  */
 export function BillingSettings() {
   return (
-    <>
-      <Row first>
-        <div>
-          <span className="block text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">
-            Subscription &amp; payment method
-          </span>
-          <p className="text-sm text-[#8A8A8A] dark:text-[#7A8189]">
-            Your IURIX subscription renews automatically each year and the card on file
-            is charged on your renewal date. Open the billing portal to see the exact
-            amount, update your card, or download invoices.
-          </p>
-        </div>
-        <a
-          href="/api/portal"
-          className="shrink-0 rounded-xl bg-[#0094FF] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-        >
-          Open billing portal
-        </a>
-      </Row>
-
-      <Row last>
-        <div>
-          <span className="block text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">
-            Cancel auto-renewal
-          </span>
-          <p className="text-sm text-[#8A8A8A] dark:text-[#7A8189]">
-            Cancelling stops future charges. Your firm keeps every certificate already
-            earned — those records are permanent — but staff cannot re-certify once the
-            subscription ends.
-          </p>
-        </div>
-        <a
-          href="/api/portal"
-          className="shrink-0 rounded-xl border border-[#E5EEF5] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-[#0A0A0A] transition-colors hover:bg-[#F5F7FA] dark:border-[#1F2429] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
-        >
-          Manage in portal
-        </a>
-      </Row>
-    </>
+    <Row first last>
+      <div>
+        <span className="block text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">
+          Subscription &amp; payment method
+        </span>
+        <p className="text-sm text-[#8A8A8A] dark:text-[#7A8189]">
+          Your IURIX subscription renews automatically each year and your card is charged
+          on your renewal date.
+        </p>
+      </div>
+      <Link
+        href="/dashboard/billing"
+        className="shrink-0 rounded-xl bg-[#0094FF] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+      >
+        Manage billing
+      </Link>
+    </Row>
   )
 }
