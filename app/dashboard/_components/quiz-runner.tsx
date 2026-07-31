@@ -205,9 +205,15 @@ export function QuizRunner({
   return (
     <div className="font-headline fixed inset-0 z-[70] flex flex-col bg-[#F5F7FA] dark:bg-[#0A0A0A]">
       {/* Header band — title, progress, exit. Never scrolls away. */}
+      {/* The three bands below (header / body / footer) share one width ladder
+          on purpose. Each has its own centred inner wrapper, so the ladder has
+          to be repeated rather than hoisted — the bands themselves are
+          full-bleed, since their borders and backgrounds must run edge to edge.
+          If you change one, change all three or the progress bar, the question
+          card and the action bar stop lining up with each other. */}
       {answering && (
         <header className="shrink-0 border-b border-[#E5EEF5] bg-white px-5 pt-6 pb-5 md:px-8 dark:border-[#1F2429] dark:bg-[#0D0F12]">
-          <div className="mx-auto flex max-w-4xl flex-col gap-4">
+          <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 lg:max-w-5xl xl:max-w-6xl">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div className="min-w-0">
                 <h1 className="text-2xl font-bold text-[#0A0A0A] md:text-3xl dark:text-[#F5F7FA]">
@@ -248,7 +254,7 @@ export function QuizRunner({
           against this element's height, so padding out here would push the
           wrapper past it and manufacture a scrollbar on a page that fits. */}
       <main className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col justify-center-safe px-5 py-8 md:px-8 md:py-10">
+        <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col justify-center-safe px-5 py-8 md:px-8 md:py-10 lg:max-w-5xl xl:max-w-6xl">
           {/* Question phase */}
           {phase === 'quiz' && currentQ && (
             <>
@@ -356,7 +362,7 @@ export function QuizRunner({
           `fixed` overlay, so it can never cover the content it sits under. */}
       {answering && (
         <footer className="shrink-0 border-t border-[#E5EEF5] bg-white px-5 py-4 md:px-8 dark:border-[#1F2429] dark:bg-[#0D0F12]">
-          <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
+          <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4 lg:max-w-5xl xl:max-w-6xl">
             {allowBack && phase === 'quiz' && qIndex > 0 ? (
               <button
                 onClick={goPrev}
