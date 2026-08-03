@@ -113,7 +113,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     // Email already registered — re-purchase edge case, not handled in v1
     console.warn(`[stripe-webhook] createUser skipped for ${email}: ${createUserError.message}`)
 
-    const operatorEmail = process.env.OPERATOR_ALERT_EMAIL ?? 'info@aistaffcompliance.com'
+    // TEMPORARY — pending Rob's business address (cutover item C4, tracked as
+    // ix-supportdest). The fallback pointed at info@aistaffcompliance.com, a
+    // RETIRED domain, so whenever OPERATOR_ALERT_EMAIL was unset this alert was
+    // mailed into a void — and it HAS been unset since the domain move (absent
+    // from wrangler.jsonc vars, all 9 Worker secrets, and the local env files).
+    // That made the whole safety net of the 07-09 collision fix inert. A
+    // misconfigured env must not silently mail a dead domain, so the fallback is
+    // now the same live inbox the in-app support form already delivers to
+    // (app/api/support/contact/route.ts:8). Set the real secret as well — the
+    // fallback is a floor, not the configuration.
+    const operatorEmail = process.env.OPERATOR_ALERT_EMAIL ?? 'solarsaiko@gmail.com'
     const subject = '⚠️ Stripe provisioning collision — manual action needed'
     const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:14px">A Stripe checkout completed but firm provisioning was skipped because the customer's email is already registered.</p>
