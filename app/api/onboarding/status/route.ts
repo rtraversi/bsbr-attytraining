@@ -48,9 +48,29 @@ export async function GET(req: NextRequest) {
     .eq('stripe_customer_id', customerId)
     .single()
 
-  if (!firm) {
-    return NextResponse.json({ provisioned: false })
+  if (firm) {
+    return NextResponse.json({ provisioned: true, email, seats, firmName: firm.name })
   }
 
-  return NextResponse.json({ provisioned: true, email, seats, firmName: firm.name })
+  // No firm for this customer. That is normally just the webhook not having
+  // landed yet — but it is also what a deliberate refusal looks like, and the
+  // two are indistinguishable from here without asking.
+  //
+  // Before this check the caller polled ten times and was told "setup is taking
+  // a moment, please refresh" with a Refresh button that could never succeed,
+  // because no amount of waiting produces a firm that was never going to exist.
+  const { data: failure } = await supabase
+    .from('provisioning_failures')
+    .select('reason')
+    .eq('stripe_session_id', sessionId)
+    .maybeSingle()
+
+  if (failure) {
+    // The blocked shape is additive: `provisioned` stays false, so any caller
+    // that only understands the original two fields still behaves correctly and
+    // simply keeps polling as it did before.
+    return NextResponse.json({ provisioned: false, blocked: true, reason: failure.reason })
+  }
+
+  return NextResponse.json({ provisioned: false })
 }

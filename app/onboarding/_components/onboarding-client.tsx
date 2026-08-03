@@ -2,18 +2,60 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-type Phase = 'polling' | 'ready' | 'submitting' | 'done' | 'timeout' | 'error'
+type Phase = 'polling' | 'ready' | 'submitting' | 'done' | 'timeout' | 'error' | 'blocked'
+
+/**
+ * Why provisioning stopped. Mirrors provisioning_failures.reason (0018) — the
+ * generated DB types render that column as a bare `string` because it is a
+ * CHECK constraint rather than a Postgres enum, so the union is declared here
+ * to keep the copy lookup exhaustive.
+ */
+type BlockedReason = 'duplicate' | 'email_in_use' | 'unresolved'
 
 interface StatusResponse {
   provisioned: boolean
   email?: string
   seats?: number
   firmName?: string
+  /** Set when setup stopped deliberately and waiting cannot help. */
+  blocked?: boolean
+  reason?: BlockedReason
 }
 
 interface CompleteResponse {
   success: boolean
   devLink?: string
+}
+
+/**
+ * Copy per refusal reason. Specific rather than generic, because the only one
+ * of these the customer can act on themselves is `email_in_use` — and for that
+ * one, knowing the actual cause is the difference between a fixable purchase
+ * and an unexplained failure.
+ *
+ * The other firm is never named for `email_in_use`: that would leak one
+ * customer's staff roster to another, and the buyer already knows who employs
+ * them.
+ */
+const BLOCKED_COPY: Record<BlockedReason, { heading: string; explanation: string; next: string }> = {
+  email_in_use: {
+    heading: 'This email is already in use',
+    explanation:
+      'The address you paid with is already registered to an existing IURIX account as a staff member. Each firm account needs its own email address, so we stopped rather than attaching your purchase to another account.',
+    next: 'Purchasing again with a different email address will work. Please get in touch first so we can sort out the payment you have already made.',
+  },
+  duplicate: {
+    heading: 'You already have an active account',
+    explanation:
+      'This email already owns an active IURIX subscription, so this second purchase would have billed you twice for the same thing. We stopped it and cancelled the new subscription — your existing account and its certificates are untouched.',
+    next: 'Sign in with this email to reach your dashboard. Get in touch about the payment just taken and we will put it right.',
+  },
+  unresolved: {
+    heading: "We couldn't finish setting up your account",
+    explanation:
+      'Something went wrong on our side while creating your account. This is not a problem with your payment or your card.',
+    next: 'Our team has been alerted and is looking into it. Get in touch and we will get you set up.',
+  },
 }
 
 export function OnboardingClient({ sessionId }: { sessionId: string }) {
@@ -24,6 +66,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
   const [enrollSelf, setEnrollSelf] = useState(false)
   const [devLink, setDevLink] = useState<string | undefined>()
   const [errorMsg, setErrorMsg] = useState('')
+  const [blockedReason, setBlockedReason] = useState<BlockedReason>('unresolved')
 
   const pollStatus = useCallback(async () => {
     let attempts = 0
@@ -40,6 +83,14 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
             setSeats(data.seats ?? 1)
             setFirmName(data.firmName === 'My Firm' ? '' : (data.firmName ?? ''))
             setPhase('ready')
+            return
+          }
+          // Stop on the first blocked response rather than burning the
+          // remaining attempts. Setup was refused, so no further poll can
+          // change the answer and every extra spinner second is a lie.
+          if (data.blocked) {
+            setBlockedReason(data.reason ?? 'unresolved')
+            setPhase('blocked')
             return
           }
         }
@@ -92,6 +143,54 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
       <div className="flex flex-col items-center gap-4 py-4 text-center">
         <Spinner />
         <p className="text-base font-extralight text-zinc-600">Confirming your payment…</p>
+      </div>
+    )
+  }
+
+  // ── Blocked ───────────────────────────────────────────────────────────────
+  // Setup was refused, not delayed. Deliberately no Refresh button: refreshing
+  // cannot produce a firm that was never going to be created, and offering it
+  // is what made the old timeout screen dishonest.
+
+  if (phase === 'blocked') {
+    const copy = BLOCKED_COPY[blockedReason]
+    return (
+      <div className="flex flex-col gap-5 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-50">
+          <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
+            <path
+              d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
+              stroke="#B45309"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+
+        <h1 className="text-2xl font-semibold text-zinc-900">{copy.heading}</h1>
+
+        {/* Said plainly and first: the money left their account. Leading with
+            anything else reads as evasion. */}
+        <p className="text-base font-extralight text-zinc-700">
+          Your payment went through, but we couldn&apos;t finish setting up your account.
+        </p>
+
+        <p className="text-base font-extralight text-zinc-700">{copy.explanation}</p>
+
+        <p className="text-base font-extralight text-zinc-700">{copy.next}</p>
+
+        <a
+          href="mailto:solarsaiko@gmail.com"
+          className="mx-auto rounded-xl bg-[#32C7FF] px-6 py-3 text-sm font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90"
+        >
+          Contact support
+        </a>
+
+        <p className="text-sm font-extralight text-[#7F7F7F]">
+          Quote reference <span className="font-medium text-zinc-700">{sessionId}</span> and
+          we&apos;ll find your payment straight away.
+        </p>
       </div>
     )
   }
