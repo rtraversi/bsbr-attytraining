@@ -47,7 +47,7 @@ export function NameSettings({ email, fullName }: { email: string; fullName: str
 
   return (
     <form onSubmit={handleSave}>
-      <Row>
+      <Row first>
         <label
           htmlFor="account-name"
           className="text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]"

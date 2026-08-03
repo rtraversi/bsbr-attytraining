@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iurix redesign — three directions</title>
+<style>
+@font-face{font-family:'Gyrotrope';src:url('../../public/fonts/GyrotropeVF.ttf') format('truetype');font-weight:100 900;font-display:swap}
+@font-face{font-family:'Host Grotesk';src:url('../../public/fonts/HostGrotesk[wght].ttf') format('truetype');font-weight:100 900;font-display:swap}
+:root{--ink:#1c2223;--soft:#4c5453;--mute:#8f9996;--line:#a6cecd;--mint:#eafbf5;--teal:#2b3334;--gold:#88685c}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#f7f7f6;color:var(--ink);font-family:'Host Grotesk',system-ui,sans-serif;font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:64px 28px 90px}
+.mono{font-family:ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:500}
+h1{font-family:'Gyrotrope',Georgia,serif;font-weight:400;font-size:clamp(32px,4.4vw,48px);letter-spacing:-.02em;margin:14px 0 16px;line-height:1.1}
+.sub{color:var(--soft);max-width:640px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px}
+@media(max-width:880px){.grid{grid-template-columns:1fr}}
+a.card{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--line);padding:26px 24px 28px;transition:transform .2s ease,box-shadow .2s ease}
+a.card:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(28,34,35,.10)}
+a.card h2{font-family:'Gyrotrope',Georgia,serif;font-weight:400;font-size:24px;margin:12px 0 10px;line-height:1.2}
+a.card p{font-size:15px;color:var(--soft)}
+.swatches{display:flex;gap:5px;margin-top:20px}
+.swatches i{width:26px;height:26px;display:block;border:1px solid rgba(28,34,35,.1)}
+.pal{margin-top:56px;border-top:1px solid var(--line);padding-top:28px}
+.pal h3{font-family:'Gyrotrope',Georgia,serif;font-weight:400;font-size:21px;margin-bottom:16px}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;padding:6px 12px 6px 6px;font-size:12.5px;font-family:ui-monospace,Consolas,monospace}
+.chip i{width:22px;height:22px;display:block}
+.note{margin-top:34px;background:var(--mint);border-left:3px solid var(--gold);padding:18px 20px;font-size:15px;color:var(--soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="mono">Iurix Accreditation · marketing redesign</span>
+  <h1>Three directions</h1>
+  <p class="sub">Same copy and section structure in all three, taken from the retired Netlify site — with the "coming soon" and waitlist sections replaced by the real checkout CTA. Every colour is sampled from <code>public/brand/iurix-logo.svg</code>; every typeface is already self-hosted in <code>public/fonts/</code>, so whichever you pick ships without new licensing.</p>
+
+  <div class="grid">
+    <a class="card" href="direction-a-marble-and-rule.html">
+      <span class="mono">A</span>
+      <h2>Marble &amp; Rule</h2>
+      <p>Light and editorial. The certificate as a printed instrument — marble ground, hairline rules, serif display, rose gold reserved for the seal and the one primary action. Calm authority.</p>
+      <div class="swatches"><i style="background:#f7f7f6"></i><i style="background:#eafbf5"></i><i style="background:#2b3334"></i><i style="background:#5a6e6e"></i><i style="background:#88685c"></i><i style="background:#d9b5a6"></i></div>
+    </a>
+    <a class="card" href="direction-b-deep-water.html">
+      <span class="mono">B</span>
+      <h2>Deep Water</h2>
+      <p>Dark jewel. Near-black teal so the metallic mark reads the way it was drawn. Very large, very light display type, lots of air, rose gold used only for actions. Premium-software register.</p>
+      <div class="swatches"><i style="background:#12191a"></i><i style="background:#232b2b"></i><i style="background:#a6cecd"></i><i style="background:#d0e5e0"></i><i style="background:#b39082"></i><i style="background:#d9b5a6"></i></div>
+    </a>
+    <a class="card" href="direction-c-the-record.html">
+      <span class="mono">C</span>
+      <h2>The Record</h2>
+      <p>The deliverable is the hero — a certificate specimen sits in the first screen. Systematic and gridded, mono metadata, filled teal bands, a tabular sanctions docket. Unmistakably compliance.</p>
+      <div class="swatches"><i style="background:#ffffff"></i><i style="background:#eafbf5"></i><i style="background:#a6cecd"></i><i style="background:#2b3334"></i><i style="background:#b39082"></i><i style="background:#d9b5a6"></i></div>
+    </a>
+  </div>
+
+  <div class="pal">
+    <h3>Sampled palette — all 28 fills in the logo SVG</h3>
+    <div class="chips">
+      <span class="chip"><i style="background:#eafbf5"></i>#eafbf5</span>
+      <span class="chip"><i style="background:#d0e5e0"></i>#d0e5e0</span>
+      <span class="chip"><i style="background:#a6cecd"></i>#a6cecd</span>
+      <span class="chip"><i style="background:#8cb2b1"></i>#8cb2b1</span>
+      <span class="chip"><i style="background:#7d8f8d"></i>#7d8f8d</span>
+      <span class="chip"><i style="background:#5a6e6e"></i>#5a6e6e</span>
+      <span class="chip"><i style="background:#2b3334"></i>#2b3334</span>
+      <span class="chip"><i style="background:#1c2223"></i>#1c2223</span>
+      <span class="chip"><i style="background:#d9b5a6"></i>#d9b5a6</span>
+      <span class="chip"><i style="background:#b39082"></i>#b39082</span>
+      <span class="chip"><i style="background:#a27c6e"></i>#a27c6e</span>
+      <span class="chip"><i style="background:#88685c"></i>#88685c</span>
+      <span class="chip"><i style="background:#f7f7f6"></i>#f7f7f6</span>
+      <span class="chip"><i style="background:#c2c5c3"></i>#c2c5c3</span>
+      <span class="chip"><i style="background:#8f9996"></i>#8f9996</span>
+      <span class="chip"><i style="background:#4c5453"></i>#4c5453</span>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Two things to look past while judging.</strong> The mark loads from the raw 3.4&nbsp;MB auto-traced SVG, so it may pop in a beat late — that gets SVGO'd before anything ships. And there is still no Iurix <em>wordmark</em>, so each direction improvises the lockup differently (A: serif name over a spaced descriptor; B: letterspaced caps; C: serif name inline). That's a real open decision, not a rendering artifact.
+  </div>
+</div>
+</body>
+</html>

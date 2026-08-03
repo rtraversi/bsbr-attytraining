@@ -139,25 +139,15 @@ export function CertificationForecast() {
         {remainingSeats > 0 && (
           <div className="flex items-center gap-3">
             <div className="flex">
-              {remainingMembers.slice(0, 3).map((m, i) =>
-                m.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- no next/image remote-pattern config in this project; plain <img> matches the codebase convention
-                  <img
-                    key={m.id}
-                    src={m.avatarUrl}
-                    alt=""
-                    className="-ml-2.5 h-11 w-11 rounded-full border-2 border-white object-cover first:ml-0 dark:border-[#0D0F12]"
-                  />
-                ) : (
-                  <span
-                    key={m.id}
-                    className="-ml-2.5 flex h-11 w-11 items-center justify-center rounded-full border-2 border-white text-base font-bold text-white first:ml-0 dark:border-[#0D0F12]"
-                    style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
-                  >
-                    {m.name.charAt(0).toUpperCase()}
-                  </span>
-                )
-              )}
+              {remainingMembers.slice(0, 3).map((m, i) => (
+                <span
+                  key={m.id}
+                  className="-ml-2.5 flex h-11 w-11 items-center justify-center rounded-full border-2 border-white text-base font-bold text-white first:ml-0 dark:border-[#0D0F12]"
+                  style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                >
+                  {m.name.charAt(0).toUpperCase()}
+                </span>
+              ))}
               {remainingSeats > 3 && (
                 <span className="-ml-2.5 flex h-11 w-11 items-center justify-center rounded-full border-2 border-white bg-[#EAF1F8] text-base font-bold text-[#6B7684] first:ml-0 dark:border-[#0D0F12] dark:bg-[#1A1F24] dark:text-[#9AA3AC]">
                   +{remainingSeats - 3}

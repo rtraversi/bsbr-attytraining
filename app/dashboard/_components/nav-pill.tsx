@@ -8,7 +8,6 @@ import { useTheme } from './theme'
 interface NavPillProps {
   firmName: string | null
   role: string | null
-  avatarUrl: string | null
 }
 
 /** The three routes that make up the training experience (the bottom tab bar's sub-nav). */
@@ -58,7 +57,7 @@ function SupportIcon() {
   )
 }
 
-/** Generic person-outline placeholder — shown only when the user has no avatar set. */
+/** Generic person-outline mark used in the profile slot. */
 function ProfileIcon() {
   return (
     <svg className="h-full w-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
@@ -71,11 +70,11 @@ function ProfileIcon() {
   )
 }
 
-/** The circular profile slot. Shows the current user's real avatar (set on
- * Settings) when present, falling back to the person-outline placeholder.
+/** The circular profile slot. Always the person-outline mark — this product
+ * deliberately holds no profile photographs (decision: Rob, 2026-07-28).
  * Tone mirrors the sketch's subtle, near-invisible-by-design opacity rules
- * for the placeholder's backdrop — irrelevant once a real photo fills it. */
-function ProfileSlot({ tone, avatarUrl }: { tone: 'idle' | 'active' | 'identity'; avatarUrl: string | null }) {
+ * for the mark's backdrop. */
+function ProfileSlot({ tone }: { tone: 'idle' | 'active' | 'identity' }) {
   const toneClass = {
     idle: 'bg-white/15',
     active: 'bg-black/[0.08] dark:bg-white/15',
@@ -84,16 +83,9 @@ function ProfileSlot({ tone, avatarUrl }: { tone: 'idle' | 'active' | 'identity'
 
   return (
     <span
-      className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full ${
-        avatarUrl ? '' : 'p-[5px]'
-      } ${toneClass}`}
+      className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full p-[5px] ${toneClass}`}
     >
-      {avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- no next/image remote-pattern config in this project; plain <img> matches the codebase convention
-        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <ProfileIcon />
-      )}
+      <ProfileIcon />
     </span>
   )
 }
@@ -145,7 +137,7 @@ function ThemeToggle() {
  * Separate from EmployeeTabBar: this switches app sections, that one navigates
  * within the training area.
  */
-export function NavPill({ firmName, role, avatarUrl }: NavPillProps) {
+export function NavPill({ firmName, role }: NavPillProps) {
   const pathname = usePathname()
   const isAdmin = role === 'admin'
   const isDashboardActive = pathname === '/dashboard'
@@ -192,7 +184,7 @@ export function NavPill({ firmName, role, avatarUrl }: NavPillProps) {
             aria-current={isDashboardActive ? 'page' : undefined}
             className={`${pillBase} shrink-0 ${isDashboardActive ? pillActive : pillIdle}`}
           >
-            <ProfileSlot tone={isDashboardActive ? 'active' : 'idle'} avatarUrl={avatarUrl} />
+            <ProfileSlot tone={isDashboardActive ? 'active' : 'idle'} />
             {/* Hidden below sm — same reasoning as the old firm-name-only rule:
                 on a phone this text alone would eat the pill's width and push
                 the nav links out of reach. Icons stay visible either way. */}
@@ -201,7 +193,7 @@ export function NavPill({ firmName, role, avatarUrl }: NavPillProps) {
           </Link>
         ) : (
           <span className={`${pillBase} shrink-0 bg-[#F5F7FA] text-[#0A0A0A] dark:bg-[#131A20] dark:text-[#F5F7FA]`}>
-            <ProfileSlot tone="identity" avatarUrl={avatarUrl} />
+            <ProfileSlot tone="identity" />
             {firmName && <span className="font-headline hidden sm:inline">{firmName}</span>}
           </span>
         )}

@@ -1,0 +1,379 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direction B â€” Deep Water Â· Iurix Accreditation</title>
+<style>
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   DIRECTION B â€” "DEEP WATER"
+   Concept: dark jewel. Near-black teal ground so the metallic mark
+   reads the way it was designed to. Very large, very light display
+   type; generous air; rose-gold reserved exclusively for actions.
+   Premium-software register rather than editorial.
+   Every colour is sampled from public/brand/iurix-logo.svg.
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+@font-face{font-family:'Stack Sans';src:url('../assets/fonts/StackSansHeadline-VariableFont_wght.ttf') format('truetype');font-weight:200 700;font-display:swap}
+@font-face{font-family:'Host Grotesk';src:url('../assets/fonts/HostGrotesk[wght].ttf') format('truetype');font-weight:100 900;font-display:swap}
+
+:root{
+  --abyss:#12191a;          /* derived: logo's #1c2223 taken one step deeper */
+  --deep:#1c2223;
+  --panel:#232b2b;          /* derived from #2b3334 */
+  --line:rgba(166,206,205,.16);
+  --line-soft:rgba(166,206,205,.09);
+  --mint:#d0e5e0;
+  --mint-bright:#eafbf5;
+  --teal-lit:#a6cecd;
+  --teal-mid:#8cb2b1;
+  --steel:#8f9996;
+  --gold:#d9b5a6;
+  --gold-mid:#b39082;
+  --gold-deep:#a27c6e;
+  --max:1200px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--abyss);
+  color:var(--mint);
+  font-family:'Host Grotesk',system-ui,sans-serif;
+  font-size:17px;line-height:1.7;font-weight:330;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 32px}
+.display{font-family:'Stack Sans','Host Grotesk',system-ui,sans-serif;font-weight:250;letter-spacing:-.025em}
+.label{font-size:11px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
+
+/* â”€â”€ header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+header{position:fixed;top:0;left:0;right:0;z-index:60;padding:18px 0}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:20px;max-width:var(--max);margin:0 auto;padding:9px 14px 9px 18px;
+  background:rgba(28,34,35,.62);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:999px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--mint-bright)}
+.brand img{width:32px;height:32px;display:block;filter:drop-shadow(0 0 14px rgba(166,206,205,.28))}
+.brand b{font-family:'Stack Sans',sans-serif;font-weight:300;font-size:18px;letter-spacing:.06em}
+nav{display:flex;align-items:center;gap:6px}
+nav a.lnk{color:var(--steel);text-decoration:none;font-size:14.5px;padding:8px 15px;border-radius:999px;transition:all .18s ease}
+nav a.lnk:hover{color:var(--mint-bright);background:rgba(208,229,224,.06)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-size:15px;font-weight:500;
+  padding:12px 26px;border-radius:999px;transition:all .18s ease;cursor:pointer;border:1px solid transparent}
+.btn-gold{background:linear-gradient(140deg,var(--gold) 0%,var(--gold-mid) 100%);color:#1c2223}
+.btn-gold:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-ghost{border-color:var(--line);color:var(--mint);background:rgba(208,229,224,.03)}
+.btn-ghost:hover{border-color:var(--teal-lit);color:var(--mint-bright)}
+nav .btn{padding:10px 22px;font-size:14.5px}
+@media(max-width:900px){nav a.lnk{display:none}}
+
+/* â”€â”€ hero â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.hero{position:relative;padding:190px 0 110px;overflow:hidden}
+.hero::before{ /* teal halo */
+  content:"";position:absolute;top:-10%;left:50%;transform:translateX(-50%);
+  width:1200px;height:900px;pointer-events:none;
+  background:radial-gradient(ellipse 50% 45% at 50% 45%,rgba(140,178,177,.20),transparent 68%);
+}
+.hero::after{ /* rose-gold counter-glow */
+  content:"";position:absolute;bottom:-25%;right:-10%;width:820px;height:820px;pointer-events:none;
+  background:radial-gradient(circle,rgba(179,144,130,.14),transparent 62%);
+}
+.hero .wrap{position:relative;z-index:2}
+.hero-inner{max-width:920px}
+.kicker{display:inline-flex;align-items:center;gap:11px;padding:7px 16px 7px 12px;border:1px solid var(--line);border-radius:999px;margin-bottom:34px}
+.kicker .dot{width:5px;height:5px;border-radius:50%;background:var(--gold);box-shadow:0 0 9px var(--gold)}
+h1{font-family:'Stack Sans',sans-serif;font-weight:250;font-size:clamp(46px,7.4vw,104px);line-height:.99;letter-spacing:-.035em;color:var(--mint-bright)}
+h1 .lit{background:linear-gradient(100deg,var(--teal-lit) 0%,var(--gold) 92%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{margin-top:34px;max-width:620px;font-size:21px;line-height:1.6;color:var(--steel)}
+.hero-actions{margin-top:44px;display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.hero-note{margin-top:22px;font-size:14.5px;color:rgba(143,153,150,.85)}
+
+.markwrap{position:absolute;right:-70px;top:120px;width:min(46vw,600px);opacity:.5;pointer-events:none;z-index:1;
+  mask-image:radial-gradient(circle at 50% 50%,#000 45%,transparent 74%);
+  -webkit-mask-image:radial-gradient(circle at 50% 50%,#000 45%,transparent 74%)}
+.markwrap img{width:100%;display:block}
+@media(max-width:1100px){.markwrap{display:none}}
+
+/* stat rail */
+.rail{margin-top:96px;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);border-radius:14px;overflow:hidden}
+@media(max-width:840px){.rail{grid-template-columns:repeat(2,1fr)}}
+.rail div{background:var(--abyss);padding:26px 26px 28px}
+.rail .label{color:var(--steel);margin-bottom:9px}
+.rail strong{font-family:'Stack Sans',sans-serif;font-weight:300;font-size:22px;color:var(--mint-bright);letter-spacing:-.01em;line-height:1.3;display:block}
+
+/* â”€â”€ sections â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+section{padding:112px 0;position:relative}
+.sec-head{max-width:760px;margin-bottom:60px}
+h2{font-family:'Stack Sans',sans-serif;font-weight:250;font-size:clamp(32px,4.6vw,58px);line-height:1.06;letter-spacing:-.03em;color:var(--mint-bright);margin-top:16px}
+.sec-head p{margin-top:20px;font-size:19px;color:var(--steel)}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:900px){.steps{grid-template-columns:1fr}}
+.card{background:linear-gradient(165deg,rgba(208,229,224,.055),rgba(208,229,224,.015));border:1px solid var(--line-soft);border-radius:18px;padding:34px 30px 36px;transition:border-color .25s ease,transform .25s ease}
+.card:hover{border-color:var(--line);transform:translateY(-4px)}
+.card .n{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;
+  border:1px solid var(--line);color:var(--gold);font-size:14px;font-weight:500;margin-bottom:22px}
+.card h3{font-family:'Stack Sans',sans-serif;font-weight:300;font-size:22px;line-height:1.28;letter-spacing:-.015em;color:var(--mint-bright);margin-bottom:12px}
+.card p{color:var(--steel);font-size:16px}
+
+/* why */
+.why{background:linear-gradient(180deg,transparent,rgba(35,43,43,.55) 18%,rgba(35,43,43,.55) 82%,transparent)}
+.why-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:70px;align-items:start}
+@media(max-width:960px){.why-grid{grid-template-columns:1fr;gap:48px}}
+.why-grid p{margin-bottom:20px;color:var(--steel)}
+.why-grid p strong{color:var(--mint-bright);font-weight:500}
+blockquote{border-left:1px solid var(--gold-mid);padding:4px 0 4px 26px;margin:32px 0;
+  font-family:'Stack Sans',sans-serif;font-weight:300;font-size:22px;line-height:1.45;letter-spacing:-.01em;color:var(--mint)}
+blockquote cite{display:block;margin-top:16px;font-family:'Host Grotesk',sans-serif;font-style:normal;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--steel)}
+.cases{display:flex;flex-direction:column;gap:14px}
+.case{border:1px solid var(--line-soft);border-radius:14px;padding:24px 26px;background:rgba(18,25,26,.6);transition:border-color .22s ease}
+.case:hover{border-color:var(--line)}
+.case .label{color:var(--steel);font-size:10.5px}
+.case h4{font-family:'Stack Sans',sans-serif;font-weight:300;font-size:20px;letter-spacing:-.015em;color:var(--mint-bright);margin:7px 0 7px}
+.case p{font-size:15.5px;color:var(--steel);margin:0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:34px;margin-top:72px}
+@media(max-width:840px){.stats{grid-template-columns:repeat(2,1fr);gap:28px}}
+.stat b{display:block;font-family:'Stack Sans',sans-serif;font-weight:250;font-size:46px;line-height:1;letter-spacing:-.03em;
+  background:linear-gradient(120deg,var(--teal-lit),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:12px}
+.stat span{font-size:14.5px;color:var(--steel);line-height:1.5;display:block}
+
+/* pricing */
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch}
+@media(max-width:900px){.tiers{grid-template-columns:1fr}}
+.tier{border:1px solid var(--line-soft);border-radius:20px;padding:38px 32px;display:flex;flex-direction:column;
+  background:linear-gradient(170deg,rgba(208,229,224,.05),rgba(208,229,224,.012));transition:border-color .25s ease,transform .25s ease}
+.tier:hover{border-color:var(--line);transform:translateY(-4px)}
+.tier.feat{border-color:rgba(217,181,166,.4);background:linear-gradient(170deg,rgba(217,181,166,.11),rgba(208,229,224,.02));position:relative}
+.tier.feat::after{content:"Most firms";position:absolute;top:20px;right:22px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+.tier .label{color:var(--steel);margin-bottom:18px}
+.price{font-family:'Stack Sans',sans-serif;font-weight:250;font-size:54px;line-height:1;letter-spacing:-.035em;color:var(--mint-bright)}
+.price small{font-family:'Host Grotesk',sans-serif;font-size:15px;color:var(--steel);letter-spacing:0;font-weight:400}
+.tier ul{list-style:none;margin:28px 0 32px;flex:1}
+.tier li{padding:11px 0;font-size:15.5px;color:var(--steel);display:flex;gap:12px;border-bottom:1px solid var(--line-soft)}
+.tier li:last-child{border-bottom:none}
+.tier li::before{content:"";flex:none;width:14px;height:14px;margin-top:.34em;border-radius:50%;border:1px solid var(--teal-mid);
+  background:radial-gradient(circle at 50% 50%,var(--teal-lit) 0 2.4px,transparent 2.4px)}
+.tier .btn{width:100%}
+.pricing-note{margin-top:36px;color:var(--steel);font-size:15px;max-width:800px}
+
+/* closing CTA */
+.close{padding:120px 0 130px;position:relative;overflow:hidden}
+.close::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 55% 65% at 50% 55%,rgba(179,144,130,.2),transparent 66%)}
+.close .wrap{position:relative;z-index:1;text-align:center}
+.close img{width:78px;margin:0 auto 30px;display:block;filter:drop-shadow(0 0 28px rgba(166,206,205,.3))}
+.close h2{margin:0 auto}
+.close p{margin:22px auto 0;max-width:560px;font-size:19px;color:var(--steel)}
+.close .hero-actions{justify-content:center;margin-top:40px}
+
+/* footer */
+footer{border-top:1px solid var(--line-soft);padding:52px 0 60px;font-size:14.5px;color:var(--steel)}
+.frow{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap;align-items:flex-start}
+.frow a{color:var(--steel);text-decoration:none}
+.frow a:hover{color:var(--mint-bright)}
+.fnav{display:flex;gap:22px;flex-wrap:wrap}
+.disclaimer{max-width:720px;margin-top:28px;padding-top:24px;border-top:1px solid var(--line-soft);font-size:12.5px;line-height:1.65;color:rgba(143,153,150,.75)}
+.todo{color:var(--gold);font-weight:500}
+
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <a class="brand" href="#top">
+      <img src="../assets/iurix-logo.svg" alt="">
+      <b>IURIX</b>
+    </a>
+    <nav>
+      <a class="lnk" href="#what">The training</a>
+      <a class="lnk" href="#why">Why it matters</a>
+      <a class="lnk" href="#pricing">Pricing</a>
+      <a class="lnk" href="#">Sign in</a>
+      <a class="btn btn-gold" href="#buy">Get started</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="markwrap"><img src="../assets/iurix-logo.svg" alt=""></div>
+    <div class="wrap">
+      <div class="hero-inner">
+        <div class="kicker"><span class="dot"></span><span class="label">ABA Model Rule 5.3 Â· Formal Opinion 512</span></div>
+        <h1>Your staff is using AI.<br>You're the one <span class="lit">responsible.</span></h1>
+        <p class="lede">Iurix Accreditation certifies your firm's staff on proper AI use â€” and gives you the documented supervision paper trail Rule&nbsp;5.3 requires.</p>
+        <div class="hero-actions">
+          <a class="btn btn-gold" href="#buy">Certify your staff</a>
+          <a class="btn btn-ghost" href="#why">Why this matters</a>
+        </div>
+        <p class="hero-note">From $28 per staff member, per year Â· certificates issue the moment they pass</p>
+      </div>
+
+      <div class="rail">
+        <div><div class="label">Format</div><strong>Interactive course</strong></div>
+        <div><div class="label">Assessment</div><strong>Scored, pass-gated</strong></div>
+        <div><div class="label">Deliverable</div><strong>Dated PDF certificate</strong></div>
+        <div><div class="label">Validity</div><strong>12 months</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="what">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="label">What we do</div>
+        <h2>Buy seats. Invite your team. Watch the record build itself.</h2>
+        <p>Three steps, no operator in the loop â€” from checkout to a certificate you can hand to a regulator.</p>
+      </div>
+      <div class="steps reveal">
+        <div class="card">
+          <span class="n">1</span>
+          <h3>Structured AI training for nonlawyer staff</h3>
+          <p>Paralegals, assistants, and office staff work through an interactive course on confidentiality, hallucinated citations, client data, and the boundaries of AI-assisted work in a legal practice.</p>
+        </div>
+        <div class="card">
+          <span class="n">2</span>
+          <h3>A scored assessment with a pass gate</h3>
+          <p>Each staff member must pass a scored certification demonstrating comprehension. Unlimited retakes â€” the goal is that every person on your team actually understands the rules.</p>
+        </div>
+        <div class="card">
+          <span class="n">3</span>
+          <h3>A defensible record for the supervising attorney</h3>
+          <p>Every completion produces a dated certificate with a unique ID, plus a firm dashboard showing who's certified, their scores, and when re-certification is due.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="why" id="why">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="label">Why now</div>
+        <h2>Rule 5.3 just changed.</h2>
+      </div>
+      <div class="why-grid reveal">
+        <div>
+          <p><strong>ABA Model Rule 5.3</strong> makes supervising attorneys responsible for the conduct of their nonlawyer staff. It was written for paralegals and office assistants â€” and in July 2024, <strong>ABA Formal Opinion 512</strong> extended it explicitly to AI tools.</p>
+          <p>The practical consequence: if your paralegal uses an AI tool to draft a brief and it hallucinates citations, <strong>you</strong> are professionally responsible. You cannot blame the tool â€” and you cannot claim you didn't know.</p>
+          <blockquote>
+            "These duties apply to nonlawyers both within and outside of the law firmâ€¦ a third-party-operated generative AI does not negate the lawyer's requirement to ensure that its actions are consistent with a lawyer's professional obligations."
+            <cite>Florida Bar Advisory Opinion 24-1 (2024)</cite>
+          </blockquote>
+          <p>State bars in <strong>Florida, California, New York, Texas, and North Carolina</strong> have issued opinions explicitly tying Rule 5.3 to AI use. A completed training certificate is the "reasonable efforts to supervise" evidence the rule demands.</p>
+        </div>
+        <div class="cases">
+          <div class="case">
+            <div class="label">S.D.N.Y. Â· 2023</div>
+            <h4>Mata v. Avianca</h4>
+            <p>Six fabricated AI citations submitted to the court. $5,000 sanction and mandatory AI education.</p>
+          </div>
+          <div class="case">
+            <div class="label">Colorado Â· 2023</div>
+            <h4>In re Crabill</h4>
+            <p>First U.S. attorney suspended over AI misconduct â€” after blaming a legal intern. 90-day suspension.</p>
+          </div>
+          <div class="case">
+            <div class="label">D. Wyoming Â· 2025</div>
+            <h4>Wadsworth v. Walmart</h4>
+            <p>Supervising partners fined for an associate's AI-fabricated citations â€” in a brief they never read.</p>
+          </div>
+        </div>
+      </div>
+      <div class="stats reveal">
+        <div class="stat"><b>480+</b><span>documented AI hallucination cases in U.S. courts</span></div>
+        <div class="stat"><b>2â€“3/day</b><span>new filings with fabricated AI citations by 2025</span></div>
+        <div class="stat"><b>$31,100</b><span>largest joint sanction to date for unverified AI work</span></div>
+        <div class="stat"><b>~49</b><span>states have adopted Rule 5.3 or an equivalent</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="label">Pricing</div>
+        <h2>One fee. Every staff member certified.</h2>
+        <p>Pay once a year per staff member. The more of your team you certify, the lower the per-seat rate â€” and it stays flat when you renew.</p>
+      </div>
+      <div class="tiers reveal">
+        <div class="tier feat">
+          <div class="label">Solo &amp; boutique Â· 1â€“9 staff</div>
+          <div class="price">$35<small> / staff / year</small></div>
+          <ul>
+            <li>Full interactive course &amp; assessment</li>
+            <li>Individual PDF certificates</li>
+            <li>Firm compliance dashboard</li>
+            <li>Re-certification reminders</li>
+          </ul>
+          <a class="btn btn-gold" href="#buy">Get started</a>
+        </div>
+        <div class="tier">
+          <div class="label">Small firm Â· 10â€“24 staff</div>
+          <div class="price">$32<small> / staff / year</small></div>
+          <ul>
+            <li>Full interactive course &amp; assessment</li>
+            <li>Individual PDF certificates</li>
+            <li>Firm compliance dashboard</li>
+            <li>Re-certification reminders</li>
+          </ul>
+          <a class="btn btn-ghost" href="#buy">Get started</a>
+        </div>
+        <div class="tier">
+          <div class="label">Growing firm Â· 25+ staff</div>
+          <div class="price">$28<small> / staff / year</small></div>
+          <ul>
+            <li>Full interactive course &amp; assessment</li>
+            <li>Individual PDF certificates</li>
+            <li>Firm compliance dashboard</li>
+            <li>Re-certification reminders</li>
+          </ul>
+          <a class="btn btn-ghost" href="#buy">Get started</a>
+        </div>
+      </div>
+      <p class="pricing-note">Billed annually per enrolled staff member. Certificates are valid for 12 months â€” and because AI rules and case law change fast, the course is substantially updated every year, so each re-certification reflects the current state of the law.</p>
+    </div>
+  </section>
+
+  <section class="close" id="buy">
+    <div class="wrap">
+      <img src="../assets/iurix-logo.svg" alt="">
+      <div class="label" style="margin-bottom:14px">Enrol now</div>
+      <h2>Certify your team this week.</h2>
+      <p>Choose your seat count, invite your staff, and watch certifications complete from your dashboard. Self-serve, start to finish.</p>
+      <div class="hero-actions">
+        <a class="btn btn-gold" href="#">Buy seats</a>
+        <a class="btn btn-ghost" href="#">Talk to us first</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="frow">
+      <div>
+        <strong style="font-family:'Stack Sans',sans-serif;font-weight:300;font-size:17px;letter-spacing:.06em;color:var(--mint-bright)">IURIX ACCREDITATION</strong><br>
+        iurixaccreditation.com<br>
+        <span class="todo">[contact email TBD] Â· [phone TBD]</span>
+      </div>
+      <nav class="fnav">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Data Processing Addendum</a>
+      </nav>
+    </div>
+    <p class="disclaimer">Iurix Accreditation provides educational training and certification of completion for law firm staff. It is not a law firm, does not provide legal advice, and its certificates are not CLE-accredited and do not constitute bar accreditation or a guarantee of compliance. Attorneys remain responsible for their own professional obligations under applicable rules of professional conduct. Â© 2026 BSBR Holdings, LLC d/b/a Iurix. All rights reserved.</p>
+  </div>
+</footer>
+
+<script>
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
+

@@ -2,9 +2,8 @@
  * Shared card-row primitive for the Settings page — label(+description) on the
  * left, control on the right; stacks to a column below `sm`. Explicit
  * first/last flags (not `first:`/`last:` pseudo-classes) because a card's rows
- * are sometimes split across sibling components (e.g. Account's photo row and
- * the NameSettings form aren't literal DOM siblings of every row), so CSS
- * child-position selectors would be unreliable.
+ * are sometimes split across sibling components (a card's rows aren't always
+ * literal DOM siblings), so CSS child-position selectors would be unreliable.
  */
 export function Row({
   first = false,

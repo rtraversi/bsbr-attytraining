@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NameSettings } from './_components/settings-client'
-import { AvatarUpload } from './_components/avatar-upload'
 import { OrganizationSettings } from './_components/organization-settings'
 import { NotificationSettings } from './_components/notification-settings'
 import { AppearanceSettings } from './_components/appearance-settings'
@@ -33,7 +32,6 @@ export default async function SettingsPage() {
 
   const isAdmin = role === 'admin'
   const fullName = (user.user_metadata?.full_name as string | undefined) ?? null
-  const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) ?? null
 
   // Firm-level settings (Organization + Notifications) are admin-only.
   let orgName = ''
@@ -105,7 +103,6 @@ export default async function SettingsPage() {
           <div id="account">
             <h2 className={SECTION_HEADING}>Your account</h2>
             <section className={CARD}>
-              <AvatarUpload avatarUrl={avatarUrl} fullName={fullName} email={user.email ?? ''} />
               <NameSettings email={user.email ?? ''} fullName={fullName} />
             </section>
           </div>

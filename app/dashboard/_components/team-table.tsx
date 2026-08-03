@@ -14,7 +14,6 @@ export interface MemberDetail {
   status: string
   email: string
   name: string
-  avatarUrl: string | null
   trainingStatus: TrainingStatus
   score: number | null
   completedAt: string | null

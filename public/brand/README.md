@@ -57,9 +57,16 @@ and a full-res raster of the primary mark.
    sizes, but the SVG will **not** match the raster's metallic finish at large sizes. Use the PNG
    where the full rendering matters and the SVG where crispness matters.
 
-6. **No wordmark.** This is a mark only. The component it replaces (`app/_components/atc-logo.tsx`)
-   is a *lockup* — mark + wordmark — so the nav still needs an "Iurix Accreditation" wordmark and a
-   typeface decision.
+6. **No wordmark — ⏸ PARKED 2026-07-28 (Rob), pending LLC approval.** This is a mark only. The
+   component it replaces (`app/_components/atc-logo.tsx`) is a *lockup* — mark + wordmark. **Do not
+   chase this or design around its absence.** Until the entity is approved and in place, the
+   shipping lockup is **type-set**: the mark plus "Iurix Accreditation" set in a font already
+   self-hosted in `public/fonts/`. Treat that as the real design, not a placeholder — it may end up
+   permanent.
+
+   Knock-on: the 2026-07-28 handoff's "once a real wordmark asset lands, the email shell and cert
+   header want a second pass" is parked with it. Max's interim text wordmarks in
+   `emails/_components/email-shell.tsx` and the cert PDF header **stay as they are** for now.
 
 7. **Dark mode unverified.** The soft white outer glow may halo against dark backgrounds.
 

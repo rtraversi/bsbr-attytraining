@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direction C — The Record · Iurix Accreditation</title>
+<style>
+/* ─────────────────────────────────────────────────────────────
+   DIRECTION C — "THE RECORD"
+   Concept: the deliverable IS the hero. A certificate specimen sits
+   in the first screen. Systematic/Swiss register — sans + mono,
+   modular grid, filled teal blocks, tabular data. Rose gold appears
+   only on the seal and the primary action, so it reads as "issued".
+   Every colour is sampled from public/brand/iurix-logo.svg.
+   ───────────────────────────────────────────────────────────── */
+
+@font-face{font-family:'Host Grotesk';src:url('../../public/fonts/HostGrotesk[wght].ttf') format('truetype');font-weight:100 900;font-display:swap}
+@font-face{font-family:'Gyrotrope';src:url('../../public/fonts/GyrotropeVF.ttf') format('truetype');font-weight:100 900;font-display:swap}
+
+:root{
+  --paper:#ffffff;
+  --paper-2:#f7f7f6;
+  --mint-bg:#eafbf5;
+  --mint:#d0e5e0;
+  --mint-line:#a6cecd;
+  --teal:#2b3334;
+  --teal-mid:#5a6e6e;
+  --teal-soft:#7d8f8d;
+  --ink:#1c2223;
+  --ink-soft:#4c5453;
+  --ink-mute:#8f9996;
+  --steel:#c2c5c3;
+  --gold:#b39082;
+  --gold-deep:#88685c;
+  --gold-pale:#d9b5a6;
+  --max:1220px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--paper-2);color:var(--ink);
+  font-family:'Host Grotesk',system-ui,sans-serif;
+  font-size:16.5px;line-height:1.62;font-weight:360;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 28px}
+.mono{font-family:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:11px;letter-spacing:.13em;text-transform:uppercase;font-weight:500}
+.tag{color:var(--gold-deep)}
+
+/* ── header ─────────────────────────────────────────────── */
+header{position:sticky;top:0;z-index:60;background:var(--paper);border-bottom:1px solid var(--mint-line)}
+.bar{display:flex;align-items:stretch;justify-content:space-between;max-width:var(--max);margin:0 auto}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink);padding:14px 28px;border-right:1px solid var(--mint-line)}
+.brand img{width:32px;height:32px;display:block}
+.brand b{font-family:'Gyrotrope',Georgia,serif;font-weight:500;font-size:18px;letter-spacing:.03em}
+nav{display:flex;align-items:stretch}
+nav a.lnk{display:flex;align-items:center;padding:0 22px;color:var(--ink-soft);text-decoration:none;font-size:15px;border-left:1px solid var(--mint-line);transition:background .16s ease,color .16s ease}
+nav a.lnk:hover{background:var(--mint-bg);color:var(--teal)}
+nav .cta{display:flex;align-items:center;padding:0 26px;background:var(--teal);color:var(--mint-bg);text-decoration:none;font-size:15px;font-weight:500;transition:background .16s ease}
+nav .cta:hover{background:var(--gold-deep)}
+@media(max-width:900px){nav a.lnk{display:none}}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-size:15px;font-weight:500;padding:13px 26px;border:1px solid transparent;transition:all .16s ease;cursor:pointer}
+.btn-solid{background:var(--teal);color:var(--mint-bg)}
+.btn-solid:hover{background:var(--gold-deep)}
+.btn-line{border-color:var(--teal);color:var(--teal);background:transparent}
+.btn-line:hover{background:var(--teal);color:var(--mint-bg)}
+
+/* ── hero ───────────────────────────────────────────────── */
+.hero{background:var(--paper);border-bottom:1px solid var(--mint-line)}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr}
+@media(max-width:980px){.hero-grid{grid-template-columns:1fr}}
+.hero-copy{padding:78px 60px 78px 28px;border-right:1px solid var(--mint-line)}
+@media(max-width:980px){.hero-copy{padding:56px 28px;border-right:none;border-bottom:1px solid var(--mint-line)}}
+.hero-copy .mono{margin-bottom:26px;display:block}
+h1{font-family:'Gyrotrope',Georgia,serif;font-weight:400;font-size:clamp(38px,4.7vw,60px);line-height:1.08;letter-spacing:-.015em}
+h1 em{font-style:normal;color:var(--teal-mid);border-bottom:3px solid var(--gold-pale);padding-bottom:2px}
+.lede{margin-top:26px;font-size:19px;color:var(--ink-soft);max-width:520px}
+.hero-actions{margin-top:34px;display:flex;gap:12px;flex-wrap:wrap}
+.hero-meta{margin-top:40px;padding-top:22px;border-top:1px solid var(--mint-line);display:grid;grid-template-columns:repeat(2,1fr);gap:18px 24px;max-width:520px}
+.hero-meta .mono{color:var(--ink-mute);margin:0 0 4px}
+.hero-meta strong{font-weight:500;font-size:15.5px;display:block}
+
+/* certificate specimen */
+.specimen-pane{padding:56px 28px 56px 60px;background:
+   linear-gradient(var(--mint-bg),var(--mint-bg)) padding-box,
+   repeating-linear-gradient(45deg,rgba(166,206,205,.16) 0 1px,transparent 1px 9px);
+   display:flex;align-items:center;justify-content:center}
+@media(max-width:980px){.specimen-pane{padding:48px 28px}}
+.cert{background:#fff;border:1px solid var(--mint-line);box-shadow:0 18px 46px rgba(28,34,35,.10);width:100%;max-width:430px;position:relative;transform:rotate(-1.1deg);transition:transform .35s ease}
+.cert:hover{transform:rotate(0deg)}
+.cert .cert-bar{background:var(--teal);color:var(--mint-bg);padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.cert .cert-bar .mono{color:var(--gold-pale)}
+.cert-body{padding:30px 26px 26px;text-align:center}
+.cert-body img{width:72px;margin:0 auto 18px;display:block}
+.cert-body .who{font-family:'Gyrotrope',Georgia,serif;font-size:27px;font-weight:400;line-height:1.15;margin-bottom:6px}
+.cert-body .what{color:var(--ink-soft);font-size:14.5px;max-width:290px;margin:0 auto 22px}
+.cert-fields{border-top:1px solid var(--mint);padding-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:left}
+.cert-fields .mono{color:var(--ink-mute);display:block;margin-bottom:3px;font-size:9.5px}
+.cert-fields span.v{font-size:13px;font-weight:500}
+.seal{position:absolute;right:-20px;bottom:-20px;width:78px;height:78px;border-radius:50%;
+  background:radial-gradient(circle at 38% 32%,var(--gold-pale),var(--gold) 58%,var(--gold-deep));
+  color:#fff;display:grid;place-items:center;text-align:center;line-height:1.15;
+  box-shadow:0 8px 22px rgba(136,104,92,.35);border:2px solid #fff}
+.seal .mono{font-size:8.5px;letter-spacing:.09em;color:#fff}
+
+/* ── section frame ──────────────────────────────────────── */
+section{border-bottom:1px solid var(--mint-line)}
+.sec-head{display:flex;align-items:baseline;gap:16px;padding:24px 28px;border-bottom:1px solid var(--mint-line);
+  max-width:var(--max);margin:0 auto;background:var(--paper)}
+.sec-head h2{font-family:'Gyrotrope',Georgia,serif;font-weight:400;font-size:clamp(24px,3vw,34px);letter-spacing:-.01em}
+.sec-head .mono{color:var(--gold-deep)}
+.sec-body{max-width:var(--max);margin:0 auto;background:var(--paper)}
+
+/* steps as a numbered ledger */
+.ledger{display:grid;grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.ledger{grid-template-columns:1fr}}
+.rowitem{padding:38px 30px 42px;border-right:1px solid var(--mint-line)}
+.rowitem:last-child{border-right:none}
+@media(max-width:900px){.rowitem{border-right:none;border-bottom:1px solid var(--mint-line)}.rowitem:last-child{border-bottom:none}}
+.rowitem .step-n{display:inline-block;background:var(--mint-bg);border:1px solid var(--mint-line);color:var(--teal-mid);
+  padding:4px 11px;margin-bottom:20px}
+.rowitem h3{font-family:'Gyrotrope',Georgia,serif;font-weight:400;font-size:22px;line-height:1.25;margin-bottom:11px}
+.rowitem p{color:var(--ink-soft);font-size:15.5px}
+
+/* why */
+.why-grid{display:grid;grid-template-columns:1.05fr .95fr}
+@media(max-width:960px){.why-grid{grid-template-columns:1fr}}
+.why-text{padding:44px 44px 48px 30px;border-right:1px solid var(--mint-line)}
+@media(max-width:960px){.why-text{padding:36px 28px;border-right:none;border-bottom:1px solid var(--mint-line)}}
+.why-text p{margin-bottom:18px;color:var(--ink-soft)}
+.why-text p strong{color:var(--ink);font-weight:600}
+blockquote{background:var(--mint-bg);border-left:3px solid var(--gold);padding:22px 24px;margin:26px 0;
+  font-family:'Gyrotrope',Georgia,serif;font-size:19px;line-height:1.45;color:var(--ink)}
+blockquote cite{display:block;margin-top:14px;font-family:ui-monospace,Consolas,monospace;font-style:normal;
+  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute)}
+.docket-table{background:var(--paper-2)}
+.docket-table .dt-head{padding:16px 30px;border-bottom:1px solid var(--mint-line);color:var(--ink-mute);background:var(--paper)}
+.caserow{display:grid;grid-template-columns:118px 1fr;gap:20px;padding:22px 30px;border-bottom:1px solid var(--mint-line);transition:background .16s ease}
+.caserow:last-child{border-bottom:none}
+.caserow:hover{background:var(--mint-bg)}
+.caserow .court{color:var(--ink-mute);padding-top:3px}
+.caserow h4{font-family:'Gyrotrope',Georgia,serif;font-weight:400;font-size:19px;margin-bottom:5px}
+.caserow p{font-size:15px;color:var(--ink-soft);margin:0}
+
+/* stats as a filled teal band */
+.statband{background:var(--teal);color:var(--mint-bg);display:grid;grid-template-columns:repeat(4,1fr)}
+@media(max-width:840px){.statband{grid-template-columns:repeat(2,1fr)}}
+.statband div{padding:34px 26px;border-right:1px solid rgba(234,251,245,.14)}
+.statband div:last-child{border-right:none}
+@media(max-width:840px){.statband div:nth-child(2){border-right:none}.statband div:nth-child(-n+2){border-bottom:1px solid rgba(234,251,245,.14)}}
+.statband b{display:block;font-family:'Gyrotrope',Georgia,serif;font-size:40px;font-weight:400;line-height:1;color:var(--gold-pale);margin-bottom:10px}
+.statband span{font-size:14px;color:var(--mint);line-height:1.45;display:block}
+
+/* pricing table */
+.pricegrid{display:grid;grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.pricegrid{grid-template-columns:1fr}}
+.pcol{padding:34px 28px 36px;border-right:1px solid var(--mint-line);display:flex;flex-direction:column}
+.pcol:last-child{border-right:none}
+@media(max-width:900px){.pcol{border-right:none;border-bottom:1px solid var(--mint-line)}}
+.pcol.feat{background:var(--mint-bg);position:relative}
+.pcol.feat .flag{position:absolute;top:0;right:0;background:var(--gold-deep);color:#fff;padding:5px 12px}
+.pcol .mono{color:var(--ink-mute);margin-bottom:14px;display:block}
+.price{font-family:'Gyrotrope',Georgia,serif;font-size:48px;font-weight:400;line-height:1;letter-spacing:-.02em}
+.price small{font-family:'Host Grotesk',sans-serif;font-size:14.5px;color:var(--ink-mute);font-weight:400}
+.pcol ul{list-style:none;margin:24px 0 28px;flex:1}
+.pcol li{padding:9px 0;font-size:15px;color:var(--ink-soft);display:flex;gap:10px;border-bottom:1px solid var(--mint)}
+.pcol li:last-child{border-bottom:none}
+.pcol li::before{content:"✓";color:var(--teal-mid);font-size:13px;line-height:1.5}
+.pcol .btn{width:100%}
+.pricing-note{padding:22px 30px 26px;color:var(--ink-mute);font-size:14.5px;background:var(--paper);border-top:1px solid var(--mint-line)}
+
+/* closing CTA */
+.close{background:var(--teal);color:var(--mint-bg);border-bottom:none}
+.close .inner{max-width:var(--max);margin:0 auto;display:grid;grid-template-columns:1.15fr .85fr}
+@media(max-width:900px){.close .inner{grid-template-columns:1fr}}
+.close-copy{padding:66px 50px 70px 28px;border-right:1px solid rgba(234,251,245,.16)}
+@media(max-width:900px){.close-copy{padding:52px 28px;border-right:none;border-bottom:1px solid rgba(234,251,245,.16)}}
+.close .mono{color:var(--gold-pale);display:block;margin-bottom:18px}
+.close h2{font-family:'Gyrotrope',Georgia,serif;font-weight:400;font-size:clamp(30px,3.8vw,46px);line-height:1.08;letter-spacing:-.015em}
+.close p{margin-top:20px;color:var(--mint);font-size:18px;max-width:480px}
+.close .btn-solid{background:var(--gold-pale);color:var(--teal)}
+.close .btn-solid:hover{background:#fff}
+.close .btn-line{border-color:rgba(234,251,245,.4);color:var(--mint-bg)}
+.close .btn-line:hover{background:var(--mint-bg);color:var(--teal)}
+.calc{padding:52px 28px 56px 50px}
+@media(max-width:900px){.calc{padding:44px 28px}}
+.calcrow{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid rgba(234,251,245,.16);font-size:15px;color:var(--mint)}
+.calcrow b{color:#fff;font-weight:500}
+.calcrow.total{border-bottom:none;padding-top:18px}
+.calcrow.total b{font-family:'Gyrotrope',Georgia,serif;font-size:26px;font-weight:400;color:var(--gold-pale)}
+.calc .btn{width:100%;margin-top:20px}
+
+/* footer */
+footer{background:var(--paper-2);padding:46px 0 56px;font-size:14.5px;color:var(--ink-soft)}
+.frow{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;align-items:flex-start}
+.frow a{color:var(--ink-soft);text-decoration:none}
+.frow a:hover{color:var(--teal-mid)}
+.fnav{display:flex;gap:22px;flex-wrap:wrap}
+.disclaimer{margin-top:26px;padding-top:22px;border-top:1px solid var(--mint-line);font-size:12.5px;line-height:1.65;color:var(--ink-mute);max-width:760px}
+.todo{color:var(--gold-deep);font-weight:600}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <a class="brand" href="#top"><img src="../../public/brand/iurix-logo.svg" alt=""><b>Iurix Accreditation</b></a>
+    <nav>
+      <a class="lnk" href="#what">The training</a>
+      <a class="lnk" href="#why">Why it matters</a>
+      <a class="lnk" href="#pricing">Pricing</a>
+      <a class="lnk" href="#">Sign in</a>
+      <a class="cta" href="#buy">Certify your staff</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="mono tag">ABA Model Rule 5.3 · Formal Opinion 512</span>
+        <h1>Your staff is using AI. You're the one <em>responsible.</em></h1>
+        <p class="lede">Iurix Accreditation certifies your firm's staff on proper AI use — and gives you the documented supervision paper trail Rule&nbsp;5.3 requires.</p>
+        <div class="hero-actions">
+          <a class="btn btn-solid" href="#buy">Certify your staff</a>
+          <a class="btn btn-line" href="#why">Why this matters</a>
+        </div>
+        <div class="hero-meta">
+          <div><span class="mono">Format</span><strong>Interactive course</strong></div>
+          <div><span class="mono">Assessment</span><strong>Scored, pass-gated</strong></div>
+          <div><span class="mono">Deliverable</span><strong>Dated PDF certificate</strong></div>
+          <div><span class="mono">Validity</span><strong>12 months</strong></div>
+        </div>
+      </div>
+
+      <div class="specimen-pane">
+        <div class="cert">
+          <div class="cert-bar">
+            <span class="mono">Certificate of completion</span>
+            <span class="mono">No. 2026-0417</span>
+          </div>
+          <div class="cert-body">
+            <img src="../../public/brand/iurix-logo.svg" alt="">
+            <div class="who">Dana R. Whitfield</div>
+            <p class="what">has satisfied the requirements of Iurix Accreditation for responsible AI use in legal practice.</p>
+            <div class="cert-fields">
+              <div><span class="mono">Score</span><span class="v">94%</span></div>
+              <div><span class="mono">Issued</span><span class="v">14 Feb 2026</span></div>
+              <div><span class="mono">Valid to</span><span class="v">14 Feb 2027</span></div>
+            </div>
+          </div>
+          <div class="seal"><span class="mono">Iurix<br>Certified</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="what">
+    <div class="sec-head"><span class="mono">01</span><h2>What we do</h2></div>
+    <div class="sec-body">
+      <div class="ledger">
+        <div class="rowitem">
+          <span class="step-n mono">Step one — Train</span>
+          <h3>Structured AI training for nonlawyer staff</h3>
+          <p>Paralegals, assistants, and office staff work through an interactive course on confidentiality, hallucinated citations, client data, and the boundaries of AI-assisted work in a legal practice.</p>
+        </div>
+        <div class="rowitem">
+          <span class="step-n mono">Step two — Certify</span>
+          <h3>A scored assessment with a pass gate</h3>
+          <p>Each staff member must pass a scored certification demonstrating comprehension. Unlimited retakes — the goal is that every person on your team actually understands the rules.</p>
+        </div>
+        <div class="rowitem">
+          <span class="step-n mono">Step three — Document</span>
+          <h3>A defensible record for the supervising attorney</h3>
+          <p>Every completion produces a dated certificate with a unique ID, plus a firm dashboard showing who's certified, their scores, and when re-certification is due.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="why">
+    <div class="sec-head"><span class="mono">02</span><h2>Why Rule 5.3 just changed</h2></div>
+    <div class="sec-body">
+      <div class="why-grid">
+        <div class="why-text">
+          <p><strong>ABA Model Rule 5.3</strong> makes supervising attorneys responsible for the conduct of their nonlawyer staff. It was written for paralegals and office assistants — and in July 2024, <strong>ABA Formal Opinion 512</strong> extended it explicitly to AI tools.</p>
+          <p>The practical consequence: if your paralegal uses an AI tool to draft a brief and it hallucinates citations, <strong>you</strong> are professionally responsible. You cannot blame the tool — and you cannot claim you didn't know.</p>
+          <blockquote>
+            "These duties apply to nonlawyers both within and outside of the law firm… a third-party-operated generative AI does not negate the lawyer's requirement to ensure that its actions are consistent with a lawyer's professional obligations."
+            <cite>Florida Bar Advisory Opinion 24-1 (2024)</cite>
+          </blockquote>
+          <p>State bars in <strong>Florida, California, New York, Texas, and North Carolina</strong> have issued opinions explicitly tying Rule 5.3 to AI use. A completed training certificate is the "reasonable efforts to supervise" evidence the rule demands.</p>
+        </div>
+        <div class="docket-table">
+          <div class="dt-head mono">Docket — selected sanctions</div>
+          <div class="caserow">
+            <div class="court mono">S.D.N.Y.<br>2023</div>
+            <div><h4>Mata v. Avianca</h4><p>Six fabricated AI citations submitted to the court. $5,000 sanction and mandatory AI education.</p></div>
+          </div>
+          <div class="caserow">
+            <div class="court mono">Colorado<br>2023</div>
+            <div><h4>In re Crabill</h4><p>First U.S. attorney suspended over AI misconduct — after blaming a legal intern. 90-day suspension.</p></div>
+          </div>
+          <div class="caserow">
+            <div class="court mono">D. Wyo.<br>2025</div>
+            <div><h4>Wadsworth v. Walmart</h4><p>Supervising partners fined for an associate's AI-fabricated citations — in a brief they never read.</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="statband">
+        <div><b>480+</b><span>documented AI hallucination cases in U.S. courts</span></div>
+        <div><b>2–3/day</b><span>new filings with fabricated AI citations by 2025</span></div>
+        <div><b>$31,100</b><span>largest joint sanction to date for unverified AI work</span></div>
+        <div><b>~49</b><span>states have adopted Rule 5.3 or an equivalent</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="sec-head"><span class="mono">03</span><h2>Simple annual pricing</h2></div>
+    <div class="sec-body">
+      <div class="pricegrid">
+        <div class="pcol feat">
+          <span class="flag mono">Most firms</span>
+          <span class="mono">Solo &amp; boutique · 1–9 staff</span>
+          <div class="price">$35<small> / staff / yr</small></div>
+          <ul>
+            <li>Full interactive course &amp; assessment</li>
+            <li>Individual PDF certificates</li>
+            <li>Firm compliance dashboard</li>
+            <li>Re-certification reminders</li>
+          </ul>
+          <a class="btn btn-solid" href="#buy">Get started</a>
+        </div>
+        <div class="pcol">
+          <span class="mono">Small firm · 10–24 staff</span>
+          <div class="price">$32<small> / staff / yr</small></div>
+          <ul>
+            <li>Full interactive course &amp; assessment</li>
+            <li>Individual PDF certificates</li>
+            <li>Firm compliance dashboard</li>
+            <li>Re-certification reminders</li>
+          </ul>
+          <a class="btn btn-line" href="#buy">Get started</a>
+        </div>
+        <div class="pcol">
+          <span class="mono">Growing firm · 25+ staff</span>
+          <div class="price">$28<small> / staff / yr</small></div>
+          <ul>
+            <li>Full interactive course &amp; assessment</li>
+            <li>Individual PDF certificates</li>
+            <li>Firm compliance dashboard</li>
+            <li>Re-certification reminders</li>
+          </ul>
+          <a class="btn btn-line" href="#buy">Get started</a>
+        </div>
+      </div>
+      <p class="pricing-note">Billed annually per enrolled staff member. Certificates are valid for 12 months — and because AI rules and case law change fast, the course is substantially updated every year, so each re-certification reflects the current state of the law.</p>
+    </div>
+  </section>
+
+  <section class="close" id="buy">
+    <div class="inner">
+      <div class="close-copy">
+        <span class="mono">04 — Enrol</span>
+        <h2>Certify your team this week.</h2>
+        <p>Choose your seat count, invite your staff, and watch certifications complete from your dashboard. Self-serve, start to finish — no call required.</p>
+        <div class="hero-actions">
+          <a class="btn btn-solid" href="#">Buy seats</a>
+          <a class="btn btn-line" href="#">Talk to us first</a>
+        </div>
+      </div>
+      <div class="calc">
+        <span class="mono" style="color:var(--gold-pale);display:block;margin-bottom:16px">Example · 6 staff</span>
+        <div class="calcrow"><span>Seats</span><b>6</b></div>
+        <div class="calcrow"><span>Rate (1–9 band)</span><b>$35 / staff / yr</b></div>
+        <div class="calcrow"><span>Certificates</span><b>Included</b></div>
+        <div class="calcrow"><span>Renewal rate</span><b>Unchanged</b></div>
+        <div class="calcrow total"><span>Billed annually</span><b>$210</b></div>
+        <a class="btn btn-solid" href="#">Continue to checkout</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="frow">
+      <div>
+        <strong style="font-family:'Gyrotrope',Georgia,serif;font-size:17px;color:var(--ink)">Iurix Accreditation</strong><br>
+        iurixaccreditation.com<br>
+        <span class="todo">[contact email TBD] · [phone TBD]</span>
+      </div>
+      <nav class="fnav">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Data Processing Addendum</a>
+      </nav>
+    </div>
+    <p class="disclaimer">Iurix Accreditation provides educational training and certification of completion for law firm staff. It is not a law firm, does not provide legal advice, and its certificates are not CLE-accredited and do not constitute bar accreditation or a guarantee of compliance. Attorneys remain responsible for their own professional obligations under applicable rules of professional conduct. © 2026 BSBR Holdings, LLC d/b/a Iurix. All rights reserved.</p>
+  </div>
+</footer>
+</body>
+</html>
