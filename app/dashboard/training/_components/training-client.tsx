@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { ClientQuestion } from '@/lib/training/questions'
-import { LESSONS } from '@/lib/training/lessons'
+import { LESSONS, READINESS_LESSON } from '@/lib/training/lessons'
 import { QuizComponent, type QuizQuestion } from './quiz-component'
 import { ScormContent } from './scorm-content'
 import { KnowledgeCheckModal } from '@/app/dashboard/overview/_components/knowledge-check-modal'
@@ -23,6 +23,12 @@ interface Props {
   questionsByLesson: Record<number, ClientQuestion[]>
   /** Lesson checks 1–5 cleared (derived server-side from knowledge_check_completed events). */
   checksCleared: boolean
+  /**
+   * Lowest-numbered lesson whose check is not yet cleared, or null when all are.
+   * Drives the "Next Up" card. Sequential ordering was removed in P0, so this is
+   * a stable choice among equally-available checks, not a required order.
+   */
+  nextUnclearedLesson?: number | null
   /** SCORM course reported completion (verified — a video_completed event exists). */
   contentViewed: boolean
   /** Highest lesson boundary reached (1–5), from the latest lesson_location_changed event. */
@@ -54,6 +60,7 @@ export function TrainingClient({
   questions,
   questionsByLesson,
   checksCleared,
+  nextUnclearedLesson = null,
   contentViewed,
   currentLessonNumber,
   initialLocation,
@@ -172,6 +179,51 @@ export function TrainingClient({
   // boundary crossings immediately; defaults to lesson 1 before any are recorded.
   const overviewLesson = LESSONS.find(l => l.number === (liveLessonNumber ?? 1)) ?? LESSONS[0]
 
+  /* ── "Next Up" target ───────────────────────────────────────────────────────
+     The card was hardcoded to the Certificate Assessment — the LAST thing in the
+     course — so it told the learner nothing about what to do now, and showed a
+     dead "Locked" pill until every gate opened.
+
+     ⚠️ Content-done is deliberately NOT `contentViewed`. Per the gatesOpen note
+     above, Rise's SCORM completion signal structurally never fires for this
+     course, so keying the first state off it would pin the card on "resume the
+     content" forever and it could never advance to the other two. Reaching the
+     final lesson is the honest available proxy, and it reuses the same
+     liveLessonNumber the progress bar and Lesson Overview already trust. */
+  const contentComplete = contentViewed || (liveLessonNumber ?? 0) >= LESSONS.length
+
+  const nextUp: { kind: 'content' | 'check'; lesson: number } | { kind: 'assessment' } =
+    !contentComplete
+      ? { kind: 'content', lesson: overviewLesson.number }
+      : nextUnclearedLesson !== null
+        ? { kind: 'check', lesson: nextUnclearedLesson }
+        : { kind: 'assessment' }
+
+  // Lesson 5's check is presented as "Final Review" everywhere else (its
+  // checkLabel), so "Lesson 5 Check: Final Review" would both repeat itself and
+  // name it differently from the Quizzes tab.
+  const nextUpCheckLesson =
+    nextUp.kind === 'check' ? LESSONS.find(l => l.number === nextUp.lesson) : undefined
+  const nextUpCheckName =
+    nextUp.kind === 'check' && nextUp.lesson === READINESS_LESSON
+      ? 'Final Review'
+      : `Lesson ${nextUp.kind === 'check' ? nextUp.lesson : ''} Check`
+
+  // Resume = scroll back to the player, which is already on this page above the
+  // card. Not focus mode: that is a full-viewport takeover and a heavier thing
+  // than "carry on where you left off" should trigger.
+  const playerRef = useRef<HTMLDivElement | null>(null)
+  const resumeContent = () =>
+    playerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+  // Opens a lesson check from the Next Up card. Reuses the soft-nag's modal
+  // state rather than adding a second pair: it is the same KnowledgeCheckModal,
+  // and two sets of state for one modal could only ever disagree.
+  const openLessonCheck = (lesson: number) => {
+    setNagLesson(lesson)
+    setNagQuizOpen(true)
+  }
+
   return (
     <>
       {showQuiz && courseId && (
@@ -194,7 +246,10 @@ export function TrainingClient({
           lesson={nagLesson}
           title={LESSONS.find(l => l.number === nagLesson)?.title ?? ''}
           questions={questionsByLesson[nagLesson] ?? []}
-          isReadiness={false}
+          // The nag itself only ever fires for lessons 1–4, so this is unchanged
+          // on that path — it matters because Next Up can now open lesson 5's
+          // Final Review, which needs the readiness banner and pass threshold.
+          isReadiness={nagLesson === READINESS_LESSON}
           onClose={() => {
             setNagQuizOpen(false)
             setNagLesson(null)
@@ -296,6 +351,7 @@ export function TrainingClient({
         {/* z-50 clears the bottom tab bar (z-40); the top bar sits at z-60 above
             this, and the assessment overlay at z-70 above everything. */}
         <div
+          ref={playerRef}
           className={
             focus
               ? 'fixed inset-0 z-50 flex items-center justify-center bg-[#0A0E12]'
@@ -408,7 +464,7 @@ export function TrainingClient({
                     <ul className="space-y-2">
                       {overviewLesson.keyTakeaways.map(t => (
                         <li key={t} className="flex gap-2 text-sm text-[#3D3D3D] dark:text-[#C4C9CE]">
-                          <CircleIcon />
+                          <TakeawayDot />
                           {t}
                         </li>
                       ))}
@@ -418,7 +474,7 @@ export function TrainingClient({
               </div>
             </div>
 
-            {/* ── Next Up — only while the assessment is still ahead of them ── */}
+            {/* ── Next Up — the first thing the learner still owes ─────────── */}
             <div
               className={phase === 'not_started' ? '' : 'hidden'}
               onMouseEnter={() => setNextUpOpen(true)}
@@ -430,23 +486,60 @@ export function TrainingClient({
                 onClick={() => setNextUpOpen(o => !o)}
               >
                 <p className="mb-3 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
-                  Certificate Assessment
+                  {nextUp.kind === 'content'
+                    ? `Lesson ${nextUp.lesson}: ${overviewLesson.title}`
+                    : nextUp.kind === 'check'
+                      ? `${nextUpCheckName}${
+                          nextUpCheckLesson ? ` — ${nextUpCheckLesson.title}` : ''
+                        }`
+                      : 'Certificate Assessment'}
                 </p>
 
-                {gatesOpen && courseId ? (
+                {/* One live action per state — never a dead "Locked" pill. The
+                    assessment state is only reachable once every check is
+                    cleared, so the old locked branch is now unreachable; the
+                    only remaining dead end is an uninitialised course. */}
+                {/* stopPropagation: the card body toggles the disclosure, and a
+                    primary action should not do that on its way through. */}
+                {nextUp.kind === 'content' ? (
                   <button
-                    onClick={openAssessment}
+                    onClick={e => {
+                      e.stopPropagation()
+                      resumeContent()
+                    }}
+                    className="block w-full rounded-full bg-[#0094FF] py-2.5 text-center text-xs font-bold text-white transition-opacity hover:opacity-90"
+                  >
+                    Resume Lesson {nextUp.lesson}
+                  </button>
+                ) : nextUp.kind === 'check' ? (
+                  <button
+                    onClick={e => {
+                      e.stopPropagation()
+                      openLessonCheck(nextUp.lesson)
+                    }}
+                    className="block w-full rounded-full bg-[#0094FF] py-2.5 text-center text-xs font-bold text-white transition-opacity hover:opacity-90"
+                  >
+                    Take the {nextUpCheckName}
+                  </button>
+                ) : courseId ? (
+                  <button
+                    onClick={e => {
+                      e.stopPropagation()
+                      openAssessment()
+                    }}
                     className="block w-full rounded-full bg-[#0094FF] py-2.5 text-center text-xs font-bold text-white transition-opacity hover:opacity-90"
                   >
                     Take Assessment
                   </button>
                 ) : (
                   <span className="block w-full cursor-not-allowed rounded-full bg-[#F2F4F7] py-2.5 text-center text-xs font-bold text-[#9AA1A9] dark:bg-[#131A20] dark:text-[#4E555C]">
-                    Locked
+                    Course not yet initialized
                   </span>
                 )}
 
-                {/* Hover/tap-expand: what still stands between here and the assessment. */}
+                {/* Hover/tap-expand: what still stands between here and the
+                    assessment. Unchanged in purpose — only the headline above
+                    moved from "the last thing" to "the next thing". */}
                 <div
                   className={`overflow-hidden transition-[max-height,opacity,margin-top,padding-top] duration-300 motion-reduce:transition-none ${
                     nextUpOpen
@@ -454,7 +547,10 @@ export function TrainingClient({
                       : 'max-h-0 opacity-0'
                   }`}
                 >
-                  <Requirement done={contentViewed} label="Training content" />
+                  {/* contentComplete, not contentViewed — otherwise this row
+                      would contradict the headline, permanently reporting the
+                      content unfinished while the card moved on to checks. */}
+                  <Requirement done={contentComplete} label="Training content" />
                   <Requirement done={checksCleared} label="Lesson checks" />
                   {!checksCleared && (
                     <Link
@@ -536,12 +632,17 @@ function FocusIcon() {
   )
 }
 
-function CircleIcon() {
-  return (
-    <svg className="mt-0.5 shrink-0" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0094FF" strokeWidth={2}>
-      <circle cx="12" cy="12" r="9" />
-    </svg>
-  )
+/**
+ * Marker for a key takeaway.
+ *
+ * Was a 15px hollow ring, which reads as an unticked checkbox — an unfinished
+ * checklist, the exact opposite of "here is what you should now know". A small
+ * solid dot is a bullet: it introduces a statement instead of inviting one to be
+ * ticked off. mt-2 optically centres it on the first line of `text-sm
+ * leading-relaxed` copy rather than hanging it from the cap height.
+ */
+function TakeawayDot() {
+  return <span aria-hidden className="mt-2 h-[6px] w-[6px] shrink-0 rounded-full bg-[#0094FF]" />
 }
 
 function ClockIcon() {

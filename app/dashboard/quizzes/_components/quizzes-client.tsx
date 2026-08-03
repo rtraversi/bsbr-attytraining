@@ -7,6 +7,7 @@ import type { ClientQuestion } from '@/lib/training/questions'
 import type { LessonState, Progress } from '@/lib/training/progress'
 import { KnowledgeCheckModal } from '../../overview/_components/knowledge-check-modal'
 import { CertPreviewModal } from '../../_components/cert-preview-modal'
+import { ClearedFlagIcon } from '../../_components/cleared-flag-icon'
 
 /** Issued-certificate details — the Quizzes tab is the one place these live. */
 export interface CertInfo {
@@ -73,7 +74,13 @@ export function QuizzesClient({
           <section className="flex flex-col gap-10 md:col-span-7 md:gap-12">
             <JumpBackInCard progress={progress} tryOpen={tryOpen} firstName={firstName} />
             <FinalTestCard progress={progress} contentViewed={contentViewed} />
-            <CertificateCard cert={cert} employeeName={employeeName} />
+            <CertificateCard
+              cert={cert}
+              employeeName={employeeName}
+              progress={progress}
+              contentViewed={contentViewed}
+              tryOpen={tryOpen}
+            />
           </section>
 
           {/* ── Right column: the S-curve path map ────────────────────────────── */}
@@ -145,8 +152,11 @@ function JumpBackInCard({
 }) {
   const { open, hovered, toggle, hoverProps } = useExpand()
 
-  // The current actionable lesson = earliest unlocked one (sequential gating
-  // guarantees ordering). When fully cleared, fall back to the last lesson for review.
+  // The current actionable lesson = the earliest still-'unlocked' one. Checks
+  // 1–4 are no longer sequentially gated, so this is now "earliest UNCLEARED"
+  // rather than "the next one in the chain" — a cleared lesson reports
+  // 'cleared', not 'unlocked', so it still resolves to a sensible suggestion.
+  // When fully cleared, fall back to the last lesson for review.
   const focus =
     progress.lessons.find(l => l.status === 'unlocked') ??
     progress.lessons[progress.lessons.length - 1]
@@ -429,7 +439,12 @@ function FinalTestCard({
                     </div>
                   ))}
                   {average !== null && (
-                    <div className={`text-sm ${MUTED}`}>
+                    // Forced to the last column and right-aligned so it always
+                    // brackets the row against the per-lesson figure on the left,
+                    // instead of floating at the 50% gridline. col-start-2 also
+                    // keeps it hard right when an even number of scores would
+                    // otherwise drop it into column 1 of a new row.
+                    <div className={`col-start-2 text-right text-sm ${MUTED}`}>
                       Average: <span className={`font-bold ${HEADING}`}>{average}%</span>
                     </div>
                   )}
@@ -457,12 +472,52 @@ function fmtCertDate(iso: string | null): string {
 function CertificateCard({
   cert,
   employeeName,
+  progress,
+  contentViewed,
+  tryOpen,
 }: {
   cert: CertInfo | null
   employeeName: string
+  progress: Progress
+  contentViewed: boolean
+  tryOpen: (l: LessonState | number) => void
 }) {
   const { open, toggle, hoverProps } = useExpand()
   const [modalOpen, setModalOpen] = useState(false)
+
+  // The locked pill used to be an inert div — it told the learner they were
+  // blocked and gave them nowhere to go. It still READS as locked (same muted
+  // styling, same padlock); this only adds a way onward.
+  //
+  // "→ Quizzes" from the plan can't be a route: this card is already ON the
+  // Quizzes page, so navigating here would be a no-op. The equivalent useful
+  // destination is the outstanding check itself, which tryOpen already knows how
+  // to open (and which respects the same canOpen gate as every other entry point).
+  const nextUncleared = progress.lessons.find(l => l.status !== 'cleared')
+  const lockedAction: { kind: 'content' } | { kind: 'check'; lesson: LessonState } | null =
+    !contentViewed
+      ? { kind: 'content' }
+      : nextUncleared && canOpen(nextUncleared, progress.fullyCleared)
+        ? { kind: 'check', lesson: nextUncleared }
+        : null
+
+  const lockedPillClass = `${PILL} flex w-full items-center justify-between gap-4 px-6 py-5 text-left opacity-80 transition-opacity md:px-8 md:py-6`
+  const lockedBody = (
+    <>
+      <span className={`text-sm italic md:text-base ${MUTED}`}>
+        {lockedAction?.kind === 'content'
+          ? 'Finish the training content to unlock your certificate — go to Content'
+          : lockedAction?.kind === 'check'
+            ? `Clear your remaining checks to unlock your certificate — start ${
+                lockedAction.lesson.isReadiness
+                  ? 'the Final Review'
+                  : `Lesson ${lockedAction.lesson.number}`
+              }`
+            : 'Complete Lesson 5 and the Certificate Assessment to unlock…'}
+      </span>
+      <LockIcon className="h-6 w-6 shrink-0 text-[#8A8A8A]" />
+    </>
+  )
 
   return (
     <div className="qz-entrance qz-d4" {...hoverProps}>
@@ -546,15 +601,22 @@ function CertificateCard({
             />
           )}
         </>
-      ) : (
-        <div
-          className={`${PILL} flex items-center justify-between gap-4 px-6 py-5 opacity-80 md:px-8 md:py-6`}
+      ) : lockedAction?.kind === 'content' ? (
+        <Link href="/dashboard/training" className={`${lockedPillClass} hover:opacity-100`}>
+          {lockedBody}
+        </Link>
+      ) : lockedAction?.kind === 'check' ? (
+        <button
+          type="button"
+          onClick={() => tryOpen(lockedAction.lesson)}
+          className={`${lockedPillClass} cursor-pointer hover:opacity-100`}
         >
-          <span className={`text-sm italic md:text-base ${MUTED}`}>
-            Complete Lesson 5 and the Certificate Assessment to unlock…
-          </span>
-          <LockIcon className="h-6 w-6 shrink-0 text-[#8A8A8A]" />
-        </div>
+          {lockedBody}
+        </button>
+      ) : (
+        // No route worth offering (e.g. every check cleared but the assessment
+        // not yet passed) — stays inert rather than pointing nowhere.
+        <div className={lockedPillClass}>{lockedBody}</div>
       )}
     </div>
   )
@@ -610,7 +672,39 @@ function PathMap({
   return (
     <div className="qz-entrance qz-d2">
       <div className={`${PILL} p-5 sm:p-7 md:p-6 lg:p-8`}>
-        <div className="relative mx-auto aspect-[4/7] w-full max-w-[380px]">
+        {/* Two separate faults; the previous pass got both backwards.
+
+            SIZE — why it grew instead of shrinking. This box is `aspect-[4/7]`,
+            so height is width × 1.75 and width is the ONLY size input. Reading
+            "doesn't scale" as "should get wider" therefore bought 1.75px of
+            height for every 1px of width: at the old xl:max-w-[520px] the map
+            stood 910px tall, taller than most laptop viewports, which is the
+            "it got bigger" report. The binding constraint on a wide screen was
+            never the column width — it is the vertical room the map has to sit
+            in. So from lg the cap is derived from viewport HEIGHT and converted
+            back through the same 4:7 ratio, which shrinks the map on a short
+            display and never exceeds the original 380px. Below lg the layout is
+            single-column and scrolls, so height costs nothing and the flat cap
+            stands.
+
+            Do NOT cap the height directly to do this. `aspect-[4/7]` is load-
+            bearing: the SVG viewBox is 400×700 and every label, flag and the
+            castle is positioned as a % of THIS box, so the two coordinate
+            spaces only agree while the box stays 4:7. A max-h would hold the
+            width, break the ratio, and slide every label off its dot.
+
+            CLIPPING — why tightening the gap missed. A left label needs
+            `0.25·W − gap − labelWidth ≥ 0`. That was right, but `--lbl-gap` was
+            keyed to the VIEWPORT (`sm:`), and this box's width is not monotonic
+            in viewport width: below `md` the grid is one column and the map is
+            at its WIDEST, then at exactly `md` the 12-column grid engages, the
+            aside drops to 5/12, and the map hits its NARROWEST (~222px inside
+            the card at 768px) — where `sm:` has already restored the wide 18px
+            gap. The tightening applied where it was not needed and switched off
+            where it was. `@container` fixes the category error: the gap and the
+            label size now respond to THIS BOX's width, the thing the geometry
+            actually depends on, at every breakpoint at once. */}
+        <div className="@container relative mx-auto aspect-[4/7] w-full max-w-[380px] [--lbl-gap:18px] @max-[300px]:[--lbl-gap:8px] lg:max-w-[min(380px,calc(60svh*4/7))]">
           {/* Single coordinate space: connectors + dots share this viewBox */}
           <svg
             className="absolute inset-0 h-full w-full"
@@ -664,7 +758,7 @@ function PathMap({
               className="qz-flag pointer-events-none absolute"
               style={{ left: `${node.leftPct}%`, top: `${node.topPct}%` }}
             >
-              <ClearedFlagIcon className="h-6 w-6" />
+              <ClearedFlagIcon className="h-6 w-6 @max-[300px]:h-5 @max-[300px]:w-5" />
             </div>
           ))}
 
@@ -688,7 +782,7 @@ function PathMap({
                   className="pointer-events-none absolute"
                   style={{ left: `${node.leftPct}%`, top: `${node.topPct}%`, transform: 'translate(-50%,-190%)' }}
                 >
-                  <span className={`text-[11px] font-bold whitespace-nowrap md:text-xs ${color5}`}>
+                  <span className={`text-xs font-bold whitespace-nowrap @max-[300px]:text-[10px] ${color5}`}>
                     Final Review
                   </span>
                 </div>
@@ -704,12 +798,14 @@ function PathMap({
                   top: `${node.topPct}%`,
                   // Fixed-px gap from the dot — %-based offsets scale with the
                   // label's own width, so spacing drifted from label to label.
+                  // --lbl-gap tightens below `sm` so the labels still clear the
+                  // container edge on a narrow phone (see the container above).
                   transform: onLeft
-                    ? 'translate(calc(-100% - 18px),-50%)'
-                    : 'translate(18px,-50%)',
+                    ? 'translate(calc(-100% - var(--lbl-gap)),-50%)'
+                    : 'translate(var(--lbl-gap),-50%)',
                 }}
               >
-                <span className={`text-[11px] font-bold whitespace-nowrap md:text-xs ${color}`}>
+                <span className={`text-xs font-bold whitespace-nowrap @max-[300px]:text-[10px] ${color}`}>
                   Lesson {node.n}
                 </span>
               </div>
@@ -722,14 +818,14 @@ function PathMap({
             style={{ left: `${CASTLE.leftPct}%`, top: `${CASTLE.topPct}%` }}
           >
             <CastleIcon
-              className={`mx-auto h-16 w-16 ${
+              className={`mx-auto h-16 w-16 @max-[300px]:h-12 @max-[300px]:w-12 ${
                 goalReached
                   ? 'text-[#0094FF] drop-shadow-[0_0_16px_rgba(0,148,255,0.55)]'
                   : 'text-[#9AA1A9] dark:text-[#5C636B]'
               }`}
             />
             <span
-              className={`mt-1 block text-[11px] font-bold md:text-xs ${
+              className={`mt-1 block text-xs font-bold @max-[300px]:text-[10px] ${
                 goalReached ? 'text-[#0094FF]' : 'text-[#9AA1A9] dark:text-[#5C636B]'
               }`}
             >
@@ -800,21 +896,6 @@ function QuizStyles() {
 /* ── Extracted assets ────────────────────────────────────────────────────────
    Reference SVG markup pulled out of quizzes-tab-v2.html as reusable components. */
 
-function ClearedFlagIcon({ className }: { className?: string }) {
-  // Green pennant on a pole (green = a cleared level).
-  return (
-    <svg className={className} viewBox="0 0 1080 1080" fill="none">
-      <g transform="matrix(2.95248,0,0,2.95248,-380.144,-1240.04)">
-        <g transform="matrix(0.607509,0,0,0.737262,-36.3326,470.984)">
-          <rect x="489" y="90" width="102" height="337" fill="#9CA3AF" />
-        </g>
-        <g transform="matrix(2.43552,0,0,1.38838,-1178.65,295.046)">
-          <path d="M591,90L687,169L591,263.991L591,90Z" fill="#22C55E" />
-        </g>
-      </g>
-    </svg>
-  )
-}
 
 function CastleIcon({ className }: { className?: string }) {
   // Monochrome castle (currentColor) so it themes cleanly in light + dark.
@@ -850,16 +931,26 @@ function CastleIcon({ className }: { className?: string }) {
 }
 
 /* ── Line icons ──────────────────────────────────────────────────────────── */
+/* The padlocks read as sitting low against the play chip and the score badge in
+   the status column. It isn't the layout — every status element is centred in
+   the same w-12 slot — it's the artwork: both padlock paths span y=7..21, so
+   their optical centre is y=14 while the 0 0 24 24 box centres on y=12. At h-4
+   that is ~1.3px of drop, which is exactly enough to look wrong in a vertical
+   stack. Shifting the viewBox window down 2 units re-centres the window on the
+   artwork (y 2..26 → centre 14) without touching the path data, so the icons
+   now share a true axis with the play button above them. */
+const PADLOCK_VIEWBOX = '0 2 24 24'
+
 function LockIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className={className} fill="none" viewBox={PADLOCK_VIEWBOX} stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
     </svg>
   )
 }
 function UnlockIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className={className} fill="none" viewBox={PADLOCK_VIEWBOX} stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0M6 11h12a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6a2 2 0 012-2z" />
     </svg>
   )

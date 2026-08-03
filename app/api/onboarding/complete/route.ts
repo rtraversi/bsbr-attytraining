@@ -66,6 +66,17 @@ export async function POST(req: NextRequest) {
     .eq('role', 'admin')
 
   if (enrollSelf) {
+    // The admin opted into training, so they now occupy a seat. The
+    // sync_used_seats trigger fires exactly one +1 on the false -> true
+    // transition; re-running onboarding is a no-op because true -> true is
+    // occupying -> occupying. If enrollSelf is false this stays false and the
+    // firm is not billed a seat for an admin who never trains.
+    await supabase
+      .from('firm_members')
+      .update({ occupies_seat: true })
+      .eq('firm_id', firm.id)
+      .eq('role', 'admin')
+
     // Get or create the stub course
     let { data: course } = await supabase
       .from('courses')
@@ -104,20 +115,6 @@ export async function POST(req: NextRequest) {
           firm_id: firm.id,
           status: 'not_started',
         })
-
-        // Consume one seat
-        const { data: seat } = await supabase
-          .from('seats')
-          .select('used_seats')
-          .eq('firm_id', firm.id)
-          .single()
-
-        if (seat) {
-          await supabase
-            .from('seats')
-            .update({ used_seats: seat.used_seats + 1 })
-            .eq('firm_id', firm.id)
-        }
       }
     }
   }

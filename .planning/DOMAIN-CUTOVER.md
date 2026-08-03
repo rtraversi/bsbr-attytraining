@@ -13,11 +13,19 @@ Moves the app + marketing site from `bsbr-attytraining.aistaffcompliance.workers
 
 ## ⚠️ Two traps that will silently waste a day
 
-**1. `NEXT_PUBLIC_APP_URL` is baked in at BUILD time.** Next.js inlines every `NEXT_PUBLIC_*` var
-into the client bundle during `next build`. Changing the value in the Cloudflare dashboard or in
-`wrangler.jsonc` **does nothing to already-built assets** — you must rebuild and redeploy
-(`pnpm run deploy` does both). Editing the var alone and reloading will show the old URL and look
-like a caching bug.
+**1. `NEXT_PUBLIC_APP_URL` is baked in at BUILD time, and NOT from `wrangler.jsonc`.** Next.js
+inlines every `NEXT_PUBLIC_*` var into the client bundle during `next build`, reading it from
+**`.env.local` and `.env.production`**. `wrangler.jsonc` vars are **runtime-only — they never reach
+the browser.** Changing the value in the Cloudflare dashboard or in `wrangler.jsonc` **does nothing
+to already-built assets**, and neither does rebuilding if the env files still hold the old value.
+
+> 🔴 This cost several hours on 2026-07-29. Three consecutive deploys produced an **identical chunk
+> hash** because only `wrangler.jsonc` had been edited. It reads exactly like a caching bug.
+
+⚠️ **`.env.local` and `.env.production` are gitignored** — the edit does not travel with a commit.
+**Every machine that deploys needs it made locally** (Rob's included). To confirm the value actually
+landed in the bundle, grep the built client chunks for the new host rather than trusting the deploy
+output.
 
 **2. A Worker *secret* silently overrides a `vars` entry.** `NEXT_PUBLIC_APP_URL` is declared in
 `wrangler.jsonc:9` as a plain var, but `DEPLOY-CHECKLIST.md` step 4 told Rob to also
@@ -76,8 +84,16 @@ curl -sS -o /dev/null -D - https://iurixaccreditation.com | head -5
 
 | File | Line | Change |
 |---|---|---|
-| `wrangler.jsonc` | 9 | `NEXT_PUBLIC_APP_URL` → `https://iurixaccreditation.com` |
+| `wrangler.jsonc` | 9 | `NEXT_PUBLIC_APP_URL` → `https://iurixaccreditation.com` — **runtime only** |
+| `.env.local` | — | `NEXT_PUBLIC_APP_URL` → `https://iurixaccreditation.com` — **gitignored** |
+| `.env.production` | — | `NEXT_PUBLIC_APP_URL` → `https://iurixaccreditation.com` — **gitignored** |
 | `workers/cert-worker/wrangler.toml` | 14 | `APP_URL` → `https://iurixaccreditation.com` |
+
+⚠️ **All three of the first rows, not just `wrangler.jsonc`.** The `wrangler.jsonc` entry is what
+server code reads at runtime; the two env files are what Next inlines into the **client bundle** at
+build time. Editing only the jsonc changes the runtime value and leaves the browser on the old host
+— see trap 1. The env files are gitignored, so this edit has to be repeated on every machine that
+deploys.
 
 ### C2. Hardcoded absolute URLs — these do NOT derive from `NEXT_PUBLIC_APP_URL`
 
@@ -107,11 +123,15 @@ curl -sS -o /dev/null -D - https://iurixaccreditation.com | head -5
 
 ```bash
 pnpm run deploy                          # app: opennextjs-cloudflare build && deploy
-cd workers/cert-worker && wrangler deploy && cd ../..
+cd workers/cert-worker && wrangler deploy --config wrangler.toml && cd ../..
 ```
 
-Both must be redeployed — the cert worker has its own `APP_URL` and its own deploy step. It was
-last deployed **2026-06-24** and will otherwise keep calling the old URL from cron.
+Both must be redeployed — the cert worker has its own `APP_URL` and its own deploy step, and will
+otherwise keep calling the old URL from cron.
+
+⚠️ **`--config wrangler.toml` is required.** A bare `wrangler deploy` from `workers/cert-worker/`
+walks up and picks up the **root `wrangler.jsonc`**, redeploying the main app over itself while
+reporting success — and the cert worker never ships.
 
 ---
 
@@ -122,20 +142,37 @@ last deployed **2026-06-24** and will otherwise keep calling the old URL from cr
 Add `iurixaccreditation.com` as a sending domain → add the SPF / DKIM / DMARC records to the
 Cloudflare zone → wait for **Verified**. Only then do C3 + redeploy.
 
-### E2. Supabase Database Webhook  *(Rob, dashboard)* — ⚠️ **the silent one**
+### E2. Supabase Database Webhooks  *(Rob, dashboard)* — ⚠️ **the silent one**
 
-Supabase → Database → Webhooks → the `cert-generation` hook. Repoint:
+Supabase → Database → Webhooks. ⚠️ **There are TWO hooks here, not one.** Earlier revisions of this
+runbook described a single `cert-generation` hook, which sent people looking for something that
+doesn't exist under that name.
+
+| Hook | Target | Status |
+|---|---|---|
+| `cert-queue-generate` | the **app** → `/api/certs/generate` | ✅ the live one — repoint this |
+| `cert-worker-quiz-pass` | `bsbr-cert-worker` | 💤 **known-inert — leave it alone** |
+
+**Repoint `cert-queue-generate` to:**
 
 ```
 https://iurixaccreditation.com/api/certs/generate
 ```
 
-⚠️ **It must target the APP, not the cert worker.** `bsbr-cert-worker`'s HTTP handler validates the
-secret, parses the payload, then discards it and returns 200 without generating anything — so if
-this is aimed at the worker, **certificates silently never generate and every delivery looks
-successful.** Confirm the current target while you're in there.
-
 Header stays `x-webhook-secret: <CERT_WEBHOOK_SECRET>`.
+
+⚠️ **It must target the APP, not the cert worker.** `bsbr-cert-worker`'s `fetch` handler validates
+the secret, parses the payload, then `void`s the fields and returns 200 without generating anything
+(there is a `// TODO: implement full cert generation pipeline` where the work would go) — so a hook
+aimed at the worker means **certificates silently never generate and every delivery looks
+successful.**
+
+**On `cert-worker-quiz-pass`:** it is permanently inert for exactly that reason — it posts to the
+worker's no-op `fetch` handler. Documented here so nobody deletes it blind, and so nobody re-verifies
+it a third time hunting a cert bug. It is **not** the reason certificates would fail; the real
+generation path is the in-app `after()` call at `app/api/quiz/attempt/route.ts` plus
+`cert-queue-generate`. Note the cert worker's **cron** handler is real and load-bearing (expiry /
+inactivity / renewal reminders + the queue drain) — inertness applies to its HTTP handler only.
 
 ### E3. Supabase Auth  *(Rob, dashboard)*
 

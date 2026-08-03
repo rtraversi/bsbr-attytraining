@@ -94,7 +94,7 @@ export function FeaturesSection() {
       <footer className="bg-white border-t border-[#d9c2b4]">
         <div className="max-w-[1280px] mx-auto px-6 md:px-[80px] py-12 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="font-host-grotesk text-xl font-bold text-[#1b1c1c]">
-            Built Smart by Rob
+            IURIX
           </div>
           <div className="flex gap-6">
             <a
@@ -117,7 +117,7 @@ export function FeaturesSection() {
             </a>
           </div>
           <p className="font-host-grotesk text-xs text-[#474746]/60">
-            © 2026 Built Smart by Rob. Legal Compliance Training.
+            © 2026 IURIX. Legal Compliance Training.
           </p>
         </div>
       </footer>

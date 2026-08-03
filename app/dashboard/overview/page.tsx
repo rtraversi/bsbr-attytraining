@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { deriveProgress, type KnowledgeCheckEvent } from '@/lib/training/progress'
 import { clientQuestionsByLesson } from '@/lib/training/questions'
 import { READINESS_LESSON } from '@/lib/training/lessons'
+import { SEAT_ACCESS_COLUMNS, hasTrainingAccess, type SeatAccessRow } from '@/lib/seats'
+import { SeatGate } from '../_components/no-seat-notice'
 import { OverviewClient, type ActivityItem } from './_components/overview-client'
 
 export const metadata = {
@@ -20,6 +22,13 @@ const ACTIVITY_TYPES = [
   'lesson_location_changed',
 ] as const
 const ACTIVITY_LIMIT = 4 // 2 shown collapsed + 2 revealed on expand
+
+// Deliberately larger than ACTIVITY_LIMIT. Repeat `video_started` rows are
+// collapsed AFTER the query (see below), so without headroom a run of launches
+// would still consume the fetch budget and the feed would simply get shorter
+// rather than showing more real events. Still bounded, so a heavy user can't
+// pull an unbounded history into a page render.
+const ACTIVITY_FETCH_LIMIT = 40
 
 export default async function OverviewPage() {
   const supabase = await createClient()
@@ -40,10 +49,15 @@ export default async function OverviewPage() {
 
   const { data: member } = await admin
     .from('firm_members')
-    .select('id')
+    .select(`id, ${SEAT_ACCESS_COLUMNS}`)
     .eq('user_id', user.id)
     .eq('firm_id', firmId)
     .maybeSingle()
+
+  // Seat gate — see lib/seats.ts. Same predicate as the seat-count trigger.
+  if (!hasTrainingAccess(member as SeatAccessRow | null)) {
+    return <SeatGate member={member} />
+  }
 
   let events: KnowledgeCheckEvent[] = []
   let activity: ActivityItem[] = []
@@ -66,7 +80,7 @@ export default async function OverviewPage() {
         .eq('firm_member_id', member.id)
         .in('event_type', [...ACTIVITY_TYPES])
         .order('event_timestamp', { ascending: false })
-        .limit(ACTIVITY_LIMIT),
+        .limit(ACTIVITY_FETCH_LIMIT),
       // Most recent lesson boundary → current lesson number.
       admin
         .from('training_events')
@@ -99,7 +113,7 @@ export default async function OverviewPage() {
       })
       .filter(e => Number.isInteger(e.lesson) && e.lesson >= 1 && e.lesson <= READINESS_LESSON)
 
-    activity = (activityResult.data ?? []).map(r => {
+    const activityRows = (activityResult.data ?? []).map(r => {
       const m = (r.metadata ?? {}) as Record<string, unknown>
       const at = r.event_timestamp as string
 
@@ -133,6 +147,33 @@ export default async function OverviewPage() {
         at,
       }
     })
+
+    // Collapse repeat "Started the training content" entries to a single item —
+    // DISPLAY ONLY.
+    //
+    // Every launch of the course appends its own video_started row and that is
+    // deliberate, not a bug: api/training/content-progress/route.ts records one
+    // row per launch as real audit signal (when did this employee open the
+    // course, and how often), and api/firm/audit-log/export/route.ts reads those
+    // rows verbatim — with ip_address and user_agent — to produce the compliance
+    // paper trail a firm uses to evidence Rule 5.3 supervision. Deduping at the
+    // source would quietly degrade the thing this product exists to produce.
+    // So the rows stay; only this feed stops repeating them.
+    //
+    // Keeps the MOST RECENT occurrence (rows arrive newest-first, so it is the
+    // first one seen): this is a "recent activity" feed, and the last time they
+    // opened the course is the fact that belongs in it. All repeats collapse
+    // into that one entry, not just consecutive runs, so a launch either side of
+    // a knowledge check still yields a single entry.
+    let seenContentStarted = false
+    activity = activityRows
+      .filter(item => {
+        if (item.kind !== 'content_started') return true
+        if (seenContentStarted) return false
+        seenContentStarted = true
+        return true
+      })
+      .slice(0, ACTIVITY_LIMIT)
 
     const locMeta = (lessonLocationResult.data?.metadata ?? null) as Record<string, unknown> | null
     const rawLessonNumber = Number(locMeta?.lessonNumber)

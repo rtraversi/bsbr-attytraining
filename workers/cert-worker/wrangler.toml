@@ -11,7 +11,7 @@ crons = ["*/5 * * * *", "0 9 * * *"]
 [vars]
 # Non-secret config — override per environment below
 SUPABASE_URL = "https://ndmzvtuywcufvkxtkjhg.supabase.co"   # fill in before first deploy
-APP_URL = "https://bsbr-attytraining.aistaffcompliance.workers.dev"        # fill in with deployed *.workers.dev URL before first deploy
+APP_URL = "https://iurixaccreditation.com"        # live app origin — reminder-email links + the cron drain POST
 
 # Secrets (never commit values — set with `wrangler secret put <KEY>`):
 #   WEBHOOK_SECRET              — shared secret validated in X-Webhook-Secret header

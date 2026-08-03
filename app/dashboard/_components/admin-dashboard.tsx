@@ -5,6 +5,7 @@ import { TeamProvider, ManageTeamPanel, type MemberDetail } from './team-table'
 import { ComplianceScore } from './compliance-score'
 import { CertificationForecast } from './certification-forecast'
 import { ResendInviteAction } from './resend-invite-modal'
+import { OutOfSeatsNotice } from './out-of-seats-notice'
 
 const CARD = 'rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
 const HEADING = 'font-headline text-2xl md:text-3xl font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
@@ -128,11 +129,7 @@ export function AdminDashboard({
               <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:justify-center-safe lg:overflow-y-auto">
                 <InviteForm seatsRemaining={seatsRemaining} />
                 <CsvUploadForm seatsRemaining={seatsRemaining} />
-                {seatsRemaining <= 0 && (
-                  <p className="mt-1 text-[11px] leading-relaxed text-[#B45309]">
-                    No seats remaining — add seats in Billing to invite more.
-                  </p>
-                )}
+                {seatsRemaining <= 0 && <OutOfSeatsNotice />}
               </div>
             </section>
           </div>

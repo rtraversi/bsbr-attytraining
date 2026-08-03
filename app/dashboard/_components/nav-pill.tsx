@@ -4,14 +4,16 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { useTheme } from './theme'
+import { isTrainingRoute } from './employee-tab-bar'
 
 interface NavPillProps {
   firmName: string | null
   role: string | null
 }
 
-/** The three routes that make up the training experience (the bottom tab bar's sub-nav). */
-const TRAINING_ROUTES = ['/dashboard/overview', '/dashboard/training', '/dashboard/quizzes']
+// The three routes that make up the training experience are now owned by the
+// bottom tab bar (its own sub-nav), and imported rather than re-listed here —
+// this was a hand-copied duplicate of that list.
 
 const ICON_CLASS = 'h-[17px] w-[17px] shrink-0'
 
@@ -151,19 +153,21 @@ export function NavPill({ firmName, role }: NavPillProps) {
       href: trainingHref,
       label: 'Training',
       icon: <TrainingIcon />,
-      active: TRAINING_ROUTES.some(r => pathname.startsWith(r)),
+      active: isTrainingRoute(pathname),
+    },
+    // Order is Training → Support → Settings (Max): Settings sits last so it is
+    // adjacent to the light/dark toggle, which is also a preference control.
+    {
+      href: '/dashboard/support',
+      label: 'Support',
+      icon: <SupportIcon />,
+      active: pathname.startsWith('/dashboard/support'),
     },
     {
       href: '/dashboard/settings',
       label: 'Settings',
       icon: <SettingsIcon />,
       active: pathname.startsWith('/dashboard/settings'),
-    },
-    {
-      href: '/dashboard/support',
-      label: 'Support',
-      icon: <SupportIcon />,
-      active: pathname.startsWith('/dashboard/support'),
     },
   ]
 

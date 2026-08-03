@@ -13,6 +13,8 @@ interface BulkResult {
   invited: number
   skipped: number
   invalid: number
+  /** Rows created (and counted in `invited`) whose invite email failed to send. */
+  emailFailed?: string[]
 }
 
 function parseCsv(text: string): ParsedRow[] {
@@ -47,6 +49,10 @@ function summaryText(result: BulkResult): string {
   if (result.invited > 0) parts.push(`${result.invited} invited`)
   if (result.skipped > 0) parts.push(`${result.skipped} already existed`)
   if (result.invalid > 0) parts.push(`${result.invalid} invalid email`)
+  // Counted within `invited` — those members and their seats are real — so this
+  // reads as a qualifier on the invited number, not another bucket beside it.
+  const failed = result.emailFailed?.length ?? 0
+  if (failed > 0) parts.push(`${failed} email${failed !== 1 ? 's' : ''} not delivered`)
   return parts.join(', ') || 'No rows processed'
 }
 
@@ -100,7 +106,14 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
       setResult(data)
       setPhase('done')
       router.refresh()
-      addToast(`${data.invited} invite${data.invited !== 1 ? 's' : ''} sent`)
+      // Don't claim invites were sent when some weren't — those rows are badged
+      // "Invite not delivered" on the team table until a resend succeeds.
+      const failed = data.emailFailed?.length ?? 0
+      addToast(
+        failed > 0
+          ? `${data.invited} member${data.invited !== 1 ? 's' : ''} added, ${failed} invite email${failed !== 1 ? 's' : ''} couldn’t be sent`
+          : `${data.invited} invite${data.invited !== 1 ? 's' : ''} sent`
+      )
     } catch {
       setErrorMsg('Network error. Please try again.')
       setPhase('error')

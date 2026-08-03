@@ -37,6 +37,9 @@ interface FirmRow {
   name: string
   owner_id: string
   reminder_days: number
+  /** Optional because only runExpiryReminders selects it — runInactivityReminders
+   *  filters on status=eq.active instead and never reads the column back. */
+  status?: string
 }
 
 interface FirmRenewalRow {
@@ -145,10 +148,11 @@ function fmtDate(dateStr: string): string {
 
 // ── Email helpers ─────────────────────────────────────────────────────────────
 
-// Display name only — the aistaffcompliance.com address stays until the new
-// domain is verified in Resend (Phase B). Sending from an unverified domain
-// silently fails, so the address must not move ahead of that.
-const FROM = 'IURIX <info@aistaffcompliance.com>'
+// iurixaccreditation.com is verified in Resend (Rob, 2026-07-29) — DKIM, SPF and
+// DMARC all confirmed live. noreply@ is deliberate: the zone has no inbound MX,
+// so replies would bounce; don't imply a reply is possible. Must stay in sync
+// with FROM_ADDRESS in lib/resend.ts — this is a duplicate, not a shared import.
+const FROM = 'IURIX <noreply@iurixaccreditation.com>'
 
 async function sendEmail(env: Env, to: string, subject: string, html: string): Promise<void> {
   const res = await fetch('https://api.resend.com/emails', {
@@ -182,10 +186,48 @@ function expiryAdminHtml(empName: string, firmName: string, days: number, dateSt
 </body></html>`
 }
 
+// The lapsed-firm variant of the above. Two things differ, both deliberate.
+//
+// It does NOT say "a reminder has been sent to <name>" — on this path the
+// employee is not emailed at all, because a lapsed firm's staff cannot sign in.
+// Claiming otherwise would be false.
+//
+// ⚠ It must NOT link to checkout. The win-back destination is blocked on
+// ix-doublebill: a returning customer whose email already has an account gets
+// charged and provisioned nothing. Until that is fixed, the only safe
+// destination is the existing Stripe portal, which is where an existing
+// customer's subscription actually lives. Do not "improve" this into a
+// checkout CTA before ix-doublebill lands.
+function expiryAdminLapsedHtml(
+  empName: string,
+  firmName: string,
+  days: number,
+  dateStr: string,
+  appUrl: string,
+): string {
+  return `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
+<p style="font-size:14px"><strong>${empName}</strong>'s AI compliance training certificate for ${firmName} <strong>expires in ${days} days</strong> — on ${dateStr}.</p>
+<p style="font-size:14px">Your IURIX subscription is not currently active, so ${empName} cannot re-certify and your firm's Rule 5.3 record will not be renewed.</p>
+<p style="font-size:14px">You can review your subscription and billing details in the customer portal.</p>
+<p><a href="${appUrl}/api/portal" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Manage subscription</a></p>
+<hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
+<p style="font-size:12px;color:#6b7280">IURIX</p>
+</body></html>`
+}
+
+// The cron's inactivity reminder. This is a SECOND copy of the reminder wording
+// — emails/training-reminder.tsx carries the app-side one (the admin's manual
+// "Remind" button). The two must stay in sync; they are worded from the same
+// approved line (Max, 2026-07-30).
+//
+// Framing is deliberate: accreditation is all-or-none (Katy's legal read), so
+// this states the consequence for the FIRM rather than nagging the individual.
+// Nothing here should imply one person finishing is sufficient.
 function inactivityHtml(name: string, firmName: string, appUrl: string): string {
   return `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:14px">Hi ${name},</p>
-<p style="font-size:14px">${firmName} has enrolled you in AI compliance training. Please complete your training to earn your compliance certificate under ABA Model Rule 5.3.</p>
+<p style="font-size:14px"><strong>Your firm can't be certified until everyone completes their training.</strong></p>
+<p style="font-size:14px">${firmName} can't be certified under ABA Model Rule 5.3 until every member of the firm has completed their training — and yours is still to do.</p>
 <p><a href="${appUrl}/dashboard/training" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Complete training</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
 <p style="font-size:12px;color:#6b7280">IURIX</p>
@@ -194,7 +236,10 @@ function inactivityHtml(name: string, firmName: string, appUrl: string): string 
 
 // ── Expiry reminders ─────────────────────────────────────────────────────────
 
+// Active firms get the full runway. A firm that is no longer active gets a
+// shorter, admin-only cadence — see the lapsed handling in runExpiryReminders.
 const EXPIRY_BUCKETS = [90, 30, 7] as const
+const EXPIRY_BUCKETS_LAPSED = [30, 7] as const
 
 async function runExpiryReminders(env: Env): Promise<void> {
   const now = new Date()
@@ -224,7 +269,7 @@ async function runExpiryReminders(env: Env): Promise<void> {
     try {
       firmData = await pgRest<FirmRow[]>(
         env, 'GET',
-        `/firms?select=id,name,owner_id,reminder_days&id=eq.${firmId}&limit=1`,
+        `/firms?select=id,name,owner_id,reminder_days,status&id=eq.${firmId}&limit=1`,
       ) ?? []
       if (!firmData[0]) continue
       adminUser = await authAdmin(env, firmData[0].owner_id)
@@ -235,6 +280,17 @@ async function runExpiryReminders(env: Env): Promise<void> {
 
     const { name: firmName, owner_id: ownerId } = firmData[0]
     void ownerId // used above
+
+    // firms.status is CHECK-constrained to ('active','payment_failed','cancelled')
+    // — verified against 0001_initial_schema.sql:45-46, not assumed. The
+    // generated type is a bare `string`, so it could not answer this.
+    //
+    // Tested for 'active' rather than against a list of the other two: a status
+    // added later should fall to the conservative lapsed path by default, and
+    // payment_failed — not cancelled — is the common case here, since Stripe
+    // Smart Retries exhausting a card lands there.
+    const isActive = firmData[0].status === 'active'
+    const buckets: readonly number[] = isActive ? EXPIRY_BUCKETS : EXPIRY_BUCKETS_LAPSED
 
     // Batch-fetch recent expiry events for this firm (last 8 days covers all buckets)
     const recentCutoff = addDays(now, -8).toISOString()
@@ -253,7 +309,7 @@ async function runExpiryReminders(env: Env): Promise<void> {
 
     for (const cert of firmCerts) {
       const daysLeft = diffDays(cert.expires_at, now)
-      const bucket = EXPIRY_BUCKETS.find(d => Math.abs(daysLeft - d) <= 1)
+      const bucket = buckets.find(d => Math.abs(daysLeft - d) <= 1)
       if (!bucket) continue
       if (alreadySent.has(`${cert.id}|${bucket}`)) continue
 
@@ -264,19 +320,39 @@ async function runExpiryReminders(env: Env): Promise<void> {
         const empName = (empUser.user_metadata?.full_name as string | undefined) ?? empUser.email
         const dateStr = fmtDate(cert.expires_at)
 
-        await sendEmail(
-          env,
-          empUser.email,
-          `Your AI compliance certificate expires in ${bucket} days`,
-          expiryEmployeeHtml(empName, bucket, dateStr, env.APP_URL),
-        )
+        // Employees of a lapsed firm are skipped entirely; only the admin is
+        // contacted.
+        //
+        // Note the reason, because it is NOT "they cannot sign in" — nothing in
+        // the app currently blocks that. handleSubscriptionDeleted only flips
+        // firms.status, and no middleware or layout gates on it, so a lapsed
+        // firm's staff can still log in today. The reason is that re-certifying
+        // is impossible while the firm is not paying, so chasing the employee
+        // puts the burden on the one person who cannot resolve it, and reads as
+        // nagging. The admin is the only one who can act.
+        if (isActive) {
+          await sendEmail(
+            env,
+            empUser.email,
+            `Your AI compliance certificate expires in ${bucket} days`,
+            expiryEmployeeHtml(empName, bucket, dateStr, env.APP_URL),
+          )
+        }
 
-        if (adminUser?.email && adminUser.email !== empUser.email) {
+        // On the active path the admin is skipped when they ARE the employee,
+        // to avoid sending the same person two emails. On the lapsed path the
+        // employee send was skipped above, so that guard must not apply or an
+        // owner-only firm would be told nothing at all.
+        if (adminUser?.email && (!isActive || adminUser.email !== empUser.email)) {
           await sendEmail(
             env,
             adminUser.email,
-            `${empName}'s AI compliance certificate expires in ${bucket} days`,
-            expiryAdminHtml(empName, firmName, bucket, dateStr),
+            isActive
+              ? `${empName}'s AI compliance certificate expires in ${bucket} days`
+              : `${empName}'s certificate expires in ${bucket} days — your subscription is not active`,
+            isActive
+              ? expiryAdminHtml(empName, firmName, bucket, dateStr)
+              : expiryAdminLapsedHtml(empName, firmName, bucket, dateStr, env.APP_URL),
           )
         }
 
@@ -350,11 +426,21 @@ async function runInactivityReminders(env: Env): Promise<void> {
 
       if (targets.size === 0) continue
 
-      // Batch-fetch recent inactivity events for this firm
+      // Batch-fetch recent reminder events for this firm.
+      //
+      // Both types count. Deduping on inactivity_reminder_sent alone meant a
+      // manual nudge was invisible here, so an employee could be personally
+      // chased by their partner in the morning and auto-chased by the cron the
+      // same evening — two near-identical emails, one of which makes the firm
+      // look like it is nagging. From the employee's side the sender does not
+      // matter; what matters is that they were already contacted.
+      //
+      // Lookback duration and recipient are unchanged — that is the separate
+      // inactivity rewrite.
       const recentCutoff = addDays(now, -reminderDays).toISOString()
       const recentEvents = await pgRest<TrainingEventRow[]>(
         env, 'GET',
-        `/training_events?select=firm_member_id&firm_id=eq.${firm.id}&event_type=eq.inactivity_reminder_sent&event_timestamp=gte.${encodeURIComponent(recentCutoff)}`,
+        `/training_events?select=firm_member_id&firm_id=eq.${firm.id}&event_type=in.(inactivity_reminder_sent,nudge_sent)&event_timestamp=gte.${encodeURIComponent(recentCutoff)}`,
       ) ?? []
 
       const recentlySent = new Set(recentEvents.map(e => e.firm_member_id))
@@ -371,7 +457,7 @@ async function runInactivityReminders(env: Env): Promise<void> {
           await sendEmail(
             env,
             empUser.email,
-            'Reminder: Complete your AI compliance training',
+            "Your firm can't be certified until everyone completes their training",
             inactivityHtml(empName, firm.name, env.APP_URL),
           )
 
@@ -395,6 +481,16 @@ async function runInactivityReminders(env: Env): Promise<void> {
 
 const RENEWAL_BUCKETS = [30, 14, 3] as const
 
+// ⚠ Deliberately states NO dollar amount. The worker cannot compute a reliable
+// figure — volume bands mean the per-seat rate moves with headcount, seats can
+// change mid-term, and tax is applied by Stripe at invoice time. A wrong number
+// on a billing notice is worse than no number, so the portal is the only place
+// the exact amount is quoted. Do not "helpfully" add one here.
+//
+// The charge disclosure leads, before the team-status table. This email exists
+// to warn about money leaving an account; burying that under a compliance
+// progress report is what made the old version read as a status update rather
+// than a billing notice.
 function renewalReminderHtml(
   firmName: string,
   days: number,
@@ -411,12 +507,15 @@ function renewalReminderHtml(
 
   return `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:14px">Hi ${firmName} Admin,</p>
-<p style="font-size:14px">Your AI compliance training subscription <strong>renews in ${days} days</strong> — on ${renewalDate}. Here's a quick look at where your team stands:</p>
+<p style="font-size:14px">Your AI compliance training subscription <strong>renews in ${days} days</strong> — on ${renewalDate}. <strong>The card on file will be charged automatically on that date</strong> unless you cancel before then.</p>
+<p style="font-size:14px">To see the exact renewal amount, update your payment method, or turn off auto-renewal, open the billing portal:</p>
+<p><a href="${appUrl}/api/portal" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Manage subscription &amp; billing</a></p>
+<p style="font-size:14px">Here's a quick look at where your team stands:</p>
 <table style="width:100%;border-collapse:collapse;margin:16px 0">${statusRows}</table>
 ${pending > 0 ? `<p style="font-size:14px">You have <strong>${pending} staff member${pending !== 1 ? 's' : ''}</strong> who ${pending !== 1 ? 'have' : 'has'} not yet completed this year's training. Reach out to them before your renewal date to close out your firm's Rule 5.3 compliance record.</p>` : `<p style="font-size:14px">Great news — all of your staff have completed their training for this certification period.</p>`}
-<p><a href="${appUrl}/dashboard" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">View dashboard &amp; manage subscription</a></p>
+<p><a href="${appUrl}/dashboard" style="font-size:14px;color:#0f766e">View your team dashboard</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
-<p style="font-size:12px;color:#6b7280">IURIX<br>To manage your subscription or update your billing details, click the button above and select "Manage Subscription" from your dashboard.</p>
+<p style="font-size:12px;color:#6b7280">IURIX</p>
 </body></html>`
 }
 
@@ -440,11 +539,27 @@ async function runRenewalReminders(env: Env): Promise<void> {
     if (!bucket) continue
 
     try {
-      // Dedup: skip if we already sent this bucket for this firm in the last 24h
-      const cutoff24h = addDays(now, -1).toISOString()
+      // Dedup: skip if we already sent this bucket for this firm recently.
+      //
+      // The memory has to outlast the ELIGIBILITY WINDOW, not the gap between
+      // two runs. A bucket matches within ±1 day (see the find() above), so
+      // days 31, 30 and 29 all qualify as the "30-day" reminder — three
+      // consecutive days on which this firm is eligible. The old 24h window
+      // equalled the cron period exactly, so any run-to-run drift let the same
+      // notice send twice, and across the full 3-day window the admin could
+      // receive it up to 3 times.
+      //
+      // 8 days clears that window with room to spare and still sits well below
+      // the 11-day gap to the next bucket (30 → 14 → 3), so it cannot suppress
+      // a reminder that should legitimately fire. It also matches what
+      // runExpiryReminders already uses, for the same reason.
+      //
+      // An hour would not have been enough: it fixes drift between two runs but
+      // still lets day 31 forget day 30.
+      const dedupeCutoff = addDays(now, -8).toISOString()
       const recentEvents = await pgRest<{ metadata: Record<string, unknown> | null }[]>(
         env, 'GET',
-        `/training_events?select=metadata&firm_id=eq.${firm.id}&event_type=eq.renewal_reminder_sent&event_timestamp=gte.${encodeURIComponent(cutoff24h)}`,
+        `/training_events?select=metadata&firm_id=eq.${firm.id}&event_type=eq.renewal_reminder_sent&event_timestamp=gte.${encodeURIComponent(dedupeCutoff)}`,
       ) ?? []
 
       const alreadySent = recentEvents.some(e => {

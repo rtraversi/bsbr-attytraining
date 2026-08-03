@@ -170,10 +170,15 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
 
 **Completed — test mode [x]:**
 
+> **Corrected 2026-08-03.** The IDs recorded here were from a **retired Stripe account** and never
+> matched the code. Read live from the Stripe API against sandbox `acct_1ThDpr6ZCSojEKRr`, which has
+> exactly one active product and one active price. Note three fields differ from what was written
+> down: no lookup_key, no tax_code, and `tax_behavior=unspecified` rather than `exclusive`.
+
 - [x] 1 Product created:
-  - `prod_UgzKT3NrGNAvDA` — "AI Staff Compliance Training — Annual Certification" — metadata: `pricing_model=per_seat_volume`, `tax_code=txcd_20060058`
+  - `prod_UiovBHrxJSDVpf` — "AI Staff Compliance Training — Annual Certification" — `tax_code`: **not set** · `metadata`: **empty** *(previously recorded as `prod_UgzKT3NrGNAvDA` with `pricing_model=per_seat_volume`, `tax_code=txcd_20060058`)*
 - [x] 1 volume-tiered Price created:
-  - `price_1ThbLNCzT2268ei9nkadS8kD` — lookup_key `per_seat_annual` — recurring yearly, `billing_scheme=tiered`, `tiers_mode=volume`: up_to 9 → $35/unit, up_to 24 → $32/unit, inf → $28/unit; `tax_behavior=exclusive`
+  - `price_1TjNHc6ZCSojEKRrKs79ToJ0` — lookup_key **not set** — recurring yearly, `billing_scheme=tiered`, `tiers_mode=volume`: up_to 9 → $35/unit, up_to 24 → $32/unit, inf → $28/unit (tiers verified correct); `tax_behavior=`**`unspecified`** *(previously recorded as `price_1ThbLNCzT2268ei9nkadS8kD`, lookup_key `per_seat_annual`, `tax_behavior=exclusive`)*
 
 **Archived (active=false, lookup keys released):**
 - Products: `prod_UgyZjCbV9uJdzX` ("Up to 5 Seats") / `prod_UgyZ7rqNgXZYao` ("6–15 Seats") / `prod_UgyZ30zgvigsd6` ("16+ Seats")
@@ -183,8 +188,10 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
 
 - [ ] Rob: provide BSBR Holdings LLC head_office address (Stripe dashboard → Settings → Tax, or via API) to activate Stripe Tax — currently PENDING; this is blocking the live-mode connection
 - [ ] Rob: complete home-state sales-tax registration (+ CPA consult on multi-state SaaS sales tax) before switching to live mode
-- [ ] Recreate the single product + volume-tiered price in LIVE mode before launch — only after Stripe Tax is enabled; lookup_key `per_seat_annual` makes it scriptable
-- [ ] Give the single test-mode Price ID `price_1ThbLNCzT2268ei9nkadS8kD` to Max for `.env.local` + the Worker's env (via `wrangler secret put` — **not** a CF Pages env dashboard)
+- [ ] Recreate the single product + volume-tiered price in LIVE mode before launch — only after Stripe Tax is enabled. ⚠️ The sandbox price has **no lookup_key**, so "scriptable via `per_seat_annual`" was never true. **Set a lookup_key on the live objects** so the live price has a stable handle and the hardcoded ID at `app/api/checkout/route.ts:17` can stop being the only reference.
+- [ ] **Set `tax_behavior` explicitly** (`inclusive`/`exclusive`) and **a `tax_code` on the product** when creating the live objects. The sandbox has neither, while `app/api/checkout/route.ts:68` already enables `automatic_tax`.
+- [ ] **Rename the Stripe product.** It still reads "AI Staff Compliance Training — Annual Certification", the retired course name, and it renders on the hosted Checkout page and every invoice. Not a source string, so no grep in the rename sweep could catch it.
+- [ ] Swap the hardcoded `PRICE_ID` at `app/api/checkout/route.ts:17` (currently the sandbox `price_1TjNHc6ZCSojEKRrKs79ToJ0`) for the live-mode price
 
 ---
 

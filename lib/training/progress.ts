@@ -7,16 +7,21 @@
 // training_events — there is no separate progress table.
 //
 // Rules (from the brief):
-//  - Sequential gating: lesson N's check unlocks only after N-1 is cleared.
+//  - NO sequential gating. Lessons 1–4 each stand alone and are always
+//    attemptable (Max, 2026-07-30). Ordering was dropped because the lesson-5
+//    test-out shortcut already lets a learner skip 1–4 entirely, so the
+//    ordering rule was half-abandoned in practice — and enforcing it at SUBMIT
+//    time rejected learners who had already answered every question.
 //  - Lessons 1–4 clear on COMPLETION (any score). Lesson 5 (readiness) requires
 //    a passing score (PASS_THRESHOLD).
 //  - Lesson 5 has a "test-out" SHORTCUT: attempt it directly, skipping 1–4.
 //    Passing via the shortcut grants full completion (all lessons cleared).
-//    Failing the shortcut 3× (before clearing 1–4) LOCKS it → must then do
-//    1–4 in order (which grants lesson 5 a fresh set of sequential attempts).
+//    Failing the shortcut 3× (before clearing 1–4) LOCKS it → must then clear
+//    1–4 (which grants lesson 5 a fresh set of attempts).
 //    The shortcut only opens once the training CONTENT is verifiably complete
 //    (contentViewed — a driver-reported video_completed event exists). The
-//    sequential 1–4 path is NOT content-gated; only the skip is.
+//    1–4 path is NOT content-gated; only the skip is. Lesson 5 is therefore the
+//    ONLY lesson that can ever be 'locked'.
 //  - While not fully cleared, each check allows MAX_ATTEMPTS. Once EVERY lesson
 //    is cleared (via either path), all checks become unlimited-retake forever.
 //
@@ -115,8 +120,8 @@ export function deriveProgress(events: KnowledgeCheckEvent[], contentViewed: boo
 
     let status: LessonStatus
     if (cleared) status = 'cleared'
-    else if (n === 1) status = 'unlocked'
-    else if (n >= 2 && n <= 4) status = clearedRaw(n - 1) ? 'unlocked' : 'locked'
+    // Lessons 1–4 stand alone — no dependency on N-1 being cleared.
+    else if (n < READINESS_LESSON) status = 'unlocked'
     else status = all14 || shortcutAvailable ? 'unlocked' : 'locked' // lesson 5
 
     let attemptsRemaining: number | null
@@ -155,7 +160,8 @@ export function deriveProgress(events: KnowledgeCheckEvent[], contentViewed: boo
 
 /**
  * Authoritative server-side gate: may this user attempt `lesson` right now?
- * Enforces sequential unlock, the shortcut lock, and attempt limits.
+ * Enforces the lesson-5 shortcut lock and attempt limits. There is no
+ * sequential unlock — lessons 1–4 are always attemptable.
  */
 export function canAttempt(
   events: KnowledgeCheckEvent[],
@@ -169,15 +175,14 @@ export function canAttempt(
   // Full clearance → unlimited retakes on every check.
   if (p.fullyCleared) return { allowed: true }
 
+  // Only lesson 5 can be locked — lessons 1–4 are always attemptable, so there
+  // is no "complete the previous lesson's check first" refusal any more.
   if (ls.status === 'locked') {
     return {
       allowed: false,
-      reason:
-        lesson === READINESS_LESSON
-          ? p.shortcutLocked
-            ? 'The readiness shortcut is locked — complete lessons 1–4 in order first.'
-            : 'Finish the training content to unlock this shortcut.'
-          : 'Complete the previous lesson’s check first.',
+      reason: p.shortcutLocked
+        ? 'The readiness shortcut is locked — complete lessons 1–4 first.'
+        : 'Finish the training content to unlock this shortcut.',
     }
   }
 

@@ -235,7 +235,9 @@ export type Database = {
           created_at: string
           firm_id: string
           id: string
+          invite_email_failed: boolean
           invited_at: string
+          occupies_seat: boolean
           role: string
           scorm_lesson_location: string | null
           scorm_suspend_data: string | null
@@ -247,7 +249,9 @@ export type Database = {
           created_at?: string
           firm_id: string
           id?: string
+          invite_email_failed?: boolean
           invited_at?: string
+          occupies_seat?: boolean
           role?: string
           scorm_lesson_location?: string | null
           scorm_suspend_data?: string | null
@@ -259,7 +263,9 @@ export type Database = {
           created_at?: string
           firm_id?: string
           id?: string
+          invite_email_failed?: boolean
           invited_at?: string
+          occupies_seat?: boolean
           role?: string
           scorm_lesson_location?: string | null
           scorm_suspend_data?: string | null

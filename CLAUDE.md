@@ -141,8 +141,23 @@ The interactive learning content is built in **Articulate Rise 360** by Rob + Ka
 
 ### 4. Stripe — per-seat volume pricing, webhooks, portal
 
-- ONE Product: `prod_UgzKT3NrGNAvDA` — "AI Staff Compliance Training — Annual Certification" — metadata: `pricing_model=per_seat_volume`, `tax_code=txcd_20060058`
-- ONE Price: `price_1ThbLNCzT2268ei9nkadS8kD` — lookup_key `per_seat_annual` — recurring yearly, `billing_scheme=tiered`, `tiers_mode=volume`, tiers: up_to 9 → $35/unit, up_to 24 → $32/unit, inf → $28/unit; `tax_behavior=exclusive`
+> **Corrected 2026-08-03.** The two lines below previously named `prod_UgzKT3NrGNAvDA` and
+> `price_1ThbLNCzT2268ei9nkadS8kD`. Those objects belong to a **retired Stripe account** and are not
+> what the code uses. The values below were read live from the Stripe API on 2026-08-03 against
+> sandbox `acct_1ThDpr6ZCSojEKRr`, which has exactly **one** active product and **one** active price.
+
+- ONE Product: `prod_UiovBHrxJSDVpf` (verified) named **"AI Staff Compliance Training — Annual Certification"**. `tax_code`: **not set**. `metadata`: **empty**.
+- ONE Price: `price_1TjNHc6ZCSojEKRrKs79ToJ0` (verified; hardcoded at `app/api/checkout/route.ts:17`). `lookup_key`: **not set**. Recurring yearly, `billing_scheme=tiered`, `tiers_mode=volume`, tiers confirmed up_to 9 → $35/unit, up_to 24 → $32/unit, inf → $28/unit. `tax_behavior`: **`unspecified`**. `livemode: false`.
+
+> 🔴 **Three deltas from the intended config, all feeding `ix-stripeaudit`:**
+> 1. **`tax_behavior=unspecified`** while `app/api/checkout/route.ts:68` sets `automatic_tax: { enabled: true }`. This doc previously claimed `exclusive`. Stripe expects an explicit `inclusive`/`exclusive` for automatic tax, so this must be resolved on the live-mode object.
+> 2. **No `tax_code` on the product** (this doc claimed `txcd_20060058`) and **no product metadata** (claimed `pricing_model=per_seat_volume`). Automatic tax will fall back to the account default tax category.
+> 3. **No `lookup_key`** (claimed `per_seat_annual`), so the hardcoded ID is the only handle on the price. Setting a lookup key on the live object would remove the hardcoded-ID swap from the launch checklist.
+>
+> ⚠️ **Also customer-visible:** the product name still reads "AI Staff Compliance Training", the
+> retired course name. `grep` shows zero occurrences in *source*, but the Stripe product name is not
+> source: it renders on the hosted Checkout page and on every invoice and receipt. Renaming the
+> Stripe object is a dashboard action, not a code change.
 - **Per-seat volume pricing, flat on renewal — locked 2026-06-12 (Rob).** ONE product, ONE price. Stripe Checkout `quantity` = number of seats purchased; `adjustable_quantity` enabled so the buyer picks seat count in Checkout; Stripe auto-computes the band rate automatically via `tiers_mode=volume`. Seat enforcement: seats owned = subscription `quantity` (no `seat_cap` metadata). Renewal reuses the same single Price ID at the same band rate — no separate renewal price.
 - Old test-mode objects archived (active=false, lookup keys released): products `prod_UgyZjCbV9uJdzX` / `prod_UgyZ7rqNgXZYao` / `prod_UgyZ30zgvigsd6`; prices `price_1ThachCzT2268ei9HlR1YivD` / `price_1ThaciCzT2268ei9tooaKk8j` / `price_1ThaciCzT2268ei9MRI94R1i`. Live-mode object creation deferred pending Stripe Tax.
 - Use **Stripe Checkout (hosted)**, mode `subscription`. Don't build a card form.
@@ -211,7 +226,7 @@ The quiz is a **custom React component (~150–200 lines)** rendered on the trai
 | `fetch()` default caching in Next.js 15 | Changed behavior from Next.js 14 — was cached, now is not. Easy to assume old behavior. | Explicit `cache: 'force-cache'` or `next: { revalidate: N }` per request |
 | `jsonwebtoken` for Cloudflare Stream signed URLs | Heavier, Node-only assumptions, unnecessary — may load under nodejs_compat but not needed | `jose` (web-standard, works in plain CF Workers and the Next.js Worker alike) |
 | PDF generation requiring a headless browser (Puppeteer/Chrome) on edge | No headless Chrome on CF Workers edge | `pdf-lib` (pure JS) in a CF Worker — no native deps, runs without a browser |
-| Multiple fixed-price Stripe Prices with `seat_cap` metadata (old 3-tier pattern) | Old pattern — three distinct fixed-price Products/Prices with `seat_cap` metadata. Replaced by per-seat volume pricing: a single volume-tiered Price where `quantity` = seats and Stripe computes the band rate automatically. | ONE Product `prod_UgzKT3NrGNAvDA` + ONE volume-tiered Price `price_1ThbLNCzT2268ei9nkadS8kD` (lookup_key `per_seat_annual`, `tiers_mode=volume`); Checkout `quantity` = seats; seat enforcement = subscription `quantity` |
+| Multiple fixed-price Stripe Prices with `seat_cap` metadata (old 3-tier pattern) | Old pattern — three distinct fixed-price Products/Prices with `seat_cap` metadata. Replaced by per-seat volume pricing: a single volume-tiered Price where `quantity` = seats and Stripe computes the band rate automatically. | ONE Product `prod_UiovBHrxJSDVpf` + ONE volume-tiered Price `price_1TjNHc6ZCSojEKRrKs79ToJ0` (`tiers_mode=volume`; **no lookup_key is set** on the real object, contrary to earlier notes); Checkout `quantity` = seats; seat enforcement = subscription `quantity`. IDs verified against the Stripe API 2026-08-03. |
 | Storing `STRIPE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` in client code | Total compromise — these keys can do anything on your account | Worker environment variables/secrets (encrypted at rest); set via `wrangler secret put` or the Worker's CF dashboard Settings; never in source code |
 | Free-tier Supabase in production | Pauses after 7 days inactivity, 500 MB RAM, no point-in-time recovery | Pro tier ($25/mo) before launch |
 | Old Supabase API keys for new projects | Will be retired end of 2026 | New `sb_publishable_*` + `sb_secret_*` key format |

@@ -149,10 +149,37 @@ export function PricingSlider() {
         </button>
         {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
 
-        <p className="mt-4 text-xs leading-relaxed text-white/40">
-          Secure checkout via Stripe — you can fine-tune the seat count there. Refunds
-          available within 14 days of purchase and only if no certificate has yet been
-          issued. Once any certificate is issued, the purchase is non-refundable.
+        {/* Auto-renewal disclosure — REQUIRED BEFORE PAYMENT, do not move below
+            the fold or fold into the refund sentence.
+
+            Checkout runs in mode: "subscription", so every firm auto-renews
+            annually until it cancels. Nothing disclosed that before the charge:
+            the page mentioned renewal only as a price fact ("Flat on renewal"),
+            which tells a buyer what a renewal COSTS while never saying one will
+            happen. US auto-renewal statutes generally expect clear disclosure
+            before the charge, so this is a legal requirement rather than a copy
+            preference (Max: "we HAVE to be extremely clear about autorenewal").
+
+            The figures are the live slider values, not hardcoded, so the notice
+            always states the amount the buyer is actually about to authorise. */}
+        <p className="mt-4 text-xs leading-relaxed text-white/60">
+          <strong className="font-semibold text-white/80">
+            This is an automatically renewing annual subscription.
+          </strong>{" "}
+          You will be charged{" "}
+          <span className="font-mono tabular-nums">${total.toLocaleString()}</span> today
+          ({seats} {seats === 1 ? "seat" : "seats"} × ${rate} per user per year), and the
+          same amount again on the same date each year unless you cancel. Your card is
+          charged automatically. You can cancel auto-renewal at any time from Settings →
+          Billing in your dashboard; cancelling stops future charges and keeps the
+          certificates you have already earned.
+        </p>
+
+        <p className="mt-3 text-xs leading-relaxed text-white/40">
+          Secure checkout via Stripe — you can fine-tune the seat count there, which will
+          change the amount above. Refunds available within 14 days of purchase and only
+          if no certificate has yet been issued. Once any certificate is issued, the
+          purchase is non-refundable.
         </p>
       </div>
     </div>

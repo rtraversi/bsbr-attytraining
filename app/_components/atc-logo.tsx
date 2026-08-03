@@ -1,6 +1,11 @@
-// Athena brand lockup: the real "atc" monogram vector
-// (landing page design resources/atc-athena-logo.svg) + the "athena." wordmark in
-// Stack Sans Headline (thinnest weight).
+// IURIX brand lockup: the monogram vector + an "IURIX" wordmark set in Stack
+// Sans Headline (thinnest weight).
+//
+// The wordmark is TEXT, not an asset — there is still no real Iurix wordmark
+// file. Same interim stand-in already used in emails/_components/email-shell.tsx
+// and the certificate PDF header; all three want a second pass once Rob's asset
+// lands. The monogram is deliberately left as-is (Max, 2026-07-29) — the Iurix
+// mark isn't final, so swapping it now would be churn.
 //
 // The source SVG's paths default to a black fill/stroke (invisible on the black
 // hero), so the mark is inlined here with fill/stroke driven by currentColor —
@@ -13,7 +18,7 @@ function AtcMark({ className }: { className?: string }) {
       className={className}
       fill="currentColor"
       role="img"
-      aria-label="Athena logo mark"
+      aria-label="IURIX logo mark"
       style={{ fillRule: "evenodd", clipRule: "evenodd" }}
     >
       <g transform="matrix(3.31803,0,0,3.31803,-273.449,-73.9698)">
@@ -57,8 +62,8 @@ export function AtcLogo({
       style={{ fontSize: "1.5rem", ...style }}
     >
       <AtcMark className="h-[1.35em] w-[1.35em]" />
-      <span className="font-headline font-extralight lowercase tracking-tight leading-none">
-        athena.
+      <span className="font-headline font-extralight uppercase tracking-tight leading-none">
+        IURIX
       </span>
     </div>
   );
