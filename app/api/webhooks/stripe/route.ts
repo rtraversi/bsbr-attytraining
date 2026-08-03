@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/resend'
+import { SEAT_OCCUPYING_STATUSES } from '@/lib/seats'
 
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
@@ -386,15 +387,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
       ])
       return
 
+    // Case 2 — the win-back. Cancellation only ever flipped firms.status, so
+    // this firm's staff, certificates, seat records and audit log are all still
+    // in the database. Reattaching them is the feature, not damage control.
     case 'returning':
-      await recordProvisioningFailure(supabase, session, email, 'unresolved')
-      await alertOperator('⚠️ Stripe — returning client needs manual reactivation', [
-        `<strong>Customer email:</strong> ${email}`,
-        `<strong>Dormant firm:</strong> ${buyer.firmId} (${buyer.firmStatus})`,
-        `<strong>New subscription:</strong> ${session.subscription as string}`,
-        `<strong>Checkout session:</strong> ${session.id}`,
-        `<strong>Action:</strong> reactivate the firm and point it at the new customer and subscription.`,
-      ])
+      await reactivateFirm(supabase, buyer, session, sub, seats, periodEnd, email)
       return
 
     case 'email_in_use':
@@ -470,6 +467,129 @@ async function provisionFirm(
     // true only if they opt in.
     occupies_seat: false,
   })
+}
+
+/**
+ * Case 2 — reattach a returning client to the firm they already had.
+ *
+ * handleSubscriptionDeleted only ever ran update({ status: 'cancelled' }), so
+ * nothing was destroyed when they left: their staff, certificates, seat records
+ * and training_events are all keyed off firm_id and are still there. This
+ * function points the existing firm at the new subscription rather than
+ * building a second one beside it, which is why no data migration of any kind
+ * is involved.
+ */
+async function reactivateFirm(
+  supabase: AdminClient,
+  buyer: Extract<BuyerIdentity, { kind: 'returning' }>,
+  session: Stripe.Checkout.Session,
+  sub: Stripe.Subscription,
+  seats: number,
+  periodEnd: string | null,
+  email: string
+) {
+  const { firmId, userId, firmStatus } = buyer
+
+  // stripe_customer_id is the load-bearing field here, not just one of six.
+  // app/api/onboarding/status/route.ts:48 finds the firm by it — leave it on the
+  // old customer and the returning client polls, times out, and lands on the
+  // exact "setup is taking a moment, please refresh" dead end this whole change
+  // exists to remove.
+  const { error: firmError } = await supabase
+    .from('firms')
+    .update({
+      stripe_customer_id: session.customer as string,
+      stripe_subscription_id: sub.id,
+      status: 'active',
+      tier: deriveTier(seats),
+      max_seats: seats,
+      current_period_end: periodEnd,
+      // name is deliberately untouched — it is theirs, and keeping it is the
+      // point of reattaching rather than provisioning fresh.
+    })
+    .eq('id', firmId)
+
+  if (firmError) throw firmError
+
+  // Re-stamp app_metadata: every gate reads firm_id from it, and it may be empty
+  // (member/delete/route.ts:64 wipes it to {}) or pointing somewhere else
+  // entirely if they were staff elsewhere in the meantime.
+  const { error: metaError } = await supabase.auth.admin.updateUserById(userId, {
+    app_metadata: { firm_id: firmId, role: 'admin' },
+  })
+
+  if (metaError) throw metaError
+
+  // The owner needs a live firm_members row. There is a unique (firm_id,
+  // user_id) constraint (0001), so a blind insert would fail for anyone whose
+  // row still exists in a soft-deleted state — restore in place instead.
+  const { data: ownerMember, error: memberReadError } = await supabase
+    .from('firm_members')
+    .select('id, status, occupies_seat')
+    .eq('firm_id', firmId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (memberReadError) throw memberReadError
+
+  if (!ownerMember) {
+    await supabase.from('firm_members').insert({
+      firm_id: firmId,
+      user_id: userId,
+      role: 'admin',
+      status: 'invited',
+      // Same reasoning as first-time provisioning: a returning admin has not
+      // chosen to train yet, so they take no seat until they opt in.
+      occupies_seat: false,
+    })
+  } else if (!(SEAT_OCCUPYING_STATUSES as readonly string[]).includes(ownerMember.status)) {
+    // Deleted or reassigned — bring the row back to life. occupies_seat stays
+    // false so reactivation never silently consumes a seat.
+    await supabase
+      .from('firm_members')
+      .update({ role: 'admin', status: 'invited', occupies_seat: false })
+      .eq('id', ownerMember.id)
+  }
+  // An already-live owner row is left exactly as it is. If they had opted into
+  // training before cancelling, they keep that seat — reactivation is not the
+  // moment to silently revoke it.
+
+  // max_seats only. used_seats belongs to the sync_used_seats trigger (0015);
+  // writing it by hand is the bug that migration removed.
+  const { error: seatsError } = await supabase
+    .from('seats')
+    .update({ max_seats: seats })
+    .eq('firm_id', firmId)
+
+  if (seatsError) throw seatsError
+
+  // A returning client can buy fewer seats than they left with. Remove nobody:
+  // lib/seats already blocks new enrollments for an oversubscribed firm, and
+  // silently deleting someone's staff to make the arithmetic work would destroy
+  // certificates that are compliance records. Just make sure a human knows.
+  const { count: occupiedCount } = await supabase
+    .from('firm_members')
+    .select('id', { count: 'exact', head: true })
+    .eq('firm_id', firmId)
+    .eq('occupies_seat', true)
+    .in('status', SEAT_OCCUPYING_STATUSES as unknown as string[])
+
+  const oversubscribed = (occupiedCount ?? 0) > seats
+
+  await alertOperator('✅ Stripe — returning client reactivated', [
+    `<strong>Customer email:</strong> ${email}`,
+    `<strong>Firm:</strong> ${firmId} (was ${firmStatus}, now active)`,
+    `<strong>New customer:</strong> ${session.customer as string}`,
+    `<strong>New subscription:</strong> ${sub.id}`,
+    `<strong>Seats purchased:</strong> ${seats}`,
+    ...(oversubscribed
+      ? [
+          `<strong>⚠️ Oversubscribed:</strong> ${occupiedCount} existing members already hold seats, ` +
+            `more than the ${seats} just purchased. Nobody was removed and no certificates were touched. ` +
+            `New enrollments are blocked until the counts line up — either they add seats or release members.`,
+        ]
+      : []),
+  ])
 }
 
 // ─── customer.subscription.updated — seat/status change ──────────────────────
