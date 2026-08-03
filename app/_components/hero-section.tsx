@@ -1,117 +1,109 @@
-"use client";
+import Link from "next/link";
+import { AtcMark } from "./atc-logo";
 
-import { useEffect, useRef, useState } from "react";
-import { SpiroPattern } from "./spiro-pattern";
+// Hero. Headline is Katy's, verbatim. The emphasis on "Held To" carries the
+// argument, so it is set in the teal italic rather than left flat.
+//
+// The right column is the "specimen" — the certificate treated as a printed
+// instrument. It exists to answer the brief's second job (prove this is a
+// finished, operating product) before the visitor reads a word of body copy.
 
-// Brief §2: last word cycles easy → simple → for you with a delete-then-retype
-// typewriter — then STOPS on "for you" (no looping). Caret keeps blinking after.
-const CYCLE_WORDS = ["easy", "simple", "for you"];
-
-const TYPE_MS = 95; // per character while typing
-const DELETE_MS = 55; // per character while deleting
-const HOLD_MS = 1600; // pause on a complete word before deleting
-
-type Phase = "typing" | "holding" | "deleting" | "done";
-
-function useTypewriter(words: string[], enabled: boolean) {
-  const [text, setText] = useState(enabled ? "" : words[words.length - 1]);
-  const wordIndex = useRef(0);
-  const phase = useRef<Phase>("typing");
-
-  // Reduced-motion (or animation disabled): show the final word statically.
-  useEffect(() => {
-    if (!enabled) setText(words[words.length - 1]);
-  }, [enabled, words]);
-
-  useEffect(() => {
-    if (!enabled) return;
-    let timer: ReturnType<typeof setTimeout>;
-
-    // All animation state lives in these locals, not in setText updaters:
-    // React Strict Mode double-invokes updater functions in dev, so side
-    // effects inside them (advancing wordIndex, scheduling timers) fire
-    // twice and run wordIndex past the end of the array.
-    let value = "";
-    wordIndex.current = 0;
-    phase.current = "typing";
-
-    function tick() {
-      const current = words[wordIndex.current];
-      const isLastWord = wordIndex.current === words.length - 1;
-
-      if (phase.current === "typing") {
-        value = current.slice(0, value.length + 1);
-        setText(value);
-        if (value === current) {
-          // Freeze permanently once the final word is fully typed.
-          if (isLastWord) {
-            phase.current = "done";
-          } else {
-            phase.current = "holding";
-            timer = setTimeout(tick, HOLD_MS);
-          }
-        } else {
-          timer = setTimeout(tick, TYPE_MS);
-        }
-      } else if (phase.current === "deleting") {
-        value = value.slice(0, -1);
-        setText(value);
-        if (value.length === 0) {
-          phase.current = "typing";
-          wordIndex.current = wordIndex.current + 1;
-          timer = setTimeout(tick, TYPE_MS);
-        } else {
-          timer = setTimeout(tick, DELETE_MS);
-        }
-      } else if (phase.current === "holding") {
-        phase.current = "deleting";
-        timer = setTimeout(tick, DELETE_MS);
-      }
-      // phase "done": no further timers — text stays on "for you".
-    }
-
-    timer = setTimeout(tick, TYPE_MS);
-    return () => clearTimeout(timer);
-  }, [words, enabled]);
-
-  return text;
-}
+const DOCKET = [
+  { label: "Format", value: "Interactive course" },
+  { label: "Assessment", value: "Scored, pass-gated" },
+  { label: "Deliverable", value: "Dated PDF certificate" },
+  { label: "Validity", value: "12 months" },
+];
 
 export function HeroSection() {
-  const [animate, setAnimate] = useState(true);
-
-  useEffect(() => {
-    setAnimate(!window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  }, []);
-
-  const word = useTypewriter(CYCLE_WORDS, animate);
-
   return (
-    <section className="relative min-h-screen overflow-hidden bg-black text-white">
-      {/* Closed Spiro rosette — contained, sits on the left; headline is the focus */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-full md:left-[10%] md:w-[42%]">
-        <SpiroPattern className="h-full w-full" scale={0.5} speed={0.7} />
-      </div>
-
-      {/* Headline — right edge lands around the "Get started" margin (max-w-1600) */}
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1600px] items-center px-6 md:px-10">
-        <div className="ml-auto mt-[7vh] max-w-[52rem] text-right">
-          <h1 className="font-headline font-medium leading-[0.95] tracking-tight text-white">
-            <span className="block text-[clamp(2.75rem,6.75vw,7.5rem)]">training</span>
-            <span className="block whitespace-nowrap text-[clamp(2.75rem,6.75vw,7.5rem)]">
-              made{" "}
-              <span className="font-serif-italic font-normal">
-                {word}
-                <span className="athena-caret" aria-hidden />
+    <section className="relative overflow-hidden border-b border-mint-line">
+      <div className="mx-auto max-w-[1140px] px-6 pt-20 md:px-8 md:pt-24">
+        <div className="grid items-start gap-16 lg:grid-cols-[1.25fr_0.75fr] lg:gap-[72px]">
+          <div>
+            <div className="mb-7 flex items-center gap-3">
+              <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-gold-deep">
+                ABA Model Rule 5.3 · Formal Opinion 512
               </span>
-            </span>
-          </h1>
-        </div>
-      </div>
+              <span
+                className="h-px flex-1 bg-gradient-to-r from-gold-pale to-transparent"
+                aria-hidden
+              />
+            </div>
 
-      {/* Bottom gridline strip (v1 treatment — Max will re-spec gridlines later) */}
-      <div className="absolute inset-x-0 bottom-0 h-24 border-t border-white/10">
-        <div className="athena-columns h-full w-full" />
+            <h1 className="font-gyrotrope text-[clamp(42px,5.6vw,74px)] font-normal leading-[1.03] tracking-[-0.02em] text-ink">
+              The Standard Other Firms
+              <br className="hidden sm:block" /> Will Be{" "}
+              <em className="font-serif-italic not-italic text-teal-mid">Held To</em>
+            </h1>
+
+            <p className="mt-7 max-w-[560px] text-[20px] leading-[1.55] text-ink-soft">
+              Our times demand that attorneys use artificial intelligence. Clients and
+              state bars expect ethical practices. Iurix Accreditation is how a firm
+              shows it meets both.
+            </p>
+
+            <div className="mt-10 flex flex-wrap items-center gap-3.5">
+              <Link
+                href="/pricing"
+                className="rounded-[1px] bg-teal-deep px-6 py-3 text-[15px] font-medium text-marble transition-colors hover:bg-ink"
+              >
+                Certify your staff
+              </Link>
+              <Link
+                href="#exposure"
+                className="rounded-[1px] border border-ink px-6 py-3 text-[15px] font-medium text-ink transition-colors hover:bg-ink hover:text-marble"
+              >
+                Why this matters
+              </Link>
+            </div>
+
+            <p className="mt-5 text-[14px] text-ink-mute">
+              From $28 per staff member, per year. Certificates issue the moment they
+              pass.
+            </p>
+          </div>
+
+          {/* Specimen — the mark held in a ruled frame, like a plate in a document */}
+          <div className="relative border border-mint-line bg-gradient-to-br from-white to-marble-deep px-[30px] py-[34px]">
+            <div
+              className="pointer-events-none absolute inset-[7px] border border-mint"
+              aria-hidden
+            />
+            <AtcMark className="mx-auto mb-6 block h-auto w-full max-w-[150px] text-teal-deep" />
+            <div className="border-t border-mint-line pt-[18px]">
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-[9px] text-[13.5px]">
+                <dt className="tracking-[0.04em] text-ink-mute">Issued to</dt>
+                <dd className="text-right font-medium text-ink">Each staff member</dd>
+                <dt className="tracking-[0.04em] text-ink-mute">Accreditation</dt>
+                <dd className="text-right font-medium text-ink">Held by the firm</dd>
+                <dt className="tracking-[0.04em] text-ink-mute">Standard</dt>
+                <dd className="text-right font-medium text-ink">ABA Rule 5.3</dd>
+                <dt className="tracking-[0.04em] text-ink-mute">Term</dt>
+                <dd className="text-right font-medium text-ink">12 months</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        {/* Docket strip */}
+        <div className="mt-[72px] grid grid-cols-2 border-t border-mint-line md:grid-cols-4">
+          {DOCKET.map((d, i) => (
+            <div
+              key={d.label}
+              className={`px-[26px] pb-[30px] pt-6 ${
+                i < DOCKET.length - 1 ? "md:border-r md:border-mint-line" : ""
+              } ${i % 2 === 0 ? "border-r border-mint-line md:border-r" : ""}`}
+            >
+              <p className="mb-[7px] text-[11px] font-medium uppercase tracking-[0.2em] text-ink-mute">
+                {d.label}
+              </p>
+              <strong className="font-gyrotrope block text-[20px] font-normal leading-[1.3] text-ink">
+                {d.value}
+              </strong>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

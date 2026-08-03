@@ -50,19 +50,19 @@ export function PricingSlider() {
 
   return (
     <div className="mx-auto w-full max-w-3xl">
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 backdrop-blur-sm md:p-12">
+      <div className="border border-mint-line bg-white p-8 md:p-12">
         <label
           htmlFor="seats"
-          className="font-headline block text-sm uppercase tracking-[0.2em] text-white/50"
+          className="block text-[11px] font-medium uppercase tracking-[0.2em] text-ink-mute"
         >
           How many staff members?
         </label>
 
         <div className="mt-4 flex items-baseline gap-3">
-          <span className="font-headline text-6xl font-medium tabular-nums text-white md:text-7xl">
+          <span className="font-gyrotrope text-6xl font-normal tabular-nums text-ink md:text-7xl">
             {seats}
           </span>
-          <span className="text-white/50">
+          <span className="text-ink-mute">
             {seats === 1 ? "seat" : "seats"}
           </span>
         </div>
@@ -78,14 +78,14 @@ export function PricingSlider() {
           className="mt-8 h-1.5 w-full cursor-pointer appearance-none rounded-full outline-none
             [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5
             [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full
-            [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-lg
+            [&::-webkit-slider-thumb]:bg-teal-deep [&::-webkit-slider-thumb]:shadow-md
             [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full
-            [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white"
+            [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-teal-deep"
           style={{
-            background: `linear-gradient(to right, #ffffff ${fillPct}%, rgba(255,255,255,0.12) ${fillPct}%)`,
+            background: `linear-gradient(to right, #2b3334 ${fillPct}%, #d0e5e0 ${fillPct}%)`,
           }}
         />
-        <div className="mt-2 flex justify-between text-xs text-white/30">
+        <div className="mt-2 flex justify-between text-xs text-ink-mute">
           <span>1</span>
           <span>{SLIDER_MAX}+</span>
         </div>
@@ -95,47 +95,47 @@ export function PricingSlider() {
           {BANDS.map((band, i) => (
             <div
               key={band.label}
-              className={`rounded-lg border p-4 transition-colors ${
+              className={`border p-4 transition-colors ${
                 i === activeBand
-                  ? "border-white/30 bg-white/[0.06]"
-                  : "border-white/10 bg-transparent"
+                  ? "border-gold bg-marble-deep"
+                  : "border-mint-line bg-transparent"
               }`}
             >
               <p
-                className={`font-headline text-sm ${
-                  i === activeBand ? "text-white" : "text-white/40"
+                className={`text-sm ${
+                  i === activeBand ? "text-ink" : "text-ink-mute"
                 }`}
               >
                 {band.label}
               </p>
               <p
                 className={`mt-1 font-mono text-lg ${
-                  i === activeBand ? "text-white" : "text-white/40"
+                  i === activeBand ? "text-ink" : "text-ink-mute"
                 }`}
               >
                 ${band.rate}
-                <span className="text-xs text-white/40">/user/yr</span>
+                <span className="text-xs text-ink-mute">/user/yr</span>
               </p>
             </div>
           ))}
         </div>
 
         {/* Total — monospace odometer */}
-        <div className="mt-10 flex flex-col gap-2 border-t border-white/10 pt-8 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mt-10 flex flex-col gap-2 border-t border-mint-line pt-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm text-white/50">
-              <span className="font-mono tabular-nums text-white/80">{seats}</span> ×{" "}
-              <span className="font-mono tabular-nums text-white/80">${rate}</span> / user / year
+            <p className="text-sm text-ink-mute">
+              <span className="font-mono tabular-nums text-ink-soft">{seats}</span> ×{" "}
+              <span className="font-mono tabular-nums text-ink-soft">${rate}</span> / user / year
             </p>
-            <p className="mt-1 text-xs text-white/40">
+            <p className="mt-1 text-xs text-ink-mute">
               Billed annually. Flat on renewal.
             </p>
           </div>
           <div className="text-right">
-            <span className="font-mono text-5xl font-medium tabular-nums text-white md:text-6xl">
+            <span className="font-mono text-5xl font-medium tabular-nums text-ink md:text-6xl">
               ${total.toLocaleString()}
             </span>
-            <span className="ml-1 text-sm text-white/50">/yr</span>
+            <span className="ml-1 text-sm text-ink-mute">/yr</span>
           </div>
         </div>
 
@@ -143,11 +143,11 @@ export function PricingSlider() {
         <button
           onClick={startCheckout}
           disabled={loading}
-          className="athena-pill-solid font-headline mt-8 w-full px-8 py-4 text-base font-medium disabled:opacity-60"
+          className="mt-8 w-full rounded-[1px] bg-teal-deep px-8 py-4 text-base font-medium text-marble transition-colors hover:bg-ink disabled:opacity-60"
         >
           {loading ? "Redirecting to checkout…" : "Get started"}
         </button>
-        {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+        {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
 
         {/* Auto-renewal disclosure — REQUIRED BEFORE PAYMENT, do not move below
             the fold or fold into the refund sentence.
@@ -162,8 +162,8 @@ export function PricingSlider() {
 
             The figures are the live slider values, not hardcoded, so the notice
             always states the amount the buyer is actually about to authorise. */}
-        <p className="mt-4 text-xs leading-relaxed text-white/60">
-          <strong className="font-semibold text-white/80">
+        <p className="mt-4 text-xs leading-relaxed text-ink-soft">
+          <strong className="font-semibold text-ink">
             This is an automatically renewing annual subscription.
           </strong>{" "}
           You will be charged{" "}
@@ -175,7 +175,7 @@ export function PricingSlider() {
           certificates you have already earned.
         </p>
 
-        <p className="mt-3 text-xs leading-relaxed text-white/40">
+        <p className="mt-3 text-xs leading-relaxed text-ink-mute">
           Secure checkout via Stripe — you can fine-tune the seat count there, which will
           change the amount above. Refunds available within 14 days of purchase and only
           if no certificate has yet been issued. Once any certificate is issued, the

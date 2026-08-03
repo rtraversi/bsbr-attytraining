@@ -46,6 +46,38 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* ── Iurix brand palette ──────────────────────────────────────────
+     Every value is sampled from the fills in public/brand/iurix-logo.svg
+     (see .planning/design-handoff/02-brand.md). The marketing surface is
+     built from these and nothing else.
+
+     Rob, 2026-08-03: teal + steel carry the design; rose gold is held back
+     for seal/issued moments (the specimen plate, the "Most firms" marker)
+     rather than acting as the general accent. */
+
+  /* neutrals — marble ground, titanium/steel structure */
+  --color-marble: #f7f7f6;
+  --color-marble-deep: #eafbf5;
+  --color-steel: #c2c5c3;
+  --color-steel-mute: #a1a4a1;
+
+  /* teals — the primary family */
+  --color-mint: #d0e5e0;
+  --color-mint-line: #a6cecd;
+  --color-teal-light: #8cb2b1;
+  --color-teal-mid: #5a6e6e;
+  --color-teal-deep: #2b3334;
+
+  /* ink */
+  --color-ink: #1c2223;
+  --color-ink-soft: #4c5453;
+  --color-ink-mute: #8f9996;
+
+  /* rose gold — seal accent only, never a general highlight */
+  --color-gold-pale: #d9b5a6;
+  --color-gold: #b39082;
+  --color-gold-deep: #88685c;
 }
 
 :root {
@@ -162,88 +194,12 @@
   }
 }
 
-/* ─── Athena landing (dark rebrand) ──────────────────────────────────
-   Scoped to the marketing surfaces only — does not touch the dashboard's
-   light zinc palette (rebrand migrates the app later). */
-
-/* readme.com-style dot grid backdrop */
-.athena-dotgrid {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px);
-  background-size: 26px 26px;
-  background-position: -1px -1px;
-}
-
-/* Column gridlines — extends Max's hero bottom-divider idea into full vertical
-   rules. Thin, low-contrast, sits behind content. */
-.athena-columns {
-  background-image: linear-gradient(
-    to right,
-    transparent 0,
-    transparent calc(20% - 1px),
-    rgba(255, 255, 255, 0.08) calc(20% - 1px),
-    rgba(255, 255, 255, 0.08) 20%,
-    transparent 20%,
-    transparent calc(40% - 1px),
-    rgba(255, 255, 255, 0.08) calc(40% - 1px),
-    rgba(255, 255, 255, 0.08) 40%,
-    transparent 40%,
-    transparent calc(60% - 1px),
-    rgba(255, 255, 255, 0.08) calc(60% - 1px),
-    rgba(255, 255, 255, 0.08) 60%,
-    transparent 60%,
-    transparent calc(80% - 1px),
-    rgba(255, 255, 255, 0.08) calc(80% - 1px),
-    rgba(255, 255, 255, 0.08) 80%,
-    transparent 80%
-  );
-}
-
-/* Nav / CTA pill container — matches first-draft reference: fully rounded,
-   near-black fill lifted a hair off pure black, hairline white border. */
-.athena-pill {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 9999px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-/* Solid white "Get started" pill — subtle press feedback */
-.athena-pill-solid {
-  background: #ffffff;
-  color: #000000;
-  border-radius: 9999px;
-  transition: transform 0.12s ease, background-color 0.12s ease;
-}
-.athena-pill-solid:hover {
-  background: #e9e5df;
-}
-.athena-pill-solid:active {
-  transform: translateY(1px);
-}
-
-/* Hide the native cursor while the custom cursor is active (added to <html> by
-   CustomCursor only on fine-pointer, motion-OK devices — never on touch). */
-.athena-custom-cursor,
-.athena-custom-cursor * {
-  cursor: none !important;
-}
-
-/* Blinking caret for the hero typewriter word */
-@keyframes athena-caret {
-  0%, 45% { opacity: 1; }
-  50%, 95% { opacity: 0; }
-  100% { opacity: 1; }
-}
-.athena-caret {
-  display: inline-block;
-  width: 0.055em;
-  height: 0.82em;
-  margin-left: 0.06em;
-  vertical-align: -0.04em;
-  background: currentColor;
-  animation: athena-caret 1s step-end infinite;
-}
+/* The retired dark-marketing CSS (.athena-dotgrid, .athena-columns,
+   .athena-pill, .athena-pill-solid, .athena-custom-cursor, .athena-caret) was
+   removed with the Iurix marketing rebuild on 2026-08-03. Every rule was dead:
+   its only consumers were custom-cursor.tsx, current-state-section.tsx,
+   features-section.tsx and spiro-pattern.tsx, all deleted in the same change.
+   Recover from git history if a dark treatment is ever wanted again. */
 
 /* Scrabble tile entrance animation */
 @keyframes tile-in {

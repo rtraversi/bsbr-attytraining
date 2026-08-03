@@ -11,7 +11,10 @@
 // hero), so the mark is inlined here with fill/stroke driven by currentColor —
 // exact geometry, but recolored by the parent text color.
 
-function AtcMark({ className }: { className?: string }) {
+// Exported so the marketing lockup (iurix-lockup.tsx) reuses this exact geometry
+// instead of duplicating the path data. AtcLogo below is unchanged — /login and
+// the other auth screens render it exactly as before.
+export function AtcMark({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 1080 1080"
