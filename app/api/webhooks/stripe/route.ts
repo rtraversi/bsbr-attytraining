@@ -269,9 +269,30 @@ async function resolveBuyer(supabase: AdminClient, email: string): Promise<Buyer
 
 // ─── checkout.session.completed — provision new firm ─────────────────────────
 
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId: string) {
-  const supabase = createAdminClient()
+/**
+ * Everything that must happen before the first write: read the session, price
+ * the subscription, and establish who the buyer is.
+ *
+ * Extracted so the entire pre-write region sits behind a single try/catch in
+ * the caller. Every throw in here — a session with no email, a Stripe retrieve
+ * fault, a non-collision createUser error, or any of resolveBuyer's four lookup
+ * failures — happens with nothing written, so all of them can safely release
+ * the idempotency row rather than only the one that used to.
+ */
+type CheckoutPlan = {
+  email: string
+  sub: Stripe.Subscription
+  seats: number
+  periodEnd: string | null
+} & (
+  | { outcome: 'provision'; userId: string }
+  | { outcome: 'resolved'; buyer: BuyerIdentity; collisionMessage: string }
+)
 
+async function prepareCheckout(
+  supabase: AdminClient,
+  session: Stripe.Checkout.Session
+): Promise<CheckoutPlan> {
   const email = session.customer_details?.email
   if (!email) throw new Error('No customer email on session')
 
@@ -288,89 +309,115 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
     email_confirm: true,
   })
 
-  if (createUserError) {
-    // A createUser failure is not evidence of a re-purchase. Anything other than
-    // "this address is taken" is a transient fault, and swallowing it is how a
-    // network blip during provisioning silently dropped a paying customer.
-    if (!isEmailTakenError(createUserError)) {
-      // Nothing has been written yet — the first DB write is the firms insert
-      // below — so releasing the idempotency row is safe here and ONLY here.
-      //
-      // Without this the throw is theatre: the processed_stripe_events row is
-      // inserted before dispatch (route.ts:57), so Stripe's retry would hit the
-      // duplicate guard and return 200 without ever re-running this handler.
-      // The insert itself stays exactly where it is; this is a compensating
-      // delete on the one path where we know no provisioning occurred.
-      //
-      // Keyed by the Stripe EVENT id (evt_…), which is what route.ts:59 wrote.
-      // session.id is the checkout session (cs_…) and would match no row, which
-      // would leave the retry silently dead — the very failure this prevents.
-      await supabase.from('processed_stripe_events').delete().eq('event_id', eventId)
-      throw createUserError
-    }
-
-    const buyer = await resolveBuyer(supabase, email)
-
-    switch (buyer.kind) {
-      // Case 4 — an existing login that owns nothing and belongs to nothing
-      // active. They are a legitimate new customer who simply already had an
-      // account, so provision normally against the user they already have.
-      case 'existing_user_no_firm':
-        await provisionFirm(supabase, buyer.userId, session, sub, seats, periodEnd)
-        return
-
-      // Cases 1, 2 and 3 record the outcome and summon a human. The refusal
-      // mechanics (cancelling the duplicate subscription) and the reactivation
-      // path land in the next two commits; until then the conservative outcome
-      // is correct — nothing is provisioned, nothing is destroyed, and the
-      // operator gets an accurate account of what happened.
-      case 'duplicate':
-        await recordProvisioningFailure(supabase, session, email, 'duplicate')
-        await alertOperator('⚠️ Stripe — duplicate purchase by an active firm owner', [
-          `<strong>Customer email:</strong> ${email}`,
-          `<strong>Existing firm:</strong> ${buyer.firmId} (active)`,
-          `<strong>Firm's subscription (LEAVE ALONE):</strong> ${buyer.firmSubscriptionId ?? 'none on record'}`,
-          `<strong>New duplicate subscription:</strong> ${session.subscription as string}`,
-          `<strong>Checkout session:</strong> ${session.id}`,
-          `<strong>Action:</strong> the duplicate subscription is still billing — cancel it in Stripe.`,
-        ])
-        return
-
-      case 'returning':
-        await recordProvisioningFailure(supabase, session, email, 'unresolved')
-        await alertOperator('⚠️ Stripe — returning client needs manual reactivation', [
-          `<strong>Customer email:</strong> ${email}`,
-          `<strong>Dormant firm:</strong> ${buyer.firmId} (${buyer.firmStatus})`,
-          `<strong>New subscription:</strong> ${session.subscription as string}`,
-          `<strong>Checkout session:</strong> ${session.id}`,
-          `<strong>Action:</strong> reactivate the firm and point it at the new customer and subscription.`,
-        ])
-        return
-
-      case 'email_in_use':
-        await recordProvisioningFailure(supabase, session, email, 'email_in_use')
-        await alertOperator('⚠️ Stripe — buyer is staff at another active firm', [
-          `<strong>Customer email:</strong> ${email}`,
-          `<strong>Checkout session:</strong> ${session.id}`,
-          `<strong>Subscription:</strong> ${session.subscription as string}`,
-          `<strong>Action:</strong> nothing was provisioned and nothing was cancelled. They must buy with a different address.`,
-        ])
-        return
-
-      case 'unresolved':
-        await recordProvisioningFailure(supabase, session, email, 'unresolved')
-        await alertOperator('🔴 Stripe — provisioning collision could not be resolved', [
-          `<strong>Customer email:</strong> ${email}`,
-          `<strong>Checkout session:</strong> ${session.id}`,
-          `<strong>Subscription:</strong> ${session.subscription as string}`,
-          `<strong>Error:</strong> ${createUserError.message}`,
-          `<strong>Action:</strong> auth reported this address as registered but no user row matches it. Identity store and lookup disagree.`,
-        ])
-        return
-    }
+  if (!createUserError) {
+    return { email, sub, seats, periodEnd, outcome: 'provision', userId: userData.user.id }
   }
 
-  await provisionFirm(supabase, userData.user.id, session, sub, seats, periodEnd)
+  // A createUser failure is not evidence of a re-purchase. Anything other than
+  // "this address is taken" is a transient fault, and swallowing it is how a
+  // network blip during provisioning silently dropped a paying customer.
+  if (!isEmailTakenError(createUserError)) throw createUserError
+
+  return {
+    email,
+    sub,
+    seats,
+    periodEnd,
+    outcome: 'resolved',
+    buyer: await resolveBuyer(supabase, email),
+    collisionMessage: createUserError.message,
+  }
+}
+
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId: string) {
+  const supabase = createAdminClient()
+
+  let plan: CheckoutPlan
+  try {
+    plan = await prepareCheckout(supabase, session)
+  } catch (err) {
+    // Release the idempotency row. Nothing in prepareCheckout writes, so there
+    // is nothing a retry could double-provision.
+    //
+    // Without this the throw is theatre: the processed_stripe_events row is
+    // inserted before dispatch (route.ts:57), so Stripe's retry hits the
+    // duplicate guard at route.ts:62 and returns 200 without ever re-running
+    // this handler. The insert itself stays exactly where it is; this is a
+    // compensating delete over the region where we know no write occurred.
+    //
+    // Keyed by the Stripe EVENT id (evt_…), which is what route.ts:59 wrote.
+    // session.id is the checkout session (cs_…) and would match no row, which
+    // would leave the retry silently dead — the very failure this prevents.
+    await supabase.from('processed_stripe_events').delete().eq('event_id', eventId)
+    throw err
+  }
+
+  const { email, sub, seats, periodEnd } = plan
+
+  if (plan.outcome === 'provision') {
+    await provisionFirm(supabase, plan.userId, session, sub, seats, periodEnd)
+    return
+  }
+
+  const { buyer, collisionMessage } = plan
+
+  switch (buyer.kind) {
+    // Case 4 — an existing login that owns nothing and belongs to nothing
+    // active. They are a legitimate new customer who simply already had an
+    // account, so provision normally against the user they already have.
+    case 'existing_user_no_firm':
+      await provisionFirm(supabase, buyer.userId, session, sub, seats, periodEnd)
+      return
+
+    // Cases 1, 2 and 3 record the outcome and summon a human. The refusal
+    // mechanics (cancelling the duplicate subscription) and the reactivation
+    // path land in the next two commits; until then the conservative outcome
+    // is correct — nothing is provisioned, nothing is destroyed, and the
+    // operator gets an accurate account of what happened.
+    case 'duplicate':
+      await recordProvisioningFailure(supabase, session, email, 'duplicate')
+      await alertOperator('⚠️ Stripe — duplicate purchase by an active firm owner', [
+        `<strong>Customer email:</strong> ${email}`,
+        `<strong>Existing firm:</strong> ${buyer.firmId} (active)`,
+        `<strong>Firm's subscription (LEAVE ALONE):</strong> ${buyer.firmSubscriptionId ?? 'none on record'}`,
+        `<strong>New duplicate subscription:</strong> ${session.subscription as string}`,
+        `<strong>Checkout session:</strong> ${session.id}`,
+        `<strong>Action:</strong> the duplicate subscription is still billing — cancel it in Stripe.`,
+      ])
+      return
+
+    case 'returning':
+      await recordProvisioningFailure(supabase, session, email, 'unresolved')
+      await alertOperator('⚠️ Stripe — returning client needs manual reactivation', [
+        `<strong>Customer email:</strong> ${email}`,
+        `<strong>Dormant firm:</strong> ${buyer.firmId} (${buyer.firmStatus})`,
+        `<strong>New subscription:</strong> ${session.subscription as string}`,
+        `<strong>Checkout session:</strong> ${session.id}`,
+        `<strong>Action:</strong> reactivate the firm and point it at the new customer and subscription.`,
+      ])
+      return
+
+    case 'email_in_use':
+      await recordProvisioningFailure(supabase, session, email, 'email_in_use')
+      await alertOperator('⚠️ Stripe — buyer is staff at another active firm', [
+        `<strong>Customer email:</strong> ${email}`,
+        `<strong>Checkout session:</strong> ${session.id}`,
+        `<strong>Subscription:</strong> ${session.subscription as string}`,
+        `<strong>Action:</strong> nothing was provisioned and nothing was cancelled. They must buy with a different address.`,
+      ])
+      return
+
+    case 'unresolved':
+      await recordProvisioningFailure(supabase, session, email, 'unresolved')
+      await alertOperator('🔴 Stripe — provisioning collision could not be resolved', [
+        `<strong>Customer email:</strong> ${email}`,
+        `<strong>Checkout session:</strong> ${session.id}`,
+        `<strong>Subscription:</strong> ${session.subscription as string}`,
+        `<strong>Error:</strong> ${collisionMessage}`,
+        `<strong>Action:</strong> auth reported this address as registered but no user row matches it. Identity store and lookup disagree.`,
+      ])
+      return
+  }
 }
 
 /**
