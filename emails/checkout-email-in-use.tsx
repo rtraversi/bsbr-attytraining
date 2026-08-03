@@ -27,6 +27,12 @@ import {
 interface CheckoutEmailInUseProps {
   /** The address they checked out with. Shown back so they know which one to change. */
   email: string
+  /**
+   * Whether the subscription was actually cancelled. Drives whether this email
+   * claims billing has stopped — never claim it on a failed cancel, because it
+   * has not.
+   */
+  cancelled: boolean
 }
 
 // TEMPORARY — pending Rob's business address (cutover item C4, tracked as
@@ -36,7 +42,7 @@ interface CheckoutEmailInUseProps {
 // that this buyer has no account to sign in to.
 const SUPPORT_EMAIL = 'solarsaiko@gmail.com'
 
-export function CheckoutEmailInUseEmail({ email }: CheckoutEmailInUseProps) {
+export function CheckoutEmailInUseEmail({ email, cancelled }: CheckoutEmailInUseProps) {
   return (
     <EmailShell preview="We couldn't finish setting up your IURIX account">
       <Text style={heading} className={EMAIL_CLASS.heading}>
@@ -55,6 +61,22 @@ export function CheckoutEmailInUseEmail({ email }: CheckoutEmailInUseProps) {
       </Text>
 
       <Section style={calloutBox} className={EMAIL_CLASS.callout}>
+        {/* Billing first — it is the thing they will worry about, and burying
+            it under the explanation reads as evasion. */}
+        <Text style={calloutItem} className={EMAIL_CLASS.text}>
+          <span style={bullet}>→</span>{' '}
+          {cancelled ? (
+            <>
+              <strong>You will not be charged again</strong> — we&apos;ve cancelled the
+              subscription, and your payment is being refunded
+            </>
+          ) : (
+            <>
+              <strong>We&apos;re sorting out your payment</strong> — please get in touch so we can
+              stop the subscription and refund you
+            </>
+          )}
+        </Text>
         <Text style={calloutItem} className={EMAIL_CLASS.text}>
           <span style={bullet}>→</span> Nothing was set up, and no training has been assigned
         </Text>
@@ -67,12 +89,15 @@ export function CheckoutEmailInUseEmail({ email }: CheckoutEmailInUseProps) {
       </Section>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        Please reply to this message or write to{' '}
+        {cancelled
+          ? 'Refunds usually take a few business days to appear, depending on your bank. '
+          : ''}
+        If anything is unclear, or you&apos;d like a hand getting set up on a different address,
+        write to{' '}
         <a href={`mailto:${SUPPORT_EMAIL}`} style={link}>
           {SUPPORT_EMAIL}
-        </a>{' '}
-        before buying again, and we&apos;ll sort out your payment and get you set up on the right
-        address.
+        </a>
+        .
       </Text>
 
       <Text style={mutedText} className={EMAIL_CLASS.muted}>

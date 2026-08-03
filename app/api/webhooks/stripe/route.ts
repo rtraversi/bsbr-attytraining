@@ -460,14 +460,15 @@ async function provisionFirm(
 }
 
 /**
- * Case 1 — a genuine duplicate purchase by someone who already owns an active
- * firm.
+ * Cancel the subscription this checkout just created, so a payment that
+ * provisioned nothing does not keep billing every year.
  *
  * 🔴 The subscription cancelled here is ALWAYS session.subscription — the brand
  * new one that arrived on this checkout. NEVER firm.stripe_subscription_id.
  * They are two different subscriptions and getting them backwards destroys the
- * access of a firm that is paying and up to date. The firm's own subscription
- * is not touched under any circumstance.
+ * access of a firm that is paying and up to date. No caller passes a firm's own
+ * subscription id and none ever should; the id is read from the session inside
+ * this function precisely so a caller cannot get it wrong.
  *
  * ⚠ This is the ONLY place in the codebase where subscriptions.cancel() is the
  * right call. app/api/billing/auto-renew/route.ts:29 carries a warning against
@@ -477,9 +478,34 @@ async function provisionFirm(
  * access to destroy, and leaving it alive would bill them again next year for
  * something they never received.
  *
- * No refund is issued. Cancelling stops future billing; it does not return the
- * payment just captured. That is deliberate (Max, 2026-08-03) and refunds stay
- * a manual decision.
+ * Never issues a refund. Cancelling stops future billing; it does not return
+ * the payment just captured. Refunds stay Rob's manual decision.
+ *
+ * Never rethrows: a failed cancel must not take down the handler and trigger a
+ * Stripe retry, which would re-enter an event whose ledger row already exists.
+ * The caller reports the failure to a human instead.
+ */
+async function cancelOrphanedSubscription(
+  session: Stripe.Checkout.Session
+): Promise<{ cancelled: boolean; error: string | null }> {
+  const subscriptionId = session.subscription as string
+
+  try {
+    await getStripe().subscriptions.cancel(subscriptionId)
+    return { cancelled: true, error: null }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(
+      `[stripe-webhook] failed to cancel orphaned subscription ${subscriptionId}:`,
+      err
+    )
+    return { cancelled: false, error: message }
+  }
+}
+
+/**
+ * Case 1 — a genuine duplicate purchase by someone who already owns an active
+ * firm. Their existing firm and its subscription are not touched.
  */
 async function cancelDuplicateSubscription(
   supabase: AdminClient,
@@ -495,22 +521,7 @@ async function cancelDuplicateSubscription(
   // processed_stripe_events, so this row is the only recovery path there is.
   await recordProvisioningFailure(supabase, session, email, 'duplicate')
 
-  let cancelled = false
-  let cancelError: string | null = null
-
-  try {
-    await getStripe().subscriptions.cancel(duplicateSubscriptionId)
-    cancelled = true
-  } catch (err) {
-    // Never rethrow: a failed cancel must not take down the handler and trigger
-    // a Stripe retry, which would try to cancel again on an event whose ledger
-    // row already exists. The alert below carries the failure to a human.
-    cancelError = err instanceof Error ? err.message : String(err)
-    console.error(
-      `[stripe-webhook] failed to cancel duplicate subscription ${duplicateSubscriptionId}:`,
-      err
-    )
-  }
+  const { cancelled, error: cancelError } = await cancelOrphanedSubscription(session)
 
   await alertOperator('⚠️ Stripe — duplicate purchase by an active firm owner', [
     `<strong>Customer email:</strong> ${email}`,
@@ -528,9 +539,19 @@ async function cancelDuplicateSubscription(
  * Case 3 — the buyer's address is already registered as staff at another firm
  * that is active.
  *
- * Nothing is provisioned and nothing is cancelled: their employer's account is
- * not ours to modify, and the buyer is the only person who can resolve this, so
- * they get an email as well as the operator alert.
+ * Nothing is provisioned; their employer's account is not ours to modify. The
+ * new subscription IS cancelled (amended 2026-08-03, Max): the original spec
+ * left it billing, which charged a customer annually for something they never
+ * received. Case 1 is the same outcome for the customer and cancelled
+ * automatically, and the asymmetry had no principle behind it.
+ *
+ * This case is well-determined — the address has an auth account, owns no firm,
+ * and is staff at an active one — so there is no ambiguity to be cautious
+ * about. `unresolved` deliberately stays uncancelled: cancel when we understand
+ * what happened, never while confused.
+ *
+ * The buyer is the only person who can resolve the underlying problem, so they
+ * get an email as well as the operator alert.
  */
 async function refuseEmailInUse(
   supabase: AdminClient,
@@ -539,8 +560,12 @@ async function refuseEmailInUse(
 ) {
   await recordProvisioningFailure(supabase, session, email, 'email_in_use')
 
+  const { cancelled, error: cancelError } = await cancelOrphanedSubscription(session)
+
   try {
-    const html = await render(CheckoutEmailInUseEmail({ email }))
+    // refundPromised mirrors what the email actually claims. If the cancel
+    // failed we do not tell them billing has stopped, because it has not.
+    const html = await render(CheckoutEmailInUseEmail({ email, cancelled }))
     await sendEmail({
       to: email,
       subject: "We couldn't finish setting up your IURIX account",
@@ -555,9 +580,16 @@ async function refuseEmailInUse(
   await alertOperator('⚠️ Stripe — buyer is staff at another active firm', [
     `<strong>Customer email:</strong> ${email}`,
     `<strong>Checkout session:</strong> ${session.id}`,
-    `<strong>Subscription — NOT cancelled, still billing:</strong> ${session.subscription as string}`,
-    `<strong>What happened:</strong> nothing was provisioned and nothing was cancelled. Their employer's firm is untouched.`,
-    `<strong>Action required:</strong> this payment bought nothing and the subscription will renew. Decide whether to cancel and/or refund it, then help them re-purchase on a different address.`,
+    `<strong>Subscription — ${cancelled ? 'CANCELLED' : 'STILL BILLING'}:</strong> ${session.subscription as string}`,
+    `<strong>What happened:</strong> nothing was provisioned. Their employer's firm is untouched.`,
+    // 🔴 The customer email states a refund is on its way. Nothing in this
+    // codebase issues one — no refund API is called anywhere, by design. That
+    // promise is kept by a human or not at all, which is why it is stated here
+    // as a required action rather than left implied.
+    cancelled
+      ? `<strong>🔴 Action required — REFUND:</strong> the subscription is cancelled, and the customer has been told <em>in writing</em> that their payment is being refunded. Issue the refund in Stripe. Nothing automated will do it.`
+      : `<strong>🔴 Action required:</strong> the cancel call FAILED (${cancelError}). The subscription is still billing and must be cancelled by hand, then refunded — the customer has been told their payment is being returned.`,
+    `<strong>Then:</strong> help them re-purchase on a different address.`,
   ])
 }
 

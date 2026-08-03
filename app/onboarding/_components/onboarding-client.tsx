@@ -42,7 +42,9 @@ const BLOCKED_COPY: Record<BlockedReason, { heading: string; explanation: string
     heading: 'This email is already in use',
     explanation:
       'The address you paid with is already registered to an existing IURIX account as a staff member. Each firm account needs its own email address, so we stopped rather than attaching your purchase to another account.',
-    next: 'Purchasing again with a different email address will work. Please get in touch first so we can sort out the payment you have already made.',
+    // Kept in step with emails/checkout-email-in-use.tsx — the same person
+    // reads both about the same payment, and they must not disagree.
+    next: 'We have cancelled the subscription and your payment is being refunded. Purchasing again with a different email address will work.',
   },
   duplicate: {
     heading: 'You already have an active account',
