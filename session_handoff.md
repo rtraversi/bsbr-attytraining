@@ -1,91 +1,99 @@
 # Session Handoff
 
-**Date:** 2026-07-31 (**Max**, terminal). 24 commits across four blocks: a STATE.md accuracy
-pass, three implementation batches, and a DB-types verification. **All 24 pushed and deployed.**
-Full detail in `.planning/sessions/20260731-max-summary.md`.
+**Date:** 2026-08-03 (**Rob**, terminal). Three commits on `redesign-iurix`: a sync-prep commit,
+the merge of Max's 74 commits, and the marketing rebuild. **Nothing pushed yet — see Next steps.**
 
-> *Corrected 2026-08-03.* This opening previously read "22 commits ... **17 pushed, 5 not**",
-> which contradicted the corrected Status block further down the same file. The true count is
-> **24** commits dated 2026-07-31 (`5370fc3` through `277056f`), all on `origin/main`.
-> Verified: `git log --pretty=format:'%cd' --date=short | grep -c 2026-07-31` returns `24`.
+## 🔴 Read this first — the repo was 74 commits behind
+
+`main` and `redesign-iurix` were both parked at `5e173b8` (07-28) while `origin/main` had moved to
+`d99aeff` (07-31). A fetch had run on 08-03 but nothing was ever merged, so Max's Iurix rebrand,
+billing pages, seat enforcement and login fixes were all absent locally. Resolved this session.
+
+Two collisions that came out of it:
+
+1. **Migration numbering.** The uncommitted `0014_remove_avatars.sql` collided with Max's
+   `0014_iurix_cert_number_format.sql`. Renumbered to **`0018_remove_avatars.sql`**. It only
+   touches `storage.buckets`/`storage.objects`, so Max's `0017` warning about rebuilding
+   `training_events_event_type_check` from a stale definition does not apply to it.
+   **`0018` has NOT been pushed to the DB yet** — `supabase db push` still to run.
+2. **One merge conflict**, in `certification-forecast.tsx`, where both sides edited the same block:
+   our side dropped the avatar `<img>`, Max's removed the dead "View who's left" link. Kept both.
 
 ## 🟢 What shipped
 
-**Batch 1 — six independent fixes.** `/cookies` route created as an empty shell (structure only,
-loud placeholder markers, not linked anywhere — Max drafts, Katy/Rob approve). Sign-in footer:
-Terms now links, Cookies removed until copy lands, support mailto moved off the retired
-`aistaffcompliance.com` to the inbox `/api/support/contact` already uses. Dead "View who's left"
-link removed. Two orphaned Athena assets deleted. Plus the quiz-width and path-map fixes below.
+**The marketing surface is rebuilt** on the design-handoff pack in `.planning/design-handoff/`
+(which was also uncommitted until this session — it is now in git). Light "marble & rule"
+direction: marble ground, mint hairlines, teal ink, Gyrotrope display over Host Grotesk body.
+Teal and steel carry the design; rose gold appears only as a seal accent.
 
-**Batch 2 — reminder correctness + auto-renewal disclosure.** The manual Remind button now writes
-a `nudge_sent` audit row with the triggering admin's id, rate-limited to one per 48h; the cron
-dedupes against it; "Remind" is "Nudge" in the UI. Renewal dedupe widened 24h → 8 days. Lapsed
-firms get a shorter admin-only expiry cadence. Auto-renewal is now disclosed **before payment**
-on the pricing page, and the renewal email says plainly that the card will be charged.
+- **Homepage** — Katy's copy as the spine, five numbered sections: the standard / reduce your
+  exposure / document your best efforts / why Rule 5.3 changed / the details. The Rule 5.3
+  evidence (Mata, Crabill, Wadsworth, the four statistics, the Florida Bar pull quote) is kept
+  from the previously reviewed `03-copy.md` rather than rewritten — those are checked claims.
+- **Shared header + footer** rebuilt light. Footer carries the disclaimer verbatim.
+- **`/pricing`** moved to light. `PricingSlider` is **restyled only** — rate maths, the checkout
+  call and the auto-renewal disclosure block are byte-for-byte untouched.
+- **Legal pages** (`/privacy`, `/terms`, `/dpa`) now share one container, `legal-page.tsx`,
+  instead of three copies of the same `Section` helper. It also ships `LegalCallout`,
+  `LegalDisclaimer` (for the all-caps conspicuousness blocks) and `LegalTable` (scrolls on
+  mobile) ready for when the real drafts land.
+- **Dead code removed**: `custom-cursor`, `current-state-section`, `features-section`,
+  `spiro-pattern`, and the whole `.athena-*` CSS block. All were unreferenced once the homepage
+  stopped importing them.
 
-**Batch 3 — the billing page.** `/dashboard/billing` with subscription state, the last 12
-invoices, and an auto-renewal switch with a confirmation step. Settings' Billing section reduced
-to a pointer.
+## ⚖️ Two decisions that were made, and should be revisited deliberately
 
-## 🔴 Carry forward
+**1. Price — the live Stripe bands won.** Katy's draft says a flat **$39** in one place and a flat
+**$35** in another. The live Price (`price_1ThbLNCzT2268ei9nkadS8kD`, `tiers_mode=volume`) is
+**$35 / $32 / $28**, and the slider hardcodes the same maths. The page ships the live bands.
+Advertising a number the checkout does not charge is a billing problem, not a copy problem.
+**If $39 is the real intent, it changes in Stripe first**, then in `included-section.tsx` and
+`pricing-slider.tsx`.
 
-**`0017` was wrong once — the lesson generalises.** Six migrations redefine
-`training_events_event_type_check` and each restates the *whole* list. I built `0017` from
-`0006`, which was not current, and it would have **deleted** `knowledge_check_completed` (`0009`)
-and `lesson_location_changed` (`0011`) — breaking every knowledge-check submit and lesson-boundary
-write. Max caught it. **For `0018`: diff against the latest definition, never the one a previous
-task happened to touch.**
+**2. Four features are advertised before they exist** — Rob's call, to publish the full programme
+and build to match. They are flagged in code comments where they appear:
 
-**`cancel_at_period_end`, never `subscriptions.cancel()`.** Verified live on the sandbox:
-cancelling leaves `status=active` with the period end unchanged, and is reversible in one call.
-`.cancel()` would destroy access the firm has already paid for. The billing route carries a
-comment saying so, because the failure mode is a plausible one-word edit.
+| Promised on the page | Reality |
+|---|---|
+| A written policy, tailored to your firm | Not built — no policy generator anywhere |
+| A yearly Iurix Accredited website token | Not built — no badge/embed |
+| Members-only page of sanction summaries | Not built — no such route |
+| Ongoing nationwide sanction monitoring | Operational commitment, not software |
+| Individually signed attestations | **Partial** — quiz captures identity attestation and `/api/firm/attestation` emits a firm-level PDF; there is no per-staff signed attestation document |
 
-**Two symptoms were the opposite of what they looked like.** The quiz was never height-broken —
-three `max-w-4xl` wrappers capped the width. And "Your path" grew because `aspect-[4/7]` means
-every 1px of width costs 1.75px of height, so widening it made it 910px tall. Its clipping fix
-had also been keyed to viewport width, but the map is *widest* on mobile and *narrowest* at `md`
-— the two are not monotonic. Both are now keyed to the right variable.
+This is now a committed backlog. Every day it stays unbuilt is a day the page overstates.
 
-**The hand-patched DB types turned out correct** — generated output was byte-identical. That
-does not make hand-editing safe; it was one boolean across three blocks. The Supabase CLI is
-linked to **STAGING** and working on this machine.
+## ⚠️ Open questions
 
-## ✅ Status — all three closed at wrap (corrected 2026-07-31 21:05Z)
+- **"Accredited" vs the brief.** `01-brief.md` says avoid "accredited" and "guarantee" entirely for
+  legal reasons; Katy's copy makes "Iurix Accredited" the central promise. Shipped as Katy wrote
+  it, with the footer disclaimer drawing the line ("not CLE-accredited... does not constitute bar
+  accreditation"). **Katy and Rob should confirm the two are reconciled on purpose.**
+- **Contact email and phone are still `[TBD]`** and render as visible placeholders in the footer
+  and on all three legal pages. This is what the brief asks for, but it **must not ship to
+  production** as-is. The old `info@aistaffcompliance.com` (dead domain) was removed.
+- **`/about` and `/contact` do not exist.** Katy's page structure calls for both. No copy for
+  either, and Contact has nowhere to point until the email is decided. Nav uses in-page anchors
+  meanwhile. `/ai-policy` is specced in the brief and also unbuilt.
+- **Katy's typo** "Reduce Your Exposure**q**" — corrected to "Reduce your exposure".
 
-*The three items below were listed as pending when this file was first written. All three were
-completed minutes later. Corrected in place so the next reader is not misled.*
+## ✅ Status
 
-1. **`supabase db push` HAS run — migration `0017` is applied.** Verified against the remote with
-   `supabase migration list --linked`: `0017` appears in the local, remote and time columns. The
-   nudge audit row writes correctly and the cron's nudge-dedupe is live. *(The original note here
-   said it had not run. That was wrong.)*
-2. **Everything is pushed.** `origin/main` = `277056f`, local `HEAD` = `277056f`, tree clean.
-   All 24 of the session's commits are on the remote, including Batch 3 and this handoff.
-   *(`7f65a19` was this file's own commit; `277056f` is the correction that followed it.)*
-3. **Everything is deployed.** App deployed **21:01:39Z** (version `0c4e7ff8`), cert-worker
-   **19:48:34Z**. Batch 3 touches no cert-worker code, so it needed no second deploy — `git diff
-   61965d7..7f65a19` returns zero `workers/cert-worker` paths. `d28576d` from 07-30 was already
-   live before today began.
+- `tsc --noEmit` clean. `next build` passes. All of `/`, `/pricing`, `/privacy`, `/terms`, `/dpa`,
+  `/login` return 200 with no console errors.
+- Homepage and footer visually verified in Chrome at desktop width; `/pricing`'s restyle verified
+  by computed style (teal CTA, gold active band, mint hairlines, no leftover dark classes).
+- **Not verified: the 390px mobile rendering.** The browser extension would not actually change
+  the viewport. Statically, every grid is mobile-first and every width is `max-w-*`; the only
+  `min-w` is the legal table, deliberately inside an `overflow-x-auto` wrapper. Worth one pass in
+  the DevTools device toolbar before deploy.
 
-**Verified live after deploying:** `/api/health` ok · `GET /api/billing/summary` → 401 with
-`{"error":"Unauthorized"}` · `POST /api/billing/auto-renew` → 401 · `GET /api/billing/auto-renew`
-→ 405 (only POST exported) · a bogus sibling route → 404 · `/cookies` 200 · zero
-`info@aistaffcompliance.com` on `/login` · zero "Built Smart by Rob" on `/`.
+## Next steps
 
-`tsc --noEmit` clean, `eslint .` clean, production build succeeds.
-
-## 🔵 Open
-
-- **The retired "atc" monogram still ships.** `app/_components/atc-logo.tsx` inlines its own copy
-  of the old geometry, so deleting the SVG file changed nothing. It renders on the site header,
-  login, onboarding, forgot-password and update-password. Blocked on Rob's final mark; the
-  "Iurix Accreditation" wordmark asset still does not exist.
-- **Settings' footer links "Cookies" → `/dpa`.** Pre-existing mislabel; `/cookies` now exists and
-  could serve it once the copy is approved.
-- **Four `info@aistaffcompliance.com` uses remain** (privacy, terms, dpa, Stripe operator alert)
-  on the retired domain — deliberately untouched, separate blocked item.
-- **GSD cannot be reinstalled as-is.** `gsd-build/get-shit-done` was archived 2026-06-26; the
-  successor `open-gsd/gsd-core` names its commands `/gsd-*`, not the `/gsd:*` CLAUDE.md documents.
-  Rob is still on the archived version, and `.planning/` is shared and committed — so which
-  version to standardise on is a joint decision, not a local install.
+1. **Push.** Three commits sit unpushed on `redesign-iurix`; `main` is still behind origin.
+2. **`supabase db push`** for `0018_remove_avatars.sql`.
+3. Decide the contact email, then replace the `[TBD]` placeholders (footer + three legal pages).
+4. Decide $35 vs $39 — Stripe first if it changes.
+5. Get About / Contact copy from Katy; add `/ai-policy`.
+6. Mobile pass at 390px, then deploy. The Cloudflare MCP is connected to this project if that
+   helps with the deploy.
