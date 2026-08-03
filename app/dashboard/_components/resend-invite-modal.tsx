@@ -15,7 +15,7 @@ export function ResendInviteAction({ tileClassName }: { tileClassName: string })
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className={tileClassName}>
-        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EAF8FF] text-[#0094FF] dark:bg-[#0094FF]/15 dark:text-[#32C7FF]">
+        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EAF8FF] text-[var(--brand-emphasis)] dark:bg-[var(--brand-emphasis)]/15 dark:text-[var(--brand-primary)]">
           <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
             <path
               strokeLinecap="round"
@@ -104,7 +104,7 @@ function ResendInviteModal({
               value={email}
               onChange={e => setEmail(e.target.value)}
               disabled={phase === 'loading'}
-              className="w-full rounded-lg border border-[#E5EEF5] bg-white px-3 py-2.5 text-sm text-[#0A0A0A] placeholder:text-[#8A8A8A] focus:outline-none focus:ring-2 focus:ring-[#0094FF] disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:placeholder:text-[#7A8189]"
+              className="w-full rounded-lg border border-[#E5EEF5] bg-white px-3 py-2.5 text-sm text-[#0A0A0A] placeholder:text-[#8A8A8A] focus:outline-none focus:ring-2 focus:ring-[var(--brand-emphasis)] disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:placeholder:text-[#7A8189]"
             />
           </div>
 

@@ -31,7 +31,7 @@ export function BillingSettings() {
       </div>
       <Link
         href="/dashboard/billing"
-        className="shrink-0 rounded-xl bg-[#0094FF] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+        className="shrink-0 rounded-xl bg-[var(--brand-emphasis)] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-white transition-opacity hover:opacity-90"
       >
         Manage billing
       </Link>

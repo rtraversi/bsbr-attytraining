@@ -184,7 +184,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
 
         <a
           href="mailto:solarsaiko@gmail.com"
-          className="mx-auto rounded-xl bg-[#32C7FF] px-6 py-3 text-sm font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90"
+          className="mx-auto rounded-xl bg-[var(--brand-primary)] px-6 py-3 text-sm font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90"
         >
           Contact support
         </a>
@@ -205,7 +205,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
         </p>
         <button
           onClick={() => window.location.reload()}
-          className="rounded-xl bg-[#32C7FF] px-6 py-3 text-sm font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90"
+          className="rounded-xl bg-[var(--brand-primary)] px-6 py-3 text-sm font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90"
         >
           Refresh
         </button>
@@ -252,7 +252,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
               value={firmName}
               onChange={(e) => setFirmName(e.target.value)}
               disabled={phase === 'submitting'}
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#32C7FF] disabled:opacity-50"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
             />
           </div>
 
@@ -263,7 +263,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
               checked={enrollSelf}
               onChange={(e) => setEnrollSelf(e.target.checked)}
               disabled={phase === 'submitting'}
-              className="mt-0.5 h-5 w-5 shrink-0 rounded border-zinc-300 accent-[#32C7FF] focus:ring-2 focus:ring-[#32C7FF] disabled:opacity-50"
+              className="mt-0.5 h-5 w-5 shrink-0 rounded border-zinc-300 accent-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
             />
             <span className="text-sm font-extralight text-zinc-700">
               I am also taking this training{' '}
@@ -276,7 +276,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
           <button
             type="submit"
             disabled={phase === 'submitting' || !firmName.trim()}
-            className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#32C7FF] px-6 py-4 text-lg font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand-primary)] px-6 py-4 text-lg font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {phase === 'submitting' ? (
               <>
@@ -299,7 +299,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
         <p className="text-base text-red-600">{errorMsg}</p>
         <button
           onClick={() => setPhase('ready')}
-          className="rounded-xl bg-[#32C7FF] px-6 py-3 text-sm font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90"
+          className="rounded-xl bg-[var(--brand-primary)] px-6 py-3 text-sm font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90"
         >
           Try again
         </button>
@@ -311,7 +311,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="flex flex-col items-center gap-4 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#32C7FF]/10">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-primary)]/10">
         <CheckIcon />
       </div>
       <div>
@@ -342,7 +342,7 @@ function Spinner({ size = 'md', className = '' }: { size?: 'sm' | 'md'; classNam
   const cls = size === 'sm' ? 'w-4 h-4' : 'w-8 h-8'
   return (
     <svg
-      className={`${cls} animate-spin ${className || 'text-[#32C7FF]'}`}
+      className={`${cls} animate-spin ${className || 'text-[var(--brand-primary)]'}`}
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -360,7 +360,7 @@ function Spinner({ size = 'md', className = '' }: { size?: 'sm' | 'md'; classNam
 function CheckIcon() {
   return (
     <svg
-      className="w-7 h-7 text-[#32C7FF]"
+      className="w-7 h-7 text-[var(--brand-primary)]"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"

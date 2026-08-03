@@ -132,9 +132,38 @@
 /* ─── Brand design system ─────────────────────────────────────────── */
 
 :root {
+  /* ⚠ DEAD as of 2026-08-03 — zero consumers anywhere in the repo (verified by
+     grep for var(--brand-bg|fg|accent)). These are the retired Athena/scrabble
+     palette: #C8783A is the old beagle tan, not a current brand colour. Left in
+     place rather than deleted because removing them is not this refactor's job,
+     but do NOT reuse these names for live tokens — --brand-accent in particular
+     reads like the blue below and is not. */
   --brand-bg: #FAFAF8;
   --brand-fg: #1A1A1A;
   --brand-accent: #C8783A;
+
+  /* ── Live brand palette ──────────────────────────────────────────────
+     The two blues the app is actually built from. Every call site
+     references these, so a palette change is an edit to these two lines
+     rather than a sweep of ~220 hardcoded hex values across 36 files.
+
+     Values are unchanged from what shipped before tokenisation:
+       --brand-primary  was #32C7FF   (112 occurrences)
+       --brand-emphasis was #0094FF   (107 occurrences)
+
+     Deliberately NOT named after the colour itself (no --brand-cyan): the
+     point of a token is to survive the palette moving to Rob's teal and
+     rose-gold, at which point a hue-based name would be a lie.
+
+     ⚠ These are consumed by app code only. The email templates under
+     emails/ cannot use them — see emails/_components/email-shell.tsx. */
+
+  /* Primary fills: buttons, active states, focus rings, gradient start. */
+  --brand-primary: #32C7FF;
+
+  /* Deeper blue for links, emphasis text and icons — carries the contrast
+     that the lighter primary cannot hold against white. Gradient end. */
+  --brand-emphasis: #0094FF;
 }
 
 @layer utilities {

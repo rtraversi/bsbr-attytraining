@@ -77,7 +77,7 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={phase === 'loading'}
-          className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-4 text-base text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[#32C7FF] focus:ring-2 focus:ring-[#32C7FF]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
+          className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-4 text-base text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
         />
         <button
           type="submit"
@@ -88,7 +88,7 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
         </button>
       </form>
 
-      {phase === 'done' && <p className="text-sm font-semibold text-[#0094FF]">Invite sent.</p>}
+      {phase === 'done' && <p className="text-sm font-semibold text-[var(--brand-emphasis)]">Invite sent.</p>}
       {phase === 'email_failed' && (
         <p className="text-sm font-semibold text-[#B45309] dark:text-[#F0B357]">
           Member added, but the invite email couldn’t be sent. Use the bell in the team table to

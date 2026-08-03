@@ -82,8 +82,8 @@ export function CertificationForecast() {
           gap-stretching between them — gap-8 is a fixed rhythm, not a filler. */}
       <div className="flex min-h-0 flex-1 flex-col justify-center gap-8">
         {hasProjection || fullyCertified ? (
-          <div className="rounded-2xl bg-[#EAF8FF] px-7 py-8 dark:bg-[#0094FF]/10">
-            <p className="mb-3 text-xl font-semibold text-[#0094FF] dark:text-[#32C7FF]">
+          <div className="rounded-2xl bg-[#EAF8FF] px-7 py-8 dark:bg-[var(--brand-emphasis)]/10">
+            <p className="mb-3 text-xl font-semibold text-[var(--brand-emphasis)] dark:text-[var(--brand-primary)]">
               Projected Fully Certified
             </p>
             {fullyCertified ? (
@@ -126,7 +126,7 @@ export function CertificationForecast() {
                 <div
                   style={{
                     flexGrow: flexActual,
-                    background: 'linear-gradient(90deg, #32C7FF 0%, #0094FF 100%)',
+                    background: 'linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-emphasis) 100%)',
                   }}
                 />
                 <div
@@ -140,7 +140,7 @@ export function CertificationForecast() {
               <div
                 style={{
                   width: `${certifiedPct}%`,
-                  background: 'linear-gradient(90deg, #32C7FF 0%, #0094FF 100%)',
+                  background: 'linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-emphasis) 100%)',
                 }}
               />
             )}

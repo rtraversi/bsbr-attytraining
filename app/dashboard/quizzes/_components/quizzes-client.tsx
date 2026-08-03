@@ -133,7 +133,7 @@ const PILL =
   'rounded-[28px] border border-[#E5EEF5] bg-[#F2F4F7] dark:border-[#1F2429] dark:bg-[#0D0F12] md:rounded-[36px]'
 // Same translucent glass treatment as the unlocked "Certificate Assessment" card.
 const GLASS =
-  'rounded-[28px] border border-[#32C7FF]/40 bg-[#32C7FF]/[0.06] md:rounded-[36px] dark:bg-[#32C7FF]/[0.08]'
+  'rounded-[28px] border border-[var(--brand-primary)]/40 bg-[var(--brand-primary)]/[0.06] md:rounded-[36px] dark:bg-[var(--brand-primary)]/[0.08]'
 const HEADING = 'font-semibold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
 const BODY = 'font-extralight text-[#3D3D3D] dark:text-[#C4CBD2]'
 const MUTED = 'font-normal text-[#8A8A8A] dark:text-[#7A8189]'
@@ -186,7 +186,7 @@ function JumpBackInCard({
             <span className={`block text-base font-semibold md:text-lg ${HEADING}`}>
               {progress.fullyCleared ? 'All lessons cleared' : `Lesson ${focus.number}`}
             </span>
-            <span className="mt-0.5 block truncate text-xs text-[#0094FF] md:text-sm">
+            <span className="mt-0.5 block truncate text-xs text-[var(--brand-emphasis)] md:text-sm">
               {progress.fullyCleared ? 'Review any check anytime' : focus.title}
             </span>
           </span>
@@ -253,7 +253,7 @@ function LessonRow({
   const dotColor = cleared
     ? 'bg-[#22C55E]'
     : lesson.status === 'unlocked' && !lesson.isReadiness
-      ? 'bg-[#32C7FF]'
+      ? 'bg-[var(--brand-primary)]'
       : 'bg-[#D1D5DB] dark:bg-[#374151]'
 
   const titleColor =
@@ -282,7 +282,7 @@ function LessonRow({
             {lesson.lastScore ?? 100}%
           </span>
         ) : showShortcutUnlock ? (
-          <UnlockIcon className="h-4 w-4 text-[#0094FF]" />
+          <UnlockIcon className="h-4 w-4 text-[var(--brand-emphasis)]" />
         ) : lesson.status === 'unlocked' ? (
           // Visual affordance only — the whole row is already the button, so a
           // nested <button> would be invalid. Mirrors Overview's outline play chip.
@@ -370,7 +370,7 @@ function FinalTestCard({
           // contentViewed) — navigate there instead of dead-ending here.
           <Link
             href="/dashboard/training"
-            className="block w-full cursor-pointer rounded-full bg-[#32C7FF] py-3 text-center text-sm font-bold text-white transition-opacity hover:opacity-90 md:text-base"
+            className="block w-full cursor-pointer rounded-full bg-[var(--brand-primary)] py-3 text-center text-sm font-bold text-white transition-opacity hover:opacity-90 md:text-base"
           >
             Take Certificate Assessment
           </Link>
@@ -400,7 +400,7 @@ function FinalTestCard({
               className={`text-sm font-bold ${
                 readinessPct >= 75
                   ? 'text-[#16A34A] dark:text-[#4ADE80]'
-                  : 'text-[#0094FF]'
+                  : 'text-[var(--brand-emphasis)]'
               }`}
             >
               {readinessPct}% — {readinessNote}
@@ -409,7 +409,7 @@ function FinalTestCard({
           <div className="h-2 w-full overflow-hidden rounded-full bg-[#DDE3E9] dark:bg-[#1F2429]">
             <div
               className={`h-full rounded-full transition-[width] duration-1000 ease-out ${
-                readinessPct >= 75 ? 'bg-[#22C55E]' : 'bg-[#32C7FF]'
+                readinessPct >= 75 ? 'bg-[#22C55E]' : 'bg-[var(--brand-primary)]'
               }`}
               style={{ width: `${barFill}%` }}
             />
@@ -524,7 +524,7 @@ function CertificateCard({
       <h2 className={`mb-4 text-2xl md:text-3xl ${HEADING}`}>Access certificate</h2>
       {cert ? (
         <>
-          <div className="rounded-[28px] bg-gradient-to-br from-[#32C7FF] to-[#0094FF] p-[1.5px] shadow-[0_0_44px_-10px_rgba(50,199,255,0.55)] md:rounded-[36px]">
+          <div className="rounded-[28px] bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-emphasis)] p-[1.5px] shadow-[0_0_44px_-10px_rgba(50,199,255,0.55)] md:rounded-[36px]">
             <div className="rounded-[27px] bg-white px-6 py-5 md:rounded-[35px] md:px-8 md:py-6 dark:bg-[#0D0F12]">
               <div className="flex items-center justify-between gap-4">
                 {/* Summary doubles as the tap-toggle for touch devices, where
@@ -535,8 +535,8 @@ function CertificateCard({
                   aria-expanded={open}
                   className="flex min-w-0 cursor-pointer items-center gap-3 text-left"
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#32C7FF]/15">
-                    <CertIcon className="h-6 w-6 text-[#0094FF]" />
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)]/15">
+                    <CertIcon className="h-6 w-6 text-[var(--brand-emphasis)]" />
                   </span>
                   <span className="min-w-0">
                     <span className={`block text-base ${HEADING}`}>Your certificate</span>
@@ -548,7 +548,7 @@ function CertificateCard({
                 <button
                   type="button"
                   onClick={() => setModalOpen(true)}
-                  className="shrink-0 cursor-pointer rounded-full bg-[#32C7FF] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                  className="shrink-0 cursor-pointer rounded-full bg-[var(--brand-primary)] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
                 >
                   Download
                 </button>
@@ -722,7 +722,7 @@ function PathMap({
                   strokeWidth={2.5}
                   strokeDasharray="5 6"
                   className={
-                    cleared ? 'stroke-[#32C7FF]' : 'stroke-[#D1D5DB] dark:stroke-[#374151]'
+                    cleared ? 'stroke-[var(--brand-primary)]' : 'stroke-[#D1D5DB] dark:stroke-[#374151]'
                   }
                 />
               )
@@ -744,7 +744,7 @@ function PathMap({
                   style={{ animationDelay: `${i * 0.4}s` }}
                   onClick={openable ? () => tryOpen(lesson) : undefined}
                   className={`qz-dot ${
-                    lit ? 'fill-[#32C7FF]' : 'fill-[#D1D5DB] dark:fill-[#374151]'
+                    lit ? 'fill-[var(--brand-primary)]' : 'fill-[#D1D5DB] dark:fill-[#374151]'
                   } ${openable ? 'cursor-pointer' : ''}`}
                 />
               )
@@ -767,13 +767,13 @@ function PathMap({
             const lesson = byNum.get(node.n)!
             const reached = lesson.status !== 'locked'
             const color = reached
-              ? 'text-[#0094FF]'
+              ? 'text-[var(--brand-emphasis)]'
               : 'text-[#9AA1A9] dark:text-[#5C636B]'
             if (node.n === 5) {
               // Grayed out until actually cleared, same rule as its dot.
               const color5 =
                 lesson.status === 'cleared'
-                  ? 'text-[#0094FF]'
+                  ? 'text-[var(--brand-emphasis)]'
                   : 'text-[#9AA1A9] dark:text-[#5C636B]'
               // Centred above its dot so the wide "Final Review" label can't clip.
               return (
@@ -820,13 +820,13 @@ function PathMap({
             <CastleIcon
               className={`mx-auto h-16 w-16 @max-[300px]:h-12 @max-[300px]:w-12 ${
                 goalReached
-                  ? 'text-[#0094FF] drop-shadow-[0_0_16px_rgba(0,148,255,0.55)]'
+                  ? 'text-[var(--brand-emphasis)] drop-shadow-[0_0_16px_rgba(0,148,255,0.55)]'
                   : 'text-[#9AA1A9] dark:text-[#5C636B]'
               }`}
             />
             <span
               className={`mt-1 block text-xs font-bold @max-[300px]:text-[10px] ${
-                goalReached ? 'text-[#0094FF]' : 'text-[#9AA1A9] dark:text-[#5C636B]'
+                goalReached ? 'text-[var(--brand-emphasis)]' : 'text-[#9AA1A9] dark:text-[#5C636B]'
               }`}
             >
               Certificate Assessment
@@ -841,7 +841,7 @@ function PathMap({
             <button
               type="button"
               onClick={() => tryOpen(5)}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#CDEEFF] bg-[#EAF8FF] px-4 py-2 text-xs font-bold text-[#0094FF] transition-colors hover:bg-[#D8F2FF] dark:border-[#1F3A4A] dark:bg-[#0E2430] dark:text-[#5FC8FF] dark:hover:bg-[#123040]"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#CDEEFF] bg-[#EAF8FF] px-4 py-2 text-xs font-bold text-[var(--brand-emphasis)] transition-colors hover:bg-[#D8F2FF] dark:border-[#1F3A4A] dark:bg-[#0E2430] dark:text-[#5FC8FF] dark:hover:bg-[#123040]"
             >
               <UnlockIcon className="h-3.5 w-3.5" />
               Skip to Final Review

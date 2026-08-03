@@ -333,13 +333,13 @@ export function TrainingClient({
                 className="h-full rounded-l-full transition-[width] duration-500"
                 style={{
                   width: `${progressPct}%`,
-                  background: 'linear-gradient(90deg, #32C7FF 0%, #0094FF 100%)',
+                  background: 'linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-emphasis) 100%)',
                 }}
               />
             </div>
             <span
               className={`whitespace-nowrap text-sm font-bold ${
-                focus ? 'text-[#5FC8FF]' : 'text-[#0094FF]'
+                focus ? 'text-[#5FC8FF]' : 'text-[var(--brand-emphasis)]'
               }`}
             >
               {progressPct}% Complete
@@ -458,7 +458,7 @@ export function TrainingClient({
 
                 {overviewLesson.keyTakeaways.length > 0 && (
                   <div className="mt-5 border-t border-[#E5EEF5] pt-5 dark:border-[#1F2429]">
-                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-[#0094FF]">
+                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-[var(--brand-emphasis)]">
                       Key Takeaways
                     </h3>
                     <ul className="space-y-2">
@@ -507,7 +507,7 @@ export function TrainingClient({
                       e.stopPropagation()
                       resumeContent()
                     }}
-                    className="block w-full rounded-full bg-[#0094FF] py-2.5 text-center text-xs font-bold text-white transition-opacity hover:opacity-90"
+                    className="block w-full rounded-full bg-[var(--brand-emphasis)] py-2.5 text-center text-xs font-bold text-white transition-opacity hover:opacity-90"
                   >
                     Resume Lesson {nextUp.lesson}
                   </button>
@@ -517,7 +517,7 @@ export function TrainingClient({
                       e.stopPropagation()
                       openLessonCheck(nextUp.lesson)
                     }}
-                    className="block w-full rounded-full bg-[#0094FF] py-2.5 text-center text-xs font-bold text-white transition-opacity hover:opacity-90"
+                    className="block w-full rounded-full bg-[var(--brand-emphasis)] py-2.5 text-center text-xs font-bold text-white transition-opacity hover:opacity-90"
                   >
                     Take the {nextUpCheckName}
                   </button>
@@ -527,7 +527,7 @@ export function TrainingClient({
                       e.stopPropagation()
                       openAssessment()
                     }}
-                    className="block w-full rounded-full bg-[#0094FF] py-2.5 text-center text-xs font-bold text-white transition-opacity hover:opacity-90"
+                    className="block w-full rounded-full bg-[var(--brand-emphasis)] py-2.5 text-center text-xs font-bold text-white transition-opacity hover:opacity-90"
                   >
                     Take Assessment
                   </button>
@@ -555,7 +555,7 @@ export function TrainingClient({
                   {!checksCleared && (
                     <Link
                       href="/dashboard/quizzes"
-                      className="mt-3 inline-block text-xs font-semibold text-[#0094FF] hover:underline"
+                      className="mt-3 inline-block text-xs font-semibold text-[var(--brand-emphasis)] hover:underline"
                     >
                       Go to Quizzes tab →
                     </Link>
@@ -569,7 +569,7 @@ export function TrainingClient({
         {/* ── Certificate states ──────────────────────────────────────────── */}
         {!focus && phase === 'cert_pending' && (
           <div className={`${CARD} mt-6 flex items-start gap-4 p-6`}>
-            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EAF8FF] dark:bg-[#0094FF]/15">
+            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EAF8FF] dark:bg-[var(--brand-emphasis)]/15">
               <ClockIcon />
             </div>
             <div>
@@ -590,7 +590,7 @@ export function TrainingClient({
             </p>
             <Link
               href="/dashboard/quizzes"
-              className="shrink-0 cursor-pointer rounded-full bg-[#32C7FF] px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+              className="shrink-0 cursor-pointer rounded-full bg-[var(--brand-primary)] px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
             >
               Go
             </Link>
@@ -608,7 +608,7 @@ function Requirement({ done, label }: { done: boolean; label: string }) {
     <p className="flex items-center gap-2 py-1 text-xs">
       <span
         className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
-          done ? 'bg-[#0094FF] text-white' : 'border border-[#E5EEF5] dark:border-[#1F2429]'
+          done ? 'bg-[var(--brand-emphasis)] text-white' : 'border border-[#E5EEF5] dark:border-[#1F2429]'
         }`}
       >
         {done && (
@@ -642,12 +642,12 @@ function FocusIcon() {
  * leading-relaxed` copy rather than hanging it from the cap height.
  */
 function TakeawayDot() {
-  return <span aria-hidden className="mt-2 h-[6px] w-[6px] shrink-0 rounded-full bg-[#0094FF]" />
+  return <span aria-hidden className="mt-2 h-[6px] w-[6px] shrink-0 rounded-full bg-[var(--brand-emphasis)]" />
 }
 
 function ClockIcon() {
   return (
-    <svg className="h-4 w-4 text-[#0094FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className="h-4 w-4 text-[var(--brand-emphasis)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <circle cx="12" cy="12" r="10" />
       <path strokeLinecap="round" d="M12 6v6l4 2" />
     </svg>

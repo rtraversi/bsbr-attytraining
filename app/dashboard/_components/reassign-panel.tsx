@@ -81,9 +81,9 @@ export function ReassignPanel({ member, onClose, onSuccess }: ReassignPanelProps
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="flex flex-col justify-between gap-6">
             <div className="flex items-start gap-4 rounded-2xl bg-[#F5F7FA] p-5 dark:bg-[#131A20]">
-              <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#32C7FF]/15">
+              <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-primary)]/15">
                 <svg
-                  className="h-5 w-5 text-[#0094FF] dark:text-[#32C7FF]"
+                  className="h-5 w-5 text-[var(--brand-emphasis)] dark:text-[var(--brand-primary)]"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -93,7 +93,7 @@ export function ReassignPanel({ member, onClose, onSuccess }: ReassignPanelProps
                 </svg>
               </div>
               <div>
-                <p className="text-base font-semibold text-[#0094FF] dark:text-[#32C7FF]">Invite sent</p>
+                <p className="text-base font-semibold text-[var(--brand-emphasis)] dark:text-[var(--brand-primary)]">Invite sent</p>
                 <p className="mt-1 text-base text-[#3D3D3D] dark:text-[#C4C9CE]">
                   {confirmedName && <span className="font-semibold">{confirmedName}</span>}
                   {confirmedName && confirmedEmail && ' '}
@@ -147,7 +147,7 @@ export function ReassignPanel({ member, onClose, onSuccess }: ReassignPanelProps
                 value={name}
                 onChange={e => setName(e.target.value)}
                 disabled={phase === 'loading'}
-                className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-3.5 text-base text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[#32C7FF] dark:placeholder:text-[#454C54] focus:ring-2 focus:ring-[#32C7FF]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
+                className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-3.5 text-base text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[var(--brand-primary)] dark:placeholder:text-[#454C54] focus:ring-2 focus:ring-[var(--brand-primary)]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
               />
             </div>
 
@@ -162,7 +162,7 @@ export function ReassignPanel({ member, onClose, onSuccess }: ReassignPanelProps
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 disabled={phase === 'loading'}
-                className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-3.5 text-base text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[#32C7FF] dark:placeholder:text-[#454C54] focus:ring-2 focus:ring-[#32C7FF]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
+                className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-3.5 text-base text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[var(--brand-primary)] dark:placeholder:text-[#454C54] focus:ring-2 focus:ring-[var(--brand-primary)]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
               />
             </div>
 
@@ -187,7 +187,7 @@ export function ReassignPanel({ member, onClose, onSuccess }: ReassignPanelProps
               type="button"
               onClick={onClose}
               disabled={phase === 'loading'}
-              className="self-center rounded-xl px-4 py-2 text-base font-bold text-[#3D3D3D] transition-colors hover:text-[#0094FF] disabled:opacity-50 dark:text-[#C4C9CE] dark:hover:text-[#32C7FF]"
+              className="self-center rounded-xl px-4 py-2 text-base font-bold text-[#3D3D3D] transition-colors hover:text-[var(--brand-emphasis)] disabled:opacity-50 dark:text-[#C4C9CE] dark:hover:text-[var(--brand-primary)]"
             >
               Cancel
             </button>
@@ -222,7 +222,7 @@ function ReplacementSummary({ member }: { member: MemberDetail }) {
   return (
     <div className="flex flex-col gap-4 rounded-2xl bg-[#F5F7FA] p-5 dark:bg-[#131A20]">
       <div className="flex min-w-0 items-center gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EAF8FF] text-[#0094FF] dark:bg-[#0094FF]/15 dark:text-[#32C7FF]">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EAF8FF] text-[var(--brand-emphasis)] dark:bg-[var(--brand-emphasis)]/15 dark:text-[var(--brand-primary)]">
           <SwapIcon className="h-5 w-5" />
         </div>
         {/* min-w-0 lets this shrink below its content width so a long name or

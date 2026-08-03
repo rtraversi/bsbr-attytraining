@@ -17,7 +17,7 @@ const LABEL = `text-xs font-bold uppercase tracking-wide ${MUTED}`
 // justify-center matters at lg+, where the tiles stretch to fill the viewport-
 // proportional row instead of leaving dead space under a natural-height grid.
 const QUICK_ACTION_TILE =
-  'flex flex-col items-center justify-center gap-2 rounded-2xl border border-[#E5EEF5] bg-[#F5F7FA] px-3 py-4 transition-all hover:-translate-y-0.5 hover:border-[#0094FF] hover:bg-[#EAF8FF] dark:border-[#1F2429] dark:bg-[#131A20] dark:hover:border-[#32C7FF] dark:hover:bg-[#0094FF]/10'
+  'flex flex-col items-center justify-center gap-2 rounded-2xl border border-[#E5EEF5] bg-[#F5F7FA] px-3 py-4 transition-all hover:-translate-y-0.5 hover:border-[var(--brand-emphasis)] hover:bg-[#EAF8FF] dark:border-[#1F2429] dark:bg-[#131A20] dark:hover:border-[var(--brand-primary)] dark:hover:bg-[var(--brand-emphasis)]/10'
 
 export interface AdminDashboardProps {
   memberDetails: MemberDetail[]
@@ -140,7 +140,7 @@ export function AdminDashboard({
               {/* Plan subtext reveals beside the heading on hover, not below it. */}
               <div className="group flex min-w-0 items-baseline gap-2.5">
                 <h2 className={`${HEADING} whitespace-nowrap`}>Billing and seats</h2>
-                <p className="truncate text-xl font-semibold text-[#0094FF] opacity-0 transition-opacity group-hover:opacity-100 dark:text-[#32C7FF]">
+                <p className="truncate text-xl font-semibold text-[var(--brand-emphasis)] opacity-0 transition-opacity group-hover:opacity-100 dark:text-[var(--brand-primary)]">
                   {planName} Plan &middot; Annual billing
                 </p>
               </div>
@@ -160,7 +160,7 @@ export function AdminDashboard({
                   className="h-full rounded-full"
                   style={{
                     width: `${seatsPct}%`,
-                    background: 'linear-gradient(90deg, #32C7FF 0%, #0094FF 100%)',
+                    background: 'linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-emphasis) 100%)',
                   }}
                 />
               </div>
@@ -228,7 +228,7 @@ function QuickAction({
 
   const inner = (
     <>
-      <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EAF8FF] text-[#0094FF] dark:bg-[#0094FF]/15 dark:text-[#32C7FF]">
+      <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EAF8FF] text-[var(--brand-emphasis)] dark:bg-[var(--brand-emphasis)]/15 dark:text-[var(--brand-primary)]">
         <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
           {children}
         </svg>

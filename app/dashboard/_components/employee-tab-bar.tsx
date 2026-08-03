@@ -50,7 +50,7 @@ export function EmployeeTabBar() {
               aria-current={active ? 'page' : undefined}
               className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
                 active
-                  ? 'text-[#32C7FF]'
+                  ? 'text-[var(--brand-primary)]'
                   : 'text-[#8A8A8A] hover:text-[#0A0A0A] dark:text-[#7A8189] dark:hover:text-[#F5F7FA]'
               }`}
             >

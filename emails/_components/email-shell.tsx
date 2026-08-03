@@ -24,6 +24,28 @@ import * as React from 'react'
  */
 const FONT_STACK = "'Stack Sans Headline', Arial, Helvetica, sans-serif"
 
+/**
+ * Brand colours for email, as literal hex.
+ *
+ * ⚠ These deliberately do NOT use the `--brand-primary` / `--brand-emphasis`
+ * custom properties defined in app/globals.css, and must not be changed to.
+ * Email clients are not browsers: Gmail strips `<style>` blocks containing
+ * custom properties and does not resolve `var()` in inline styles, and Outlook's
+ * Word rendering engine has no support at all. A tokenised colour would render
+ * as no colour — an unstyled black button on a white card — in the clients most
+ * of our recipients actually use.
+ *
+ * So the app has one source of truth and email has a second, on purpose. Keep
+ * the two in step by hand: a palette change is app/globals.css plus this block.
+ * Values here are identical to the tokens as of 2026-08-03.
+ */
+export const EMAIL_BRAND = {
+  /** Matches --brand-primary. Buttons and accent rules. */
+  primary: '#32C7FF',
+  /** Matches --brand-emphasis. Links. */
+  emphasis: '#0094FF',
+} as const
+
 /** className hooks the dark-mode media query targets (inline styles can't be). */
 export const EMAIL_CLASS = {
   body: 'atc-body',
@@ -136,7 +158,7 @@ export const mutedText: React.CSSProperties = {
 
 export const calloutBox: React.CSSProperties = {
   backgroundColor: '#EAF8FF',
-  borderLeft: '3px solid #32C7FF',
+  borderLeft: `3px solid ${EMAIL_BRAND.primary}`,
   borderRadius: '4px',
   margin: '0 0 24px',
   padding: '16px 20px',
@@ -152,7 +174,7 @@ export const calloutItem: React.CSSProperties = {
 }
 
 export const bullet: React.CSSProperties = {
-  color: '#0094FF',
+  color: EMAIL_BRAND.emphasis,
   fontWeight: 700,
   marginRight: '8px',
 }
@@ -163,7 +185,7 @@ export const buttonContainer: React.CSSProperties = {
 }
 
 export const button: React.CSSProperties = {
-  backgroundColor: '#32C7FF',
+  backgroundColor: EMAIL_BRAND.primary,
   borderRadius: '12px',
   color: '#FFFFFF',
   display: 'inline-block',
@@ -176,7 +198,7 @@ export const button: React.CSSProperties = {
 }
 
 export const link: React.CSSProperties = {
-  color: '#0094FF',
+  color: EMAIL_BRAND.emphasis,
   textDecoration: 'underline',
 }
 

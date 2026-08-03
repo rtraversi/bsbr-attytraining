@@ -41,7 +41,7 @@ const CARD =
 const HEADING = 'font-headline font-bold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
 const SECTION_HEADING = `${HEADING} mb-4 text-2xl md:text-3xl xl:mb-5 xl:text-[2.5rem]`
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
-const ACCENT = 'text-[#0094FF]'
+const ACCENT = 'text-[var(--brand-emphasis)]'
 const CARD_PAD = 'p-6 xl:p-8'
 
 function canOpen(lesson: LessonState, fullyCleared: boolean): boolean {
@@ -123,7 +123,7 @@ export function OverviewClient({
               </div>
               <div className="h-4 w-full overflow-hidden rounded-full bg-[#E5EEF5] xl:h-6 dark:bg-[#1F2429]">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#32C7FF] to-[#0094FF] transition-[width] duration-500"
+                  className="h-full rounded-full bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-emphasis)] transition-[width] duration-500"
                   style={{ width: `${(lessonsComplete / 5) * 100}%` }}
                 />
               </div>
@@ -249,7 +249,7 @@ function UpNextCard({
             {lessonN}
           </span>
           {/* Wraps on narrow screens; single-line with ellipsis once there's room. */}
-          <span className="min-w-0 flex-1 font-headline text-base font-semibold tracking-tight text-[#0094FF] text-pretty md:truncate xl:text-xl">
+          <span className="min-w-0 flex-1 font-headline text-base font-semibold tracking-tight text-[var(--brand-emphasis)] text-pretty md:truncate xl:text-xl">
             {title}
           </span>
         </button>
@@ -326,7 +326,7 @@ function ActivityRow({ item, recent }: { item: ActivityItem; recent: boolean }) 
     <span className="flex gap-4">
       <span
         className={`w-[3px] shrink-0 self-stretch rounded-full ${
-          recent ? 'bg-[#32C7FF]' : 'bg-[#E5EEF5] dark:bg-[#1F2429]'
+          recent ? 'bg-[var(--brand-primary)]' : 'bg-[#E5EEF5] dark:bg-[#1F2429]'
         }`}
       />
       <span className="block min-w-0">
@@ -405,7 +405,7 @@ function CertificateCard({ certUrl }: { certUrl: string | null }) {
       </p>
       <Link
         href="/dashboard/quizzes"
-        className="shrink-0 cursor-pointer rounded-full bg-[#32C7FF] px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+        className="shrink-0 cursor-pointer rounded-full bg-[var(--brand-primary)] px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
       >
         Go
       </Link>
@@ -472,26 +472,26 @@ function ContentOutlineRow({
 
   const rowBase = 'flex items-center gap-3 py-2.5 xl:gap-4 xl:py-3'
   const rowClass = current
-    ? `${rowBase} -mx-3 rounded-xl bg-[#EAF8FF] px-3 dark:bg-[#0094FF]/10`
+    ? `${rowBase} -mx-3 rounded-xl bg-[#EAF8FF] px-3 dark:bg-[var(--brand-emphasis)]/10`
     : rowBase
 
   const titleClass = done
     ? 'font-medium text-[#0A0A0A] dark:text-[#F5F7FA]'
     : current
-      ? 'font-bold text-[#0094FF]'
+      ? 'font-bold text-[var(--brand-emphasis)]'
       : MUTED
 
   return (
     <div className={rowClass}>
       {/* Badge — content is not a quiz, so a done lesson shows a check, no score. */}
       {done ? (
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#32C7FF] xl:h-7 xl:w-7">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)] xl:h-7 xl:w-7">
           <svg className="h-3.5 w-3.5 text-white xl:h-4 xl:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </span>
       ) : current ? (
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-[#0094FF] text-[11px] font-bold text-[#0094FF] xl:h-7 xl:w-7 xl:text-xs">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-[var(--brand-emphasis)] text-[11px] font-bold text-[var(--brand-emphasis)] xl:h-7 xl:w-7 xl:text-xs">
           {lesson.number}
         </span>
       ) : (
@@ -574,19 +574,19 @@ function QuizRow({
 
   const rowBase = 'flex items-center gap-3 py-2 xl:gap-4 xl:py-2.5'
   const rowClass = isNext
-    ? `${rowBase} -mx-3 rounded-xl bg-[#EAF8FF] px-3 dark:bg-[#0094FF]/10`
+    ? `${rowBase} -mx-3 rounded-xl bg-[#EAF8FF] px-3 dark:bg-[var(--brand-emphasis)]/10`
     : rowBase
 
   const titleClass = cleared
     ? 'font-medium text-[#0A0A0A] dark:text-[#F5F7FA]'
     : isNext
-      ? 'font-bold text-[#0094FF]'
+      ? 'font-bold text-[var(--brand-emphasis)]'
       : MUTED
 
   return (
     <div className={rowClass}>
       {cleared ? (
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#32C7FF] xl:h-7 xl:w-7">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)] xl:h-7 xl:w-7">
           <svg className="h-3.5 w-3.5 text-white xl:h-4 xl:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
@@ -595,7 +595,7 @@ function QuizRow({
         <span
           className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold xl:h-7 xl:w-7 xl:text-xs ${
             isNext
-              ? 'border-2 border-[#0094FF] text-[#0094FF]'
+              ? 'border-2 border-[var(--brand-emphasis)] text-[var(--brand-emphasis)]'
               : `bg-[#F2F4F7] dark:bg-[#1F2429] ${MUTED}`
           }`}
         >

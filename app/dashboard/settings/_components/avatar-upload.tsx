@@ -72,7 +72,7 @@ export function AvatarUpload({
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#0094FF] text-[22px] font-bold text-white">
+        <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--brand-emphasis)] text-[22px] font-bold text-white">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- no next/image remote-pattern config in this project; plain <img> matches the codebase convention
             <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
@@ -92,7 +92,7 @@ export function AvatarUpload({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5EEF5] px-4 py-2 text-sm font-semibold transition-colors hover:border-[#0094FF] hover:text-[#0094FF] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#1F2429]"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5EEF5] px-4 py-2 text-sm font-semibold transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#1F2429]"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />

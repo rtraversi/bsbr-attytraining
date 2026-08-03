@@ -39,7 +39,7 @@ function PasswordField({
           value={value}
           onChange={onChange}
           disabled={disabled}
-          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 pr-14 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#32C7FF] disabled:opacity-50"
+          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 pr-14 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
         />
         <button
           type="button"
@@ -170,7 +170,7 @@ export function UpdatePasswordForm({
           onChange={(e) => setFullName(e.target.value)}
           disabled={loading}
           placeholder="Jane Marsh"
-          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#32C7FF] disabled:opacity-50"
+          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
         />
         <p className="text-sm font-extralight text-zinc-500">
           This is the name printed on your compliance certificate.
@@ -194,7 +194,7 @@ export function UpdatePasswordForm({
             className="h-7 w-7"
           />
           <span
-            className={`text-sm font-extralight ${isStrong ? 'text-[#0094FF]' : 'text-zinc-500'}`}
+            className={`text-sm font-extralight ${isStrong ? 'text-[var(--brand-emphasis)]' : 'text-zinc-500'}`}
           >
             {isStrong ? 'Strong enough.' : 'Use at least 8 characters.'}
           </span>
@@ -213,7 +213,7 @@ export function UpdatePasswordForm({
       <button
         type="submit"
         disabled={loading}
-        className="mt-1 flex w-full items-center justify-center rounded-2xl bg-[#32C7FF] px-6 py-4 text-lg font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-1 flex w-full items-center justify-center rounded-2xl bg-[var(--brand-primary)] px-6 py-4 text-lg font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? 'Saving…' : 'Set & continue'}
       </button>
