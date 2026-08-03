@@ -1,9 +1,11 @@
 import { after } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { render } from '@react-email/render'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/resend'
 import { SEAT_OCCUPYING_STATUSES } from '@/lib/seats'
+import { CheckoutEmailInUseEmail } from '@/emails/checkout-email-in-use'
 
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
@@ -370,21 +372,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
       await provisionFirm(supabase, buyer.userId, session, sub, seats, periodEnd)
       return
 
-    // Cases 1, 2 and 3 record the outcome and summon a human. The refusal
-    // mechanics (cancelling the duplicate subscription) and the reactivation
-    // path land in the next two commits; until then the conservative outcome
-    // is correct — nothing is provisioned, nothing is destroyed, and the
-    // operator gets an accurate account of what happened.
+    // Case 1 — a genuine duplicate. Stop the new subscription billing and leave
+    // the firm they already have completely alone. No refund: cancelling in
+    // Stripe does not return funds, and whether to refund is Rob's call, made
+    // by hand.
     case 'duplicate':
-      await recordProvisioningFailure(supabase, session, email, 'duplicate')
-      await alertOperator('⚠️ Stripe — duplicate purchase by an active firm owner', [
-        `<strong>Customer email:</strong> ${email}`,
-        `<strong>Existing firm:</strong> ${buyer.firmId} (active)`,
-        `<strong>Firm's subscription (LEAVE ALONE):</strong> ${buyer.firmSubscriptionId ?? 'none on record'}`,
-        `<strong>New duplicate subscription:</strong> ${session.subscription as string}`,
-        `<strong>Checkout session:</strong> ${session.id}`,
-        `<strong>Action:</strong> the duplicate subscription is still billing — cancel it in Stripe.`,
-      ])
+      await cancelDuplicateSubscription(supabase, buyer, session, email)
       return
 
     // Case 2 — the win-back. Cancellation only ever flipped firms.status, so
@@ -394,14 +387,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
       await reactivateFirm(supabase, buyer, session, sub, seats, periodEnd, email)
       return
 
+    // Case 3 — the buyer is staff at somebody else's active firm. Provision
+    // nothing and cancel nothing; their employer's account is not ours to
+    // touch, and the buyer is the only one who can resolve it.
     case 'email_in_use':
-      await recordProvisioningFailure(supabase, session, email, 'email_in_use')
-      await alertOperator('⚠️ Stripe — buyer is staff at another active firm', [
-        `<strong>Customer email:</strong> ${email}`,
-        `<strong>Checkout session:</strong> ${session.id}`,
-        `<strong>Subscription:</strong> ${session.subscription as string}`,
-        `<strong>Action:</strong> nothing was provisioned and nothing was cancelled. They must buy with a different address.`,
-      ])
+      await refuseEmailInUse(supabase, session, email)
       return
 
     case 'unresolved':
@@ -467,6 +457,108 @@ async function provisionFirm(
     // true only if they opt in.
     occupies_seat: false,
   })
+}
+
+/**
+ * Case 1 — a genuine duplicate purchase by someone who already owns an active
+ * firm.
+ *
+ * 🔴 The subscription cancelled here is ALWAYS session.subscription — the brand
+ * new one that arrived on this checkout. NEVER firm.stripe_subscription_id.
+ * They are two different subscriptions and getting them backwards destroys the
+ * access of a firm that is paying and up to date. The firm's own subscription
+ * is not touched under any circumstance.
+ *
+ * ⚠ This is the ONLY place in the codebase where subscriptions.cancel() is the
+ * right call. app/api/billing/auto-renew/route.ts:29 carries a warning against
+ * it and that warning still stands everywhere else: there, cancelling
+ * immediately would destroy paid-for access. Here the subscription being ended
+ * is seconds old, has bought nothing, and is attached to no firm — there is no
+ * access to destroy, and leaving it alive would bill them again next year for
+ * something they never received.
+ *
+ * No refund is issued. Cancelling stops future billing; it does not return the
+ * payment just captured. That is deliberate (Max, 2026-08-03) and refunds stay
+ * a manual decision.
+ */
+async function cancelDuplicateSubscription(
+  supabase: AdminClient,
+  buyer: Extract<BuyerIdentity, { kind: 'duplicate' }>,
+  session: Stripe.Checkout.Session,
+  email: string
+) {
+  const duplicateSubscriptionId = session.subscription as string
+
+  // The ledger row goes in first, before the cancel and before the alert. If
+  // the Stripe call throws, the record of a captured payment that provisioned
+  // nothing still exists — the event is already burned in
+  // processed_stripe_events, so this row is the only recovery path there is.
+  await recordProvisioningFailure(supabase, session, email, 'duplicate')
+
+  let cancelled = false
+  let cancelError: string | null = null
+
+  try {
+    await getStripe().subscriptions.cancel(duplicateSubscriptionId)
+    cancelled = true
+  } catch (err) {
+    // Never rethrow: a failed cancel must not take down the handler and trigger
+    // a Stripe retry, which would try to cancel again on an event whose ledger
+    // row already exists. The alert below carries the failure to a human.
+    cancelError = err instanceof Error ? err.message : String(err)
+    console.error(
+      `[stripe-webhook] failed to cancel duplicate subscription ${duplicateSubscriptionId}:`,
+      err
+    )
+  }
+
+  await alertOperator('⚠️ Stripe — duplicate purchase by an active firm owner', [
+    `<strong>Customer email:</strong> ${email}`,
+    `<strong>Existing firm:</strong> ${buyer.firmId} (active, untouched)`,
+    `<strong>Firm's subscription — STILL ACTIVE, do not cancel:</strong> ${buyer.firmSubscriptionId ?? 'none on record'}`,
+    `<strong>Duplicate subscription — ${cancelled ? 'CANCELLED' : 'STILL BILLING'}:</strong> ${duplicateSubscriptionId}`,
+    `<strong>Checkout session:</strong> ${session.id}`,
+    cancelled
+      ? `<strong>Action:</strong> the duplicate has been cancelled and will not bill again. No refund was issued — decide whether to refund the payment just taken.`
+      : `<strong>🔴 Action required:</strong> the cancel call FAILED (${cancelError}). The duplicate subscription is still billing and must be cancelled by hand in Stripe.`,
+  ])
+}
+
+/**
+ * Case 3 — the buyer's address is already registered as staff at another firm
+ * that is active.
+ *
+ * Nothing is provisioned and nothing is cancelled: their employer's account is
+ * not ours to modify, and the buyer is the only person who can resolve this, so
+ * they get an email as well as the operator alert.
+ */
+async function refuseEmailInUse(
+  supabase: AdminClient,
+  session: Stripe.Checkout.Session,
+  email: string
+) {
+  await recordProvisioningFailure(supabase, session, email, 'email_in_use')
+
+  try {
+    const html = await render(CheckoutEmailInUseEmail({ email }))
+    await sendEmail({
+      to: email,
+      subject: "We couldn't finish setting up your IURIX account",
+      html,
+    })
+  } catch (err) {
+    // Best-effort, same as every other send in this file. The ledger row is
+    // already written and the operator alert still goes out below.
+    console.error('[stripe-webhook] email_in_use customer email failed:', err)
+  }
+
+  await alertOperator('⚠️ Stripe — buyer is staff at another active firm', [
+    `<strong>Customer email:</strong> ${email}`,
+    `<strong>Checkout session:</strong> ${session.id}`,
+    `<strong>Subscription — NOT cancelled, still billing:</strong> ${session.subscription as string}`,
+    `<strong>What happened:</strong> nothing was provisioned and nothing was cancelled. Their employer's firm is untouched.`,
+    `<strong>Action required:</strong> this payment bought nothing and the subscription will renew. Decide whether to cancel and/or refund it, then help them re-purchase on a different address.`,
+  ])
 }
 
 /**
