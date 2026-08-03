@@ -121,6 +121,18 @@ could have caught it, but customers see it at Checkout and on invoices. See Stri
 
 ## Locked Decisions
 
+### 2026-08-03 (Max) — brand palette
+
+- **Primary / turquoise: PANTONE 14-4912 TCX "Rinsing Rivulet" = `#5CC6C3`.** The mark is set in this.
+- **Neutral light: PANTONE 13-4108 TCX "Nimbus Cloud" = `#D5D5D8`.**
+- **Neutral dark: `#9C9EA0`.** Adjusted from PANTONE 16-4402 TCX "Drizzle" (`#A09E9C`) at Max's direction, 2026-08-03: *"change the drizzle, nudge it to a hair cooler."* The change is an exact mirror — green held at 158, red and blue swapped — so weight is unchanged (luminance moves ~0.5/255) but the temperature flips from warm to cool and now agrees with Nimbus Cloud's bias. Halfway option if it reads too cool: `#9E9EA0`.
+
+**⏸ DEFERRED, NOT DECIDED — the dashboard/app palette.** Logged 2026-08-03 13:15 CST (Max), verbatim:
+
+> *"for now we can leave the dashboard/app color palette on hold, but perhaps we will just change the blue to that turqouise, but hold off on that just log it."*
+
+Context for whoever picks this up: the app currently runs on `#0094FF` / `#32C7FF` across **35 files**, as raw inline hex, not tokens. The marketing and legal pages are a **third** system (`teal-300/400` on `zinc-950`). Swapping the blue for `#5CC6C3` is cheap only if the palette is tokenised first; today it is a 35-file hand edit. Do not start it without Max saying so.
+
 ### 2026-07-26 (Rob) — naming + corporate structure
 - **Product name: "Iurix Accreditation"** ("Iurix" for the company). Replaces "Athena".
 - **BSBR Holdings, LLC is the parent.** Iurix, IurisIQ, and Built Smart by Rob are three separate
