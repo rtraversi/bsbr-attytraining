@@ -348,6 +348,36 @@ export type Database = {
         }
         Relationships: []
       }
+      provisioning_failures: {
+        Row: {
+          created_at: string
+          email: string
+          reason: string
+          resolved_at: string | null
+          stripe_customer_id: string
+          stripe_session_id: string
+          stripe_subscription_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          reason: string
+          resolved_at?: string | null
+          stripe_customer_id: string
+          stripe_session_id: string
+          stripe_subscription_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          reason?: string
+          resolved_at?: string | null
+          stripe_customer_id?: string
+          stripe_session_id?: string
+          stripe_subscription_id?: string | null
+        }
+        Relationships: []
+      }
       quiz_attempts: {
         Row: {
           answers: Json | null
@@ -525,6 +555,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      find_user_id_by_email: { Args: { p_email: string }; Returns: string }
       firm_id: { Args: never; Returns: string }
       firm_role: { Args: never; Returns: string }
       generate_certificate_number: { Args: never; Returns: string }
