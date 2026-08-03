@@ -1,8 +1,13 @@
 # Session summary — 2026-07-31 (Max, terminal)
 
-22 commits. Four blocks of work: a doc-accuracy pass, three implementation batches, and a
-types verification. 17 commits pushed; **Batch 3 (5 commits) is committed but NOT pushed** —
-Max said no push for that batch and that instruction was never lifted.
+24 commits. Four blocks of work: a doc-accuracy pass, three implementation batches, and a
+types verification. **All 24 pushed and deployed.**
+
+> *Corrected 2026-08-03.* This opening previously read "22 commits ... **Batch 3 (5 commits) is
+> committed but NOT pushed**". Batch 3 was pushed the same evening (see Status below, itself
+> corrected in place on 07-31). The true count is **24** commits dated 2026-07-31, `5370fc3`
+> through `277056f`. The "22" was already wrong when written: the file was committed at
+> `7f65a19`, which was the 23rd commit of the day.
 
 ---
 
@@ -110,7 +115,7 @@ possible case to get right by hand. The CLI is linked and working on this machin
 
 ---
 
-## 5 · Batch 3 — the billing page (`368dff4` → `612dc56`) — **NOT PUSHED**
+## 5 · Batch 3 — the billing page (`368dff4` → `612dc56`) — **PUSHED + DEPLOYED**
 
 Settings' Billing section had two rows that both deep-linked the same Stripe portal, so "Cancel
 auto-renewal" was a second door to the same room. Now: `/dashboard/billing` owns state and the
@@ -138,8 +143,8 @@ design** — never `subscriptions.cancel()`, which would destroy paid-for access
 | `tsc --noEmit` | clean |
 | `eslint .` | clean |
 | production build | succeeds |
-| `origin/main` | `7f65a19` — all 22 commits pushed |
-| local `HEAD` | `7f65a19` — in sync, tree clean |
+| `origin/main` | `277056f` — all 24 commits pushed |
+| local `HEAD` | `277056f` — in sync, tree clean |
 | deployed | app `21:01:39Z` (`0c4e7ff8`) · cert-worker `19:48:34Z` |
 | `0017` | **applied** — confirmed local/remote/time via `supabase migration list --linked` |
 
@@ -152,7 +157,7 @@ recorded as unapplied. All of it completed minutes later; corrected in place 202
 
 1. ~~`supabase db push`~~ — **done.** `0017` is applied; the nudge audit row writes and the cron's
    nudge-dedupe is live. The earlier claim that it had not run was wrong.
-2. ~~Push Batch 3~~ — **done.** All 22 commits are on `origin/main` at `7f65a19`.
+2. ~~Push Batch 3~~ — **done.** All 24 commits are on `origin/main` at `277056f`.
 3. ~~Deploy~~ — **done.** App at `21:01:39Z`; cert-worker at `19:48:34Z` and untouched by Batch 3
    (`git diff 61965d7..7f65a19` returns no `workers/cert-worker` paths).
 

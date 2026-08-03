@@ -1,8 +1,13 @@
 # STATE — Iurix Accreditation (formerly "Athena")
 
-**Last updated:** 2026-07-31 — doc-accuracy pass, every claim re-verified against the code by grep
-and file read. No app code changed. (Prior refresh 2026-07-26, itself a correction of a version that
-claimed "Phase 0, 0% complete" while Phases 0–5 were built and deployed.)
+**Last updated:** 2026-08-03 (Max, desktop). Catch-up pass: this file was written at `5370fc3`,
+07:13 on 07-31, **before** the three implementation batches that shipped later that same day, so it
+had gone stale within hours of its own accuracy pass. Corrected here: migration high-water mark
+`0016` → `0017`, the billing page and reminder work recorded, and the 07-31 Session Continuity entry
+fixed (it claimed "no app code changed" for a day with 24 commits). Every claim below re-verified by
+grep, file read, `wrangler deployments list`, `supabase migration list --linked`, and live HTTP.
+(Prior refresh 2026-07-26, itself a correction of a version that claimed "Phase 0, 0% complete"
+while Phases 0–5 were built and deployed.)
 
 > **Naming:** the product is **Iurix Accreditation** ("Iurix"). **The rename is executed.**
 > `grep -ri "built smart by rob"` returns **zero hits in source** — it survives only in
@@ -47,12 +52,12 @@ claimed "Phase 0, 0% complete" while Phases 0–5 were built and deployed.)
 
 | Phase | Name | Code | Notes on what is NOT done |
 |---|---|---|---|
-| 0 | Foundations | ✅ Deployed | Legal pages live (`/terms`, `/privacy`, `/dpa`); `tests/rls-isolation.test.ts` exists; migrations `0001`–`0016` applied. ✅ Resend sending-domain verification **closed** — Rob verified DKIM, SPF and DMARC on `iurixaccreditation.com` (2026-07-29); mail sends as `IURIX <noreply@iurixaccreditation.com>` from both `lib/resend.ts:6` and `workers/cert-worker/src/index.ts:152`. **Open:** Supabase still on free tier — **Pro required before launch**. |
+| 0 | Foundations | ✅ Deployed | Legal pages live (`/terms`, `/privacy`, `/dpa`); `tests/rls-isolation.test.ts` exists; migrations `0001`–`0017` applied (verified 2026-08-03, `supabase migration list --linked`: local, remote and time columns all reach `0017`). ✅ Resend sending-domain verification **closed** — Rob verified DKIM, SPF and DMARC on `iurixaccreditation.com` (2026-07-29); mail sends as `IURIX <noreply@iurixaccreditation.com>` from both `lib/resend.ts:6` and `workers/cert-worker/src/index.ts:152`. **Open:** Supabase still on free tier — **Pro required before launch**. |
 | 1 | Hello-cert end-to-end stub | ✅ Deployed | Checkout, 373-line webhook w/ `processed_stripe_events` idempotency + 5 handlers, cert PDF via `pdf-lib`, `cert_generation_queue` + 5-min drain, `/api/certificates/[id]/url` signed URLs. Superseded by Phase 2 (the "Mark Pass" stub is gone). |
 | 2 | Rise 360 content + custom React quiz | ⚠️ Deployed, content-incomplete | Rise/SCORM export embedded and working; server-side scoring, identity attestation, unlimited retakes all built. **Open:** the question pool is a placeholder — 8 questions with **pool size == attempt size, so there is no randomization**. Roadmap criterion 3 (pool ≥ 3× per-attempt) is unmet. Content-blocked, not code-blocked. |
 | 3 | Firm admin dashboard | ✅ Deployed | Verified present: `/api/firm/attestation`, `/api/firm/audit-log`, `/api/invite/bulk`, `csv-upload-form.tsx`, reminders, seat reassignment, member delete/redact. |
 | 4 | Automation hardening | ⚠️ Deployed, ops-incomplete | Cert Worker crons live (`*/5` queue drain + `0 9` daily reminders); `X-Webhook-Secret` enforced; `/api/health` + secret-gated `/api/metrics` exist. ✅ Cert PDF logo **is no longer a placeholder** — the certificate was rebuilt (`6c44493`) around the real Iurix mark, base64-encoded at `lib/cert-logo.ts` from `public/brand/iurix-logo-2048-white.png`. (`lib/cert-pdf.ts:18` is now just the comment on the pure-white paper color.) **Open:** external uptime monitor never picked (UptimeRobot vs BetterStack); Supabase PITR needs Pro tier. |
-| 5 | Renewal flow + launch polish | ⚠️ Deployed, launch-incomplete | Renewal re-enrollment, grace-vs-lapsed logic (30-day grace), reminder cadence, and expiry handling are all built in `invoice.payment_succeeded`. **Open:** attorney review of cert + landing copy + TOS never completed; iPad Safari / Chromebook QA not run. |
+| 5 | Renewal flow + launch polish | ⚠️ Deployed, launch-incomplete | Renewal re-enrollment, grace-vs-lapsed logic (30-day grace), reminder cadence, and expiry handling are all built in `invoice.payment_succeeded`. **Added 07-31:** customer billing page at `/dashboard/billing` with `GET /api/billing/summary` (subscription state + last 12 invoices) and `POST /api/billing/auto-renew` (both directions, confirm step on cancel). Auto-renewal is disclosed **before payment** on the pricing page (`app/pricing/_components/pricing-slider.tsx`) and the renewal email states the card will be charged. Cancellation uses `cancel_at_period_end`; the only `subscriptions.cancel` string in the tree is the comment warning against it (`app/api/billing/auto-renew/route.ts:29`). **Open:** attorney review of cert + landing copy + TOS never completed; iPad Safari / Chromebook QA not run; the cancellation email has never been visually rendered. |
 
 ---
 
@@ -81,7 +86,9 @@ claimed "Phase 0, 0% complete" while Phases 0–5 were built and deployed.)
 *Closed 2026-07-31:* ~~Pick + register the Iurix domain~~ — `iurixaccreditation.com` is live and
 wired through the app, the cert Worker, and the email footers. ~~Decide whether the course keeps
 the name "AI Staff Compliance Training"~~ — retired; the phrase returns **zero** hits in source and
-the `courses.title` row was updated.
+the `courses.title` row was updated. ⚠️ **Partially reopened 2026-08-03:** the *Stripe product* is
+still named "AI Staff Compliance Training — Annual Certification". Not a source string, so no grep
+could have caught it, but customers see it at Checkout and on invoices. See Stripe live mode above.
 
 ### Blocked on Katy
 - Legal-accuracy pass on both question sets (`supabase/migrations/0003_quiz_questions.sql` — the
@@ -92,6 +99,17 @@ the `courses.title` row was updated.
   `PRICE_ID` at `app/api/checkout/route.ts:17` → register the webhook **on the new domain**.
   ⚠️ `app/api/checkout/route.ts:68` already sets `automatic_tax: { enabled: true }`, so **live
   checkout hard-fails until Stripe Tax is enabled.**
+  🔴 **Found 2026-08-03 by reading the sandbox objects over the API** (all three must be right on the
+  *live* objects, not just the sandbox):
+  1. The price has **`tax_behavior=unspecified`**. Automatic tax expects an explicit
+     `inclusive`/`exclusive`. Docs had claimed `exclusive`; the object does not have it.
+  2. The product carries **no `tax_code`** and **no metadata**, so automatic tax falls back to the
+     account default category. Docs had claimed `txcd_20060058`.
+  3. The price has **no `lookup_key`**. Docs had claimed `per_seat_annual`. Setting one on the live
+     price would retire the hardcoded-ID swap from this checklist permanently.
+  ⚠️ Separately, the **Stripe product name still reads "AI Staff Compliance Training"**, the retired
+  course name. It is not in source, so the rename sweep's `grep` could never have caught it, but it
+  renders on the hosted Checkout page and on every invoice and receipt. Dashboard fix, not code.
 - **Auth performance** — ~5s per dashboard route. **Zero `getClaims()` usage repo-wide** despite
   CLAUDE.md mandating it; three serialized `getUser()` round-trips per navigation
   (`middleware.ts:36` → `app/dashboard/layout.tsx:11` → page) plus a `getUserById` fan-out at
@@ -131,9 +149,11 @@ the `courses.title` row was updated.
 
 ## ⚠️ Known-stale references in other docs
 
-- **CLAUDE.md Stripe IDs are wrong.** It names `price_1ThbLNCzT2268ei9nkadS8kD` /
-  `prod_UgzKT3NrGNAvDA`. The code uses **`price_1TjNHc6ZCSojEKRrKs79ToJ0`**, hardcoded at
-  `app/api/checkout/route.ts:17`, on sandbox `acct_1ThDpr6ZCSojEKRr`. Fix during the rename pass.
+- ✅ **CLAUDE.md Stripe IDs — FIXED 2026-08-03.** It named `price_1ThbLNCzT2268ei9nkadS8kD` /
+  `prod_UgzKT3NrGNAvDA`, both from a retired Stripe account. Corrected to the API-verified
+  `price_1TjNHc6ZCSojEKRrKs79ToJ0` / `prod_UiovBHrxJSDVpf` on sandbox `acct_1ThDpr6ZCSojEKRr`,
+  which has exactly one active product and one active price. Verifying it surfaced three further
+  deltas now recorded in CLAUDE.md §4 and flagged under Stripe live mode below.
 - **`.planning/ROADMAP.md` Progress table still reads "Not started" for all six phases** and its
   Phase 4 fallback still references Puppeteer-in-n8n (n8n is out of scope). Cosmetic; low priority.
 - **`.planning/DEPLOY-CHECKLIST.md`** is a 2026-06-17 artifact describing the first deploy. Its
@@ -164,12 +184,30 @@ the `courses.title` row was updated.
 
 ## Session Continuity
 
-- **2026-07-31 (Max):** Doc-accuracy pass on this file, **no app code changed**. Re-verified eight
-  claims against the codebase by grep and file read and corrected each: the rename is executed (not
-  pending); the live URL is `iurixaccreditation.com` (not the `workers.dev` sandbox); the domain
-  decision, the course-name decision, the Resend domain verification, and the cert-PDF logo
-  placeholder are all closed; the logo blocker is narrowed to the monogram in `atc-logo.tsx` plus
-  the still-missing wordmark asset; migration high-water mark corrected `0013` → `0016`.
+- **2026-08-03 (Max, desktop):** Catch-up + correction pass, no app code changed. Fixed the 07-31
+  record across four files: the commit count (22/23 → **24**), the contradictory "17 pushed, 5 not"
+  opening in `session_handoff.md`, this file's stale migration and phase notes, and the wrong Stripe
+  product/price IDs in `CLAUDE.md` (see below). Verified Friday's deploys independently.
+- **2026-07-31 (Max):** **Four blocks, 24 commits, `5370fc3` → `277056f`.** *(This entry originally
+  read "Doc-accuracy pass on this file, no app code changed" — true of the 07:13 commit only, and
+  wrong about the day. Corrected 2026-08-03.)*
+  - *Block 1, `5370fc3`:* doc-accuracy pass on this file. Re-verified eight claims by grep and file
+    read: the rename is executed (not pending); the live URL is `iurixaccreditation.com` (not the
+    `workers.dev` sandbox); the domain decision, the course-name decision, the Resend domain
+    verification, and the cert-PDF logo placeholder are all closed; the logo blocker is narrowed to
+    the monogram in `atc-logo.tsx` plus the still-missing wordmark asset; migrations `0013` → `0016`.
+  - *Block 2, Batch 1 (`8e1e6cc` → `0601f68`):* `/cookies` route as an empty shell; sign-in footer
+    fixed (Terms links, Cookies removed pending copy, support mailto off the retired domain); dead
+    "View who's left" link removed; two orphaned Athena assets deleted; quiz width and "Your path"
+    sizing fixed.
+  - *Block 3, Batch 2 (`484e318` → `cc5d969`, plus the `0017` rebuild at `61965d7`):* migration
+    `0017` adds `nudge_sent`; the manual Nudge button now writes an audit row with `triggered_by`,
+    rate-limited to one per 48h; cron dedupes against it; renewal dedupe widened 24h → 8 days;
+    lapsed firms get a shorter admin-only cadence; auto-renewal disclosed before payment.
+  - *Block 4, Batch 3 (`368dff4` → `612dc56`):* the `/dashboard/billing` page (see Phase 5 above).
+  - Deployed: app **2026-07-31T21:01:39Z** (version `0c4e7ff8`), cert-worker **19:48:34Z**. Both
+    re-confirmed 2026-08-03 via `wrangler deployments list`. The final commit `277056f` postdates
+    the app deploy by ~2.5 minutes but touches **only** two docs, so no code is unshipped.
 - **2026-07-26 (Rob):** Scoping session, no code. Locked the Iurix name + corporate structure;
   produced `.planning/RENAME-IURIX.md`; corrected the "payment backend is unfinished" premise (it
   is built and deployed — the gap is live mode); refreshed this file. Commit `26729d3`.
