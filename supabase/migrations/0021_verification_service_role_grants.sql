@@ -1,0 +1,37 @@
+-- =============================================================================
+-- 0021_verification_service_role_grants.sql
+-- Fixes: 0020 revoked EXECUTE from public but never granted it to service_role
+-- =============================================================================
+--
+-- 0020 copied the revoke half of 0018's pattern and dropped the grant half.
+-- 0018 ends with `grant execute ... to service_role` for exactly this reason;
+-- Postgres grants EXECUTE to PUBLIC by default, `revoke ... from public` takes
+-- it away from EVERY role that had it only by that route, and service_role is
+-- one of them.
+--
+-- Two consequences, and the first one is the dangerous one:
+--
+--  1. check_verification_rate_limit is called from application code through
+--     admin.rpc() on the service-role key. It would have raised 42501 on every
+--     call. lib/verification.ts fails OPEN by design — a database problem must
+--     not make a valid certificate look unverifiable to a regulator — so the
+--     limiter would have been silently inert on a public endpoint while
+--     appearing to work perfectly. Nothing would have surfaced it.
+--
+--  2. generate_verification_token is the DEFAULT on certificates
+--     .verification_token. Default expressions are evaluated with the
+--     privileges of the role doing the INSERT, not the definer, so a
+--     service-role insert that did not supply a token explicitly would have
+--     failed outright. The cert generation route now always supplies one, but a
+--     default that throws for the only role that inserts is a landmine either
+--     way.
+--
+-- The anon probe against 0020 passed precisely because anon is supposed to get
+-- 42501 here. Testing the role that should be refused does not test the role
+-- that should be allowed.
+--
+-- These grants are additive and idempotent. Nothing else changes.
+-- ---------------------------------------------------------------------------
+
+grant execute on function public.generate_verification_token() to service_role;
+grant execute on function public.check_verification_rate_limit(text, int, int) to service_role;

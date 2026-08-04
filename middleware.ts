@@ -59,6 +59,11 @@ export const config = {
     // `training-content/` is the static SCORM package (~325 files: html/js/css/
     // json/fonts/audio). Without this exclusion every asset request would run
     // middleware and pay a supabase.auth.getUser() round-trip.
-    '/((?!_next/static|_next/image|favicon.ico|api/|training-content/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    //
+    // `verify/` is public by definition — a regulator or client scanning a QR
+    // code has no session and never will. Running middleware there would spend
+    // a getUser() round-trip on every scan to learn nothing, on the one route
+    // whose latency is measured while someone stands holding a piece of paper.
+    '/((?!_next/static|_next/image|favicon.ico|api/|training-content/|verify|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

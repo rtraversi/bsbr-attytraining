@@ -104,10 +104,28 @@ export async function POST(req: NextRequest) {
     // fallback only covers the row being unreadable, not a genuinely absent score.
     const score         = attemptResult.data?.score ?? 0
 
-    // ── Certificate number — DB sequence guarantees global uniqueness ────────────
+    // ── Certificate number — unique constraint guarantees global uniqueness ──────
+    // (This comment used to say "DB sequence". 0014 replaced the sequence with a
+    // random 4-digit tail plus a retry loop; the unique index is now the actual
+    // guarantee, and the loop only keeps the insert from failing in practice.)
     const { data: certNumberRaw, error: seqErr } = await admin.rpc('generate_certificate_number')
     if (seqErr || !certNumberRaw) throw new Error('Failed to generate certificate number')
     const certNumber = certNumberRaw as string
+
+    // ── Verification token ───────────────────────────────────────────────────────
+    // Generated here rather than left to the column default, because the PDF's
+    // QR code has to encode the SAME value the row is written with. Letting the
+    // database mint it during the insert would mean the PDF was already printed
+    // and uploaded before the token existed.
+    //
+    // 16 bytes = 128 bits, hex, matching generate_verification_token(). Web
+    // Crypto is available in both the Worker and Node, so no import is needed.
+    const tokenBytes = new Uint8Array(16)
+    crypto.getRandomValues(tokenBytes)
+    const verificationToken = Array.from(tokenBytes, (b) => b.toString(16).padStart(2, '0')).join('')
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+    const verifyUrl = `${appUrl}/verify/${verificationToken}`
 
     // ── Date math ────────────────────────────────────────────────────────────────
     const completedAt = enrollment.completed_at
@@ -126,6 +144,7 @@ export async function POST(req: NextRequest) {
       score,
       completedAt,
       expiresAt,
+      verifyUrl,
     })
 
     // ── Upload to Supabase Storage ────────────────────────────────────────────────
@@ -138,6 +157,16 @@ export async function POST(req: NextRequest) {
     if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`)
 
     // ── Insert certificates row ──────────────────────────────────────────────────
+    // holder_name / firm_name are snapshots taken now, on purpose (0020). They
+    // are what the public /verify page reads, so verification reflects what the
+    // PDF actually says rather than whatever the profile says later.
+    //
+    // holder_name is NOT the `employeeName` used for the PDF: that one falls
+    // back to the email address when no full_name is set, which is fine on a
+    // private document sent to its own subject and unacceptable on a public
+    // endpoint. A holder with no recorded name verifies as having none.
+    const holderName = (authResult.data?.user?.user_metadata?.full_name as string | undefined)?.trim() || null
+
     const { error: certInsertErr } = await admin.from('certificates').insert({
       firm_id:            queue.firm_id,
       user_id:            enrollment.user_id,
@@ -146,6 +175,9 @@ export async function POST(req: NextRequest) {
       storage_path:       storagePath,
       issued_at:          new Date().toISOString(),
       expires_at:         expiresAt.toISOString(),
+      holder_name:        holderName,
+      firm_name:          firmResult.data?.name ?? null,
+      verification_token: verificationToken,
     })
 
     if (certInsertErr) throw new Error(`Certificate insert failed: ${certInsertErr.message}`)
