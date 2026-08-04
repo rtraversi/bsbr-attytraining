@@ -52,41 +52,42 @@
      (2026-08-04) — the real mark: brushed-metal scales fused with a column,
      teal edge-lighting, two rose-gold crescents enclosing it.
 
-     The mark is genuinely low-saturation: its teals sit around #5c6b6b and its
-     rose golds around #926c5d, both far more muted than a typical brand
-     palette. That restraint IS the brand — it is what makes it read as an
-     instrument rather than a startup. Do not "correct" these toward more
-     saturated values.
+     The raw sampled values (teal #5c6b6b, rose gold #926c5d) were used verbatim
+     at first and read as washed out on screen — a mark rendered in brushed metal
+     carries its own specular highlights, and a flat page has none of that to
+     lift it. So the hues below are the mark's, held at the same relationships,
+     with chroma and contrast raised (Rob, 2026-08-04: "it's too muted").
 
-     Text colours (--color-ink*) are darkened past anything in the mark on
-     purpose: the sampled tones are mid-lightness and would fail WCAG AA as
-     body text on the marble ground. */
+     Every value here has been contrast-checked against the grounds it is used
+     on. Two are constrained: --color-silver is 2.4:1 and is for RULES ONLY,
+     never text; --color-gold is 3.8:1, so it is large-text or decoration only —
+     use --color-gold-deep (6.4:1) for anything small. */
 
   /* neutrals — marble ground, titanium/silver structure */
   --color-marble: #f7f7f6;
-  --color-marble-deep: #f0f3f2;
-  --color-silver: #c4ccca;      /* sampled — the brushed-metal highlight */
-  --color-steel: #acb3b0;       /* sampled — titanium mid */
-  --color-steel-mute: #8f9996;
+  --color-marble-deep: #edf3f1;
+  --color-silver: #c0c9c6;      /* rules and hairlines only — 2.4:1, never text */
+  --color-steel: #9aa5a2;
+  --color-steel-mute: #7c8785;
 
-  /* teals — sampled from the scales and the column */
-  --color-mint: #d7e5e3;
-  --color-mint-line: #acd4d3;   /* sampled — the teal edge-light */
-  --color-teal-light: #778887;  /* sampled */
-  --color-teal-mid: #5c6b6b;    /* sampled — the dominant teal */
-  --color-teal-deep: #37403f;
-  --color-teal-ink: #252c2c;    /* darkest ground, for the closing panel */
+  /* teals — the mark's hue, pushed up in chroma */
+  --color-mint: #cde3df;
+  --color-mint-line: #93c2be;
+  --color-teal-light: #5f8d89;
+  --color-teal-mid: #3d6764;    /* 5.9:1 on marble — safe for emphasis text */
+  --color-teal-deep: #24403e;
+  --color-teal-ink: #16292a;    /* the closing panel ground */
 
-  /* ink — darkened for contrast, keyed to the mark's hue */
-  --color-ink: #1c2223;
-  --color-ink-soft: #4a5253;
-  --color-ink-mute: #79817f;
+  /* ink */
+  --color-ink: #14201f;
+  --color-ink-soft: #3d4a49;
+  --color-ink-mute: #656f6d;    /* 4.8:1 — still AA for body */
 
-  /* rose gold — the crescents. Used as fine rules and seal moments. */
-  --color-gold-pale: #fcece4;   /* sampled — the crescent's brightest point */
-  --color-gold-soft: #c9b0a4;
-  --color-gold: #926c5d;        /* sampled — the crescent workhorse */
-  --color-gold-deep: #74564a;   /* darkened so it passes AA as small text */
+  /* rose gold — the crescents */
+  --color-gold-pale: #f0d5c4;
+  --color-gold-soft: #d2a68c;
+  --color-gold: #a9714f;        /* 3.8:1 — LARGE TEXT OR DECORATION ONLY */
+  --color-gold-deep: #7f4f34;   /* 6.4:1 — the one to use for small text */
 }
 
 :root {

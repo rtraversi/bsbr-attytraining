@@ -50,7 +50,7 @@ export function StandardSection() {
           {PILLARS.map((p) => (
             <div key={p.n} className="border-t border-silver pt-7">
               <div className="mb-4 flex items-baseline gap-4">
-                <span className="font-gyrotrope text-[15px] tracking-[0.12em] text-gold">
+                <span className="font-gyrotrope text-[15px] tracking-[0.12em] text-gold-deep">
                   {p.n}
                 </span>
                 <h3 className="font-gyrotrope text-[24px] font-normal leading-[1.25] text-ink">

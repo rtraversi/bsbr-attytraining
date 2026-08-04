@@ -10,11 +10,18 @@ import Link from "next/link";
 // The mark carries the hero instead. It is the most persuasive asset available —
 // it looks like a seal, which is precisely what is being sold.
 
-const FACTS = [
-  { label: "Format", value: "Interactive training" },
-  { label: "Record", value: "Signed attestations" },
-  { label: "Held by", value: "The firm" },
-  { label: "Term", value: "12 months" },
+// Katy's own three-line summary, from directly beneath "Iurix Accreditation is
+// the solution." It sits under the mark so the visitor sees what they get before
+// reading a paragraph.
+//
+// This replaces a framed plate listing Format / Record / Held by / Term (Rob,
+// 2026-08-04: didn't like it). That plate was spec-sheet furniture — it made the
+// hero look like a product datasheet, and it boxed in the mark, which is the one
+// asset on the page that should be allowed to breathe.
+const SUMMARY = [
+  "A written firm policy",
+  "Online staff training",
+  "Attestations of compliance",
 ];
 
 export function HeroSection() {
@@ -61,32 +68,37 @@ export function HeroSection() {
             </p>
           </div>
 
-          {/* The mark, held in a ruled plate */}
-          <div className="relative mx-auto w-full max-w-[420px] lg:mx-0">
-            <div className="relative border border-silver bg-gradient-to-br from-white to-marble-deep px-10 py-12">
-              <div
-                className="pointer-events-none absolute inset-[6px] border border-mint-line/60"
-                aria-hidden
-              />
-              <img
-                src="/brand/iurix-mark.png"
-                alt="The Iurix Accreditation mark"
-                width={500}
-                height={500}
-                className="relative mx-auto block w-full max-w-[230px] select-none"
-                draggable={false}
-              />
-              <div className="relative mt-8 border-t border-silver pt-6">
-                <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2.5 text-[13px]">
-                  {FACTS.map((f) => (
-                    <div key={f.label} className="contents">
-                      <dt className="tracking-[0.04em] text-ink-mute">{f.label}</dt>
-                      <dd className="text-right font-medium text-ink">{f.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            </div>
+          {/* The mark, unframed. A soft teal bloom behind it stands in for the
+              specular light the brushed-metal rendering implies but a flat page
+              cannot produce on its own. */}
+          <div className="relative mx-auto w-full max-w-[380px] lg:mx-0">
+            <div
+              className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_45%,rgba(147,194,190,0.30),transparent_68%)]"
+              aria-hidden
+            />
+            <img
+              src="/brand/iurix-mark.png"
+              alt="The Iurix Accreditation mark"
+              width={500}
+              height={500}
+              className="mx-auto block w-full max-w-[300px] select-none"
+              draggable={false}
+            />
+
+            <ul className="mx-auto mt-8 max-w-[300px]">
+              {SUMMARY.map((s) => (
+                <li
+                  key={s}
+                  className="flex items-center gap-3.5 border-t border-silver py-3 text-[15px] text-ink-soft last:border-b last:border-silver"
+                >
+                  <span
+                    className="h-[5px] w-[5px] flex-none rotate-45 bg-gold"
+                    aria-hidden
+                  />
+                  <span>{s}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 

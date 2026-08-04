@@ -16,7 +16,7 @@ export function SectionHead({
 }) {
   const headingColor = tone === "dark" ? "text-marble" : "text-ink";
   const introColor = tone === "dark" ? "text-mint" : "text-ink-soft";
-  const numColor = tone === "dark" ? "text-gold-soft" : "text-gold";
+  const numColor = tone === "dark" ? "text-gold-soft" : "text-gold-deep";
   const ruleColor = tone === "dark" ? "bg-marble/25" : "bg-silver";
 
   return (
