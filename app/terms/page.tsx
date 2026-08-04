@@ -70,7 +70,15 @@ export default function TermsPage() {
       <LegalSection title="9. Contact">
         <p>[ATTORNEY TO COMPLETE — contact information for legal notices and questions about
         these Terms.]</p>
-        <p>Current contact: [CONTACT EMAIL — TBD]</p>
+        <p>
+          Current contact:{' '}
+          <a
+            href="mailto:info@iurixaccreditation.com"
+            className="text-teal-mid underline underline-offset-4 hover:text-ink"
+          >
+            info@iurixaccreditation.com
+          </a>
+        </p>
       </LegalSection>
     </LegalPage>
   )

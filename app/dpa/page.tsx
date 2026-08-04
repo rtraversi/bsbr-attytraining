@@ -72,7 +72,15 @@ export default function DpaPage() {
       <LegalSection title="9. Contact">
         <p>[ATTORNEY TO COMPLETE — provide contact details for the processor&apos;s data protection
         point of contact for DPA-related inquiries.]</p>
-        <p>Current contact: [CONTACT EMAIL — TBD]</p>
+        <p>
+          Current contact:{' '}
+          <a
+            href="mailto:info@iurixaccreditation.com"
+            className="text-teal-mid underline underline-offset-4 hover:text-ink"
+          >
+            info@iurixaccreditation.com
+          </a>
+        </p>
       </LegalSection>
     </LegalPage>
   )

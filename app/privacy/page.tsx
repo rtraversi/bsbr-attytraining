@@ -5,9 +5,9 @@ export const metadata = {
 }
 
 // Content unchanged (still attorney-review drafts); container moved to the
-// shared light template. The hardcoded info@aistaffcompliance.com address that
-// used to sit in section 7 pointed at a retired domain — replaced with the
-// visible TBD placeholder the brief asks for rather than an invented address.
+// shared light template. The address in section 7 used to be
+// info@aistaffcompliance.com, a retired domain; it is now
+// info@iurixaccreditation.com (decided by Rob, 2026-08-03).
 export default function PrivacyPage() {
   return (
     <LegalPage
@@ -58,7 +58,15 @@ export default function PrivacyPage() {
       <LegalSection title="7. Contact">
         <p>[ATTORNEY TO COMPLETE — provide a contact name, email address, and mailing address
         for privacy-related inquiries and data subject requests.]</p>
-        <p>Current contact: [CONTACT EMAIL — TBD]</p>
+        <p>
+          Current contact:{' '}
+          <a
+            href="mailto:info@iurixaccreditation.com"
+            className="text-teal-mid underline underline-offset-4 hover:text-ink"
+          >
+            info@iurixaccreditation.com
+          </a>
+        </p>
       </LegalSection>
     </LegalPage>
   )

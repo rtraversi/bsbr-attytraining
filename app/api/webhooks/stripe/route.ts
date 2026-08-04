@@ -113,7 +113,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     // Email already registered — re-purchase edge case, not handled in v1
     console.warn(`[stripe-webhook] createUser skipped for ${email}: ${createUserError.message}`)
 
-    const operatorEmail = process.env.OPERATOR_ALERT_EMAIL ?? 'info@aistaffcompliance.com'
+    // The fallback used to be info@aistaffcompliance.com — a retired domain — which
+    // meant that with OPERATOR_ALERT_EMAIL unset, THIS alert silently vanished. It is
+    // the alert that says a customer paid and was never provisioned a firm, so losing
+    // it is the worst possible one to lose. Still set OPERATOR_ALERT_EMAIL in the
+    // Worker env; this is a floor, not the configuration.
+    const operatorEmail = process.env.OPERATOR_ALERT_EMAIL ?? 'info@iurixaccreditation.com'
     const subject = '⚠️ Stripe provisioning collision — manual action needed'
     const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:14px">A Stripe checkout completed but firm provisioning was skipped because the customer's email is already registered.</p>
