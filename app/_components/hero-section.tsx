@@ -1,108 +1,105 @@
 import Link from "next/link";
-import { AtcMark } from "./atc-logo";
 
-// Hero. Headline is Katy's, verbatim. The emphasis on "Held To" carries the
-// argument, so it is set in the teal italic rather than left flat.
+// Hero. Katy's headline and opening lines, verbatim.
 //
-// The right column is the "specimen" — the certificate treated as a printed
-// instrument. It exists to answer the brief's second job (prove this is a
-// finished, operating product) before the visitor reads a word of body copy.
+// The old hero led with an "ABA MODEL RULE 5.3 · FORMAL OPINION 512" eyebrow and
+// a specimen plate stamped with the rule number. Both are gone (Rob, 2026-08-04):
+// the rule is relevant background, not the pitch, and leading with a citation
+// made the page read like a compliance notice instead of a standard.
+//
+// The mark carries the hero instead. It is the most persuasive asset available —
+// it looks like a seal, which is precisely what is being sold.
 
-const DOCKET = [
-  { label: "Format", value: "Interactive course" },
-  { label: "Assessment", value: "Scored, pass-gated" },
-  { label: "Deliverable", value: "Dated PDF certificate" },
-  { label: "Validity", value: "12 months" },
+const FACTS = [
+  { label: "Format", value: "Interactive training" },
+  { label: "Record", value: "Signed attestations" },
+  { label: "Held by", value: "The firm" },
+  { label: "Term", value: "12 months" },
 ];
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden border-b border-mint-line">
-      <div className="mx-auto max-w-[1140px] px-6 pt-20 md:px-8 md:pt-24">
-        <div className="grid items-start gap-16 lg:grid-cols-[1.25fr_0.75fr] lg:gap-[72px]">
+    <section className="relative overflow-hidden border-b border-silver">
+      <div className="mx-auto max-w-[1140px] px-6 pt-16 md:px-8 md:pt-24">
+        <div className="grid items-center gap-14 lg:grid-cols-[1.15fr_0.85fr] lg:gap-20">
           <div>
-            <div className="mb-7 flex items-center gap-3">
-              <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-gold-deep">
-                ABA Model Rule 5.3 · Formal Opinion 512
-              </span>
-              <span
-                className="h-px flex-1 bg-gradient-to-r from-gold-pale to-transparent"
-                aria-hidden
-              />
-            </div>
-
-            <h1 className="font-gyrotrope text-[clamp(42px,5.6vw,74px)] font-normal leading-[1.03] tracking-[-0.02em] text-ink">
+            <h1 className="font-gyrotrope text-[clamp(40px,5.2vw,68px)] font-normal leading-[1.06] tracking-[-0.02em] text-ink">
               The Standard Other Firms
               <br className="hidden sm:block" /> Will Be{" "}
               <em className="font-serif-italic not-italic text-teal-mid">Held To</em>
             </h1>
 
-            <p className="mt-7 max-w-[560px] text-[20px] leading-[1.55] text-ink-soft">
+            {/* Rose-gold hairline — the crescent motif from the mark, reduced to a rule */}
+            <div className="mt-9 h-px w-24 bg-gradient-to-r from-gold to-transparent" aria-hidden />
+
+            <p className="mt-8 max-w-[540px] text-[19px] leading-[1.6] text-ink-soft">
               Our times demand that attorneys use artificial intelligence. Clients and
-              state bars expect ethical practices. Iurix Accreditation is how a firm
-              shows it meets both.
+              state bars expect ethical practices.
+            </p>
+            <p className="mt-4 max-w-[540px] text-[19px] leading-[1.6] text-ink-soft">
+              Iurix Accreditation is how a firm shows it meets both — a written policy,
+              trained staff, and a signed record to prove it.
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-3.5">
               <Link
                 href="/pricing"
-                className="rounded-[1px] bg-teal-deep px-6 py-3 text-[15px] font-medium text-marble transition-colors hover:bg-ink"
+                className="rounded-[2px] bg-teal-ink px-7 py-3.5 text-[15px] font-medium text-marble transition-colors hover:bg-ink"
               >
-                Certify your staff
+                Accredit your firm
               </Link>
               <Link
                 href="#exposure"
-                className="rounded-[1px] border border-ink px-6 py-3 text-[15px] font-medium text-ink transition-colors hover:bg-ink hover:text-marble"
+                className="rounded-[2px] border border-steel px-7 py-3.5 text-[15px] font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-marble"
               >
-                Why this matters
+                Why it matters
               </Link>
             </div>
 
-            <p className="mt-5 text-[14px] text-ink-mute">
-              From $28 per staff member, per year. Certificates issue the moment they
-              pass.
+            <p className="mt-6 text-[14px] text-ink-mute">
+              $35 per seat, per year. The accreditation belongs to your firm.
             </p>
           </div>
 
-          {/* Specimen — the mark held in a ruled frame, like a plate in a document */}
-          <div className="relative border border-mint-line bg-gradient-to-br from-white to-marble-deep px-[30px] py-[34px]">
-            <div
-              className="pointer-events-none absolute inset-[7px] border border-mint"
-              aria-hidden
-            />
-            <AtcMark className="mx-auto mb-6 block h-auto w-full max-w-[150px] text-teal-deep" />
-            <div className="border-t border-mint-line pt-[18px]">
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-[9px] text-[13.5px]">
-                <dt className="tracking-[0.04em] text-ink-mute">Issued to</dt>
-                <dd className="text-right font-medium text-ink">Each staff member</dd>
-                <dt className="tracking-[0.04em] text-ink-mute">Accreditation</dt>
-                <dd className="text-right font-medium text-ink">Held by the firm</dd>
-                <dt className="tracking-[0.04em] text-ink-mute">Standard</dt>
-                <dd className="text-right font-medium text-ink">ABA Rule 5.3</dd>
-                <dt className="tracking-[0.04em] text-ink-mute">Term</dt>
-                <dd className="text-right font-medium text-ink">12 months</dd>
-              </dl>
+          {/* The mark, held in a ruled plate */}
+          <div className="relative mx-auto w-full max-w-[420px] lg:mx-0">
+            <div className="relative border border-silver bg-gradient-to-br from-white to-marble-deep px-10 py-12">
+              <div
+                className="pointer-events-none absolute inset-[6px] border border-mint-line/60"
+                aria-hidden
+              />
+              <img
+                src="/brand/iurix-mark.png"
+                alt="The Iurix Accreditation mark"
+                width={500}
+                height={500}
+                className="relative mx-auto block w-full max-w-[230px] select-none"
+                draggable={false}
+              />
+              <div className="relative mt-8 border-t border-silver pt-6">
+                <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2.5 text-[13px]">
+                  {FACTS.map((f) => (
+                    <div key={f.label} className="contents">
+                      <dt className="tracking-[0.04em] text-ink-mute">{f.label}</dt>
+                      <dd className="text-right font-medium text-ink">{f.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Docket strip */}
-        <div className="mt-[72px] grid grid-cols-2 border-t border-mint-line md:grid-cols-4">
-          {DOCKET.map((d, i) => (
-            <div
-              key={d.label}
-              className={`px-[26px] pb-[30px] pt-6 ${
-                i < DOCKET.length - 1 ? "md:border-r md:border-mint-line" : ""
-              } ${i % 2 === 0 ? "border-r border-mint-line md:border-r" : ""}`}
-            >
-              <p className="mb-[7px] text-[11px] font-medium uppercase tracking-[0.2em] text-ink-mute">
-                {d.label}
-              </p>
-              <strong className="font-gyrotrope block text-[20px] font-normal leading-[1.3] text-ink">
-                {d.value}
-              </strong>
-            </div>
-          ))}
+        {/* Katy's three-line argument, set as the transition into the page */}
+        <div className="mt-20 border-t border-silver pt-10 md:mt-24">
+          <p className="max-w-[820px] text-[18px] leading-[1.7] text-ink-soft">
+            Clients know that a firm that doesn&apos;t use AI may be missing things, and
+            wasting billable hours. They want their lawyers using it. But they also want
+            to know their data is safe, and that their attorney is{" "}
+            <em className="font-serif-italic not-italic text-ink">
+              a competent, zealous advocate — not a figurehead.
+            </em>
+          </p>
         </div>
       </div>
     </section>

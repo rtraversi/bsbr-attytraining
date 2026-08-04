@@ -29,7 +29,7 @@ export function LegalPage({
           <h1 className="font-gyrotrope text-[clamp(30px,4vw,44px)] font-normal leading-[1.1] tracking-[-0.015em]">
             {title}
           </h1>
-          <p className="mt-3 border-b border-mint-line pb-8 text-[14px] text-ink-mute">
+          <p className="mt-3 border-b border-silver pb-8 text-[14px] text-ink-mute">
             {updated}
           </p>
 

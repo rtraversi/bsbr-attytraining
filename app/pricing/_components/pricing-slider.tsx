@@ -50,7 +50,7 @@ export function PricingSlider() {
 
   return (
     <div className="mx-auto w-full max-w-3xl">
-      <div className="border border-mint-line bg-white p-8 md:p-12">
+      <div className="border border-silver bg-white p-8 md:p-12">
         <label
           htmlFor="seats"
           className="block text-[11px] font-medium uppercase tracking-[0.2em] text-ink-mute"
@@ -78,11 +78,13 @@ export function PricingSlider() {
           className="mt-8 h-1.5 w-full cursor-pointer appearance-none rounded-full outline-none
             [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5
             [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full
-            [&::-webkit-slider-thumb]:bg-teal-deep [&::-webkit-slider-thumb]:shadow-md
+            [&::-webkit-slider-thumb]:bg-teal-ink [&::-webkit-slider-thumb]:shadow-md
             [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full
-            [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-teal-deep"
+            [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-teal-ink"
           style={{
-            background: `linear-gradient(to right, #2b3334 ${fillPct}%, #d0e5e0 ${fillPct}%)`,
+            // Inline because a range track cannot be filled with a utility class.
+            // Keep in sync with --color-teal-ink / --color-mint in globals.css.
+            background: `linear-gradient(to right, #252c2c ${fillPct}%, #d7e5e3 ${fillPct}%)`,
           }}
         />
         <div className="mt-2 flex justify-between text-xs text-ink-mute">
@@ -98,7 +100,7 @@ export function PricingSlider() {
               className={`border p-4 transition-colors ${
                 i === activeBand
                   ? "border-gold bg-marble-deep"
-                  : "border-mint-line bg-transparent"
+                  : "border-silver bg-transparent"
               }`}
             >
               <p
@@ -121,7 +123,7 @@ export function PricingSlider() {
         </div>
 
         {/* Total — monospace odometer */}
-        <div className="mt-10 flex flex-col gap-2 border-t border-mint-line pt-8 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mt-10 flex flex-col gap-2 border-t border-silver pt-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm text-ink-mute">
               <span className="font-mono tabular-nums text-ink-soft">{seats}</span> ×{" "}
@@ -143,7 +145,7 @@ export function PricingSlider() {
         <button
           onClick={startCheckout}
           disabled={loading}
-          className="mt-8 w-full rounded-[1px] bg-teal-deep px-8 py-4 text-base font-medium text-marble transition-colors hover:bg-ink disabled:opacity-60"
+          className="mt-8 w-full rounded-[1px] bg-teal-ink px-8 py-4 text-base font-medium text-marble transition-colors hover:bg-ink disabled:opacity-60"
         >
           {loading ? "Redirecting to checkout…" : "Get started"}
         </button>

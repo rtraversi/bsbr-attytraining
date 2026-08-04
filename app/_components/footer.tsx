@@ -23,7 +23,7 @@ const SITE_LINKS: { label: string; href: string }[] = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-mint-line bg-marble px-6 py-16 text-ink md:px-8">
+    <footer className="border-t border-silver bg-marble px-6 py-16 text-ink md:px-8">
       <div className="mx-auto max-w-[1140px]">
         <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr]">
           {/* Brand block */}
@@ -37,7 +37,7 @@ export function Footer() {
             <p className="mt-1 text-[15px]">
               <a
                 href="mailto:info@iurixaccreditation.com"
-                className="text-ink-soft underline decoration-mint-line underline-offset-4 transition-colors hover:text-teal-mid"
+                className="text-ink-soft underline decoration-silver underline-offset-4 transition-colors hover:text-teal-mid"
               >
                 info@iurixaccreditation.com
               </a>
@@ -86,7 +86,7 @@ export function Footer() {
             it is the sentence that keeps the marketing copy's use of
             "accreditation" from reading as a bar-accreditation claim. Do not
             shorten it, and do not drop it below 12px. */}
-        <div className="mt-14 border-t border-steel pt-8">
+        <div className="mt-14 border-t border-steel/70 pt-8">
           <p className="max-w-3xl text-[13px] leading-relaxed text-ink-soft">
             Iurix Accreditation provides educational training and certification of
             completion for law firm staff. It is not a law firm, does not provide legal

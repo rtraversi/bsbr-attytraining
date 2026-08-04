@@ -48,36 +48,45 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 
   /* ── Iurix brand palette ──────────────────────────────────────────
-     Every value is sampled from the fills in public/brand/iurix-logo.svg
-     (see .planning/design-handoff/02-brand.md). The marketing surface is
-     built from these and nothing else.
+     Sampled directly out of the pixels of public/brand/iurix-mark.png
+     (2026-08-04) — the real mark: brushed-metal scales fused with a column,
+     teal edge-lighting, two rose-gold crescents enclosing it.
 
-     Rob, 2026-08-03: teal + steel carry the design; rose gold is held back
-     for seal/issued moments (the specimen plate, the "Most firms" marker)
-     rather than acting as the general accent. */
+     The mark is genuinely low-saturation: its teals sit around #5c6b6b and its
+     rose golds around #926c5d, both far more muted than a typical brand
+     palette. That restraint IS the brand — it is what makes it read as an
+     instrument rather than a startup. Do not "correct" these toward more
+     saturated values.
 
-  /* neutrals — marble ground, titanium/steel structure */
+     Text colours (--color-ink*) are darkened past anything in the mark on
+     purpose: the sampled tones are mid-lightness and would fail WCAG AA as
+     body text on the marble ground. */
+
+  /* neutrals — marble ground, titanium/silver structure */
   --color-marble: #f7f7f6;
-  --color-marble-deep: #eafbf5;
-  --color-steel: #c2c5c3;
-  --color-steel-mute: #a1a4a1;
+  --color-marble-deep: #f0f3f2;
+  --color-silver: #c4ccca;      /* sampled — the brushed-metal highlight */
+  --color-steel: #acb3b0;       /* sampled — titanium mid */
+  --color-steel-mute: #8f9996;
 
-  /* teals — the primary family */
-  --color-mint: #d0e5e0;
-  --color-mint-line: #a6cecd;
-  --color-teal-light: #8cb2b1;
-  --color-teal-mid: #5a6e6e;
-  --color-teal-deep: #2b3334;
+  /* teals — sampled from the scales and the column */
+  --color-mint: #d7e5e3;
+  --color-mint-line: #acd4d3;   /* sampled — the teal edge-light */
+  --color-teal-light: #778887;  /* sampled */
+  --color-teal-mid: #5c6b6b;    /* sampled — the dominant teal */
+  --color-teal-deep: #37403f;
+  --color-teal-ink: #252c2c;    /* darkest ground, for the closing panel */
 
-  /* ink */
+  /* ink — darkened for contrast, keyed to the mark's hue */
   --color-ink: #1c2223;
-  --color-ink-soft: #4c5453;
-  --color-ink-mute: #8f9996;
+  --color-ink-soft: #4a5253;
+  --color-ink-mute: #79817f;
 
-  /* rose gold — seal accent only, never a general highlight */
-  --color-gold-pale: #d9b5a6;
-  --color-gold: #b39082;
-  --color-gold-deep: #88685c;
+  /* rose gold — the crescents. Used as fine rules and seal moments. */
+  --color-gold-pale: #fcece4;   /* sampled — the crescent's brightest point */
+  --color-gold-soft: #c9b0a4;
+  --color-gold: #926c5d;        /* sampled — the crescent workhorse */
+  --color-gold-deep: #74564a;   /* darkened so it passes AA as small text */
 }
 
 :root {

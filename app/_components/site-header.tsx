@@ -14,6 +14,7 @@ const NAV_ITEMS: { label: string; href: string }[] = [
   { label: "The standard", href: "/#standard" },
   { label: "Your exposure", href: "/#exposure" },
   { label: "The record", href: "/#record" },
+  { label: "What's included", href: "/#included" },
   { label: "Pricing", href: "/pricing" },
 ];
 
@@ -21,7 +22,7 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-mint-line bg-marble/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-silver bg-marble/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1140px] items-center justify-between gap-6 px-6 py-3.5 md:px-8">
         <Link href="/" aria-label="Iurix Accreditation — home">
           <IurixLockup />
@@ -48,9 +49,9 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/pricing"
-            className="rounded-[1px] bg-teal-deep px-5 py-2.5 text-[15px] font-medium text-marble transition-colors hover:bg-ink"
+            className="rounded-[1px] bg-teal-ink px-5 py-2.5 text-[15px] font-medium text-marble transition-colors hover:bg-ink"
           >
-            Certify your staff
+            Accredit your firm
           </Link>
         </div>
 
@@ -61,7 +62,7 @@ export function SiteHeader() {
           aria-expanded={open}
           aria-controls="mobile-nav"
           aria-label="Toggle navigation"
-          className="flex h-9 w-9 items-center justify-center rounded-[1px] border border-mint-line text-ink sm:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-[1px] border border-silver text-ink sm:hidden"
         >
           <svg
             viewBox="0 0 20 20"
@@ -79,7 +80,7 @@ export function SiteHeader() {
       {open && (
         <nav
           id="mobile-nav"
-          className="border-t border-mint-line bg-marble px-6 py-4 sm:hidden"
+          className="border-t border-silver bg-marble px-6 py-4 sm:hidden"
         >
           <ul className="flex flex-col gap-1">
             {NAV_ITEMS.map((item) => (
@@ -106,9 +107,9 @@ export function SiteHeader() {
               <Link
                 href="/pricing"
                 onClick={() => setOpen(false)}
-                className="block rounded-[1px] bg-teal-deep px-5 py-3 text-center text-[15px] font-medium text-marble"
+                className="block rounded-[1px] bg-teal-ink px-5 py-3 text-center text-[15px] font-medium text-marble"
               >
-                Certify your staff
+                Accredit your firm
               </Link>
             </li>
           </ul>
