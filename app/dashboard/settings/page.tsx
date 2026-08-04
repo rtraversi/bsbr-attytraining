@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { resolveAvatarPath, signAvatarUrl } from '@/lib/avatars'
 import { NameSettings } from './_components/settings-client'
 import { AvatarUpload } from './_components/avatar-upload'
 import { OrganizationSettings } from './_components/organization-settings'
@@ -34,7 +35,8 @@ export default async function SettingsPage() {
 
   const isAdmin = role === 'admin'
   const fullName = (user.user_metadata?.full_name as string | undefined) ?? null
-  const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) ?? null
+  // Signed at render time — the avatars bucket is private as of 0019.
+  const avatarUrl = await signAvatarUrl(createAdminClient(), resolveAvatarPath(user))
 
   // Firm-level settings (Organization + Notifications) are admin-only.
   let orgName = ''

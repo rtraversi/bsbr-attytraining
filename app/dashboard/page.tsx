@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hasTrainingAccess } from '@/lib/seats'
+import { resolveAvatarPath, signAvatarUrls } from '@/lib/avatars'
 import { AdminDashboard } from './_components/admin-dashboard'
 import type { TrainingStatus } from './_components/team-table'
 
@@ -97,11 +98,20 @@ export default async function DashboardPage() {
   const isGracePeriod = daysOverdue !== null && daysOverdue > 0 && daysOverdue <= 30
   const isLapsed     = daysOverdue !== null && daysOverdue > 30
 
+  // Avatars are signed in ONE batch, before the map. This site is per-member,
+  // not per-viewer: a firm with 40 staff renders 40 photos, so signing inside
+  // the map would be 40 sequential Storage round trips on every dashboard load.
+  // signAvatarUrls returns positionally aligned with its input.
+  const signedAvatarUrls = await signAvatarUrls(
+    admin,
+    authUsers.map((u) => resolveAvatarPath(u.data?.user))
+  )
+
   const memberDetails = members.map((m, i) => {
     const authUser = authUsers[i].data?.user
     const email = authUser?.email ?? '(unknown)'
     const name = (authUser?.user_metadata?.full_name as string | undefined) || email
-    const avatarUrl = (authUser?.user_metadata?.avatar_url as string | undefined) ?? null
+    const avatarUrl = signedAvatarUrls[i]
 
     const enrollment = enrollmentByUser[m.user_id]
     const attempt = attemptByUser[m.user_id]

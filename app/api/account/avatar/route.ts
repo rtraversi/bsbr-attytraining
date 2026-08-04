@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { signAvatarUrl } from '@/lib/avatars'
 
 const ALLOWED_TYPES = new Set(['image/png', 'image/jpeg'])
 const MAX_BYTES = 2 * 1024 * 1024 // 2MB, matches the Settings page copy
@@ -46,21 +47,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
   }
 
-  const { data: publicUrlData } = admin.storage.from('avatars').getPublicUrl(path)
-  // Cache-bust: the path is stable per user, so an updated photo needs a
-  // changing URL or the browser (and any CDN in front of Storage) keeps
-  // showing the old bytes.
-  const avatarUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`
+  // Store the PATH, never a URL. The bucket is private as of 0019, so a stored
+  // URL would be both a dead link and a durable record of the world-readable
+  // address the object used to have. Signing happens at render time in
+  // lib/avatars.ts.
+  //
+  // The old value also carried a `?v=<timestamp>` cache-buster, needed because
+  // the public URL was byte-identical after every re-upload. Signed URLs carry a
+  // fresh token per render, so the URL changes on its own and the hack is gone.
+  //
+  // Merge, not replace — user_metadata carries full_name too. avatar_url is
+  // explicitly dropped rather than left behind: it is the legacy shape that
+  // resolveAvatarPath falls back to, and leaving a stale one would keep the
+  // fallback alive for a user who no longer needs it.
+  const nextMetadata: Record<string, unknown> = {
+    ...(user.user_metadata ?? {}),
+    avatar_path: path,
+  }
+  delete nextMetadata.avatar_url
 
-  // Merge, not replace — user_metadata carries full_name too.
   const { error: updateErr } = await admin.auth.admin.updateUserById(user.id, {
-    user_metadata: { ...user.user_metadata, avatar_url: avatarUrl },
+    user_metadata: nextMetadata,
   })
 
   if (updateErr) {
     console.error('[account/avatar] user_metadata update failed:', updateErr)
     return NextResponse.json({ error: 'Failed to save avatar' }, { status: 500 })
   }
+
+  // Sign one for the client so the new photo appears immediately, without a
+  // round trip through a server render.
+  const avatarUrl = await signAvatarUrl(admin, path)
 
   return NextResponse.json({ avatarUrl })
 }
