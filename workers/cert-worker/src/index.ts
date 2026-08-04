@@ -616,6 +616,172 @@ async function runRenewalReminders(env: Env): Promise<void> {
   }
 }
 
+// ── Retention purge ───────────────────────────────────────────────────────────
+//
+// Max: "why keep it for longer than we need?" The principle is KEEP THE
+// OUTCOME, DROP THE DETAIL. Scores, pass/fail and certificates are the record;
+// IP addresses, user agents and individual answers are incidental detail that
+// stops earning its keep long before the record does.
+//
+// Certificates are NEVER purged. They are the product.
+//
+// ⚠️ ORDERING: this cannot run before refund eligibility ships, because training
+// events are the evidence behind it (lib/refund-eligibility.ts). The windows
+// below are years and the refund window is 14 days, so there is no live
+// conflict — but if a retention period is ever SHORTENED toward the refund
+// window, that stops being true.
+
+/** Days after which a training event's IP address and user agent are nulled. */
+const RETAIN_EVENT_IDENTIFIERS_DAYS = 730 // 2 years
+
+/** Days after which a quiz attempt's individual answers are nulled. Score and passed stay. */
+const RETAIN_QUIZ_ANSWERS_DAYS = 365 // 12 months
+
+/** Days after which a RESOLVED provisioning failure is deleted. Unresolved rows are kept. */
+const RETAIN_RESOLVED_FAILURES_DAYS = 365 // 12 months
+
+/** Days after which whole training_event rows are deleted. See PURGE_EVENT_ROWS. */
+const RETAIN_EVENT_ROWS_DAYS = 730 // 2 years
+
+/**
+ * 🔴 OFF, pending a decision from Max — the plan contradicts itself here.
+ *
+ * Its retention table says, of the same table at the same 2-year mark:
+ *
+ *     training_events.ip_address, .user_agent  →  null them, KEEP THE EVENT ROW
+ *     training_events rows                     →  DELETE
+ *
+ * Both cannot hold. If the rows are deleted at 2 years, nulling their
+ * identifiers at 2 years is a no-op on rows that cease to exist in the same
+ * pass.
+ *
+ * Left off rather than guessed, because the two mistakes are not symmetric:
+ * keeping the rows too long is fixed by flipping this to true, while deleting
+ * them wrongly destroys Rule 5.3 supervision evidence that cannot be
+ * reconstructed. Certificates are kept forever, and these events are the proof
+ * behind them — deleting the evidence while keeping the conclusion is the
+ * outcome most likely to be regretted.
+ *
+ * Flip to true once Max confirms deletion is what he meant.
+ */
+// Typed as boolean, not inferred as the literal `false`, so the branch below is
+// live code that keeps typechecking rather than statically-dead code a future
+// lint pass offers to delete.
+const PURGE_EVENT_ROWS: boolean = false
+
+/**
+ * PostgREST mutation that reports how many rows it touched.
+ *
+ * pgRest() sends `Prefer: return=minimal` and returns null for non-GET, which is
+ * right for its callers but useless here: a purge that silently affects zero
+ * rows forever looks identical to a purge that is working. `count=exact` puts
+ * the number in Content-Range.
+ *
+ * `filter` is a required argument rather than part of an optional query string,
+ * because a PostgREST PATCH or DELETE with no filter applies to EVERY ROW IN THE
+ * TABLE. Making it impossible to call this without one is the whole point.
+ */
+async function pgRestPurge(
+  env: Env,
+  method: 'PATCH' | 'DELETE',
+  table: string,
+  filter: string,
+  body?: unknown,
+): Promise<number> {
+  if (!filter || !filter.includes('=')) {
+    throw new Error(`pgRestPurge refused: ${method} ${table} with no filter — this would affect every row`)
+  }
+
+  const headers: Record<string, string> = {
+    apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+    Prefer: 'return=minimal,count=exact',
+  }
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
+
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/${table}?${filter}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  })
+
+  if (!res.ok) {
+    throw new Error(`pgRestPurge ${method} ${table}: ${res.status} ${await res.text()}`)
+  }
+
+  // Content-Range comes back as "*/<count>" for a mutation with count=exact.
+  const range = res.headers.get('content-range')
+  const total = range ? Number(range.split('/')[1]) : NaN
+  return Number.isFinite(total) ? total : 0
+}
+
+/** ISO timestamp `days` before now — the cutoff every purge filters on. */
+function cutoffIso(days: number): string {
+  return new Date(Date.now() - days * 86_400_000).toISOString()
+}
+
+async function runRetentionPurge(env: Env): Promise<void> {
+  const results: string[] = []
+
+  // 1. Training event identifiers. The event row survives with its type,
+  //    timestamp and metadata — what happened and when is the compliance
+  //    record; who-from-which-IP is the detail.
+  //
+  //    `ip_address=not.is.null` keeps this from rewriting rows that are already
+  //    clean on every single daily run.
+  {
+    const cutoff = cutoffIso(RETAIN_EVENT_IDENTIFIERS_DAYS)
+    const n = await pgRestPurge(
+      env,
+      'PATCH',
+      'training_events',
+      `event_timestamp=lt.${cutoff}&or=(ip_address.not.is.null,user_agent.not.is.null)`,
+      { ip_address: null, user_agent: null },
+    )
+    results.push(`event identifiers nulled: ${n}`)
+  }
+
+  // 2. Quiz answers. score and passed are untouched — the certificate rests on
+  //    those, not on which distractor someone picked in question 4.
+  {
+    const cutoff = cutoffIso(RETAIN_QUIZ_ANSWERS_DAYS)
+    const n = await pgRestPurge(
+      env,
+      'PATCH',
+      'quiz_attempts',
+      `attempted_at=lt.${cutoff}&answers=not.is.null`,
+      { answers: null },
+    )
+    results.push(`quiz answers nulled: ${n}`)
+  }
+
+  // 3. Resolved provisioning failures. Measured from resolved_at, not
+  //    created_at: the row's job is done when an operator closes it, and an
+  //    UNRESOLVED failure is never purged at any age — it means someone paid
+  //    and may still be owed a firm or a refund.
+  {
+    const cutoff = cutoffIso(RETAIN_RESOLVED_FAILURES_DAYS)
+    const n = await pgRestPurge(
+      env,
+      'DELETE',
+      'provisioning_failures',
+      `resolved_at=not.is.null&resolved_at=lt.${cutoff}`,
+    )
+    results.push(`resolved provisioning failures deleted: ${n}`)
+  }
+
+  // 4. Whole training event rows — see PURGE_EVENT_ROWS.
+  if (PURGE_EVENT_ROWS) {
+    const cutoff = cutoffIso(RETAIN_EVENT_ROWS_DAYS)
+    const n = await pgRestPurge(env, 'DELETE', 'training_events', `event_timestamp=lt.${cutoff}`)
+    results.push(`training event rows deleted: ${n}`)
+  } else {
+    results.push('training event rows: SKIPPED (PURGE_EVENT_ROWS is off)')
+  }
+
+  console.log(`[retention-purge] ${results.join(' | ')}`)
+}
+
 // ── Worker export ─────────────────────────────────────────────────────────────
 
 export default {
@@ -627,6 +793,9 @@ export default {
           runExpiryReminders(env).catch(err => console.error('[scheduled] expiry reminders:', err)),
           runInactivityReminders(env).catch(err => console.error('[scheduled] inactivity reminders:', err)),
           runRenewalReminders(env).catch(err => console.error('[scheduled] renewal reminders:', err)),
+          // Idempotent and cheap — every filter excludes rows already purged, so
+          // a daily run costs nothing once the backlog is clear.
+          runRetentionPurge(env).catch(err => console.error('[scheduled] retention purge:', err)),
         ]),
       )
     } else {
