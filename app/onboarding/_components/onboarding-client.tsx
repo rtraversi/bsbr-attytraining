@@ -10,7 +10,7 @@ type Phase = 'polling' | 'ready' | 'submitting' | 'done' | 'timeout' | 'error' |
  * CHECK constraint rather than a Postgres enum, so the union is declared here
  * to keep the copy lookup exhaustive.
  */
-type BlockedReason = 'duplicate' | 'email_in_use' | 'unresolved'
+type BlockedReason = 'duplicate' | 'email_in_use' | 'unresolved' | 'non_us_billing'
 
 interface StatusResponse {
   provisioned: boolean
@@ -51,6 +51,16 @@ const BLOCKED_COPY: Record<BlockedReason, { heading: string; explanation: string
     explanation:
       'This email already owns an active IURIX subscription, so this second purchase would have billed you twice for the same thing. We stopped it and cancelled the new subscription — your existing account and its certificates are untouched.',
     next: 'Sign in with this email to reach your dashboard. Get in touch about the payment just taken and we will put it right.',
+  },
+  non_us_billing: {
+    heading: 'IURIX is available to US firms only',
+    explanation:
+      'The billing address on this purchase is outside the United States. We keep all training and certification data within the US and are not set up to handle international data transfers, so we stopped rather than take on an obligation we cannot meet properly.',
+    // Kept in step with emails/checkout-non-us.tsx — the same person reads both
+    // about the same payment, and they must not disagree. No "try again":
+    // unlike email_in_use there is nothing the buyer can change, and offering a
+    // retry that fails identically is worse than one clear no.
+    next: 'We have cancelled the subscription and your payment is being refunded. If your firm is US-based and this address is wrong, get in touch and we will sort it out.',
   },
   unresolved: {
     heading: "We couldn't finish setting up your account",

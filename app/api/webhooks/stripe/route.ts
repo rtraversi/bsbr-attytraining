@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/resend'
 import { SEAT_OCCUPYING_STATUSES } from '@/lib/seats'
 import { CheckoutEmailInUseEmail } from '@/emails/checkout-email-in-use'
+import { CheckoutNonUsEmail } from '@/emails/checkout-non-us'
 
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
@@ -100,7 +101,23 @@ type AdminClient = ReturnType<typeof createAdminClient>
 // CHECK constraints. So a typo here would compile cleanly and only blow up at
 // runtime inside a webhook handler — the worst possible place to find out.
 // Declaring the union locally makes TypeScript and the DB CHECK agree.
-type ProvisioningFailureReason = 'duplicate' | 'email_in_use' | 'unresolved'
+type ProvisioningFailureReason = 'duplicate' | 'email_in_use' | 'unresolved' | 'non_us_billing'
+
+/**
+ * LAYER 2 of the US-only rule — the backstop.
+ *
+ * Layer 1 (/api/checkout) refuses to create a session for a non-US buyer, so
+ * nothing is charged. That check is self-declared and therefore defeatable, and
+ * this is what catches anyone who does. It runs on the address STRIPE collected,
+ * which the buyer cannot forge — checkout sets billing_address_collection:
+ * 'required' precisely so this field is always populated.
+ *
+ * Reaching here means someone WAS charged, so this is not simply a refusal: it
+ * follows the same path as case 3 — ledger row, cancel the orphan, tell the
+ * customer, alert the operator. That is Max's "charged and received nothing"
+ * case, which he has ruled gets a full refund with no window.
+ */
+const ALLOWED_BILLING_COUNTRY = 'US'
 
 /**
  * Who is this buyer? Resolved before anything is provisioned, cancelled or
@@ -355,6 +372,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
 
   const { email, sub, seats, periodEnd } = plan
 
+  // Country is checked BEFORE any provisioning branch, including the happy path.
+  // A non-US buyer who is otherwise a perfectly ordinary new customer is exactly
+  // the one this has to stop, and putting it inside the switch below would miss
+  // them entirely.
+  const billingCountry = session.customer_details?.address?.country ?? null
+  if (billingCountry !== ALLOWED_BILLING_COUNTRY) {
+    await refuseNonUsBilling(supabase, session, email, billingCountry)
+    return
+  }
+
   if (plan.outcome === 'provision') {
     await provisionFirm(supabase, plan.userId, session, sub, seats, periodEnd)
     return
@@ -551,6 +578,56 @@ async function cancelDuplicateSubscription(
  * The buyer is the only person who can resolve the underlying problem, so they
  * get an email as well as the operator alert.
  */
+/**
+ * A buyer whose Stripe-collected billing address is outside the US.
+ *
+ * Deliberately the SAME shape as refuseEmailInUse rather than a parallel path:
+ * ledger row, cancel the orphaned subscription, tell the customer, alert the
+ * operator. Reusing it means /api/onboarding/status already reports this
+ * correctly and the customer sees a real explanation instead of polling into a
+ * timeout.
+ *
+ * `country` is carried into the alert because a null value means something
+ * different from a wrong value: null says Stripe collected no address at all,
+ * which would point at billing_address_collection having been changed away from
+ * 'required' in checkout, not at an international buyer.
+ */
+async function refuseNonUsBilling(
+  supabase: AdminClient,
+  session: Stripe.Checkout.Session,
+  email: string,
+  country: string | null
+) {
+  await recordProvisioningFailure(supabase, session, email, 'non_us_billing')
+
+  const { cancelled, error: cancelError } = await cancelOrphanedSubscription(session)
+
+  try {
+    const html = await render(CheckoutNonUsEmail({ email, cancelled }))
+    await sendEmail({
+      to: email,
+      subject: "We couldn't complete your IURIX purchase",
+      html,
+    })
+  } catch (err) {
+    console.error('[stripe-webhook] non_us_billing customer email failed:', err)
+  }
+
+  await alertOperator('⚠️ Stripe — purchase from a non-US billing address', [
+    `<strong>Customer email:</strong> ${email}`,
+    `<strong>Billing country:</strong> ${country ?? 'NONE COLLECTED — check billing_address_collection in /api/checkout'}`,
+    `<strong>Checkout session:</strong> ${session.id}`,
+    `<strong>Subscription — ${cancelled ? 'CANCELLED' : 'STILL BILLING'}:</strong> ${session.subscription as string}`,
+    `<strong>What happened:</strong> nothing was provisioned. US-only is a policy constraint (Katy), not a technical one.`,
+    // Same standing rule as case 3: no refund API is called anywhere in this
+    // codebase, so a promise made in writing is kept by a human or not at all.
+    cancelled
+      ? `<strong>🔴 Action required — REFUND:</strong> the subscription is cancelled and the customer has been told <em>in writing</em> that their payment is being refunded. Issue it in Stripe. Nothing automated will.`
+      : `<strong>🔴 Action required:</strong> the cancel call FAILED (${cancelError}). The subscription is still billing — cancel by hand, then refund. The customer has been told their payment is being returned.`,
+    `<strong>Worth noting:</strong> layer 1 in /api/checkout should have stopped this before any charge. A row here means it was bypassed.`,
+  ])
+}
+
 async function refuseEmailInUse(
   supabase: AdminClient,
   session: Stripe.Checkout.Session,
