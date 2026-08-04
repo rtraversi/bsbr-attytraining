@@ -21,9 +21,9 @@ export function ClosingCta() {
         <img
           src="/brand/iurix-mark.png"
           alt=""
-          width={500}
-          height={500}
-          className="mx-auto mb-10 w-[76px] select-none opacity-95"
+          width={326}
+          height={326}
+          className="mx-auto mb-10 w-[64px] select-none opacity-95"
           draggable={false}
         />
 

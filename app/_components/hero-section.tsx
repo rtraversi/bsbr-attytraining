@@ -76,12 +76,16 @@ export function HeroSection() {
               className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_45%,rgba(147,194,190,0.30),transparent_68%)]"
               aria-hidden
             />
+            {/* 220px, not the 300px this box used to be: the trimmed asset draws
+                ~1.53x more mark per pixel of box, so keeping 300 would have made
+                the hero mark far larger than the one already signed off. This
+                lands a little bigger than before, not half again as big. */}
             <img
               src="/brand/iurix-mark.png"
               alt="The Iurix Accreditation mark"
-              width={500}
-              height={500}
-              className="mx-auto block w-full max-w-[300px] select-none"
+              width={326}
+              height={326}
+              className="mx-auto block w-full max-w-[220px] select-none"
               draggable={false}
             />
 
