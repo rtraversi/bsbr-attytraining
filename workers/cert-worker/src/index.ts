@@ -158,14 +158,37 @@ function fmtDate(dateStr: string): string {
 // with FROM_ADDRESS in lib/resend.ts — this is a duplicate, not a shared import.
 const FROM = 'IURIX <noreply@iurixaccreditation.com>'
 
+/**
+ * Split a recipient value into the array Resend expects. Must stay in step with
+ * parseRecipients in lib/resend.ts — this is a duplicate, not a shared import,
+ * because the worker builds independently of the app.
+ *
+ * The previous `[to]` was already an array, which is why this looked correct:
+ * but a value holding several addresses became ONE malformed entry
+ * ("a@x.com, b@y.com") rather than two recipients, and Resend rejects it. That
+ * is what stopped OPERATOR_ALERT_EMAIL from holding a list.
+ */
+function parseRecipients(to: string): string[] {
+  return to
+    .split(',')
+    .map((address) => address.trim())
+    .filter(Boolean)
+}
+
 async function sendEmail(env: Env, to: string, subject: string, html: string): Promise<void> {
+  const recipients = parseRecipients(to)
+  // Thrown, not skipped. Every caller in this file is inside a cron job whose
+  // failures are logged; a silent no-send would make an unset or malformed
+  // secret indistinguishable from a healthy run with nothing to report.
+  if (recipients.length === 0) throw new Error('sendEmail: no valid recipients')
+
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: FROM, to: [to], subject, html }),
+    body: JSON.stringify({ from: FROM, to: recipients, subject, html }),
   })
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`)
 }

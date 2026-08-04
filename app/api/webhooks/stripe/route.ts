@@ -193,6 +193,11 @@ async function alertOperator(subject: string, lines: string[]) {
   // delivers to (app/api/support/contact/route.ts). A misconfigured env must
   // still not silently mail a dead domain. Set the real secret as well — the
   // fallback is a floor, not the configuration.
+  //
+  // May hold SEVERAL addresses, comma-separated. sendEmail splits them (see
+  // parseRecipients in lib/resend.ts), so an alert that a customer paid and got
+  // nothing can reach more than one person — a single address is a single point
+  // of failure for exactly the message that must not be missed.
   const operatorEmail = process.env.OPERATOR_ALERT_EMAIL ?? 'info@iurixaccreditation.com'
 
   const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
