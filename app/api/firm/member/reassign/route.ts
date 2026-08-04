@@ -16,6 +16,21 @@ import { EmployeeInviteEmail } from '@/emails/employee-invite'
  * 2026-07-30). Content position is what "meaningfully through the course"
  * means; a learner can be most of the way through without having taken a
  * single check, and checks are the easier signal to avoid tripping.
+ *
+ * ⚠️ THIS IS NOT THE REFUND THRESHOLD, and the two must not be merged.
+ * lib/refund-eligibility.ts has its own, REFUND_BLOCK_CLEARED_CHECKS, also 4.
+ * The number coinciding is a coincidence; the question is different:
+ *
+ *   reassignment  "has this seat been used enough that transferring it would
+ *                  defeat per-seat billing?"        → content POSITION reached
+ *   refunds       "has this person consumed the product they are asking for
+ *                  their money back on?"            → checks actually CLEARED,
+ *                                                     plus verified completion
+ *
+ * A learner can trip one and not the other in both directions — someone can
+ * read most of the course without clearing a check, and a test-out user can
+ * clear the final review having barely moved through the content. Collapsing
+ * them into one constant would silently change the published refund policy.
  */
 const REASSIGN_BLOCK_LESSON = 4
 
