@@ -1,41 +1,39 @@
-// The marketing lockup: the real Iurix mark (public/brand/iurix-mark.png —
-// brushed-metal scales fused with a column, teal edge-lighting, rose-gold
-// crescents) plus a type-set wordmark.
+// The marketing lockup: the Iurix mark beside the Iurix wordmark.
 //
-// Per 02-brand.md there is no wordmark ASSET and there will not be one during
-// this engagement, so the type-setting below is the permanent design, not a
-// placeholder waiting to be replaced.
+// ⚠️ This supersedes 02-brand.md's "one hard constraint", which stated that no
+// wordmark asset existed or would exist during the engagement and that the
+// lockup must therefore be type-set. Rob supplied one on 2026-08-04, so the
+// type-set "IURIX / ACCREDITATION" it used to render is gone. Treat the brand
+// doc's wordmark section as out of date, not as a rule being broken.
 //
-// Plain <img>, not next/image: this project has no image-optimisation config for
-// the OpenNext/Cloudflare target, and plain <img> is the established convention
-// in this codebase. 326×326 transparent RGBA PNG, 78 KB.
+// Both files are trimmed to their alpha bounding boxes. The originals carried
+// huge transparent margins — the wordmark's artwork was 392×148 inside a 500×500
+// canvas — which made every render far smaller than its CSS box implied. Re-trim
+// with scratchpad/croprect.js if either asset is replaced.
 //
-// The source file was 500×500 with the artwork filling only 62.6% of it — about
-// 19% dead transparent margin on every side. That margin was invisible but not
-// harmless: every render was ~35% smaller than its CSS box implied, which is why
-// doubling the header lockup still looked undersized. The asset is now trimmed to
-// its alpha bounding box (96% fill), so a 2em box finally draws 2em of mark.
-// Re-trim with scratchpad/croppng.js if the artwork is ever replaced.
+//   mark      326×326  (1:1)
+//   wordmark  400×156  (2.56:1)
 //
-// `tone` switches the wordmark for dark grounds. The mark itself needs no
-// variant — it is transparent and reads on both.
+// Plain <img>, not next/image: no image-optimisation config exists for the
+// OpenNext/Cloudflare target, and plain <img> is this codebase's convention.
+//
+// ⚠️ LIGHT GROUNDS ONLY. The wordmark is dark teal and rose gold baked into
+// pixels; there is no light-on-dark variant. It is used on the marble header and
+// footer only. Putting this lockup on the closing panel or any dark ground needs
+// a second asset — do not try to solve it with a CSS filter.
 export function IurixLockup({
   className = "",
   style,
-  showDescriptor = true,
-  tone = "light",
 }: {
   className?: string;
   style?: React.CSSProperties;
-  showDescriptor?: boolean;
-  tone?: "light" | "dark";
 }) {
-  const word = tone === "dark" ? "text-marble" : "text-ink";
-  const desc = tone === "dark" ? "text-silver" : "text-ink-mute";
-
+  // Sized as one unit off font-size so a single value scales the whole lockup.
+  // The mark is square at 2em; the wordmark is set to 1.55em tall, which lands
+  // its "IURIX" cap-height close to the mark's optical centre band.
   return (
     <span
-      className={`inline-flex items-center gap-[0.55em] ${className}`}
+      className={`inline-flex items-center gap-[0.5em] ${className}`}
       style={{ fontSize: "1.25rem", ...style }}
     >
       <img
@@ -46,20 +44,14 @@ export function IurixLockup({
         className="h-[2em] w-[2em] shrink-0 select-none"
         draggable={false}
       />
-      <span className="leading-none">
-        <span
-          className={`font-headline block font-extralight uppercase tracking-[0.14em] ${word}`}
-        >
-          Iurix
-        </span>
-        {showDescriptor && (
-          <span
-            className={`mt-[0.3em] hidden text-[0.4em] font-medium uppercase tracking-[0.3em] sm:block ${desc}`}
-          >
-            Accreditation
-          </span>
-        )}
-      </span>
+      <img
+        src="/brand/iurix-wordmark.png"
+        alt="Iurix Accreditation"
+        width={400}
+        height={156}
+        className="h-[1.55em] w-auto shrink-0 select-none"
+        draggable={false}
+      />
     </span>
   );
 }

@@ -3,7 +3,36 @@
 Staged from Rob's originals so Max has access. Updated 2026-07-27 after Rob supplied a **vector**
 and a full-res raster of the primary mark.
 
-## Use these
+---
+
+## ⚠️ Updated 2026-08-04 — the marketing site uses these two, and a wordmark now exists
+
+| File | Size | Background | Use for |
+|---|---|---|---|
+| **`iurix-mark.png`** | 326×326, 78 KB | ✅ Transparent | **The mark, everywhere on the marketing site**: header, hero, closing panel |
+| **`iurix-wordmark.png`** | 400×156, 70 KB | ✅ Transparent | **The wordmark**, beside the mark in the header and footer lockup |
+
+**A wordmark now exists.** `.planning/design-handoff/02-brand.md` states as "the one hard
+constraint" that no wordmark asset exists or will exist, and that the lockup must therefore be
+type-set. Rob supplied one on 2026-08-04. That section of the brand doc is **out of date** — the
+lockup in `app/_components/iurix-lockup.tsx` is now mark + wordmark image, and the type-set
+"IURIX / ACCREDITATION" it used to render is gone.
+
+**Both files are trimmed to their alpha bounding boxes, and that matters.** The originals carried
+large transparent margins — the mark's artwork filled only 62.6% of its 500×500 canvas, the
+wordmark's only 29.6% of its height. The margin is invisible but not harmless: every render came
+out roughly a third smaller than its CSS box implied, which is exactly why doubling the header
+lockup still looked undersized. If either asset is ever replaced, **re-trim it** — the cropper is
+dependency-free and lives in the session scratchpad as `croprect.js` (rectangular) and
+`croppng.js` (square).
+
+**The wordmark is light-grounds-only.** It is dark teal and rose gold baked into pixels, with no
+light-on-dark variant. It works on the marble header and footer. Putting the lockup on the dark
+closing panel needs a second asset — a CSS filter will not do it.
+
+---
+
+## Earlier assets
 
 | File | Size | Background | Use for |
 |---|---|---|---|
