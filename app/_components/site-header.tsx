@@ -23,9 +23,15 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-silver bg-marble/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-[1140px] items-center justify-between gap-6 px-6 py-3.5 md:px-8">
+      <div className="mx-auto flex max-w-[1140px] items-center justify-between gap-6 px-6 py-2.5 md:px-8">
         <Link href="/" aria-label="Iurix Accreditation — home">
-          <IurixLockup />
+          {/* Doubled from the 1.25rem default (Rob, 2026-08-04). The lockup scales
+              as one unit off font-size, so this takes the mark from 40px to 80px
+              and the wordmark with it. Clamped rather than fixed so it backs off
+              on narrow screens, where 80px of mark plus the menu button would
+              crowd a 390px viewport. Vertical padding is trimmed to absorb some
+              of the added height. */}
+          <IurixLockup style={{ fontSize: "clamp(1.9rem, 4.5vw, 2.5rem)" }} />
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">
