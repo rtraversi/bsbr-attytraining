@@ -1,8 +1,21 @@
 const RESEND_API_URL = 'https://api.resend.com/emails'
 // iurixaccreditation.com is verified in Resend (Rob, 2026-07-29) — DKIM, SPF and
-// DMARC all confirmed live. noreply@ is deliberate: the zone has no inbound MX,
-// so replies would bounce; don't imply a reply is possible. If a monitored
-// address is ever wanted, add MX + a mailbox first, then change this.
+// DMARC all confirmed live.
+//
+// noreply@ is still deliberate, but the ORIGINAL reason is now void. This said
+// "the zone has no inbound MX, so replies would bounce"; that stopped being true
+// on 2026-08-04, when Zoho MX went live on the apex (mx.zoho.com, with
+// v=spf1 include:one.zoho.com ~all). Inbound mail is now delivered.
+//
+// It stays noreply@ because nothing monitors a reply to a transactional send —
+// certificate deliveries, reminders and renewal notices all reach people who
+// have a real support route, and inviting replies into an inbox nobody watches
+// for them is worse than declining them. Changing it is a decision about who
+// reads that mail, not a DNS question any more.
+//
+// The Zoho SPF sits at the APEX while Resend sends from
+// send.iurixaccreditation.com, which carries its own SPF, so inbound and
+// outbound do not collide.
 const FROM_ADDRESS = 'IURIX <noreply@iurixaccreditation.com>'
 
 /**

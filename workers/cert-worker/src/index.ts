@@ -153,9 +153,16 @@ function fmtDate(dateStr: string): string {
 // ── Email helpers ─────────────────────────────────────────────────────────────
 
 // iurixaccreditation.com is verified in Resend (Rob, 2026-07-29) — DKIM, SPF and
-// DMARC all confirmed live. noreply@ is deliberate: the zone has no inbound MX,
-// so replies would bounce; don't imply a reply is possible. Must stay in sync
-// with FROM_ADDRESS in lib/resend.ts — this is a duplicate, not a shared import.
+// DMARC all confirmed live.
+//
+// noreply@ is still deliberate, but the ORIGINAL reason is now void. This said
+// "the zone has no inbound MX, so replies would bounce"; that stopped being true
+// on 2026-08-04, when Zoho MX went live on the apex. Inbound mail is delivered
+// now. It stays noreply@ because nothing monitors replies to a transactional
+// send, not because they would bounce.
+//
+// Must stay in sync with FROM_ADDRESS in lib/resend.ts — this is a duplicate,
+// not a shared import, because the worker builds independently of the app.
 const FROM = 'IURIX <noreply@iurixaccreditation.com>'
 
 /**
