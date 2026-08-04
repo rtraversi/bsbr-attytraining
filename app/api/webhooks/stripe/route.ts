@@ -168,17 +168,15 @@ async function recordProvisioningFailure(
 
 /** Best-effort operator alert. A mail failure is logged and swallowed. */
 async function alertOperator(subject: string, lines: string[]) {
-  // TEMPORARY — pending Rob's business address (cutover item C4, tracked as
-  // ix-supportdest). The fallback pointed at info@aistaffcompliance.com, a
-  // RETIRED domain, so whenever OPERATOR_ALERT_EMAIL was unset this alert was
-  // mailed into a void — and it HAS been unset since the domain move (absent
-  // from wrangler.jsonc vars, all 9 Worker secrets, and the local env files).
-  // That made the whole safety net of the 07-09 collision fix inert. A
-  // misconfigured env must not silently mail a dead domain, so the fallback is
-  // now the same live inbox the in-app support form already delivers to
-  // (app/api/support/contact/route.ts:8). Set the real secret as well — the
+  // The fallback once pointed at info@aistaffcompliance.com, a RETIRED domain,
+  // so whenever OPERATOR_ALERT_EMAIL was unset this alert was mailed into a void
+  // — and it HAS been unset since the domain move, which made the whole safety
+  // net of the 07-09 collision fix inert. It is now Rob's real business address
+  // (cutover item C4, ix-supportdest), the same inbox the in-app support form
+  // delivers to (app/api/support/contact/route.ts). A misconfigured env must
+  // still not silently mail a dead domain. Set the real secret as well — the
   // fallback is a floor, not the configuration.
-  const operatorEmail = process.env.OPERATOR_ALERT_EMAIL ?? 'solarsaiko@gmail.com'
+  const operatorEmail = process.env.OPERATOR_ALERT_EMAIL ?? 'info@iurixaccreditation.com'
 
   const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
 <ul style="font-size:14px">

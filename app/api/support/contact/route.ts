@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/resend'
 
-// Temporary destination — Max's personal inbox until a real support address
-// exists. Deliberately a literal constant (not a Worker secret): easier to
-// find and swap when the real address lands.
-const SUPPORT_INBOX = 'solarsaiko@gmail.com'
+// The real support address, confirmed by Rob (cutover item C4, ix-supportdest).
+// Replaces the personal Gmail that stood in while the domain move was in flight.
+// The apex carries Zoho MX (mx.zoho.com, verified 2026-08-04), so this mailbox
+// receives; it is NOT the same zone as the Resend sending subdomain
+// (send.iurixaccreditation.com), so there is no SPF collision between them.
+// Deliberately a literal constant rather than a Worker secret: a support inbox
+// is not a credential, and a missing secret must never silently drop support
+// mail into a void the way the unset OPERATOR_ALERT_EMAIL did.
+const SUPPORT_INBOX = 'info@iurixaccreditation.com'
 
 interface RequestBody {
   topic?: unknown
