@@ -108,6 +108,16 @@ Also note these are **civil privilege / work-product rulings, not bar discipline
 two of the three came out in the firm's favour. The exhibit is labelled and framed
 accordingly. Do not relabel them as sanctions.
 
+**The COPRAC pull quote beside them IS verified.** It was extracted from the source
+PDF (`calbar.ca.gov/.../Generative-AI-Practical-Guidance.pdf`) and string-matched
+verbatim against it — State Bar of California, Committee on Professional
+Responsibility and Conduct, *Practical Guidance for the Use of Generative AI in the
+Practice of Law*, 2026 revision, which replaces the November 2023 version at the
+California Supreme Court's request. The quote is attributed to California by name
+and framed as one state's guidance, deliberately: Iurix is sold nationally with no
+state-specific accreditation claim, and this must never read as a California
+endorsement of the product.
+
 ## Next steps
 
 1. **Push.** Three commits sit unpushed on `redesign-iurix`; `main` is still behind origin.

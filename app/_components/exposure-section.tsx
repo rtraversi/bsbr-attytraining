@@ -81,6 +81,36 @@ export function ExposureSection() {
               </p>
             </div>
 
+            {/* COPRAC's 2026 guidance, quoted verbatim and attributed.
+                Extracted from the source PDF at
+                calbar.ca.gov/.../Generative-AI-Practical-Guidance.pdf on
+                2026-08-04 — a state bar telling firms in terms to train their
+                NONLAWYER staff. That is the product, described by a regulator,
+                so it is set as a pull quote rather than buried in a list.
+
+                Attribution names California explicitly and the framing calls it
+                one state's guidance. Iurix is sold nationally with no
+                state-specific accreditation claim (CLAUDE.md), and this must not
+                read as though the product is California-endorsed. */}
+            <figure className="mt-10 border-l-2 border-gold pl-7">
+              <blockquote className="font-gyrotrope text-[21px] leading-[1.5] text-ink">
+                &ldquo;Lawyers should ensure that their lawyer and nonlawyer staff
+                receive periodic training on the appropriate use of AI and safeguards
+                surrounding the use of AI.&rdquo;
+              </blockquote>
+              <figcaption className="mt-4 text-[12px] uppercase leading-[1.6] tracking-[0.12em] text-ink-mute">
+                State Bar of California, Committee on Professional Responsibility and
+                Conduct — Practical Guidance for the Use of Generative AI in the
+                Practice of Law, 2026
+              </figcaption>
+            </figure>
+
+            <p className="mt-6 text-[15px] leading-[1.6] text-ink-soft">
+              California revised its guidance in 2026 at the request of its Supreme
+              Court. Other states are moving the same way — and periodic staff training
+              is what they are asking for.
+            </p>
+
             <ul className="mt-10 border-t border-silver">
               {CLAIMS.map((c) => (
                 <li
