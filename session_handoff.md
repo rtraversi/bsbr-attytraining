@@ -97,3 +97,10 @@ This is now a committed backlog. Every day it stays unbuilt is a day the page ov
 5. Get About / Contact copy from Katy; add `/ai-policy`.
 6. Mobile pass at 390px, then deploy. The Cloudflare MCP is connected to this project if that
    helps with the deploy.
+7. **Business voicemail line (Twilio)** — added to `.planning/BACKLOG.md` item 7 on 08-03.
+   Voicemail-only, no `<Dial>`, three signature-validated endpoints on a Cloudflare Worker
+   following the `workers/cert-worker` pattern. Reuses the already-paid KCL number. The spec's
+   "Netlify vs Cloudflare" question is closed — this stack has no Netlify site. Note it ties to
+   two open items above: the notification address is probably the same address that settles the
+   `[CONTACT EMAIL — TBD]` placeholder, and the phone number fills the footer's `[PHONE — TBD]`.
+   Retaining voicemails would also add Twilio to the DPA's sub-processor list.

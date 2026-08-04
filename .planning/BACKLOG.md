@@ -3,7 +3,7 @@
 Items discovered during development that must be addressed before real customers,
 or are otherwise worth tracking. Organized by priority.
 
-**Last updated:** 2026-06-19 | **Source:** Max + Claude desktop session
+**Last updated:** 2026-08-03 | **Source:** Max + Claude desktop session; Twilio item added by Rob
 
 ---
 
@@ -31,20 +31,24 @@ returns an "already registered" error, immediately cancel the new subscription v
 you already have an account — here's a login link." Then return cleanly.
 **File:** `app/api/webhooks/stripe/route.ts` → `handleCheckoutCompleted`
 
-### 3. Login button on marketing/landing page
+### 3. Login button on marketing/landing page — ✅ DONE 2026-08-03
 **Found:** 2026-06-19
 **Problem:** Existing customers have no visible path back into the app. There is
 no "Log in" link anywhere on the landing page. They'd have to know the URL.
 **Fix:** Add a "Log in" button/link in the nav or hero of the landing page pointing
 to `/login` (or wherever the auth page lives).
+**Resolved:** the rebuilt marketing header carries a "Sign in" link to `/login`, and
+the footer and closing CTA both repeat it.
 
-### 4. Pricing tier display on landing page
+### 4. Pricing tier display on landing page — ✅ DONE 2026-08-03
 **Found:** 2026-06-19
 **Problem:** Buyers cannot see what they're paying before checkout. The seat bands
 ($35/user for 1–9, $32/user for 10–24, $28/user for 25+) are not shown anywhere
 on the landing page.
 **Fix:** Add a pricing section or card to the landing page showing the three volume
 bands clearly before the CTA button.
+**Resolved:** section 05 ("The details") shows all three bands, with a note that this
+is volume pricing rather than tiers, plus a worked example in the closing CTA.
 
 ### 5. Remove `devLink` from production routes
 **Found:** Earlier session (carried from session_handoff.md)
@@ -54,6 +58,65 @@ removed so it can never leak a login link to the screen in prod.
 **Fix:** Remove the `devLink` return from `app/api/onboarding/complete/route.ts`
 and `app/api/invite/route.ts`. Keep only the `console.error` for server logs.
 Do this after confirming emails deliver end-to-end.
+
+### 7. Business voicemail line (Twilio)
+**Added:** 2026-08-03 (Rob)
+**Problem:** Iurix Accreditation has no business phone number. Forming as an NC LLC,
+and the marketing footer already reserves a `[PHONE — TBD]` slot. No physical phone,
+low expected volume. The requirement is **voicemail + notification**; SMS is a
+nice-to-have, secondary.
+
+**Decision:** reuse the Twilio number already purchased for KCL and never deployed —
+it is already paid for. Google Voice was rejected: the free tier reclaims numbers
+after roughly three months of inactivity, which is unacceptable for a number printed
+on a compliance product's marketing site.
+
+**Design — voicemail only. Nothing ever rings a cell; there is no `<Dial>` in the flow.**
+
+Three endpoints, and **every one must validate the `X-Twilio-Signature` header** —
+these are public URLs and an unvalidated one is an open relay into the notification
+inbox:
+
+1. `/voice` — the Twilio Voice webhook. Returns TwiML: a greeting (`<Say>` or
+   `<Play>`) followed by
+   `<Record transcribe="true" maxLength="120" playBeep="true" finishOnKey="#"
+   recordingStatusCallback="/voicemail-complete" />`
+2. `/voicemail-complete` — the `recordingStatusCallback` target. Pulls the recording
+   URL and transcript, then sends a notification email via Resend.
+3. `/sms` — optional, **receive-only**. Inbound text forwarded to email. A2P 10DLC
+   registration governs *outbound* US-bound 10DLC traffic, so inbound forwarding
+   works unregistered — but it cannot auto-reply or send anything until registered.
+   Defer registration until two-way SMS is actually wanted.
+
+**Host: a Cloudflare Worker — this is already decided, not an open question.** The
+original spec listed "Netlify function vs Cloudflare Worker" as undecided, but
+`iurixaccreditation.com` is a Next.js app on Cloudflare Workers via
+`@opennextjs/cloudflare` (`wrangler.jsonc`), and CLAUDE.md's stack constraint is
+explicit: CF, not Netlify. There is no Netlify site to put a function on.
+
+Follow the existing `workers/cert-worker` pattern rather than inventing a new one:
+its own `wrangler.toml`, secrets set with `wrangler secret put` and never committed,
+and Resend called over plain `fetch` to `https://api.resend.com/emails` with a
+`Bearer ${env.RESEND_API_KEY}` header (see `workers/cert-worker/src/index.ts`).
+Secrets needed: `TWILIO_AUTH_TOKEN` (for signature validation), `RESEND_API_KEY`,
+and the notification target address.
+
+**Cost:** number already paid at ~$1.15/mo. Inbound voice ~$0.0085/min, transcription
+$0.05/min — a 90-second voicemail is about $0.09. Immaterial at expected volume.
+
+**Open decisions — resolve before building:**
+- [ ] Which Twilio project/subaccount holds the number? If it is KCL-scoped, move it first.
+- [ ] Confirm the number is still active (Phone Numbers → Manage → Active).
+- [ ] Greeting: TTS `<Say>` vs a recorded `<Play>` MP3. Recorded reads better to
+      law-firm buyers, and this is a product sold on looking like a serious instrument.
+- [ ] Recording retention: auto-delete from Twilio after the email goes out, or keep
+      in the account? Note this interacts with the Privacy Policy and the DPA — a
+      retained voicemail from a client is personal data under both, and the DPA's
+      sub-processor list would need Twilio added.
+- [ ] Notification target email address. Likely the same address that settles the
+      `[CONTACT EMAIL — TBD]` placeholder in the footer and legal pages.
+- [ ] Area code — the number was picked for the law firm, but Iurix sells into all
+      50 states. Decide whether a local NC area code is a liability or a non-issue.
 
 ---
 
