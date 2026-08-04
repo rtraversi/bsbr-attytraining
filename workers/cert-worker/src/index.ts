@@ -21,6 +21,10 @@ export interface Env {
   RESEND_API_KEY: string
   CERT_WEBHOOK_SECRET: string
   APP_URL: string
+  /** Reconciliation only. Read-only usage — this job never mutates Stripe. */
+  STRIPE_SECRET_KEY: string
+  /** Where reconciliation findings go. Same address the app's webhook alerts use. */
+  OPERATOR_ALERT_EMAIL: string
 }
 
 // ── Row types ────────────────────────────────────────────────────────────────
@@ -782,6 +786,215 @@ async function runRetentionPurge(env: Env): Promise<void> {
   console.log(`[retention-purge] ${results.join(' | ')}`)
 }
 
+// ── Reconciliation ────────────────────────────────────────────────────────────
+//
+// The refund policy will state that someone charged who received nothing gets a
+// full refund or access, with no window. That promise has no detector today.
+// provisioning_failures catches the three CLASSIFIED causes, but a silent
+// failure — the webhook never delivered, or the handler threw before writing
+// anything — leaves no trace at all. The only symptom is a customer sitting on
+// /onboarding, and nobody finds out until they complain.
+//
+// This is the detector: compare Stripe against the database daily, in three
+// directions. It is READ ONLY on both sides. It cancels nothing, provisions
+// nothing and refunds nothing — it reports, and a human acts.
+
+/** Ignore anything younger than this. Provisioning is not instant. */
+const RECONCILE_GRACE_MS = 15 * 60 * 1000
+
+interface StripeSubscription {
+  id: string
+  customer: string
+  status: string
+  livemode: boolean
+  created: number
+  items: { data: { quantity?: number | null }[] }
+}
+
+interface FirmReconcileRow {
+  id: string
+  name: string
+  status: string
+  max_seats: number
+  stripe_subscription_id: string | null
+  stripe_customer_id: string | null
+  created_at: string
+}
+
+/** Paginated GET against the Stripe REST API. No SDK — the worker uses raw fetch throughout. */
+async function stripeListActiveSubscriptions(env: Env): Promise<StripeSubscription[]> {
+  const all: StripeSubscription[] = []
+  let startingAfter: string | undefined
+
+  // Bounded rather than while(true): a pagination bug that never terminates
+  // would burn the whole cron budget silently. 100 pages is 10,000 subscriptions.
+  for (let page = 0; page < 100; page++) {
+    const params = new URLSearchParams({ status: 'active', limit: '100' })
+    if (startingAfter) params.set('starting_after', startingAfter)
+
+    const res = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
+      headers: {
+        Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+        // Pinned to match every Stripe call in the app (app/api/checkout/route.ts
+        // and siblings). An unpinned call silently follows the account default.
+        'Stripe-Version': '2026-05-27.dahlia',
+      },
+    })
+
+    if (!res.ok) throw new Error(`Stripe subscriptions ${res.status}: ${await res.text()}`)
+
+    const body = (await res.json()) as { data: StripeSubscription[]; has_more: boolean }
+    all.push(...body.data)
+
+    const last = body.data[body.data.length - 1]
+    if (!body.has_more || !last) break
+    startingAfter = last.id
+  }
+
+  return all
+}
+
+function subscriptionQuantity(sub: StripeSubscription): number {
+  return sub.items.data.reduce((sum, item) => sum + (item.quantity ?? 0), 0)
+}
+
+async function runReconciliation(env: Env): Promise<void> {
+  const [subsRaw, firms] = await Promise.all([
+    stripeListActiveSubscriptions(env),
+    pgRest<FirmReconcileRow[]>(
+      env,
+      'GET',
+      '/firms?select=id,name,status,max_seats,stripe_subscription_id,stripe_customer_id,created_at',
+    ),
+  ])
+
+  const now = Date.now()
+
+  // 🔴 LIVEMODE ONLY. Learned from running this against real data on 2026-08-03:
+  // all 30 sandbox subscriptions are livemode:false and 13 of them have no firm,
+  // so without this filter the job reports 13 phantom emergencies on day one and
+  // is switched off by the second. Filtering on the object's own flag rather
+  // than trusting which key is configured means a sandbox key produces silence
+  // instead of a false alarm.
+  const subs = subsRaw.filter(
+    (s) => s.livemode === true && now - s.created * 1000 > RECONCILE_GRACE_MS,
+  )
+
+  const firmRows = firms ?? []
+
+  // A lapsed re-subscription arrives with a NEW subscription id, and
+  // handlePaymentSucceeded resolves those by CUSTOMER before updating the row.
+  // Matching on both keys here means the window between those two events reads
+  // as healthy rather than as an emergency in both directions at once.
+  const firmBySubId = new Map<string, FirmReconcileRow>()
+  const firmByCustomerId = new Map<string, FirmReconcileRow>()
+  for (const f of firmRows) {
+    if (f.stripe_subscription_id) firmBySubId.set(f.stripe_subscription_id, f)
+    if (f.stripe_customer_id) firmByCustomerId.set(f.stripe_customer_id, f)
+  }
+
+  const matchFirm = (sub: StripeSubscription) =>
+    firmBySubId.get(sub.id) ?? firmByCustomerId.get(sub.customer) ?? null
+
+  const paidButNothing: string[] = []
+  const accessWithoutPayment: string[] = []
+  const seatDrift: string[] = []
+
+  // 🔴 The livemode filter has a MIRROR-IMAGE failure the plan does not mention.
+  //
+  // The plan's guard is written for direction 1: without it, 13 sandbox
+  // subscriptions with no firm read as 13 emergencies. True. But the database
+  // has no livemode column — a firm provisioned in sandbox is indistinguishable
+  // from a live one. So with a sandbox key the filter empties `subs`, and
+  // direction 2 then reports EVERY ACTIVE FIRM as "access without payment".
+  // That is a far bigger false alarm than the one the guard prevents, and it
+  // would arrive on the same first run.
+  //
+  // Directions 2 and 3 are therefore suppressed when there are no live
+  // subscriptions at all. Zero live subscriptions means either a sandbox key or
+  // a product that has not sold anything yet — in both cases "these firms have
+  // no subscription" is noise, not information. Direction 1 needs no such guard:
+  // an empty subscription list cannot produce a false positive there.
+  //
+  // This degrades in the right direction. The day the first real customer
+  // exists, subs is non-empty and all three directions engage on their own.
+  const canCompareFirmsToStripe = subs.length > 0
+
+  // ── Direction 1: active Stripe subscription with no firm ───────────────────
+  // The one that matters. This is someone who paid and received nothing.
+  for (const sub of subs) {
+    if (!matchFirm(sub)) {
+      paidButNothing.push(
+        `${sub.id} (customer ${sub.customer}, ${subscriptionQuantity(sub)} seats, created ${new Date(sub.created * 1000).toISOString()})`,
+      )
+    }
+  }
+
+  const liveSubBySubId = new Map(subs.map((s) => [s.id, s]))
+  const liveSubByCustomerId = new Map(subs.map((s) => [s.customer, s]))
+
+  for (const firm of canCompareFirmsToStripe ? firmRows : []) {
+    const sub =
+      (firm.stripe_subscription_id ? liveSubBySubId.get(firm.stripe_subscription_id) : undefined) ??
+      (firm.stripe_customer_id ? liveSubByCustomerId.get(firm.stripe_customer_id) : undefined) ??
+      null
+
+    // ── Direction 2: active firm with no live subscription ───────────────────
+    // status='active' ONLY — a payment_failed or cancelled firm is SUPPOSED to
+    // have no live subscription, and reporting those would bury the real signal
+    // under every lapsed customer the product is handling correctly.
+    if (firm.status === 'active') {
+      const firmAgeMs = now - new Date(firm.created_at).getTime()
+      if (!sub && firmAgeMs > RECONCILE_GRACE_MS) {
+        accessWithoutPayment.push(`${firm.name} (firm ${firm.id})`)
+      }
+    }
+
+    // ── Direction 3: seat drift ──────────────────────────────────────────────
+    if (sub) {
+      const stripeSeats = subscriptionQuantity(sub)
+      if (stripeSeats !== firm.max_seats) {
+        seatDrift.push(
+          `${firm.name} (firm ${firm.id}): DB max_seats=${firm.max_seats}, Stripe quantity=${stripeSeats}`,
+        )
+      }
+    }
+  }
+
+  const findings = paidButNothing.length + accessWithoutPayment.length + seatDrift.length
+
+  // SILENCE WHEN HEALTHY. A report that always arrives is a report nobody reads,
+  // and this one has to be believed on the day it finally says something.
+  if (findings === 0) {
+    console.log(
+      `[reconciliation] clean — ${subs.length} live subscriptions, ${firmRows.length} firms` +
+        (canCompareFirmsToStripe ? '' : ' (directions 2 and 3 skipped: no live subscriptions)'),
+    )
+    return
+  }
+
+  const section = (title: string, items: string[]) =>
+    items.length === 0
+      ? ''
+      : `<h3 style="font-size:14px;margin:24px 0 8px">${title} (${items.length})</h3><ul style="font-size:13px">${items.map((i) => `<li>${i}</li>`).join('')}</ul>`
+
+  const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:640px;margin:0 auto;padding:32px 24px">
+<p style="font-size:14px">Daily Stripe/database reconciliation found <strong>${findings}</strong> discrepancy(ies).</p>
+${section('🔴 PAID BUT NOT PROVISIONED — someone was charged and received nothing', paidButNothing)}
+${section('⚠️ ACTIVE FIRM WITH NO LIVE SUBSCRIPTION — access without payment', accessWithoutPayment)}
+${section('⚠️ SEAT DRIFT — billed quantity does not match the firm record', seatDrift)}
+<hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
+<p style="font-size:12px;color:#6b7280">Compared ${subs.length} live active subscriptions against ${firmRows.length} firms.${canCompareFirmsToStripe ? '' : ' Directions 2 and 3 were SKIPPED — no live subscriptions exist, so firm-to-Stripe comparison would report every firm.'} Subscriptions younger than 15 minutes are ignored. This job is read-only — nothing was changed in Stripe or the database.</p>
+</body></html>`
+
+  await sendEmail(
+    env,
+    env.OPERATOR_ALERT_EMAIL,
+    `[IURIX] Reconciliation: ${findings} discrepancy(ies)`,
+    html,
+  )
+}
+
 // ── Worker export ─────────────────────────────────────────────────────────────
 
 export default {
@@ -796,6 +1009,7 @@ export default {
           // Idempotent and cheap — every filter excludes rows already purged, so
           // a daily run costs nothing once the backlog is clear.
           runRetentionPurge(env).catch(err => console.error('[scheduled] retention purge:', err)),
+          runReconciliation(env).catch(err => console.error('[scheduled] reconciliation:', err)),
         ]),
       )
     } else {
