@@ -88,6 +88,26 @@ This is now a committed backlog. Every day it stays unbuilt is a day the page ov
   `min-w` is the legal table, deliberately inside an `overflow-x-auto` wrapper. Worth one pass in
   the DevTools device toolbar before deploy.
 
+## 🔴 Production blocker — the case citations are unverified
+
+The "Reduce your exposure" exhibit now cites three **2026** decisions, taken from
+`builtsmartbyrob.com/ai-confidentiality` and not checked against the dockets:
+
+| Case | Cited as |
+|---|---|
+| Morgan v. V2X, Inc. | No. 25-1991 · D. Colo. · Mar 30 2026 |
+| Warner v. Gilbarco, Inc. | No. 2:2024-cv-12333 · E.D. Mich. · Feb 2026 |
+| United States v. Heppner | S.D.N.Y. · Feb 2026 — **the source's docket reads `25-cr-XXX`, a placeholder** |
+
+No docket number is printed for Heppner and none should be invented. **Verify all
+three against the real records before this page is public.** Case citations on a
+commercial page aimed at attorneys are the single most checkable thing on it, and
+a wrong one costs more credibility than the section earns.
+
+Also note these are **civil privilege / work-product rulings, not bar discipline** —
+two of the three came out in the firm's favour. The exhibit is labelled and framed
+accordingly. Do not relabel them as sanctions.
+
 ## Next steps
 
 1. **Push.** Three commits sit unpushed on `redesign-iurix`; `main` is still behind origin.
