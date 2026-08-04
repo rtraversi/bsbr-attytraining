@@ -35,12 +35,16 @@ interface CheckoutEmailInUseProps {
   cancelled: boolean
 }
 
-// TEMPORARY — pending Rob's business address (cutover item C4, tracked as
-// ix-supportdest). Matches the sign-in page's support mailto and the inbox
-// app/api/support/contact/route.ts:8 already delivers to. The in-app support
-// form is not an option here: it requires a session, and the whole problem is
-// that this buyer has no account to sign in to.
-const SUPPORT_EMAIL = 'solarsaiko@gmail.com'
+// Rob's real business address (cutover item C4, ix-supportdest). Matches the
+// sign-in page's support mailto and the inbox app/api/support/contact/route.ts
+// already delivers to. The in-app support form is not an option here: it
+// requires a session, and the whole problem is that this buyer has no account to
+// sign in to.
+//
+// This one mattered most of the six. It is the email sent to someone we just
+// charged and then refused, telling them a refund is coming — and it was
+// directing them to a personal Gmail address to chase it.
+const SUPPORT_EMAIL = 'info@iurixaccreditation.com'
 
 export function CheckoutEmailInUseEmail({ email, cancelled }: CheckoutEmailInUseProps) {
   return (

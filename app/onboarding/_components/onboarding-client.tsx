@@ -192,8 +192,11 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
 
         <p className="text-base font-extralight text-zinc-700">{copy.next}</p>
 
+        {/* The real business address (cutover item C4, ix-supportdest). This is
+            the only route open to someone whose provisioning was refused: they
+            have no account, so the in-app support form is unreachable. */}
         <a
-          href="mailto:solarsaiko@gmail.com"
+          href="mailto:info@iurixaccreditation.com"
           className="mx-auto rounded-xl bg-[var(--brand-primary)] px-6 py-3 text-sm font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90"
         >
           Contact support
