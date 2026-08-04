@@ -657,7 +657,9 @@ async function runRenewalReminders(env: Env): Promise<void> {
 // IP addresses, user agents and individual answers are incidental detail that
 // stops earning its keep long before the record does.
 //
-// Certificates are NEVER purged. They are the product.
+// Certificates are NEVER purged, and neither are training event ROWS. They are
+// the product and the evidence behind it respectively; only the incidental
+// detail attached to them ages out.
 //
 // ⚠️ ORDERING: this cannot run before refund eligibility ships, because training
 // events are the evidence behind it (lib/refund-eligibility.ts). The windows
@@ -674,34 +676,23 @@ const RETAIN_QUIZ_ANSWERS_DAYS = 365 // 12 months
 /** Days after which a RESOLVED provisioning failure is deleted. Unresolved rows are kept. */
 const RETAIN_RESOLVED_FAILURES_DAYS = 365 // 12 months
 
-/** Days after which whole training_event rows are deleted. See PURGE_EVENT_ROWS. */
-const RETAIN_EVENT_ROWS_DAYS = 730 // 2 years
-
-/**
- * 🔴 OFF, pending a decision from Max — the plan contradicts itself here.
- *
- * Its retention table says, of the same table at the same 2-year mark:
- *
- *     training_events.ip_address, .user_agent  →  null them, KEEP THE EVENT ROW
- *     training_events rows                     →  DELETE
- *
- * Both cannot hold. If the rows are deleted at 2 years, nulling their
- * identifiers at 2 years is a no-op on rows that cease to exist in the same
- * pass.
- *
- * Left off rather than guessed, because the two mistakes are not symmetric:
- * keeping the rows too long is fixed by flipping this to true, while deleting
- * them wrongly destroys Rule 5.3 supervision evidence that cannot be
- * reconstructed. Certificates are kept forever, and these events are the proof
- * behind them — deleting the evidence while keeping the conclusion is the
- * outcome most likely to be regretted.
- *
- * Flip to true once Max confirms deletion is what he meant.
- */
-// Typed as boolean, not inferred as the literal `false`, so the branch below is
-// live code that keeps typechecking rather than statically-dead code a future
-// lint pass offers to delete.
-const PURGE_EVENT_ROWS: boolean = false
+// ── Training event ROWS are never deleted. Max's call, 2026-08-04. ───────────
+//
+// An earlier draft of these rules said to delete them at 2 years, directly
+// contradicting the line above it, which said to null their identifiers and KEEP
+// THE EVENT ROW. Max resolved it in favour of keeping: the event row is the Rule
+// 5.3 supervision evidence behind a certificate that is itself kept
+// indefinitely, so deleting it would destroy the proof and preserve only the
+// conclusion.
+//
+// There is deliberately NO disabled flag for this. A dormant switch reads as an
+// intention someone is expected to carry out eventually, and the next person to
+// find one would reasonably flip it. Deleting this data is not pending — it is
+// decided against. If that ever changes it should arrive as a new decision
+// carrying its own reasoning, not as a boolean somebody turned on.
+//
+// What DOES age out of these rows is ip_address and user_agent, at 2 years. That
+// is the whole of the retention story for training_events.
 
 /**
  * PostgREST mutation that reports how many rows it touched.
@@ -804,14 +795,8 @@ async function runRetentionPurge(env: Env): Promise<void> {
     results.push(`resolved provisioning failures deleted: ${n}`)
   }
 
-  // 4. Whole training event rows — see PURGE_EVENT_ROWS.
-  if (PURGE_EVENT_ROWS) {
-    const cutoff = cutoffIso(RETAIN_EVENT_ROWS_DAYS)
-    const n = await pgRestPurge(env, 'DELETE', 'training_events', `event_timestamp=lt.${cutoff}`)
-    results.push(`training event rows deleted: ${n}`)
-  } else {
-    results.push('training event rows: SKIPPED (PURGE_EVENT_ROWS is off)')
-  }
+  // There is no step 4. Training event ROWS are never deleted — see the note by
+  // RETAIN_EVENT_IDENTIFIERS_DAYS. Step 1 is the whole of their retention.
 
   console.log(`[retention-purge] ${results.join(' | ')}`)
 }
