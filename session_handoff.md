@@ -27,8 +27,8 @@
 >
 > The runbook's step 2 is the one that removes the Mac dependency permanently.
 
-**Date:** 2026-08-03 (**Rob**, terminal). Three commits on `redesign-iurix`: a sync-prep commit,
-the merge of Max's 74 commits, and the marketing rebuild. **Nothing pushed yet — see Next steps.**
+**Date:** 2026-08-03 to 08-05 (**Rob**, terminal). The marketing rebuild plus the CI work.
+**Everything is pushed to `redesign-iurix`.**
 
 ## 🔴 Read this first — the repo was 74 commits behind
 
@@ -53,10 +53,11 @@ Two collisions that came out of it:
 direction: marble ground, mint hairlines, teal ink, Gyrotrope display over Host Grotesk body.
 Teal and steel carry the design; rose gold appears only as a seal accent.
 
-- **Homepage** — Katy's copy as the spine, five numbered sections: the standard / reduce your
-  exposure / document your best efforts / why Rule 5.3 changed / the details. The Rule 5.3
-  evidence (Mata, Crabill, Wadsworth, the four statistics, the Florida Bar pull quote) is kept
-  from the previously reviewed `03-copy.md` rather than rewritten — those are checked claims.
+- **Homepage** — Katy's copy as the spine, four sections: the solution / reduce your exposure /
+  document your best efforts / the details. The standalone "Why Rule 5.3 just changed" section was
+  cut on 08-04 (Rob: too much 5.3 for a page about the accreditation); the rule now appears once,
+  in the specification fine print. The old Mata/Crabill/Wadsworth exhibit was replaced by the three
+  2026 privilege decisions.
 - **Shared header + footer** rebuilt light. Footer carries the disclaimer verbatim.
 - **`/pricing`** moved to light. `PricingSlider` is **restyled only** — rate maths, the checkout
   call and the auto-renewal disclosure block are byte-for-byte untouched.
@@ -96,9 +97,9 @@ This is now a committed backlog. Every day it stays unbuilt is a day the page ov
   legal reasons; Katy's copy makes "Iurix Accredited" the central promise. Shipped as Katy wrote
   it, with the footer disclaimer drawing the line ("not CLE-accredited... does not constitute bar
   accreditation"). **Katy and Rob should confirm the two are reconciled on purpose.**
-- **Contact email and phone are still `[TBD]`** and render as visible placeholders in the footer
-  and on all three legal pages. This is what the brief asks for, but it **must not ship to
-  production** as-is. The old `info@aistaffcompliance.com` (dead domain) was removed.
+- **Contact email resolved:** `info@iurixaccreditation.com` (Zoho alias), live in the footer and
+  all three legal pages. The phone placeholder was removed entirely rather than shown as `[TBD]` —
+  it lands when the Twilio line is provisioned (`.planning/BACKLOG.md` item 7).
 - **`/about` and `/contact` do not exist.** Katy's page structure calls for both. No copy for
   either, and Contact has nowhere to point until the email is decided. Nav uses in-page anchors
   meanwhile. `/ai-policy` is specced in the brief and also unbuilt.
@@ -115,35 +116,25 @@ This is now a committed backlog. Every day it stays unbuilt is a day the page ov
   `min-w` is the legal table, deliberately inside an `overflow-x-auto` wrapper. Worth one pass in
   the DevTools device toolbar before deploy.
 
-## 🔴 Production blocker — the case citations are unverified
+## ✅ Case citations — confirmed valid (2026-08-05)
 
-The "Reduce your exposure" exhibit now cites three **2026** decisions, taken from
-`builtsmartbyrob.com/ai-confidentiality` and not checked against the dockets:
+The three 2026 decisions in *Reduce your exposure* — Morgan v. V2X (D. Colo.), Warner v.
+Gilbarco (E.D. Mich.) and United States v. Heppner (S.D.N.Y.) — were **confirmed valid by
+Rob on 2026-08-05**. They come from his own write-up at
+`builtsmartbyrob.com/ai-confidentiality`. This is no longer a deploy blocker.
 
-| Case | Cited as |
-|---|---|
-| Morgan v. V2X, Inc. | No. 25-1991 · D. Colo. · Mar 30 2026 |
-| Warner v. Gilbarco, Inc. | No. 2:2024-cv-12333 · E.D. Mich. · Feb 2026 |
-| United States v. Heppner | S.D.N.Y. · Feb 2026 — **the source's docket reads `25-cr-XXX`, a placeholder** |
+The page prints court and month only, no docket numbers, which is deliberate: the source
+gives Heppner's docket as a placeholder (`25-cr-XXX`). If dockets are ever added, get the
+real Heppner number rather than inventing one.
 
-No docket number is printed for Heppner and none should be invented. **Verify all
-three against the real records before this page is public.** Case citations on a
-commercial page aimed at attorneys are the single most checkable thing on it, and
-a wrong one costs more credibility than the section earns.
+These are **civil privilege / work-product rulings, not bar discipline** — two of the three
+went the firm's way, and the section is framed accordingly. Do not relabel them as sanctions.
 
-Also note these are **civil privilege / work-product rulings, not bar discipline** —
-two of the three came out in the firm's favour. The exhibit is labelled and framed
-accordingly. Do not relabel them as sanctions.
-
-**The COPRAC pull quote beside them IS verified.** It was extracted from the source
-PDF (`calbar.ca.gov/.../Generative-AI-Practical-Guidance.pdf`) and string-matched
-verbatim against it — State Bar of California, Committee on Professional
-Responsibility and Conduct, *Practical Guidance for the Use of Generative AI in the
-Practice of Law*, 2026 revision, which replaces the November 2023 version at the
-California Supreme Court's request. The quote is attributed to California by name
-and framed as one state's guidance, deliberately: Iurix is sold nationally with no
-state-specific accreditation claim, and this must never read as a California
-endorsement of the product.
+**The COPRAC pull quote beside them is separately verified** — extracted from the source PDF
+(`calbar.ca.gov/.../Generative-AI-Practical-Guidance.pdf`) and string-matched verbatim.
+State Bar of California, Committee on Professional Responsibility and Conduct, 2026 revision.
+Attributed to California by name and framed as one state's guidance on purpose: Iurix is sold
+nationally with no state-specific accreditation claim.
 
 ## 🔴 This machine cannot produce a working Cloudflare build (2026-08-05)
 

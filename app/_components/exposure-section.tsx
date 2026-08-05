@@ -19,11 +19,14 @@ import { SectionHead } from "./section-head";
 // rulings, and two of the three came out in the firm's favour. Calling them
 // sanctions would misrepresent them to the one audience certain to look them up.
 //
-// ⚠️ UNVERIFIED CITATIONS. These are Feb–Mar 2026 district court decisions taken
-// from Rob's own write-up; they have not been checked against the dockets here.
-// The source lists Heppner's docket as "No. 25-cr-XXX", a placeholder, so no
-// docket number is printed for it — do not invent one. Verify all three against
-// the real records before this page goes to production.
+// Citations confirmed valid by Rob, 2026-08-05. They are Feb–Mar 2026 district
+// court decisions from his own write-up at builtsmartbyrob.com/ai-confidentiality.
+//
+// No docket numbers are printed — only court and month. That is deliberate and
+// worth keeping: the source gives Heppner's docket as "No. 25-cr-XXX", a
+// placeholder, and court-plus-date is enough for a reader to find the case.
+// If dockets are ever added, get Heppner's real number first rather than
+// inventing one to match the other two.
 const CASES = [
   {
     court: "D. Colo. · Mar 2026",

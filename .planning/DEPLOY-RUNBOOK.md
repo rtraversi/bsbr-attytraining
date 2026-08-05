@@ -107,24 +107,22 @@ Then by eye:
 
 ---
 
-## Step 5 — ⚖️ Verify the case citations (decision point, do not skip)
+## Step 5 — ✅ Case citations: cleared
 
-*Reduce your exposure* cites three **2026** decisions taken from
-`builtsmartbyrob.com/ai-confidentiality`. **None has been checked against a docket.**
+*Reduce your exposure* cites three 2026 decisions — Morgan v. V2X (D. Colo.), Warner v.
+Gilbarco (E.D. Mich.), United States v. Heppner (S.D.N.Y.). **Rob confirmed these valid on
+2026-08-05.** They are from his own write-up at `builtsmartbyrob.com/ai-confidentiality`.
+No action needed — this was a blocker and is not one now.
 
-| Case | Cited as |
-|---|---|
-| Morgan v. V2X, Inc. | No. 25-1991 · D. Colo. · Mar 30 2026 |
-| Warner v. Gilbarco, Inc. | No. 2:2024-cv-12333 · E.D. Mich. · Feb 2026 |
-| United States v. Heppner | S.D.N.Y. · Feb 2026 — source's docket reads `25-cr-XXX`, a placeholder |
+Two things to preserve if that block is ever edited:
 
-Case citations are the most checkable thing on a page sold to attorneys, and a wrong one costs
-more credibility than the section earns. Either verify them, or delete the docket block from
-`app/_components/exposure-section.tsx` and ship without it — **the COPRAC pull quote beside it is
-verified** (string-matched against the source PDF) and carries the section on its own.
+- The page prints **court and month only, no docket numbers**. Deliberate: the source gives
+  Heppner's docket as a placeholder (`25-cr-XXX`). Don't invent one to match the other two.
+- These are **civil privilege / work-product rulings, not bar discipline** — two of the three
+  went the firm's way. Don't relabel them as sanctions.
 
-Also live on the page, by Rob's explicit decision: four features that do not exist yet (tailored
-policy, website token, members-only decisions page, monitoring feed).
+Still live on the page by Rob's explicit decision: four features that do not exist yet
+(tailored policy, website token, members-only decisions page, monitoring feed).
 
 ---
 
