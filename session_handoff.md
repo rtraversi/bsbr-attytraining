@@ -75,9 +75,21 @@ Worker at 15:07Z. That took effect immediately without a deploy.
 2. Test all four billing cases with `stripe listen` + `pnpm dev`. Case 3 now cancels, so that is a new case to confirm.
 3. Max: draft **Terms first** (no inventory dependency), then Privacy → Cookies → DPA.
 4. Max: fill the **Why** and **How long** columns in `.planning/DATA-INVENTORY.md`.
-5. Cloudflare Email Routing. Closes `ix-certmailbox`, `ix-supportdest`, and unblocks `ix-contactc4`.
-   **Verified safe:** the apex has zero MX and zero TXT records; Resend's SPF lives on
-   `send.iurixaccreditation.com`, so there is no SPF collision risk at the apex.
+5. ~~Cloudflare Email Routing.~~ 🔴 **DO NOT DO THIS. The advice below is now HARMFUL.**
+
+   *Written 2026-08-03, when the apex genuinely had zero MX and zero TXT records. **The DNS changed
+   on 2026-08-04:** the apex now carries **Zoho MX** (`mx.zoho.com`, `mx2`, `mx3`) and
+   `v=spf1 include:one.zoho.com ~all`. Configuring Cloudflare Email Routing would **overwrite those
+   MX records and break inbound mail.** Caught by terminal, verified by dig.*
+
+   Resend is unaffected so far as can be checked: DKIM at `resend._domainkey` is intact, the
+   `send.` subdomain still carries its own MX and SPF, and DMARC uses relaxed alignment.
+   ⚠️ **Not fully verified** — the Resend API key is send-only and cannot list domains, so the only
+   real test is sending a message. A mail change broke everything for days on 07-29; do not assume.
+
+   Two code comments are now stale and say the opposite of the truth: `lib/resend.ts:2-5` and the
+   equivalent in `workers/cert-worker/src/index.ts` both justify the `noreply@` sender with "the zone
+   has no inbound MX, so replies would bounce."
 
 ## 🔵 Open questions
 
