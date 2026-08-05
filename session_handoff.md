@@ -1,5 +1,22 @@
 # Session Handoff
 
+> ## 👉 Max, start here (2026-08-05)
+>
+> **Your Windows laptop is fine for this work — with one exception.** Everything normal works on
+> Windows: `next dev`, `pnpm build`, `tsc`, the whole edit/review loop. We used it all evening.
+>
+> **Do not run `opennextjs-cloudflare build` or `deploy` on Windows.** It appears to succeed and
+> produces a Worker that returns **500 on every route**, because Windows path separators get baked
+> into the server manifests and workerd cannot resolve them. Rob lost an evening to this; the full
+> diagnosis is below. It is not fixable with a flag — the adapter does not support Windows.
+>
+> **Deploy through CI instead.** `.github/workflows/deploy.yml` builds on Linux. It needs five repo
+> secrets added once (listed below) and then anyone can ship from any machine, Windows included.
+> That is also why this is no longer blocked on your Mac.
+>
+> Work waiting on you: add the secrets, run the workflow, review the preview, and check the three
+> unverified case citations before promoting to production.
+
 **Date:** 2026-08-03 (**Rob**, terminal). Three commits on `redesign-iurix`: a sync-prep commit,
 the merge of Max's 74 commits, and the marketing rebuild. **Nothing pushed yet — see Next steps.**
 

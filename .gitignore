@@ -53,3 +53,12 @@ next-env.d.ts
 /memory/
 /landing page design resources/
 
+# Tool-managed, per-machine. settings.local.json is a permission allowlist full of
+# one developer's absolute paths — pushing it would apply Rob's grants on Max's
+# machine and vice versa. The skill packs are installed by tooling and restore
+# themselves. Remove these lines if we ever want project skills shared in-repo.
+.claude/settings.local.json
+.claude/skills/
+.agents/skills/
+skills-lock.json
+
