@@ -1,6 +1,43 @@
 -- Allow multiple enrollment rows per (firm_id, user_id, course_id).
 -- RENEW-04 inserts a new enrollment row on each annual renewal cycle;
--- the unique constraint blocked that. All enrollment reads use
--- ORDER BY created_at DESC LIMIT 1 to pick the newest row.
+-- the unique constraint blocked that.
+--
+-- ⚠️ Corrected 2026-08-05. This comment previously read:
+--
+--     "All enrollment reads use ORDER BY created_at DESC LIMIT 1 to pick the
+--      newest row."
+--
+-- Both halves were wrong, and the second one did damage.
+--
+--   created_at is NOT a column on this table. The timestamp is `enrolled_at`
+--   (0001). Naming a column that does not exist sends anyone checking the claim
+--   looking for the wrong thing.
+--
+--   "All enrollment reads" was never true. app/dashboard/page.tsx read them
+--   unordered and collapsed them with Object.fromEntries, which keeps the LAST
+--   row for a repeated key — so from the first renewal onward the admin
+--   dashboard resolved an arbitrary term per member. The comment asserted the
+--   invariant instead of the code enforcing it, which is precisely why nobody
+--   went looking.
+--
+-- Fixed in app/dashboard/page.tsx (2026-08-05).
+--
+-- Stated precisely this time, since overclaiming is what went wrong before.
+-- Every read that resolves WHICH enrollment is current now orders by
+-- enrolled_at DESC: dashboard, training, overview, quizzes, content-progress,
+-- quiz/attempt and lib/refund-eligibility. Two reads legitimately do not, and
+-- neither needs to: certs/generate looks one up by primary key, and the renewal
+-- handler filters to open enrollments only.
+--
+-- ⚠️ Still outstanding, NOT fixed here — app/api/firm/enroll-self/route.ts:85
+-- and app/api/onboarding/complete/route.ts:105 test existence with
+-- .maybeSingle(), which ERRORS when more than one row matches rather than
+-- returning the first. Post-renewal that error surfaces as `existing = null`,
+-- so the guard reads "no enrollment" and inserts another. That is a different
+-- defect from this one (wrong method, not missing ORDER BY) and is only
+-- reachable on the self-enrol path after a renewal.
+--
+-- Comment-only change: 0007 is already applied and is tracked by version, so
+-- editing this text cannot cause a re-run.
 ALTER TABLE enrollments
   DROP CONSTRAINT enrollments_firm_id_user_id_course_id_key;
