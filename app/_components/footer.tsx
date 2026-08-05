@@ -28,7 +28,12 @@ export function Footer() {
         <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr]">
           {/* Brand block */}
           <div>
-            <IurixLockup />
+            {/* The lockup scales as one unit off font-size. The header sits at
+                clamp(1.9rem, 4.5vw, 2.5rem); the 1.25rem default put the footer
+                mark at 40px against the header's ~67px, which read as a second,
+                smaller logo rather than the same one. 1.75rem keeps it in the
+                same family while staying subordinate to the header. */}
+            <IurixLockup style={{ fontSize: "1.75rem" }} />
             <p className="mt-5 text-[15px] text-ink-soft">iurixaccreditation.com</p>
             {/* Contact address decided 2026-08-03 (Rob): info@iurixaccreditation.com,
                 a Zoho alias on the domain.
