@@ -147,12 +147,12 @@ The interactive learning content is built in **Articulate Rise 360** by Rob + Ka
 > sandbox `acct_1ThDpr6ZCSojEKRr`, which has exactly **one** active product and **one** active price.
 
 - ONE Product: `prod_UiovBHrxJSDVpf` (verified) named **"AI Staff Compliance Training — Annual Certification"**. `tax_code`: **not set**. `metadata`: **empty**.
-- ONE Price: `price_1TjNHc6ZCSojEKRrKs79ToJ0` (verified; hardcoded at `app/api/checkout/route.ts:17`). `lookup_key`: **not set**. Recurring yearly, `billing_scheme=tiered`, `tiers_mode=volume`, tiers confirmed up_to 9 → $35/unit, up_to 24 → $32/unit, inf → $28/unit. `tax_behavior`: **`unspecified`**. `livemode: false`.
+- ONE Price: `price_1TjNHc6ZCSojEKRrKs79ToJ0` (verified). **No longer hardcoded** — as of 2026-08-05 checkout resolves the Price by `lookup_key` at runtime (`lib/stripe-price.ts`), falling back to this ID **only while the secret key is a test key**. `lookup_key`: **not set**. Recurring yearly, `billing_scheme=tiered`, `tiers_mode=volume`, tiers confirmed up_to 9 → $35/unit, up_to 24 → $32/unit, inf → $28/unit. `tax_behavior`: **`unspecified`**. `livemode: false`.
 
 > 🔴 **Three deltas from the intended config, all feeding `ix-stripeaudit`:**
 > 1. **`tax_behavior=unspecified`** while `app/api/checkout/route.ts:68` sets `automatic_tax: { enabled: true }`. This doc previously claimed `exclusive`. Stripe expects an explicit `inclusive`/`exclusive` for automatic tax, so this must be resolved on the live-mode object.
 > 2. **No `tax_code` on the product** (this doc claimed `txcd_20060058`) and **no product metadata** (claimed `pricing_model=per_seat_volume`). Automatic tax will fall back to the account default tax category.
-> 3. **No `lookup_key`** (claimed `per_seat_annual`), so the hardcoded ID is the only handle on the price. Setting a lookup key on the live object would remove the hardcoded-ID swap from the launch checklist.
+> 3. **No `lookup_key`** (claimed `per_seat_annual`). ✅ **The code side of this is now done** — checkout resolves by lookup key (`lib/stripe-price.ts`), so the hardcoded-ID swap is off the launch checklist. What remains is a **dashboard action**: set `lookup_key: per_seat_annual` on the live Price when it is created, and on the sandbox Price whenever convenient. Live mode **refuses to charge** if no active Price carries the key — deliberately, rather than falling back to a Price nobody chose.
 >
 > ⚠️ **Also customer-visible:** the product name still reads "AI Staff Compliance Training", the
 > retired course name. `grep` shows zero occurrences in *source*, but the Stripe product name is not

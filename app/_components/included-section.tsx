@@ -3,9 +3,17 @@ import { SectionHead } from "./section-head";
 
 // "The Details" — Katy's copy.
 //
-// PRICE. Katy's copy says "$35 per seat, per year" flat. The live Stripe Price
-// (price_1ThbLNCzT2268ei9nkadS8kD, tiers_mode=volume) is banded 35/32/28, and
+// PRICE. Katy's copy says "$35 per seat, per year" flat. The Stripe Price
+// (tiers_mode=volume) is banded 35/32/28, and
 // app/pricing/_components/pricing-slider.tsx hardcodes the same maths. Both are
+//
+// ⚠️ This comment used to name price_1ThbLNCzT2268ei9nkadS8kD. That object
+// belongs to a RETIRED Stripe account and is not what the code charges against
+// (CLAUDE.md, corrected 2026-08-03). No price ID is named here now on purpose —
+// checkout resolves the Price by lookup key at runtime (lib/stripe-price.ts),
+// so there is no ID in source to drift out of date. If you need the current
+// one, read it from Stripe, not from a comment.
+//
 // satisfied by leading with $35 — the true rate for the 1–9 band, which is the
 // whole target market (solo and small firms, 1–15 staff) — and stating the two
 // lower bands underneath as what they are: a volume reduction, not a plan to
