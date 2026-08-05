@@ -2,15 +2,23 @@
 
 **Date:** 2026-08-05 (**Rob**, terminal). Merge + CI. Everything is pushed to `redesign-iurix`.
 
-> ## 👉 There is a working preview. Nothing is blocking a deploy.
+> ## 🚀 The redesign is LIVE on iurixaccreditation.com (2026-08-05 19:11 UTC)
 >
-> **Preview:** `https://26a860e7-bsbr-attytraining.aistaffcompliance.workers.dev`
-> Every route returns **200** — built by CI, on Linux. That is the number that matters: the
-> Windows-built preview 500'd on all of them.
+> Production version **`2c8bf062-378b-4149-9fb2-26c18ec1fb05`**, deployed by CI from `3e8761e`.
+> Rob reviewed the preview and approved promotion.
 >
-> **The merge is done.** Do not redo it. `.planning/MERGE-GUIDE.md` is now history, not a to-do.
-> **The five GitHub secrets are added.** `.planning/DEPLOY-RUNBOOK.md` steps 2 and 3 are done.
-> Start at **step 4 — review the preview**, and read *Before promoting* below.
+> Verified live: `/`, `/pricing`, `/privacy`, `/terms`, `/dpa`, `/login`, `/verify` all **200**;
+> `/cookies` and `/mockup` **404** as intended. The homepage carries `bg-marble` and *Reduce your
+> exposure* with no `athena-*` CSS left. `/pricing` shows both the auto-renewal disclosure and the
+> US-only declaration. The browser bundle has the Supabase URL and publishable key inlined and no
+> `localhost:3000`.
+>
+> **Rollback:** `wrangler rollback --name bsbr-attytraining`. The pre-redesign build is
+> **`a0323ac4-e7f3-44d1-8e0e-9071b5dc241d`** (2026-08-05 13:25 UTC).
+>
+> **The merge is done.** Do not redo it. `.planning/MERGE-GUIDE.md` is history.
+> **`.planning/DEPLOY-RUNBOOK.md` is fully worked through.** Deploys now go through CI:
+> Actions → *Build & deploy* → Run workflow → `target: production`.
 >
 > Rob rolled the Cloudflare API token on 2026-08-05. It lives in exactly one place, the GitHub
 > Actions secret — **there is nothing to update on the Cloudflare side.** Neither Worker holds a
@@ -115,15 +123,32 @@ blank line under it. Build the URL from the version ID instead: the first 8 char
 5. **Four features are advertised before they exist** (policy generator, website token, sanction
    summaries page, per-staff signed attestations). Rob's call, flagged in code comments.
 
-## 🌐 Where production actually stands (checked 2026-08-05)
+## 🔴 The live site runs on the STAGING database — resolve before real customers
 
-**`iurixaccreditation.com` is live and has been cut over for a while** — it serves the Worker
-directly (`x-opennext: 1`). It is currently running version
-**`a0323ac4-e7f3-44d1-8e0e-9071b5dc241d`, deployed 2026-08-05 13:25 UTC** by wrangler, not by CI.
+Found 2026-08-05 while verifying accounts before the promotion. **This predates the redesign and
+the deploy did not change it** — the pre-redesign build and the new one inline the same project.
 
-**It is serving the PRE-redesign site.** The live homepage still carries the `athena-*` CSS and has
-no *Reduce your exposure* section and no `bg-marble`. So production is Max's Iurix rebrand; Rob's
-redesign has never been promoted. The preview above is the first build of it that works.
+| Project | Ref | Status |
+|---|---|---|
+| **IURIX STAGING** | `ndmzvtuywcufvkxtkjhg` | ACTIVE_HEALTHY — **this is what production uses** |
+| **IURIX PROD** | `ttqthtzdjacrhjtrcmmy` | **INACTIVE** — created 2026-06-11, appears never used |
+
+`iurixaccreditation.com` inlines the STAGING ref in its browser bundle, and `.env.local` points
+there too, which is where the CI secrets were copied from. IURIX PROD is paused — free-tier
+projects pause after 7 days idle, which is exactly the failure mode CLAUDE.md calls "fatal for
+prod."
+
+STAGING currently holds **17 firms (all 17 carrying a `stripe_subscription_id`), 55 members, 12
+certificates, 13 quiz attempts**, newest firm 2026-07-30. These are almost certainly test records:
+checkout hardcodes `price_1TjNHc6ZCSojEKRrKs79ToJ0`, which CLAUDE.md verified as `livemode: false`.
+**Stripe is still in sandbox, so no real money has moved.** Confirm that before assuming it.
+
+**Rob is upgrading to Supabase Pro within 24 hours of 2026-08-05** and activating the prod DB. The
+decision that comes with it: either IURIX PROD becomes the real production database (and the three
+`NEXT_PUBLIC_SUPABASE_*` values change in `.env.local`, the Worker secrets **and** the GitHub
+Actions secrets — all three, or sign-in breaks silently), or STAGING is promoted in place and a new
+staging is stood up. Whichever way, migrations `0001`–`0022` must exist on the target before it
+takes traffic, and `0023` still needs applying anywhere.
 
 > 🔴 **`www.iurixaccreditation.com` returns 522 and has done consistently.** DNS resolves to
 > Cloudflare, but the response carries **no `x-opennext` header**, so www is not bound to the
@@ -158,11 +183,13 @@ the discovery and is safe only on macOS/Linux.
 
 ## Next steps
 
-1. Review the preview by eye — **390px mobile** first, since nobody has ever checked it, then the
-   US-only checkbox on the light card. Routes are already confirmed 200.
-2. Resolve the refund-email wording (blocker 1 above).
-3. `supabase db push` for `0023`.
-4. Promote: Actions → *Build & deploy* → **Run workflow** → `target: production`.
+1. **Supabase Pro + activate the prod DB** — Rob, within 24h of 2026-08-05. See the STAGING/PROD
+   section above; if the project ref changes, all three copies of the `NEXT_PUBLIC_SUPABASE_*`
+   values must change together.
+2. **Fix `www.iurixaccreditation.com`** — it still 522s. Dashboard action, Rob.
+3. Resolve the refund-email wording (blocker 1 below) — deferred during the deploy, still open.
+4. **390px mobile** — the site is live and still has never been checked at that width.
+5. `supabase db push` for `0023`.
 6. Merge `redesign-iurix` → `main` after production is verified.
 7. Still open: `/about`, `/contact`, `/ai-policy` have no copy; $35 vs $39 undecided (Stripe first
    if it changes); Twilio voicemail line (`.planning/BACKLOG.md` item 7).
