@@ -115,8 +115,30 @@ blank line under it. Build the URL from the version ID instead: the first 8 char
 5. **Four features are advertised before they exist** (policy generator, website token, sanction
    summaries page, per-staff signed attestations). Rob's call, flagged in code comments.
 
-Rollback is `wrangler rollback --name bsbr-attytraining`; last known-good production version is
-`0cd156ef-1b0e-4b5d-a43a-3a95f0e63039` (2026-07-30).
+## 🌐 Where production actually stands (checked 2026-08-05)
+
+**`iurixaccreditation.com` is live and has been cut over for a while** — it serves the Worker
+directly (`x-opennext: 1`). It is currently running version
+**`a0323ac4-e7f3-44d1-8e0e-9071b5dc241d`, deployed 2026-08-05 13:25 UTC** by wrangler, not by CI.
+
+**It is serving the PRE-redesign site.** The live homepage still carries the `athena-*` CSS and has
+no *Reduce your exposure* section and no `bg-marble`. So production is Max's Iurix rebrand; Rob's
+redesign has never been promoted. The preview above is the first build of it that works.
+
+> 🔴 **`www.iurixaccreditation.com` returns 522 and has done consistently.** DNS resolves to
+> Cloudflare, but the response carries **no `x-opennext` header**, so www is not bound to the
+> Worker the way the apex is — Cloudflare accepts the request and then has no origin to reach.
+> Anyone who types the `www.` form gets a Cloudflare error page. This is broken *now*, is
+> independent of the redesign, and **promoting will not fix it** — it needs a custom-domain or
+> redirect rule added in the Cloudflare dashboard (Rob owns that).
+
+> ⚠️ **The rollback target this document used to name did not exist.** It said
+> `0cd156ef-1b0e-4b5d-a43a-3a95f0e63039`, which appears in **zero** of the Worker's 10 deployments —
+> following it during an incident would have failed at the worst possible moment. Rollback is
+> `wrangler rollback --name bsbr-attytraining`; the real last-known-good is
+> **`a0323ac4-e7f3-44d1-8e0e-9071b5dc241d`**. Re-check with
+> `wrangler deployments list --name bsbr-attytraining` before relying on it — production was
+> deployed by CLI as recently as today.
 
 ## ⛔ Still true: never build Cloudflare artifacts on Windows
 
