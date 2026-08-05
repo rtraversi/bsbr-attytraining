@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/app/_components/site-header";
 import { HeroSection } from "@/app/_components/hero-section";
+import { OvertureSection } from "@/app/_components/overture-section";
 import { StandardSection } from "@/app/_components/standard-section";
 import { ExposureSection } from "@/app/_components/exposure-section";
 import { RecordSection } from "@/app/_components/record-section";
@@ -24,6 +25,7 @@ export default function HomePage() {
       <SiteHeader />
       <main>
         <HeroSection />
+        <OvertureSection />
         <StandardSection />
         <ExposureSection />
         <RecordSection />

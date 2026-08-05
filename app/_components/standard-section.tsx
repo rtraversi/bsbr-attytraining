@@ -34,7 +34,11 @@ export function StandardSection() {
   return (
     <section id="standard" className="scroll-mt-20 border-b border-silver py-20 md:py-28">
       <div className="mx-auto max-w-[1140px] px-6 md:px-8">
-        <SectionHead num="I" heading="Iurix Accreditation is the solution" />
+        <SectionHead
+          num="I"
+          label="The standard"
+          heading="Iurix Accreditation is the solution"
+        />
 
         <p className="mb-16 max-w-[820px] text-[18px] leading-[1.7] text-ink-soft">
           Built by a practicing attorney, from the ground up —{" "}

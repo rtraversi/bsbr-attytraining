@@ -1,7 +1,12 @@
 import { SectionHead } from "./section-head";
 
-// "Document Your Best Efforts" — Katy's copy, verbatim. Set on the tinted ground
-// so the page changes register between two prose-heavy sections.
+// "Document Your Best Efforts" — Katy's copy, verbatim.
+//
+// This used to carry the tinted ground. It moved to the exposure section on
+// 2026-08-05: the page's contrast is now the dark hero and the dark close, and
+// only one body section carries a tint. marble → marble-deep is a ~3% value
+// shift, so alternating it does not register as a change of register — it just
+// makes the hairlines sit on two nearly identical greys.
 
 const CLAIMS = [
   "Signed staff attestations, not just a completed course",
@@ -13,10 +18,14 @@ export function RecordSection() {
   return (
     <section
       id="record"
-      className="scroll-mt-20 border-b border-silver bg-marble-deep py-20 md:py-28"
+      className="scroll-mt-20 border-b border-silver py-20 md:py-28"
     >
       <div className="mx-auto max-w-[1140px] px-6 md:px-8">
-        <SectionHead num="III" heading="Document your best efforts" />
+        <SectionHead
+          num="III"
+          label="The record"
+          heading="Document your best efforts"
+        />
 
         <div className="grid gap-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20">
           <div className="space-y-5 text-[17px] leading-[1.7] text-ink-soft">
@@ -36,11 +45,11 @@ export function RecordSection() {
             </p>
           </div>
 
-          <ul className="border-t border-steel/70">
+          <ul className="border-t border-silver">
             {CLAIMS.map((c) => (
               <li
                 key={c}
-                className="flex gap-4 border-b border-steel/70 py-4 text-[16px] text-ink"
+                className="flex gap-4 border-b border-silver py-4 text-[16px] text-ink"
               >
                 <span
                   className="mt-[0.62em] h-[4px] w-[4px] flex-none rotate-45 bg-gold"

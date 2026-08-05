@@ -9,16 +9,35 @@ import Link from "next/link";
 //
 // The mark carries the hero instead. It is the most persuasive asset available —
 // it looks like a seal, which is precisely what is being sold.
-
+//
+// ── Dark ground, 2026-08-05 (Rob) ────────────────────────────────────────────
+// The section was marble until now. The mark is brushed metal: teal edge-light,
+// two rose-gold crescents, specular highlights — and it was rendered for a dark
+// ground. The palette comment in globals.css records the cost of ignoring that,
+// the sampled hues "read as washed out … a flat page has none of that to lift
+// it", so the chroma was raised to compensate. That treated the symptom. The
+// hero now gives the metal the ground it was drawn for.
+//
+// It is also the page's contrast: marble #f7f7f6 → marble-deep #edf3f1 is a ~3%
+// value shift, so every section below reads as one continuous field and the
+// closing panel used to be the only change of register on the whole page. The
+// page now runs dark → light (the entire argument) → dark. Two events.
+//
+// ⚠️ The HEADER STAYS MARBLE above this. That is a constraint, not an oversight:
+// the wordmark is dark teal and rose gold baked into pixels with no
+// light-on-dark variant, and a CSS filter will not produce one
+// (public/brand/README.md). A transparent header over this ground needs a second
+// asset. Until then, solid marble — which reads as a document header above a
+// plate anyway.
+//
 // Katy's own three-line summary, from directly beneath "Iurix Accreditation is
-// the solution." It sits under the mark so the visitor sees what they get before
-// reading a paragraph.
+// the solution." It sits at the foot of the hero so the visitor sees what they
+// get before reading a paragraph.
 //
 // This replaces a framed plate listing Format / Record / Held by / Term (Rob,
-// 2026-08-04: didn't like it). That plate was spec-sheet furniture — it made the
-// hero look like a product datasheet, and it boxed in the mark, which is the one
-// asset on the page that should be allowed to breathe.
-const SUMMARY = [
+// 2026-08-04: didn't like it). That plate was spec-sheet furniture — do not
+// reintroduce a specification block here in any form.
+const DELIVERABLES = [
   "A written firm policy",
   "Online staff training",
   "Attestations of compliance",
@@ -26,96 +45,87 @@ const SUMMARY = [
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden border-b border-silver">
-      <div className="mx-auto max-w-[1140px] px-6 pt-16 md:px-8 md:pt-24">
-        <div className="grid items-center gap-14 lg:grid-cols-[1.15fr_0.85fr] lg:gap-20">
-          <div>
-            <h1 className="font-gyrotrope text-[clamp(40px,5.2vw,68px)] font-normal leading-[1.06] tracking-[-0.02em] text-ink">
-              The Standard Other Firms
-              <br className="hidden sm:block" /> Will Be{" "}
-              <em className="font-serif-italic not-italic text-teal-mid">Held To</em>
-            </h1>
-
-            {/* Rose-gold hairline — the crescent motif from the mark, reduced to a rule */}
-            <div className="mt-9 h-px w-24 bg-gradient-to-r from-gold to-transparent" aria-hidden />
-
-            <p className="mt-8 max-w-[540px] text-[19px] leading-[1.6] text-ink-soft">
-              Our times demand that attorneys use artificial intelligence. Clients and
-              state bars expect ethical practices.
-            </p>
-            <p className="mt-4 max-w-[540px] text-[19px] leading-[1.6] text-ink-soft">
-              Iurix Accreditation is how a firm shows it meets both — a written policy,
-              trained staff, and a signed record to prove it.
-            </p>
-
-            <div className="mt-10 flex flex-wrap items-center gap-3.5">
-              <Link
-                href="/pricing"
-                className="rounded-[2px] bg-teal-ink px-7 py-3.5 text-[15px] font-medium text-marble transition-colors hover:bg-ink"
-              >
-                Accredit your firm
-              </Link>
-              <Link
-                href="#exposure"
-                className="rounded-[2px] border border-steel px-7 py-3.5 text-[15px] font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-marble"
-              >
-                Why it matters
-              </Link>
-            </div>
-
-            <p className="mt-6 text-[14px] text-ink-mute">
-              $35 per seat, per year. The accreditation belongs to your firm.
-            </p>
-          </div>
-
-          {/* The mark, unframed. A soft teal bloom behind it stands in for the
-              specular light the brushed-metal rendering implies but a flat page
-              cannot produce on its own. */}
-          <div className="relative mx-auto w-full max-w-[380px] lg:mx-0">
-            <div
-              className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_45%,rgba(147,194,190,0.30),transparent_68%)]"
-              aria-hidden
-            />
-            {/* 220px, not the 300px this box used to be: the trimmed asset draws
-                ~1.53x more mark per pixel of box, so keeping 300 would have made
-                the hero mark far larger than the one already signed off. This
-                lands a little bigger than before, not half again as big. */}
-            <img
-              src="/brand/iurix-mark.png"
-              alt="The Iurix Accreditation mark"
-              width={326}
-              height={326}
-              className="mx-auto block w-full max-w-[220px] select-none"
-              draggable={false}
-            />
-
-            <ul className="mx-auto mt-8 max-w-[300px]">
-              {SUMMARY.map((s) => (
-                <li
-                  key={s}
-                  className="flex items-center gap-3.5 border-t border-silver py-3 text-[15px] text-ink-soft last:border-b last:border-silver"
-                >
-                  <span
-                    className="h-[5px] w-[5px] flex-none rotate-45 bg-gold"
-                    aria-hidden
-                  />
-                  <span>{s}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+    <section className="relative overflow-hidden bg-teal-ink text-marble">
+      <div className="relative z-10 mx-auto max-w-[1140px] px-6 pt-[72px] text-center md:px-8 md:pt-24">
+        {/* The seal. height-auto is load-bearing — see the img note below. */}
+        <div className="hero-seal relative mx-auto w-[126px] md:w-[150px]">
+          <span className="hero-seal-bloom" aria-hidden />
+          {/* ⚠️ h-auto is REQUIRED. This img carries width={326} height={326},
+              which map to CSS presentational hints. Setting only the width
+              leaves the height hint in force and the mark renders distorted —
+              a 68px-wide box came out 326px tall. Any mark <img> that sizes
+              one axis in CSS must set the other to auto. */}
+          <img
+            src="/brand/iurix-mark.png"
+            alt="The Iurix Accreditation mark"
+            width={326}
+            height={326}
+            className="relative block h-auto w-full select-none"
+            draggable={false}
+          />
         </div>
 
-        {/* Katy's three-line argument, set as the transition into the page */}
-        <div className="mt-20 border-t border-silver pt-10 md:mt-24">
-          <p className="max-w-[820px] text-[18px] leading-[1.7] text-ink-soft">
-            Clients know that a firm that doesn&apos;t use AI may be missing things, and
-            wasting billable hours. They want their lawyers using it. But they also want
-            to know their data is safe, and that their attorney is{" "}
-            <em className="font-serif-italic not-italic text-ink">
-              a competent, zealous advocate — not a figurehead.
-            </em>
-          </p>
+        <h1 className="hero-rise font-gyrotrope mx-auto mt-[34px] max-w-[15ch] text-[clamp(38px,5.6vw,68px)] font-normal leading-[1.05] tracking-[-0.022em] text-marble [animation-delay:0.14s]">
+          The Standard Other Firms Will Be{" "}
+          <em className="font-serif-italic not-italic text-gold-soft">Held To</em>
+        </h1>
+
+        {/* Rose-gold hairline — the crescent motif from the mark, reduced to a rule */}
+        <div
+          className="hero-rise mx-auto mt-[30px] h-px w-[104px] bg-gradient-to-r from-transparent via-gold-soft to-transparent [animation-delay:0.26s]"
+          aria-hidden
+        />
+
+        <p className="hero-rise mx-auto mt-7 max-w-[600px] text-[18px] leading-[1.62] text-mint [animation-delay:0.36s] md:text-[19px]">
+          Our times demand that attorneys use artificial intelligence. Clients and
+          state bars expect ethical practices.
+        </p>
+        <p className="hero-rise mx-auto mt-4 max-w-[600px] text-[18px] leading-[1.62] text-mint [animation-delay:0.46s] md:text-[19px]">
+          Iurix Accreditation is how a firm shows it meets both — a written policy,
+          trained staff, and a signed record to prove it.
+        </p>
+
+        <div className="hero-rise mt-[38px] flex flex-wrap items-center justify-center gap-3.5 [animation-delay:0.56s]">
+          <Link
+            href="/pricing"
+            className="rounded-[2px] bg-marble px-7 py-3.5 text-[15px] font-medium text-teal-ink transition-colors hover:bg-gold-pale"
+          >
+            Accredit your firm
+          </Link>
+          <Link
+            href="#exposure"
+            className="rounded-[2px] border border-marble/35 px-7 py-3.5 text-[15px] font-medium text-marble transition-colors hover:border-marble hover:bg-marble hover:text-teal-ink"
+          >
+            Why it matters
+          </Link>
+        </div>
+
+        <p className="hero-rise mt-6 text-[14px] text-silver [animation-delay:0.66s]">
+          $35 per seat, per year. The accreditation belongs to your firm.
+        </p>
+      </div>
+
+      {/* Katy's three deliverables, as the ruled base of the certificate. */}
+      <div className="mt-16 border-t border-mint-line/25 bg-teal-deep">
+        <div className="mx-auto grid max-w-[1140px] grid-cols-1 px-6 md:px-8 lg:grid-cols-3">
+          {DELIVERABLES.map((d, i) => (
+            <h2
+              key={d}
+              className={[
+                "font-gyrotrope flex items-baseline gap-[13px] border-mint-line/20 text-[20px] font-normal leading-[1.3] text-marble",
+                "border-b py-[26px] last:border-b-0",
+                "lg:border-b-0 lg:border-l lg:px-8 lg:py-[30px]",
+                i === 0 ? "lg:border-l-0 lg:pl-0" : "",
+                i === DELIVERABLES.length - 1 ? "lg:pr-0" : "",
+              ].join(" ")}
+            >
+              <span
+                className="h-[5px] w-[5px] flex-none rotate-45 bg-gold-soft"
+                aria-hidden
+              />
+              <span>{d}</span>
+            </h2>
+          ))}
         </div>
       </div>
     </section>

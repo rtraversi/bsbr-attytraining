@@ -18,12 +18,18 @@ export function ClosingCta() {
         aria-hidden
       />
       <div className="relative z-10 mx-auto max-w-[1140px] px-6 text-center md:px-8">
+        {/* ⚠️ h-auto is REQUIRED here. width={326} height={326} map to CSS
+            presentational hints; setting only the width leaves the height hint
+            in force and the mark renders 68px wide by 326px tall. Tailwind's
+            preflight normally supplies height:auto, so this is belt and braces —
+            but the same omission in a plain-CSS build of this page distorted
+            both marks, so it is spelled out rather than relied upon. */}
         <img
           src="/brand/iurix-mark.png"
           alt=""
           width={326}
           height={326}
-          className="mx-auto mb-10 w-[64px] select-none opacity-95"
+          className="mx-auto mb-10 h-auto w-[68px] select-none opacity-95"
           draggable={false}
         />
 

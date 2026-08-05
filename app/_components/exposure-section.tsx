@@ -51,11 +51,20 @@ const CLAIMS = [
   "Ongoing review, so your policy doesn't age out as the rules evolve",
 ];
 
+// The tinted ground moved here from the record section on 2026-08-05. Only one
+// body section carries it: the page's contrast now comes from the dark hero and
+// the dark close, and alternating marble/marble-deep across four sections is a
+// ~3% value shift that reads as no change at all. This is the section that earns
+// it — it holds the docket, which is the one object on the light half of the
+// page that needs a ground to sit on.
 export function ExposureSection() {
   return (
-    <section id="exposure" className="scroll-mt-20 border-b border-silver py-20 md:py-28">
+    <section
+      id="exposure"
+      className="scroll-mt-20 border-b border-silver bg-marble-deep py-20 md:py-28"
+    >
       <div className="mx-auto max-w-[1140px] px-6 md:px-8">
-        <SectionHead num="II" heading="Reduce your exposure" />
+        <SectionHead num="II" label="Your exposure" heading="Reduce your exposure" />
 
         <div className="grid gap-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20">
           <div>
@@ -114,11 +123,11 @@ export function ExposureSection() {
               is what they are asking for.
             </p>
 
-            <ul className="mt-10 border-t border-silver">
+            <ul className="mt-10 border-t border-steel/70">
               {CLAIMS.map((c) => (
                 <li
                   key={c}
-                  className="flex gap-4 border-b border-silver py-4 text-[16px] text-ink"
+                  className="flex gap-4 border-b border-steel/70 py-4 text-[16px] text-ink"
                 >
                   <span
                     className="mt-[0.62em] h-[4px] w-[4px] flex-none rotate-45 bg-gold"
@@ -130,12 +139,22 @@ export function ExposureSection() {
             </ul>
           </div>
 
-          {/* The 2026 decisions, as a short docket */}
-          <div className="relative border border-silver bg-marble-deep px-7 pb-7 pt-3">
-            <span className="absolute -top-2.5 left-6 border border-silver bg-marble-deep px-3 text-[10px] uppercase tracking-[0.22em] text-gold-deep">
-              The 2026 decisions
-            </span>
-            <p className="border-b border-dashed border-steel/60 pb-5 pt-6 text-[15px] leading-[1.6] text-ink">
+          {/* The 2026 decisions, as a short docket.
+              teal-ink is used as a rule, not a decoration: it marks the four
+              things on this page that carry authority — the seal, the rulings,
+              the price, the sign-off. Hence the dark header bar here and on the
+              price plate in included-section.tsx. The card itself is white so it
+              lifts off the tinted ground the section now sits on. The old
+              notched label (an absolutely-positioned span straddling the top
+              border) is gone: it needed the card and the section to share a
+              background colour, which is no longer true. */}
+          <div className="border border-silver bg-white">
+            <div className="bg-teal-ink px-6 py-3.5">
+              <span className="text-[10.5px] font-medium uppercase tracking-[0.22em] text-gold-soft">
+                The 2026 decisions
+              </span>
+            </div>
+            <p className="border-b border-silver px-6 py-5 text-[15px] leading-[1.6] text-ink">
               Three rulings this year draw the same line: AI use is defensible when
               the protections are contractual and documented —{" "}
               <strong className="font-semibold">and not when they aren&apos;t.</strong>
@@ -143,8 +162,8 @@ export function ExposureSection() {
             {CASES.map((c, i) => (
               <div
                 key={c.name}
-                className={`py-5 ${
-                  i < CASES.length - 1 ? "border-b border-dashed border-steel/60" : ""
+                className={`px-6 py-5 ${
+                  i < CASES.length - 1 ? "border-b border-silver" : ""
                 }`}
               >
                 <p className="text-[10.5px] font-medium uppercase tracking-[0.2em] text-ink-mute">

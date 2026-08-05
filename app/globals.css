@@ -240,6 +240,50 @@
    features-section.tsx and spiro-pattern.tsx, all deleted in the same change.
    Recover from git history if a dark treatment is ever wanted again. */
 
+/* ─── Marketing hero ──────────────────────────────────────────────────
+   The specular bloom behind the mark. The mark is brushed metal — it is
+   rendered with teal edge-lighting and rose-gold crescents that only read
+   on a dark ground, which is why the sampled palette above had to have its
+   chroma raised to survive on marble. The hero now gives it the dark ground
+   it was drawn for, and this is the highlight the metal implies.
+
+   Every stop reaches full transparency INSIDE the box: the radii are
+   40%/44% of the box and alpha hits zero at 100% of the radius, while the
+   box half-extent is 50%. An earlier version faded out at 62% of a
+   farthest-corner radius — further than the box's own edge along the
+   vertical — so the box clipped a still-lit gradient and painted a visible
+   rectangle behind the mark. Terminal stops are rgba(…,0) rather than the
+   `transparent` keyword, which some engines interpolate through black. */
+.hero-seal-bloom {
+  position: absolute;
+  left: -78%;
+  right: -78%;
+  top: -34%;
+  bottom: -34%;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 40% 44% at 50% 47%, rgba(147,194,190,0.30), rgba(147,194,190,0) 100%),
+    radial-gradient(ellipse 30% 34% at 50% 58%, rgba(210,166,140,0.18), rgba(210,166,140,0) 100%);
+}
+
+/* Hero load sequence — the one orchestrated moment on the marketing page.
+   Deliberately pure CSS: a scroll-triggered reveal would need an
+   IntersectionObserver, which would mean "use client" on sections that are
+   server components today. Not worth a client boundary for a fade. */
+@keyframes iurix-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes iurix-bloom {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: none; }
+}
+.hero-rise  { opacity: 0; animation: iurix-rise  0.82s cubic-bezier(.2,.7,.3,1) forwards; }
+.hero-seal  { opacity: 0; animation: iurix-bloom 1.05s cubic-bezier(.2,.7,.3,1) forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise, .hero-seal { opacity: 1; animation: none; }
+}
+
 /* Scrabble tile entrance animation */
 @keyframes tile-in {
   0%   { opacity: 0; transform: translateY(14px) scale(0.84); }

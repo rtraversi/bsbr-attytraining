@@ -35,46 +35,59 @@ export function IncludedSection() {
       <div className="mx-auto max-w-[1140px] px-6 md:px-8">
         <SectionHead
           num="IV"
+          label="The details"
           heading="The details"
           intro="Iurix is built for small firms that don't have the resources to build formal AI governance in-house — no compliance officer, no risk committee, just attorneys and staff trying to use AI responsibly without a roadmap."
         />
 
         <div className="grid gap-14 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20">
-          {/* Price */}
+          {/* Price.
+              A dark plate, not a bordered white card with a gradient — that was
+              the one generic-SaaS object on an otherwise document-like page.
+              teal-ink is the page's mark of authority (the seal, the rulings,
+              this, the sign-off), and using it here makes the price the most
+              emphatic object on the light half of the page, which is where the
+              emphasis belongs on the section that has to convert. */}
           <div>
-            <div className="border border-silver bg-gradient-to-b from-white to-marble-deep px-8 py-9">
-              <p className="text-[10.5px] font-medium uppercase tracking-[0.22em] text-gold-deep">
-                Per seat, per year
-              </p>
-              <p className="font-gyrotrope mt-4 text-[64px] font-normal leading-none tracking-[-0.02em] text-ink">
-                $35
-              </p>
-              <p className="mt-4 text-[15px] leading-[1.6] text-ink-soft">
-                Accessible without cutting corners.
-              </p>
+            <div className="relative overflow-hidden bg-teal-ink px-8 py-[34px] text-marble">
+              <span
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(210,166,140,0.16),transparent_68%)]"
+                aria-hidden
+              />
+              <div className="relative">
+                <p className="text-[10.5px] font-medium uppercase tracking-[0.22em] text-gold-soft">
+                  Per seat, per year
+                </p>
+                <p className="font-gyrotrope mt-4 text-[64px] font-normal leading-none tracking-[-0.02em] text-marble">
+                  $35
+                </p>
+                <p className="mt-3.5 text-[15px] leading-[1.6] text-mint">
+                  Accessible without cutting corners.
+                </p>
 
-              <dl className="mt-7 border-t border-silver pt-5 text-[14px]">
-                {BANDS.map((b) => (
-                  <div
-                    key={b.range}
-                    className="flex justify-between py-1.5 text-ink-soft"
-                  >
-                    <dt>{b.range}</dt>
-                    <dd className="font-medium text-ink">${b.rate}</dd>
-                  </div>
-                ))}
-              </dl>
-              <p className="mt-4 text-[13px] leading-[1.55] text-ink-mute">
-                The rate drops as your headcount grows — every seat bills at the band you
-                land in — and stays flat when you renew.
-              </p>
+                <dl className="mt-[26px] border-t border-mint-line/30 pt-[18px] text-[14px]">
+                  {BANDS.map((b) => (
+                    <div
+                      key={b.range}
+                      className="flex justify-between py-1.5 text-mint"
+                    >
+                      <dt>{b.range}</dt>
+                      <dd className="font-medium text-marble">${b.rate}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="mt-4 text-[13px] leading-[1.55] text-silver">
+                  The rate drops as your headcount grows — every seat bills at the band
+                  you land in — and stays flat when you renew.
+                </p>
 
-              <Link
-                href="/pricing"
-                className="mt-7 block rounded-[2px] bg-teal-ink px-6 py-3.5 text-center text-[15px] font-medium text-marble transition-colors hover:bg-ink"
-              >
-                Accredit your firm
-              </Link>
+                <Link
+                  href="/pricing"
+                  className="mt-[26px] block rounded-[2px] bg-marble px-6 py-3.5 text-center text-[15px] font-medium text-teal-ink transition-colors hover:bg-gold-pale"
+                >
+                  Accredit your firm
+                </Link>
+              </div>
             </div>
           </div>
 
