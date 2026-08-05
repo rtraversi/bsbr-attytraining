@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation'
 import { LegalPage, LegalPlaceholder, LegalSection } from '@/app/_components/legal-page'
 
 export const metadata = {
@@ -16,6 +17,13 @@ export const metadata = {
  * accident. Match app/privacy/page.tsx once real copy lands.
  */
 export default function CookiesPage() {
+  // "Deliberately not linked" stopped being sufficient once this branch became
+  // the thing we deploy: an unlinked route is still served to anyone who types
+  // the URL, so the loud markers below would have been public. This enforces
+  // the instruction in the comment above rather than restating it. Delete this
+  // guard when the copy lands and Katy or Rob has approved it.
+  if (process.env.NODE_ENV === 'production') notFound()
+
   return (
     <LegalPage title="Cookie Policy" updated="🚧 UNWRITTEN PAGE — NOT FOR DEPLOY 🚧">
       <LegalSection title="1. What Cookies Are">

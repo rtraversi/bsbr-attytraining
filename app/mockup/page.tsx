@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react"
+import { notFound } from "next/navigation"
 import { SiteHeader } from "@/app/mockup/_components/site-header"
 import { Hero } from "@/app/mockup/_components/hero"
 import { TrustBar } from "@/app/mockup/_components/trust-bar"
@@ -42,6 +43,13 @@ const warmPaletteStyle = {
 } as CSSProperties
 
 export default function MockupPage() {
+  // Superseded design concept, kept for reference but never a customer surface.
+  // It is unlinked, which is not the same as unreachable: Next serves it to
+  // anyone who types the URL, and it carries its own pricing section in a
+  // palette the product no longer uses. 404 in production, still viewable in
+  // `next dev` for anyone comparing the two directions.
+  if (process.env.NODE_ENV === "production") notFound();
+
   return (
     <div
       className="mk-root bg-background text-foreground flex min-h-screen flex-col"
