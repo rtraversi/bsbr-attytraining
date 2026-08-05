@@ -1,0 +1,129 @@
+name: Build & deploy (Cloudflare Workers)
+
+# WHY THIS EXISTS
+#
+# OpenNext cannot produce a working bundle on native Windows. It bakes filesystem
+# paths into the server manifests, and on Windows those come out as
+# `C:\Sites\attytraining` and `.next\server\pages-manifest.json`, which do not
+# resolve in workerd — every route then returns 500. This was diagnosed the hard
+# way on 2026-08-05; see session_handoff.md.
+#
+# Until this workflow existed, that meant only Max could deploy, because only Max
+# had a Mac. This runs on Linux, so anyone who can push can ship.
+#
+# DEFAULT IS SAFE: pushes only ever build a PREVIEW. Production requires a
+# deliberate manual run with target=production.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "preview = new version + preview URL, production is untouched. production = goes live."
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - production
+  push:
+    branches:
+      - main
+      - redesign-iurix
+
+concurrency:
+  # Never let two deploys race for the same Worker.
+  group: cf-deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-ship:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
+      # NEXT_PUBLIC_* are INLINED AT BUILD TIME, not read from the Worker at
+      # runtime. They are Worker secrets too, but that only covers server-side
+      # reads — if they are missing here, the browser-side Supabase client ships
+      # with `undefined` and silently breaks sign-in. They must be present for
+      # this step specifically.
+      - name: Build the Cloudflare worker
+        env:
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: pnpm exec opennextjs-cloudflare build
+
+      # Guard against the exact failure that produced a 500-on-every-route
+      # preview. If a Windows-built artifact ever reaches this workflow, or the
+      # adapter regresses, fail loudly here instead of shipping a dead Worker.
+      - name: Assert the bundle has no Windows paths
+        run: |
+          MANIFEST=.open-next/server-functions/default/.next/required-server-files.json
+          if [ ! -f "$MANIFEST" ]; then
+            echo "::error::$MANIFEST missing — the build did not produce a server function."
+            exit 1
+          fi
+          if grep -qE '"[A-Za-z]:\\\\|\.next\\\\' "$MANIFEST"; then
+            echo "::error::Windows path separators found in $MANIFEST — this bundle would 500 on every route."
+            grep -oE '"[^"]*\\\\[^"]*"' "$MANIFEST" | head -10
+            exit 1
+          fi
+          echo "OK: no Windows paths in the server manifest."
+
+      - name: Upload preview version
+        if: github.event_name == 'push' || inputs.target == 'preview'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          pnpm exec opennextjs-cloudflare upload | tee upload.log
+          echo "### Preview uploaded :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          grep -Eo 'https://[a-z0-9-]+\.workers\.dev' upload.log | tail -1 >> "$GITHUB_STEP_SUMMARY" || true
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Production was NOT changed." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy to production
+        if: github.event_name == 'workflow_dispatch' && inputs.target == 'production'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          pnpm exec opennextjs-cloudflare deploy
+          echo "### Deployed to production :warning:" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://iurixaccreditation.com is now serving this build." >> "$GITHUB_STEP_SUMMARY"
+          echo "Roll back with: wrangler rollback --name bsbr-attytraining" >> "$GITHUB_STEP_SUMMARY"
+
+      # Cheap smoke test. Production only — a preview URL is not known to this
+      # step, and a broken production deploy is the one we must never sit on.
+      - name: Smoke-test production
+        if: github.event_name == 'workflow_dispatch' && inputs.target == 'production'
+        run: |
+          sleep 15
+          fail=0
+          for path in / /pricing /login; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "https://iurixaccreditation.com$path")
+            echo "$path -> $code"
+            [ "$code" = "200" ] || fail=1
+          done
+          if [ "$fail" = "1" ]; then
+            echo "::error::Production is not returning 200 on every checked route. Roll back: wrangler rollback --name bsbr-attytraining"
+            exit 1
+          fi
+          echo "Production healthy."

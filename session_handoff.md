@@ -143,14 +143,46 @@ Rewriting those 22 paths to POSIX was **not sufficient** — `handler.mjs.meta.j
 and the contamination is spread through the bundle. Hand-patching a bundle that fronts Stripe and
 Supabase is the wrong answer; do not go further down that road.
 
-**Build on Linux.** In rough order of preference:
+### ✅ Resolution: deploys move to CI — `.github/workflows/deploy.yml`
 
-1. **Cloudflare Workers Builds / GitHub Actions** — `redesign-iurix` is already pushed. CI builds
-   on Linux, which removes both this problem and the local-CF-login problem. Note the current
-   production deploy shows `Source: Unknown (deployment)`, i.e. it was pushed manually, so CI may
-   not be connected yet.
-2. **WSL** — not currently installed (`wsl --install`). OpenNext's own recommendation.
-3. **Build from Max's machine** if it is not Windows.
+Max builds on a Mac, which is why 07-30 worked (macOS is Unix, not Linux, but the two things that
+matter here are identical: forward-slash paths and symlinks without elevation). That made **Max
+the only person who could ship**, which is not an acceptable bus factor for a product taking
+payments. So deploys move to a Linux CI runner instead.
+
+**Nothing is wrong with the code.** Native Windows simply cannot build this — it is not a setting.
+
+**Setup, one time — Rob (needs GitHub repo admin):**
+
+Settings → Secrets and variables → Actions → *New repository secret*, five of them:
+
+| Secret | Where it comes from |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare → My Profile → API Tokens → Create Token → **Edit Cloudflare Workers** template |
+| `CLOUDFLARE_ACCOUNT_ID` | `4b2a402334decc9259d7317aaf9782f0` |
+| `NEXT_PUBLIC_APP_URL` | same value as `.env.local` |
+| `NEXT_PUBLIC_SUPABASE_URL` | same value as `.env.local` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | same value as `.env.local` |
+
+The three `NEXT_PUBLIC_*` are **not optional and not redundant** with the Worker secrets of the
+same name. They are inlined into the client bundle at *build* time; the Worker secrets only cover
+server-side reads. Omit them in CI and the browser Supabase client ships `undefined` and sign-in
+breaks silently — the build still goes green.
+
+**Then:**
+
+- Any push to `main` or `redesign-iurix` → builds and uploads a **preview** version. Production is
+  never touched automatically.
+- To go live: Actions → *Build & deploy* → **Run workflow** → `target: production`. It deploys,
+  then smoke-tests `/`, `/pricing` and `/login` and fails loudly if any is not 200.
+
+The workflow also asserts the bundle contains no Windows paths before uploading anything. That
+check was tested against both the real broken Windows manifest (caught) and a clean one (passed),
+so the 500-on-every-route failure cannot silently recur.
+
+**Before promoting to production, read the unverified-citations blocker above.** Rollback is
+`wrangler rollback --name bsbr-attytraining`; last known-good version is
+`0cd156ef-1b0e-4b5d-a43a-3a95f0e63039`.
 
 Note for whoever picks this up: local builds also need symlink permission on Windows, which is a
 *separate* issue from the above. Developer Mode is off and the shell must be elevated, or
