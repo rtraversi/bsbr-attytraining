@@ -226,11 +226,22 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
     x: M, y: 60, size: 9, font: regular, color: MID_GREY,
   })
 
-  // Placeholder — the retired aistaffcompliance.com had to come off the cert, but
-  // no real contact address exists yet (still blocked on Rob). The domain now matches
-  // the registered zone; the mailbox itself still needs to be created and verified
-  // before a real certificate ships with it printed on.
-  const contact = 'accreditation@iurixaccreditation.com'
+  // This read `accreditation@iurixaccreditation.com`, introduced in c0718aa as an
+  // explicit PLACEHOLDER when the retired aistaffcompliance.com came off the cert.
+  // It was put on iurix.com, a domain the project did not own, then f3db0c3 fixed
+  // the domain and nobody revisited the local part — so a stopgap hardened into a
+  // requirement, and it sat in the brief as a pre-launch blocker for a week.
+  //
+  // Resolved 2026-08-05 by deleting the requirement rather than satisfying it
+  // (Max's call). `info@iurixaccreditation.com` exists as a Zoho alias and is
+  // already the address on all three legal pages and behind the support form, so
+  // this needs no second mailbox. Certificates now also carry a QR to /verify, so
+  // the main reason anyone contacts us about one is self-service.
+  //
+  // ⚠️ Stored PDFs are never re-rendered. Whatever is printed here is permanent on
+  // every certificate issued while it stands, so it must always be an address that
+  // actually receives mail.
+  const contact = 'info@iurixaccreditation.com'
   page.drawText(contact, {
     x: W - M - regular.widthOfTextAtSize(contact, 9), y: 60,
     size: 9, font: regular, color: MID_GREY,
