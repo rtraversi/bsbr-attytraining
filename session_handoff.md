@@ -183,6 +183,10 @@ the discovery and is safe only on macOS/Linux.
 
 ## Next steps
 
+> 📋 **`.planning/OPEN-ISSUES.md` is the working list** — everything open as of 2026-08-05,
+> prioritised, with owners, cross-referenced to `.planning/BACKLOG.md` where an item already lives
+> there. **Max: start there.** The summary below is the short version.
+
 1. **Supabase Pro + activate the prod DB** — Rob, within 24h of 2026-08-05. See the STAGING/PROD
    section above; if the project ref changes, all three copies of the `NEXT_PUBLIC_SUPABASE_*`
    values must change together.
@@ -210,9 +214,14 @@ and SPF, DMARC on relaxed alignment. ⚠️ **Not fully verified** — the Resen
 cannot list domains, so the only real test is sending a message. A mail change broke everything for
 days on 07-29; do not assume.
 
-Two code comments now say the opposite of the truth and still need correcting: `lib/resend.ts:2-5`
-and the equivalent block in `workers/cert-worker/src/index.ts`, both of which justify the `noreply@`
-sender with "the zone has no inbound MX, so replies would bounce."
+Max's note also said two code comments still asserted the opposite — `lib/resend.ts` and the block
+in `workers/cert-worker/src/index.ts`. **Checked on 08-05: both were already corrected** by Max in
+`98019d3` on 08-04. The note was stale, not the code. No action needed.
+
+**Verified live on 2026-08-05:** apex MX is Zoho (`mx.zoho.com` 10, `mx2` 20, `mx3` 50), apex SPF is
+`v=spf1 include:one.zoho.com ~all`, `send.` still points at `feedback-smtp.us-east-1.amazonses.com`,
+and `resend._domainkey` is present. Zoho owns inbound at the apex, Resend sends from `send.`, and
+they do not collide.
 
 Max also added `.planning/POLICY-DECISIONS.md` (his decisions, dated, so the four legal drafts can
 be traced rather than invented) and resolved the retention contradiction in
