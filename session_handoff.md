@@ -2,15 +2,20 @@
 
 **Date:** 2026-08-05 (**Rob**, terminal). Merge + CI. Everything is pushed to `redesign-iurix`.
 
-> ## 👉 One thing is blocking the deploy
+> ## 👉 There is a working preview. Nothing is blocking a deploy.
 >
-> **`CLOUDFLARE_API_TOKEN` is set but malformed.** CI now builds the whole app on Linux and passes
-> the Windows-path assertion — the upload is the only step that fails, with
-> `Invalid format for Authorization header [code: 6111]`. Re-set that one secret and the preview
-> ships. Details in *Where it stands* below.
+> **Preview:** `https://26a860e7-bsbr-attytraining.aistaffcompliance.workers.dev`
+> Every route returns **200** — built by CI, on Linux. That is the number that matters: the
+> Windows-built preview 500'd on all of them.
 >
 > **The merge is done.** Do not redo it. `.planning/MERGE-GUIDE.md` is now history, not a to-do.
-> **The five GitHub secrets are added.** `.planning/DEPLOY-RUNBOOK.md` step 2 is done; start at step 3.
+> **The five GitHub secrets are added.** `.planning/DEPLOY-RUNBOOK.md` steps 2 and 3 are done.
+> Start at **step 4 — review the preview**, and read *Before promoting* below.
+>
+> Rob rolled the Cloudflare API token on 2026-08-05. It lives in exactly one place, the GitHub
+> Actions secret — **there is nothing to update on the Cloudflare side.** Neither Worker holds a
+> `CLOUDFLARE_API_TOKEN` and no source file reads one; it is a deploy credential, not a runtime
+> one. Local wrangler authenticates by OAuth, so rolling it does not affect anyone's machine.
 
 ## ✅ What happened this session
 
@@ -58,43 +63,42 @@ unreachable — Next serves them to anyone who types the URL.
 
 Both stay viewable under `next dev`. Delete the guards when the copy lands / the concept is retired.
 
-## 🔴 Where it stands — the token
+## 🟢 The preview, and what was verified against it
 
-CI run `31035257829` on `6f20b9a`:
-
-```
-✓ Install   ✓ Typecheck   ✓ Build the Cloudflare worker
-✓ Assert the bundle has no Windows paths      ← the check that proves CI fixed the 500s
-X Upload preview version
-```
-
-The upload fails on authentication, not on the bundle:
+Run `31036234368`, version `26a860e7-8637-41e9-9897-928d29a1da6b`, built from `4eaf7c1`.
 
 ```
-A request to the Cloudflare API (/user/tokens/verify) failed.
-  Invalid request headers [code: 6003]
-  - Invalid format for Authorization header [code: 6111]
+/          200      /dpa       200      /cookies   404  ← intended
+/pricing   200      /login     200      /mockup    404  ← intended
+/privacy   200      /verify    200
+/terms     200
 ```
 
-`CLOUDFLARE_ACCOUNT_ID` is verified correct (`4b2a402334decc9259d7317aaf9782f0`, confirmed against
-`wrangler whoami`). Code 6111 means the token *string* is malformed as sent. GitHub secrets cannot
-be read back, so this needs re-setting. Most likely, in order:
+**The browser bundle is correctly wired**, which is the failure the runbook warns is invisible:
+the Supabase URL and the `sb_publishable_` key are both inlined, and `localhost:3000` appears
+nowhere. Had `NEXT_PUBLIC_*` been missing or wrong, the build would still have gone green and
+sign-in would have broken silently.
 
-1. **A Global API Key was used instead of an API token.** Global keys are 37 hex characters and
-   need `CLOUDFLARE_EMAIL` + `CLOUDFLARE_API_KEY` — they do not work as a bearer token.
-2. **Whitespace or a newline came along with the paste.**
-3. **The token's ID was copied rather than its value.** The value is shown once, at creation.
+Content confirmed live: the *Reduce your exposure* section, `info@iurixaccreditation.com` in the
+footer, and on `/pricing` both the auto-renewal disclosure and the US-only declaration with its
+corrected `text-ink-soft` / `accent-teal-mid` palette.
 
-Create via Cloudflare → My Profile → API Tokens → **Create Token** → *Edit Cloudflare Workers*,
-scoped to `Aistaffcompliance@gmail.com's Account`. Verify it before setting it:
+**A note on the earlier token failure, in case it recurs.** The first token produced
+`Invalid format for Authorization header [code: 6111]` — the token *string* was malformed as sent,
+not a permissions problem. If that appears again, the usual causes are a Global API Key used in
+place of an API token (Global keys need `CLOUDFLARE_EMAIL` + `CLOUDFLARE_API_KEY` and cannot be a
+bearer token), whitespace in the paste, or the token's ID copied instead of its value. Verify
+before setting:
 
 ```bash
 curl -s https://api.cloudflare.com/client/v4/user/tokens/verify \
   -H "Authorization: Bearer <TOKEN>"        # expect "status":"active"
-gh secret set CLOUDFLARE_API_TOKEN          # paste at the prompt
 ```
 
-Then re-run: Actions → *Build & deploy* → **Run workflow** → `target: preview`.
+**The workflow does not print the preview URL.** Its grep expects a `workers.dev` string that
+`opennextjs-cloudflare upload` does not emit, so the run summary says "Preview uploaded" with a
+blank line under it. Build the URL from the version ID instead: the first 8 characters, then
+`-bsbr-attytraining.aistaffcompliance.workers.dev`. Worth fixing in `deploy.yml` at some point.
 
 ## ⚠️ Read before promoting to production
 
@@ -132,11 +136,11 @@ the discovery and is safe only on macOS/Linux.
 
 ## Next steps
 
-1. **Re-set `CLOUDFLARE_API_TOKEN`**, re-run the workflow for a preview.
-2. Review the preview — every route 200, then **390px mobile**, then the US-only checkbox by eye.
-3. Resolve the refund-email wording (blocker 1 above).
-4. `supabase db push` for `0023`.
-5. Promote: Actions → *Build & deploy* → **Run workflow** → `target: production`.
+1. Review the preview by eye — **390px mobile** first, since nobody has ever checked it, then the
+   US-only checkbox on the light card. Routes are already confirmed 200.
+2. Resolve the refund-email wording (blocker 1 above).
+3. `supabase db push` for `0023`.
+4. Promote: Actions → *Build & deploy* → **Run workflow** → `target: production`.
 6. Merge `redesign-iurix` → `main` after production is verified.
 7. Still open: `/about`, `/contact`, `/ai-policy` have no copy; $35 vs $39 undecided (Stripe first
    if it changes); Twilio voicemail line (`.planning/BACKLOG.md` item 7).
