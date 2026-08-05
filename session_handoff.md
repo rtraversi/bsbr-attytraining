@@ -190,6 +190,33 @@ the discovery and is safe only on macOS/Linux.
 3. Resolve the refund-email wording (blocker 1 below) — deferred during the deploy, still open.
 4. **390px mobile** — the site is live and still has never been checked at that width.
 5. `supabase db push` for `0023`.
-6. Merge `redesign-iurix` → `main` after production is verified.
+6. ~~Merge `redesign-iurix` → `main`~~ — done 2026-08-05, `main` now matches what is live.
 7. Still open: `/about`, `/contact`, `/ai-policy` have no copy; $35 vs $39 undecided (Stripe first
    if it changes); Twilio voicemail line (`.planning/BACKLOG.md` item 7).
+
+## 🔴 Carried from Max (c9d5665) — do NOT configure Cloudflare Email Routing
+
+Max's 08-05 commit landed while the deploy was running and the handoff was being rewritten; this
+warning is reproduced here so the rewrite does not bury it.
+
+Earlier notes called Cloudflare Email Routing "verified safe: the apex has zero MX and zero TXT."
+**That was true on 2026-08-03 and is false now.** The DNS changed on 08-04 — the apex carries
+**Zoho MX** (`mx.zoho.com`, `mx2`, `mx3`) and `v=spf1 include:one.zoho.com ~all`. Configuring
+Email Routing would **overwrite those MX records and break inbound mail**. Caught by Max, verified
+by dig.
+
+Resend looks unaffected: DKIM at `resend._domainkey` intact, the `send.` subdomain keeps its own MX
+and SPF, DMARC on relaxed alignment. ⚠️ **Not fully verified** — the Resend API key is send-only and
+cannot list domains, so the only real test is sending a message. A mail change broke everything for
+days on 07-29; do not assume.
+
+Two code comments now say the opposite of the truth and still need correcting: `lib/resend.ts:2-5`
+and the equivalent block in `workers/cert-worker/src/index.ts`, both of which justify the `noreply@`
+sender with "the zone has no inbound MX, so replies would bounce."
+
+Max also added `.planning/POLICY-DECISIONS.md` (his decisions, dated, so the four legal drafts can
+be traced rather than invented) and resolved the retention contradiction in
+`.planning/DATA-INVENTORY.md`: **keep `training_events` rows, strip the identifiers.** The row is
+the Rule 5.3 evidence a certificate rests on. Consequence for the Privacy Policy — training
+activity is retained as long as the certificates it supports, which is indefinitely, and that must
+be stated.
