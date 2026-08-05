@@ -18,6 +18,18 @@ APP_URL = "https://iurixaccreditation.com"        # live app origin — reminder
 #   SUPABASE_SERVICE_ROLE_KEY   — Supabase service-role key (bypasses RLS)
 #   RESEND_API_KEY              — Resend transactional email key
 #   CERT_WEBHOOK_SECRET         — shared secret for the Next.js /api/certs/drain endpoint
+#   STRIPE_SECRET_KEY           — reconciliation only, read-only usage. The job filters on
+#                                 each object's own `livemode` flag, so a sandbox key here
+#                                 produces silence rather than false alarms.
+#   OPERATOR_ALERT_EMAIL        — where reconciliation findings go. Same address the app's
+#                                 Stripe webhook alerts use (app/api/webhooks/stripe/route.ts).
+#                                 MAY HOLD SEVERAL ADDRESSES, comma-separated —
+#                                 "rob@x.com,max@y.com". sendEmail splits them into the array
+#                                 Resend expects; a single comma-joined string would be one
+#                                 malformed recipient and the send would fail.
+#                                 NO FALLBACK in the worker: unlike the app, an unset value
+#                                 here makes the send throw and log rather than quietly mail
+#                                 a default nobody reads.
 
 # ---------------------------------------------------------------------------
 # Staging environment

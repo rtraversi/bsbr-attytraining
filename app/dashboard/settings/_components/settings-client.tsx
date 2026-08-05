@@ -60,7 +60,7 @@ export function NameSettings({ email, fullName }: { email: string; fullName: str
           value={draft}
           onChange={e => setDraft(e.target.value)}
           placeholder="Full name"
-          className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-2.5 text-sm text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[#32C7FF] focus:ring-2 focus:ring-[#32C7FF]/30 sm:w-80 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
+          className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-2.5 text-sm text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/30 sm:w-80 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
         />
       </Row>
 
@@ -79,11 +79,11 @@ export function NameSettings({ email, fullName }: { email: string; fullName: str
       {error && <p className="pt-4 text-sm text-[#DC2626]">{error}</p>}
 
       <div className="flex items-center justify-between pt-6">
-        <Link href="/update-password" className="text-sm font-semibold text-[#0094FF] hover:underline">
+        <Link href="/update-password" className="text-sm font-semibold text-[var(--brand-emphasis)] hover:underline">
           Change password
         </Link>
         <div className="flex items-center gap-3">
-          {saved && <span className="text-sm font-semibold text-[#0094FF]">Saved</span>}
+          {saved && <span className="text-sm font-semibold text-[var(--brand-emphasis)]">Saved</span>}
           <button
             type="submit"
             disabled={saving || !draft.trim() || draft.trim() === name.trim()}

@@ -81,7 +81,7 @@ function KnowledgeCheckResult({
        steer) rather than being a separate piece of iconography. */
     return (
       <div
-        className="kc-card mx-auto flex max-w-xl flex-col items-center rounded-3xl border border-[#32C7FF]/30 bg-white px-8 py-12 text-center shadow-[0_10px_44px_-12px_rgba(50,199,255,0.45)] md:px-12 md:py-14 dark:bg-[#0D0F12]"
+        className="kc-card mx-auto flex max-w-xl flex-col items-center rounded-3xl border border-[var(--brand-primary)]/30 bg-white px-8 py-12 text-center shadow-[0_10px_44px_-12px_rgba(50,199,255,0.45)] md:px-12 md:py-14 dark:bg-[#0D0F12]"
       >
         <KcCelebrationStyles />
 

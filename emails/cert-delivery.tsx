@@ -3,6 +3,7 @@ import * as React from 'react'
 import {
   button,
   buttonContainer,
+  EMAIL_BRAND,
   EMAIL_CLASS,
   EmailShell,
   heading,
@@ -65,7 +66,7 @@ const badgeRow: React.CSSProperties = {
 const badge: React.CSSProperties = {
   backgroundColor: '#EAF8FF',
   borderRadius: '999px',
-  color: '#0094FF',
+  color: EMAIL_BRAND.emphasis,
   display: 'inline-block',
   fontSize: '12px',
   fontWeight: 700,

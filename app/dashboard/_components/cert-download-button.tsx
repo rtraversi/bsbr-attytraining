@@ -20,7 +20,7 @@ export function CertDownloadButton({ certId }: { certId: string }) {
     <button
       onClick={handleClick}
       disabled={loading}
-      className="text-[#0094FF] hover:text-[#32C7FF] dark:text-[#32C7FF] dark:hover:text-[#5FC8FF] text-xs underline underline-offset-2 disabled:opacity-50 transition-colors"
+      className="text-[var(--brand-emphasis)] hover:text-[var(--brand-primary)] dark:text-[var(--brand-primary)] dark:hover:text-[#5FC8FF] text-xs underline underline-offset-2 disabled:opacity-50 transition-colors"
     >
       {loading ? '…' : 'Download'}
     </button>

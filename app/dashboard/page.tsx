@@ -55,14 +55,20 @@ export default async function DashboardPage() {
   // Batch-fetch auth users + training data in parallel — one query per table, not per member
   const [authUsers, enrollmentsRes, attemptsRes, certsRes, eventsRes] = await Promise.all([
     Promise.all(members.map(m => admin.auth.admin.getUserById(m.user_id))),
+    // Ordered newest-first. 0007 dropped the unique constraint on
+    // (firm_id, user_id, course_id) so that each renewal inserts a FRESH
+    // enrollment row, which means a renewed firm has several per person and an
+    // unordered read collapses to an arbitrary one.
     userIds.length > 0
-      ? admin.from('enrollments').select('user_id, status, completed_at').eq('firm_id', firmId).in('user_id', userIds)
-      : Promise.resolve({ data: [] as { user_id: string; status: string; completed_at: string | null }[] }),
+      ? admin.from('enrollments').select('user_id, status, completed_at, enrolled_at').eq('firm_id', firmId).in('user_id', userIds).order('enrolled_at', { ascending: false })
+      : Promise.resolve({ data: [] as { user_id: string; status: string; completed_at: string | null; enrolled_at: string }[] }),
     userIds.length > 0
       ? admin.from('quiz_attempts').select('user_id, score, attempted_at').eq('firm_id', firmId).eq('passed', true).in('user_id', userIds).order('attempted_at', { ascending: false })
       : Promise.resolve({ data: [] as { user_id: string; score: number; attempted_at: string }[] }),
+    // Also newest-first, and for the same reason. certificates is unique per
+    // ENROLLMENT, not per user, so someone who has renewed holds one per term.
     userIds.length > 0
-      ? admin.from('certificates').select('id, user_id, expires_at, issued_at, certificate_number').eq('firm_id', firmId).in('user_id', userIds)
+      ? admin.from('certificates').select('id, user_id, expires_at, issued_at, certificate_number').eq('firm_id', firmId).in('user_id', userIds).order('issued_at', { ascending: false })
       : Promise.resolve({ data: [] as { id: string; user_id: string; expires_at: string; issued_at: string; certificate_number: string }[] }),
     // An `enrollments` row is only created at first quiz attempt (see
     // /api/quiz/attempt) — everything before that (opening the course, lesson
@@ -74,19 +80,34 @@ export default async function DashboardPage() {
       : Promise.resolve({ data: [] as { firm_member_id: string }[] }),
   ])
 
-  // Index by user_id — for attempts, ordered DESC so first hit per user is the latest passing attempt
-  const enrollmentByUser = Object.fromEntries(
-    (enrollmentsRes.data ?? []).map(e => [e.user_id, e])
-  )
-
-  const attemptByUser: Record<string, { score: number; attempted_at: string }> = {}
-  for (const a of (attemptsRes.data ?? [])) {
-    if (!(a.user_id in attemptByUser)) attemptByUser[a.user_id] = a
+  // Index by user_id. ALL THREE queries above are ordered newest-first and all
+  // three collapse first-hit-wins, so each person resolves to their CURRENT
+  // term.
+  //
+  // Object.fromEntries was the wrong tool here and was doing real damage: it
+  // keeps the LAST entry for a repeated key, so on an unordered read it picked
+  // an arbitrary row, and on a newest-first read it would pick the OLDEST.
+  // Either way a renewed firm's dashboard could show a member as "Expired" from
+  // last year's certificate on the day after they recertified — the one screen
+  // an attorney uses to check their firm is compliant, quietly reporting that it
+  // is not.
+  //
+  // Nothing was wrong before 0007, which dropped the unique constraint on
+  // enrollments so renewals could insert a fresh row per term. That made
+  // multiple rows per user possible and turned a safe collapse into an arbitrary
+  // one. certificates has the same shape for the same reason: unique per
+  // ENROLLMENT, so one per term.
+  const firstPerUser = <T extends { user_id: string }>(rows: T[]): Record<string, T> => {
+    const byUser: Record<string, T> = {}
+    for (const row of rows) {
+      if (!(row.user_id in byUser)) byUser[row.user_id] = row
+    }
+    return byUser
   }
 
-  const certByUser = Object.fromEntries(
-    (certsRes.data ?? []).map(c => [c.user_id, c])
-  )
+  const enrollmentByUser = firstPerUser(enrollmentsRes.data ?? [])
+  const attemptByUser = firstPerUser(attemptsRes.data ?? [])
+  const certByUser = firstPerUser(certsRes.data ?? [])
 
   const startedMemberIds = new Set((eventsRes.data ?? []).map(e => e.firm_member_id))
 

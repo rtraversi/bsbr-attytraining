@@ -19,7 +19,7 @@ const SECTION_HEADING = `${HEADING} mb-4 text-2xl md:text-3xl xl:mb-5 xl:text-[2
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 
 const NAV_LINK =
-  'flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-[#8A8A8A] transition-colors hover:bg-[#EAF8FF] hover:text-[#0094FF] dark:text-[#7A8189] dark:hover:bg-[#0094FF]/10 dark:hover:text-[#32C7FF]'
+  'flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-[#8A8A8A] transition-colors hover:bg-[#EAF8FF] hover:text-[var(--brand-emphasis)] dark:text-[#7A8189] dark:hover:bg-[var(--brand-emphasis)]/10 dark:hover:text-[var(--brand-primary)]'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -155,9 +155,9 @@ export default async function SettingsPage() {
           </div>
 
           <nav className={`flex flex-wrap gap-x-6 gap-y-1 px-1 pt-2 text-sm ${MUTED}`}>
-            <Link href="/privacy" className="hover:text-[#0094FF]">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-[#0094FF]">Terms of Service</Link>
-            <Link href="/dpa" className="hover:text-[#0094FF]">Cookies</Link>
+            <Link href="/privacy" className="hover:text-[var(--brand-emphasis)]">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-[var(--brand-emphasis)]">Terms of Service</Link>
+            <Link href="/dpa" className="hover:text-[var(--brand-emphasis)]">Cookies</Link>
           </nav>
 
           <form action="/api/auth/logout" method="POST" className="px-1">

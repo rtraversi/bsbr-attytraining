@@ -200,7 +200,7 @@ const EM_DASH = 'text-[#C7CDD3] dark:text-[#3A4048]'
 
 // Neutral outline button — kept for the pagination Prev/Next controls only.
 const ROW_ACTION =
-  'whitespace-nowrap rounded-lg border border-[#E5EEF5] px-2.5 py-1 text-sm font-semibold text-[#3D3D3D] transition-colors hover:border-[#0094FF] hover:text-[#0094FF] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[#32C7FF] dark:hover:text-[#32C7FF]'
+  'whitespace-nowrap rounded-lg border border-[#E5EEF5] px-2.5 py-1 text-sm font-semibold text-[#3D3D3D] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[var(--brand-primary)] dark:hover:text-[var(--brand-primary)]'
 
 // Per-column row actions: compact bordered icon buttons, one column each
 // (Remind / Reassign / Delete). The column headers carry the label, so the
@@ -209,7 +209,7 @@ const ROW_ACTION =
 const ICON_ACTION =
   'inline-flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:opacity-40'
 const ICON_ACTION_REMIND = `${ICON_ACTION} border-[#FF6600]/35 text-[#FF6600] hover:bg-[#FF6600]/10 dark:border-[#FF6600]/45`
-const ICON_ACTION_REASSIGN = `${ICON_ACTION} border-[#0094FF]/35 text-[#0094FF] hover:bg-[#EAF8FF] dark:border-[#0094FF]/45 dark:hover:bg-[#0094FF]/10`
+const ICON_ACTION_REASSIGN = `${ICON_ACTION} border-[var(--brand-emphasis)]/35 text-[var(--brand-emphasis)] hover:bg-[#EAF8FF] dark:border-[var(--brand-emphasis)]/45 dark:hover:bg-[var(--brand-emphasis)]/10`
 const ICON_ACTION_DANGER = `${ICON_ACTION} border-[#DC2626]/35 text-[#DC2626] hover:bg-[#DC2626]/10 dark:border-[#DC2626]/45`
 
 // Window the member list so the block can't grow unbounded and break the
@@ -344,7 +344,7 @@ export function ManageTeamPanel() {
                           {m.certId ? (
                             <button
                               onClick={() => setCertPreview(m)}
-                              className="text-sm font-semibold text-[#0094FF] hover:underline"
+                              className="text-sm font-semibold text-[var(--brand-emphasis)] hover:underline"
                             >
                               View &amp; download
                             </button>
@@ -370,7 +370,7 @@ export function ManageTeamPanel() {
                             ) : remindState === 'loading' ? (
                               <span className={`text-sm ${MUTED}`}>…</span>
                             ) : remindState === 'sent' ? (
-                              <span className="text-sm font-semibold text-[#0094FF]">Sent ✓</span>
+                              <span className="text-sm font-semibold text-[var(--brand-emphasis)]">Sent ✓</span>
                             ) : remindState === 'rate_limited' ? (
                               // Not an error and not a dead control: the reminder
                               // already went out. Muted rather than red, and the
@@ -569,7 +569,7 @@ export function TrainingStatusBadge({ status }: { status: TrainingStatus }) {
       label: 'In progress',
     },
     passed: {
-      pill: 'bg-[#EAF8FF] text-[#0094FF] dark:bg-[#0094FF]/15 dark:text-[#32C7FF]',
+      pill: 'bg-[#EAF8FF] text-[var(--brand-emphasis)] dark:bg-[var(--brand-emphasis)]/15 dark:text-[var(--brand-primary)]',
       label: 'Passed',
     },
     expired: {

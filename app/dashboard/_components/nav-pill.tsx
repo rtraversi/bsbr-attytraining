@@ -176,7 +176,7 @@ export function NavPill({ firmName, role }: NavPillProps) {
   const pillBase =
     'inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-colors sm:gap-2 sm:px-5 sm:py-2.5 sm:text-sm'
   const pillIdle =
-    'bg-[#F5F7FA] text-[#8A8A8A] hover:text-[#0094FF] dark:bg-[#131A20] dark:text-[#7A8189] dark:hover:text-[#32C7FF]'
+    'bg-[#F5F7FA] text-[#8A8A8A] hover:text-[var(--brand-emphasis)] dark:bg-[#131A20] dark:text-[#7A8189] dark:hover:text-[var(--brand-primary)]'
   const pillActive = 'bg-black text-white dark:bg-[#F5F7FA] dark:text-[#0A0A0A]'
 
   return (

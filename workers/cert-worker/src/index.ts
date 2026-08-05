@@ -21,6 +21,10 @@ export interface Env {
   RESEND_API_KEY: string
   CERT_WEBHOOK_SECRET: string
   APP_URL: string
+  /** Reconciliation only. Read-only usage — this job never mutates Stripe. */
+  STRIPE_SECRET_KEY: string
+  /** Where reconciliation findings go. Same address the app's webhook alerts use. */
+  OPERATOR_ALERT_EMAIL: string
 }
 
 // ── Row types ────────────────────────────────────────────────────────────────
@@ -149,19 +153,49 @@ function fmtDate(dateStr: string): string {
 // ── Email helpers ─────────────────────────────────────────────────────────────
 
 // iurixaccreditation.com is verified in Resend (Rob, 2026-07-29) — DKIM, SPF and
-// DMARC all confirmed live. noreply@ is deliberate: the zone has no inbound MX,
-// so replies would bounce; don't imply a reply is possible. Must stay in sync
-// with FROM_ADDRESS in lib/resend.ts — this is a duplicate, not a shared import.
+// DMARC all confirmed live.
+//
+// noreply@ is still deliberate, but the ORIGINAL reason is now void. This said
+// "the zone has no inbound MX, so replies would bounce"; that stopped being true
+// on 2026-08-04, when Zoho MX went live on the apex. Inbound mail is delivered
+// now. It stays noreply@ because nothing monitors replies to a transactional
+// send, not because they would bounce.
+//
+// Must stay in sync with FROM_ADDRESS in lib/resend.ts — this is a duplicate,
+// not a shared import, because the worker builds independently of the app.
 const FROM = 'IURIX <noreply@iurixaccreditation.com>'
 
+/**
+ * Split a recipient value into the array Resend expects. Must stay in step with
+ * parseRecipients in lib/resend.ts — this is a duplicate, not a shared import,
+ * because the worker builds independently of the app.
+ *
+ * The previous `[to]` was already an array, which is why this looked correct:
+ * but a value holding several addresses became ONE malformed entry
+ * ("a@x.com, b@y.com") rather than two recipients, and Resend rejects it. That
+ * is what stopped OPERATOR_ALERT_EMAIL from holding a list.
+ */
+function parseRecipients(to: string): string[] {
+  return to
+    .split(',')
+    .map((address) => address.trim())
+    .filter(Boolean)
+}
+
 async function sendEmail(env: Env, to: string, subject: string, html: string): Promise<void> {
+  const recipients = parseRecipients(to)
+  // Thrown, not skipped. Every caller in this file is inside a cron job whose
+  // failures are logged; a silent no-send would make an unset or malformed
+  // secret indistinguishable from a healthy run with nothing to report.
+  if (recipients.length === 0) throw new Error('sendEmail: no valid recipients')
+
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: FROM, to: [to], subject, html }),
+    body: JSON.stringify({ from: FROM, to: recipients, subject, html }),
   })
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`)
 }
@@ -616,6 +650,366 @@ async function runRenewalReminders(env: Env): Promise<void> {
   }
 }
 
+// ── Retention purge ───────────────────────────────────────────────────────────
+//
+// Max: "why keep it for longer than we need?" The principle is KEEP THE
+// OUTCOME, DROP THE DETAIL. Scores, pass/fail and certificates are the record;
+// IP addresses, user agents and individual answers are incidental detail that
+// stops earning its keep long before the record does.
+//
+// Certificates are NEVER purged, and neither are training event ROWS. They are
+// the product and the evidence behind it respectively; only the incidental
+// detail attached to them ages out.
+//
+// ⚠️ ORDERING: this cannot run before refund eligibility ships, because training
+// events are the evidence behind it (lib/refund-eligibility.ts). The windows
+// below are years and the refund window is 14 days, so there is no live
+// conflict — but if a retention period is ever SHORTENED toward the refund
+// window, that stops being true.
+
+/** Days after which a training event's IP address and user agent are nulled. */
+const RETAIN_EVENT_IDENTIFIERS_DAYS = 730 // 2 years
+
+/** Days after which a quiz attempt's individual answers are nulled. Score and passed stay. */
+const RETAIN_QUIZ_ANSWERS_DAYS = 365 // 12 months
+
+/** Days after which a RESOLVED provisioning failure is deleted. Unresolved rows are kept. */
+const RETAIN_RESOLVED_FAILURES_DAYS = 365 // 12 months
+
+// ── Training event ROWS are never deleted. Max's call, 2026-08-04. ───────────
+//
+// An earlier draft of these rules said to delete them at 2 years, directly
+// contradicting the line above it, which said to null their identifiers and KEEP
+// THE EVENT ROW. Max resolved it in favour of keeping: the event row is the Rule
+// 5.3 supervision evidence behind a certificate that is itself kept
+// indefinitely, so deleting it would destroy the proof and preserve only the
+// conclusion.
+//
+// There is deliberately NO disabled flag for this. A dormant switch reads as an
+// intention someone is expected to carry out eventually, and the next person to
+// find one would reasonably flip it. Deleting this data is not pending — it is
+// decided against. If that ever changes it should arrive as a new decision
+// carrying its own reasoning, not as a boolean somebody turned on.
+//
+// What DOES age out of these rows is ip_address and user_agent, at 2 years. That
+// is the whole of the retention story for training_events.
+
+/**
+ * PostgREST mutation that reports how many rows it touched.
+ *
+ * pgRest() sends `Prefer: return=minimal` and returns null for non-GET, which is
+ * right for its callers but useless here: a purge that silently affects zero
+ * rows forever looks identical to a purge that is working. `count=exact` puts
+ * the number in Content-Range.
+ *
+ * `filter` is a required argument rather than part of an optional query string,
+ * because a PostgREST PATCH or DELETE with no filter applies to EVERY ROW IN THE
+ * TABLE. Making it impossible to call this without one is the whole point.
+ */
+async function pgRestPurge(
+  env: Env,
+  method: 'PATCH' | 'DELETE',
+  table: string,
+  filter: string,
+  body?: unknown,
+): Promise<number> {
+  if (!filter || !filter.includes('=')) {
+    throw new Error(`pgRestPurge refused: ${method} ${table} with no filter — this would affect every row`)
+  }
+
+  const headers: Record<string, string> = {
+    apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+    Prefer: 'return=minimal,count=exact',
+  }
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
+
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/${table}?${filter}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  })
+
+  if (!res.ok) {
+    throw new Error(`pgRestPurge ${method} ${table}: ${res.status} ${await res.text()}`)
+  }
+
+  // Content-Range comes back as "*/<count>" for a mutation with count=exact.
+  const range = res.headers.get('content-range')
+  const total = range ? Number(range.split('/')[1]) : NaN
+  return Number.isFinite(total) ? total : 0
+}
+
+/** ISO timestamp `days` before now — the cutoff every purge filters on. */
+function cutoffIso(days: number): string {
+  return new Date(Date.now() - days * 86_400_000).toISOString()
+}
+
+async function runRetentionPurge(env: Env): Promise<void> {
+  const results: string[] = []
+
+  // 1. Training event identifiers. The event row survives with its type,
+  //    timestamp and metadata — what happened and when is the compliance
+  //    record; who-from-which-IP is the detail.
+  //
+  //    `ip_address=not.is.null` keeps this from rewriting rows that are already
+  //    clean on every single daily run.
+  {
+    const cutoff = cutoffIso(RETAIN_EVENT_IDENTIFIERS_DAYS)
+    const n = await pgRestPurge(
+      env,
+      'PATCH',
+      'training_events',
+      `event_timestamp=lt.${cutoff}&or=(ip_address.not.is.null,user_agent.not.is.null)`,
+      { ip_address: null, user_agent: null },
+    )
+    results.push(`event identifiers nulled: ${n}`)
+  }
+
+  // 2. Quiz answers. score and passed are untouched — the certificate rests on
+  //    those, not on which distractor someone picked in question 4.
+  {
+    const cutoff = cutoffIso(RETAIN_QUIZ_ANSWERS_DAYS)
+    const n = await pgRestPurge(
+      env,
+      'PATCH',
+      'quiz_attempts',
+      `attempted_at=lt.${cutoff}&answers=not.is.null`,
+      { answers: null },
+    )
+    results.push(`quiz answers nulled: ${n}`)
+  }
+
+  // 3. Resolved provisioning failures. Measured from resolved_at, not
+  //    created_at: the row's job is done when an operator closes it, and an
+  //    UNRESOLVED failure is never purged at any age — it means someone paid
+  //    and may still be owed a firm or a refund.
+  {
+    const cutoff = cutoffIso(RETAIN_RESOLVED_FAILURES_DAYS)
+    const n = await pgRestPurge(
+      env,
+      'DELETE',
+      'provisioning_failures',
+      `resolved_at=not.is.null&resolved_at=lt.${cutoff}`,
+    )
+    results.push(`resolved provisioning failures deleted: ${n}`)
+  }
+
+  // There is no step 4. Training event ROWS are never deleted — see the note by
+  // RETAIN_EVENT_IDENTIFIERS_DAYS. Step 1 is the whole of their retention.
+
+  console.log(`[retention-purge] ${results.join(' | ')}`)
+}
+
+// ── Reconciliation ────────────────────────────────────────────────────────────
+//
+// The refund policy will state that someone charged who received nothing gets a
+// full refund or access, with no window. That promise has no detector today.
+// provisioning_failures catches the three CLASSIFIED causes, but a silent
+// failure — the webhook never delivered, or the handler threw before writing
+// anything — leaves no trace at all. The only symptom is a customer sitting on
+// /onboarding, and nobody finds out until they complain.
+//
+// This is the detector: compare Stripe against the database daily, in three
+// directions. It is READ ONLY on both sides. It cancels nothing, provisions
+// nothing and refunds nothing — it reports, and a human acts.
+
+/** Ignore anything younger than this. Provisioning is not instant. */
+const RECONCILE_GRACE_MS = 15 * 60 * 1000
+
+interface StripeSubscription {
+  id: string
+  customer: string
+  status: string
+  livemode: boolean
+  created: number
+  items: { data: { quantity?: number | null }[] }
+}
+
+interface FirmReconcileRow {
+  id: string
+  name: string
+  status: string
+  max_seats: number
+  stripe_subscription_id: string | null
+  stripe_customer_id: string | null
+  created_at: string
+}
+
+/** Paginated GET against the Stripe REST API. No SDK — the worker uses raw fetch throughout. */
+async function stripeListActiveSubscriptions(env: Env): Promise<StripeSubscription[]> {
+  const all: StripeSubscription[] = []
+  let startingAfter: string | undefined
+
+  // Bounded rather than while(true): a pagination bug that never terminates
+  // would burn the whole cron budget silently. 100 pages is 10,000 subscriptions.
+  for (let page = 0; page < 100; page++) {
+    const params = new URLSearchParams({ status: 'active', limit: '100' })
+    if (startingAfter) params.set('starting_after', startingAfter)
+
+    const res = await fetch(`https://api.stripe.com/v1/subscriptions?${params}`, {
+      headers: {
+        Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+        // Pinned to match every Stripe call in the app (app/api/checkout/route.ts
+        // and siblings). An unpinned call silently follows the account default.
+        'Stripe-Version': '2026-05-27.dahlia',
+      },
+    })
+
+    if (!res.ok) throw new Error(`Stripe subscriptions ${res.status}: ${await res.text()}`)
+
+    const body = (await res.json()) as { data: StripeSubscription[]; has_more: boolean }
+    all.push(...body.data)
+
+    const last = body.data[body.data.length - 1]
+    if (!body.has_more || !last) break
+    startingAfter = last.id
+  }
+
+  return all
+}
+
+function subscriptionQuantity(sub: StripeSubscription): number {
+  return sub.items.data.reduce((sum, item) => sum + (item.quantity ?? 0), 0)
+}
+
+async function runReconciliation(env: Env): Promise<void> {
+  const [subsRaw, firms] = await Promise.all([
+    stripeListActiveSubscriptions(env),
+    pgRest<FirmReconcileRow[]>(
+      env,
+      'GET',
+      '/firms?select=id,name,status,max_seats,stripe_subscription_id,stripe_customer_id,created_at',
+    ),
+  ])
+
+  const now = Date.now()
+
+  // 🔴 LIVEMODE ONLY. Learned from running this against real data on 2026-08-03:
+  // all 30 sandbox subscriptions are livemode:false and 13 of them have no firm,
+  // so without this filter the job reports 13 phantom emergencies on day one and
+  // is switched off by the second. Filtering on the object's own flag rather
+  // than trusting which key is configured means a sandbox key produces silence
+  // instead of a false alarm.
+  const subs = subsRaw.filter(
+    (s) => s.livemode === true && now - s.created * 1000 > RECONCILE_GRACE_MS,
+  )
+
+  const firmRows = firms ?? []
+
+  // A lapsed re-subscription arrives with a NEW subscription id, and
+  // handlePaymentSucceeded resolves those by CUSTOMER before updating the row.
+  // Matching on both keys here means the window between those two events reads
+  // as healthy rather than as an emergency in both directions at once.
+  const firmBySubId = new Map<string, FirmReconcileRow>()
+  const firmByCustomerId = new Map<string, FirmReconcileRow>()
+  for (const f of firmRows) {
+    if (f.stripe_subscription_id) firmBySubId.set(f.stripe_subscription_id, f)
+    if (f.stripe_customer_id) firmByCustomerId.set(f.stripe_customer_id, f)
+  }
+
+  const matchFirm = (sub: StripeSubscription) =>
+    firmBySubId.get(sub.id) ?? firmByCustomerId.get(sub.customer) ?? null
+
+  const paidButNothing: string[] = []
+  const accessWithoutPayment: string[] = []
+  const seatDrift: string[] = []
+
+  // 🔴 The livemode filter has a MIRROR-IMAGE failure the plan does not mention.
+  //
+  // The plan's guard is written for direction 1: without it, 13 sandbox
+  // subscriptions with no firm read as 13 emergencies. True. But the database
+  // has no livemode column — a firm provisioned in sandbox is indistinguishable
+  // from a live one. So with a sandbox key the filter empties `subs`, and
+  // direction 2 then reports EVERY ACTIVE FIRM as "access without payment".
+  // That is a far bigger false alarm than the one the guard prevents, and it
+  // would arrive on the same first run.
+  //
+  // Directions 2 and 3 are therefore suppressed when there are no live
+  // subscriptions at all. Zero live subscriptions means either a sandbox key or
+  // a product that has not sold anything yet — in both cases "these firms have
+  // no subscription" is noise, not information. Direction 1 needs no such guard:
+  // an empty subscription list cannot produce a false positive there.
+  //
+  // This degrades in the right direction. The day the first real customer
+  // exists, subs is non-empty and all three directions engage on their own.
+  const canCompareFirmsToStripe = subs.length > 0
+
+  // ── Direction 1: active Stripe subscription with no firm ───────────────────
+  // The one that matters. This is someone who paid and received nothing.
+  for (const sub of subs) {
+    if (!matchFirm(sub)) {
+      paidButNothing.push(
+        `${sub.id} (customer ${sub.customer}, ${subscriptionQuantity(sub)} seats, created ${new Date(sub.created * 1000).toISOString()})`,
+      )
+    }
+  }
+
+  const liveSubBySubId = new Map(subs.map((s) => [s.id, s]))
+  const liveSubByCustomerId = new Map(subs.map((s) => [s.customer, s]))
+
+  for (const firm of canCompareFirmsToStripe ? firmRows : []) {
+    const sub =
+      (firm.stripe_subscription_id ? liveSubBySubId.get(firm.stripe_subscription_id) : undefined) ??
+      (firm.stripe_customer_id ? liveSubByCustomerId.get(firm.stripe_customer_id) : undefined) ??
+      null
+
+    // ── Direction 2: active firm with no live subscription ───────────────────
+    // status='active' ONLY — a payment_failed or cancelled firm is SUPPOSED to
+    // have no live subscription, and reporting those would bury the real signal
+    // under every lapsed customer the product is handling correctly.
+    if (firm.status === 'active') {
+      const firmAgeMs = now - new Date(firm.created_at).getTime()
+      if (!sub && firmAgeMs > RECONCILE_GRACE_MS) {
+        accessWithoutPayment.push(`${firm.name} (firm ${firm.id})`)
+      }
+    }
+
+    // ── Direction 3: seat drift ──────────────────────────────────────────────
+    if (sub) {
+      const stripeSeats = subscriptionQuantity(sub)
+      if (stripeSeats !== firm.max_seats) {
+        seatDrift.push(
+          `${firm.name} (firm ${firm.id}): DB max_seats=${firm.max_seats}, Stripe quantity=${stripeSeats}`,
+        )
+      }
+    }
+  }
+
+  const findings = paidButNothing.length + accessWithoutPayment.length + seatDrift.length
+
+  // SILENCE WHEN HEALTHY. A report that always arrives is a report nobody reads,
+  // and this one has to be believed on the day it finally says something.
+  if (findings === 0) {
+    console.log(
+      `[reconciliation] clean — ${subs.length} live subscriptions, ${firmRows.length} firms` +
+        (canCompareFirmsToStripe ? '' : ' (directions 2 and 3 skipped: no live subscriptions)'),
+    )
+    return
+  }
+
+  const section = (title: string, items: string[]) =>
+    items.length === 0
+      ? ''
+      : `<h3 style="font-size:14px;margin:24px 0 8px">${title} (${items.length})</h3><ul style="font-size:13px">${items.map((i) => `<li>${i}</li>`).join('')}</ul>`
+
+  const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:640px;margin:0 auto;padding:32px 24px">
+<p style="font-size:14px">Daily Stripe/database reconciliation found <strong>${findings}</strong> discrepancy(ies).</p>
+${section('🔴 PAID BUT NOT PROVISIONED — someone was charged and received nothing', paidButNothing)}
+${section('⚠️ ACTIVE FIRM WITH NO LIVE SUBSCRIPTION — access without payment', accessWithoutPayment)}
+${section('⚠️ SEAT DRIFT — billed quantity does not match the firm record', seatDrift)}
+<hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
+<p style="font-size:12px;color:#6b7280">Compared ${subs.length} live active subscriptions against ${firmRows.length} firms.${canCompareFirmsToStripe ? '' : ' Directions 2 and 3 were SKIPPED — no live subscriptions exist, so firm-to-Stripe comparison would report every firm.'} Subscriptions younger than 15 minutes are ignored. This job is read-only — nothing was changed in Stripe or the database.</p>
+</body></html>`
+
+  await sendEmail(
+    env,
+    env.OPERATOR_ALERT_EMAIL,
+    `[IURIX] Reconciliation: ${findings} discrepancy(ies)`,
+    html,
+  )
+}
+
 // ── Worker export ─────────────────────────────────────────────────────────────
 
 export default {
@@ -627,6 +1021,10 @@ export default {
           runExpiryReminders(env).catch(err => console.error('[scheduled] expiry reminders:', err)),
           runInactivityReminders(env).catch(err => console.error('[scheduled] inactivity reminders:', err)),
           runRenewalReminders(env).catch(err => console.error('[scheduled] renewal reminders:', err)),
+          // Idempotent and cheap — every filter excludes rows already purged, so
+          // a daily run costs nothing once the backlog is clear.
+          runRetentionPurge(env).catch(err => console.error('[scheduled] retention purge:', err)),
+          runReconciliation(env).catch(err => console.error('[scheduled] reconciliation:', err)),
         ]),
       )
     } else {

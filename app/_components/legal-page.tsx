@@ -102,6 +102,22 @@ export function LegalDisclaimer({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * The "no copy written" marker used by /cookies. Loud on purpose — it exists so
+ * an unwritten page cannot be mistaken for a finished one or shipped by
+ * accident. Do not soften it.
+ *
+ * Carried over from main's template during the 2026-08-05 merge, restyled for
+ * the marble ground: red-400 on white failed contrast, red-700 holds it.
+ */
+export function LegalPlaceholder({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="rounded border border-dashed border-red-600/60 bg-red-50 px-3 py-2 font-mono text-xs text-red-700">
+      {children}
+    </p>
+  );
+}
+
 // Tables must scroll rather than overflow on mobile — the wrapper is the whole
 // point of this component.
 export function LegalTable({ children }: { children: React.ReactNode }) {

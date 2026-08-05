@@ -22,6 +22,7 @@ export function PricingSlider() {
   const [seats, setSeats] = useState(5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isUsFirm, setIsUsFirm] = useState(false);
 
   const rate = useMemo(() => rateFor(seats), [seats]);
   const total = seats * rate;
@@ -37,9 +38,15 @@ export function PricingSlider() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seats }),
+        body: JSON.stringify({ seats, billingCountry: isUsFirm ? "US" : "" }),
       });
-      if (!res.ok) throw new Error("Could not start checkout. Please try again.");
+      // Surface the server's own message rather than a generic retry prompt.
+      // A US-only refusal is not a transient failure, and telling someone to
+      // "please try again" when trying again cannot work is worse than useless.
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? "Could not start checkout. Please try again.");
+      }
       const { url } = (await res.json()) as { url: string };
       window.location.href = url;
     } catch (err) {
@@ -141,11 +148,34 @@ export function PricingSlider() {
           </div>
         </div>
 
+        {/* US-only declaration — REQUIRED BEFORE CHECKOUT.
+            Katy's constraint: US law firms only, because all training and
+            certification data stays in the United States. Stripe Checkout has no
+            billing-country allowlist (verified against the API reference), so
+            this is where the honest case is stopped, before any card is charged.
+            A checkbox rather than a country dropdown on purpose: a dropdown
+            implies we accept the other entries. */}
+        <label className="mt-8 flex cursor-pointer items-start gap-3 text-sm text-ink-soft">
+          <input
+            type="checkbox"
+            checked={isUsFirm}
+            onChange={(e) => setIsUsFirm(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-teal-mid"
+          />
+          <span>
+            My firm is based in the United States.{" "}
+            <span className="text-ink-mute">
+              IURIX is available to US firms only — all training and certification data is
+              held in the US.
+            </span>
+          </span>
+        </label>
+
         {/* CTA */}
         <button
           onClick={startCheckout}
-          disabled={loading}
-          className="mt-8 w-full rounded-[1px] bg-teal-ink px-8 py-4 text-base font-medium text-marble transition-colors hover:bg-ink disabled:opacity-60"
+          disabled={loading || !isUsFirm}
+          className="mt-5 w-full rounded-[1px] bg-teal-ink px-8 py-4 text-base font-medium text-marble transition-colors hover:bg-ink disabled:opacity-60"
         >
           {loading ? "Redirecting to checkout…" : "Get started"}
         </button>

@@ -30,6 +30,7 @@ export function Pricing() {
   const [seats, setSeats] = useState(10)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [isUsFirm, setIsUsFirm] = useState(false)
 
   const rate = perSeatRate(seats)
   const total = seats * rate
@@ -45,7 +46,7 @@ export function Pricing() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seats }),
+        body: JSON.stringify({ seats, billingCountry: isUsFirm ? "US" : "" }),
       })
       const data = (await res.json()) as { url?: string; error?: string }
       if (data.url) {
@@ -190,11 +191,28 @@ export function Pricing() {
                 </div>
               </div>
 
+              {/* US-only declaration. /mockup is a design surface but it posts
+                  to the REAL /api/checkout and can take real money, so it
+                  carries the same gate as /pricing rather than a decorative
+                  copy of one. */}
+              <label className="mt-6 flex cursor-pointer items-start gap-2.5 text-sm text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={isUsFirm}
+                  onChange={(e) => setIsUsFirm(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                />
+                <span>
+                  My firm is based in the United States. IURIX is available to US firms only —
+                  all training and certification data is held in the US.
+                </span>
+              </label>
+
               <Button
                 size="lg"
-                className="mt-6 h-12 w-full rounded-xl text-[0.95rem]"
+                className="mt-4 h-12 w-full rounded-xl text-[0.95rem]"
                 onClick={handleCheckout}
-                disabled={loading}
+                disabled={loading || !isUsFirm}
               >
                 {loading ? (
                   <>

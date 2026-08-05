@@ -28,6 +28,32 @@
 // Stars (0–3): 1 = first check cleared; 2 = all of lessons 1–4 cleared;
 //              3 = lesson 5 (readiness) cleared. Done in order the 3rd star is
 //              the natural last step; via the shortcut all three land at once.
+//
+// ── ACCESS vs ACHIEVEMENT (ix-skipcascade) ───────────────────────────────────
+// These are two different questions and they must not share a field:
+//
+//   ACCESS      "is anything more required of this learner here?"
+//               → LessonState.status. Passing lesson 5 legitimately satisfies
+//                 every lesson, because that is what the test-out shortcut IS.
+//
+//   ACHIEVEMENT "did this learner personally pass this check?"
+//               → LessonState.clearedByAttempt, and Progress.attemptClearedCount.
+//                 Never inflated by completion, the shortcut, or anything else.
+//
+// Until 2026-08-04 only the first existed, and it was written over the second:
+// `cleared = fullyCleared || clearedThis`. Passing the readiness check marked
+// all four earlier checks as cleared, including ones the learner never opened,
+// and the record of what they actually did was not merely displayed wrong — it
+// was unrecoverable, because the derivation destroyed it.
+//
+// That matters twice over. This product's output is Rule 5.3 supervision
+// evidence, so "what did this person actually do" is the thing being sold. And
+// refund eligibility (lib/refund-eligibility.ts) turns on how many checks
+// someone cleared: a test-out user who cleared none would have counted as five,
+// and been refused a refund for training they never consumed.
+//
+// status is unchanged on purpose — the shortcut UX is intended and correct.
+// The fix is that the truth now survives alongside it.
 // =============================================================================
 
 import { LESSONS, MAX_ATTEMPTS, PASS_THRESHOLD, READINESS_LESSON } from './lessons'
@@ -45,7 +71,25 @@ export type LessonStatus = 'locked' | 'unlocked' | 'cleared'
 export interface LessonState {
   number: number
   title: string
+  /**
+   * ACCESS state, not achievement. 'cleared' here means "satisfied — nothing
+   * more is required of the learner on this check", which passing lesson 5
+   * legitimately grants for every lesson via the test-out shortcut.
+   *
+   * Do NOT read this to answer "did this person clear this check?" — use
+   * `clearedByAttempt`. See the note on that field.
+   */
   status: LessonStatus
+  /**
+   * ACHIEVEMENT state: true only if this learner personally passed THIS check.
+   * Never inflated by course completion, the test-out shortcut, or anything
+   * else — `ix-skipcascade`.
+   *
+   * This is the field that carries Rule 5.3 evidentiary weight. `status` records
+   * what the product owes the learner; this records what the learner actually
+   * did, and the two genuinely differ for a test-out user.
+   */
+  clearedByAttempt: boolean
   isReadiness: boolean
   attempts: number
   /** null = unlimited (full clearance reached) */
@@ -58,6 +102,17 @@ export interface LessonState {
 export interface Progress {
   stars: number
   lessons: LessonState[]
+  /**
+   * How many checks this learner personally passed, 0–5. Counts
+   * `clearedByAttempt`, so a test-out user who skipped 1–4 and passed only the
+   * readiness check reads as 1, not 5.
+   *
+   * This is the number refund eligibility is computed from
+   * (lib/refund-eligibility.ts). Reading `lessons.filter(l => l.status ===
+   * 'cleared').length` instead would report 5 for that learner and silently
+   * make them non-refundable for training they never consumed.
+   */
+  attemptClearedCount: number
   fullyCleared: boolean
   /** Lesson-5 shortcut has been failed out (3×) without clearing 1–4 first. */
   shortcutLocked: boolean
@@ -140,6 +195,9 @@ export function deriveProgress(events: KnowledgeCheckEvent[], contentViewed: boo
       number: n,
       title: l.checkLabel ?? l.title,
       status,
+      // clearedRaw, deliberately — NOT `cleared`. `cleared` folds in
+      // fullyCleared, which is exactly the cascade this field exists to escape.
+      clearedByAttempt: clearedThis,
       isReadiness: n === READINESS_LESSON,
       attempts,
       attemptsRemaining,
@@ -151,6 +209,7 @@ export function deriveProgress(events: KnowledgeCheckEvent[], contentViewed: boo
   return {
     stars,
     lessons,
+    attemptClearedCount: lessons.filter(l => l.clearedByAttempt).length,
     fullyCleared,
     shortcutLocked,
     shortcutAvailable,

@@ -1,0 +1,41 @@
+-- =============================================================================
+-- 0019_private_avatars.sql
+-- Satisfies: staff photos must not be world-readable (pre-launch privacy batch)
+-- =============================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1. Flip the avatars bucket to private.
+--
+--    0013 created it with public = true and said so deliberately: "public read
+--    (served via public URL, no signing)". That made every staff photo readable
+--    by anyone holding the URL, with no auth and no expiry — the URL is also
+--    guessable, because the object path is the bare user id. The `certificates`
+--    bucket has always been private and signed; this brings avatars onto the
+--    same footing.
+--
+--    Reads now go through short-lived signed URLs minted server-side in
+--    lib/avatars.ts. Writes were already service-role only (the avatar upload
+--    route), and the service role bypasses RLS in both directions, so no
+--    storage.objects policy is required here — exactly as 0013 reasoned, the
+--    conclusion just changes with the flag.
+--
+--    This is reversible: set public = true to undo. No object is moved or
+--    renamed, so a rollback restores the previous behaviour exactly.
+-- ---------------------------------------------------------------------------
+update storage.buckets set public = false where id = 'avatars';
+
+-- ---------------------------------------------------------------------------
+-- 2. No data migration for existing avatars, deliberately.
+--
+--    Accounts created before this migration hold a full public URL in
+--    user_metadata.avatar_url. Rewriting auth.users metadata from SQL is
+--    possible but is a write into GoTrue's own table, so it is done in
+--    application code instead: lib/avatars.ts resolves BOTH shapes, and the
+--    upload route rewrites a user onto the new `avatar_path` shape the next
+--    time they change their photo.
+--
+--    The legacy resolver never parses the stored URL. The object path has
+--    always been the bare user id (0013, and app/api/account/avatar/route.ts),
+--    so the presence of avatar_url is the only signal needed, and a stale
+--    hostname in an old value cannot mislead it.
+-- ---------------------------------------------------------------------------

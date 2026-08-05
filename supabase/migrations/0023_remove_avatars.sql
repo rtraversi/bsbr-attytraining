@@ -1,18 +1,32 @@
 -- =============================================================================
--- 0014_remove_avatars.sql
--- Removes the profile-photo feature added in 0013.
+-- 0023_remove_avatars.sql
+-- Removes the profile-photo feature added in 0013, including the PRIVATE
+-- bucket that 0019 established.
 --
 -- Decision (Rob, 2026-07-28): this product should not hold profile photographs
 -- of law firm staff at all. Staff are enrolled by their employer rather than
--- signing up themselves, the photo served no function in the certification
--- record, and 0013 created the bucket as PUBLIC (`public = true`) — meaning any
--- uploaded photo was readable by anyone holding the URL, without
--- authentication. Removing the feature eliminates that exposure outright rather
--- than mitigating it.
+-- signing up themselves, and the photo served no function in the certification
+-- record. That reasoning is about what the product should store, not about how
+-- the bucket was configured — so it stands regardless of the flag.
+--
+-- Numbering: written as 0014, renumbered to 0018, and renumbered again to 0023
+-- on 2026-08-05 when this branch merged main. It collided with
+-- 0018_provisioning_identity.sql. Nothing here touches
+-- training_events_event_type_check, so the warning attached to 0017 does not
+-- apply to this file.
+--
+-- ⚠ Ordering note: this migration no longer drops a PUBLIC bucket.
+-- 0019_private_avatars.sql runs first in every environment and already set
+-- `public = false`, so by the time this executes the exposure 0013 created is
+-- closed and what remains is the feature itself. 0019 added no
+-- storage.objects policies — it changed one flag — so the deletes below are
+-- still sufficient and there is no policy to drop.
 --
 -- Application code for the feature is removed in the same change:
 --   - app/api/account/avatar/route.ts            (deleted)
 --   - app/dashboard/settings/_components/avatar-upload.tsx (deleted)
+--   - lib/avatars.ts                             (deleted — 0019's signed-URL
+--     resolver, orphaned once the feature went away)
 --   - avatar rendering in nav-pill.tsx, certification-forecast.tsx,
 --     team-table.tsx, dashboard/page.tsx, dashboard/layout.tsx,
 --     dashboard/settings/page.tsx
@@ -32,11 +46,14 @@ delete from storage.objects where bucket_id = 'avatars';
 delete from storage.buckets where id = 'avatars';
 
 -- ---------------------------------------------------------------------------
--- 3. NOTE — residual `avatar_url` keys in auth.users.raw_user_meta_data.
+-- 3. NOTE — residual `avatar_url` / `avatar_path` keys in
+--    auth.users.raw_user_meta_data.
 --
 --    Any user who uploaded a photo still carries an `avatar_url` value in their
---    user_metadata. Those values are now inert: no application code reads the
---    key, and the URL they point at no longer resolves.
+--    user_metadata, and anyone who changed their photo after 0019 carries an
+--    `avatar_path` instead (0019 introduced the second shape; lib/avatars.ts
+--    resolved both). Those values are now inert: no application code reads
+--    either key, and the object they point at no longer exists.
 --
 --    They are deliberately NOT cleaned up here. Writing to the `auth` schema
 --    from a migration is discouraged by Supabase — that schema is managed by

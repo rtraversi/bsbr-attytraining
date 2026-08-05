@@ -102,9 +102,9 @@ function FinalResult({ result, onRetry }: { result: QuizResult; onRetry: () => v
 
   if (result.passed) {
     return (
-      <div className={`${card} border-[#32C7FF]/30`}>
+      <div className={`${card} border-[var(--brand-primary)]/30`}>
         <div className="mb-4 flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#32C7FF]/15">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)]/15">
             <CheckIcon />
           </div>
           <p className="text-lg font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
@@ -139,7 +139,7 @@ function FinalResult({ result, onRetry }: { result: QuizResult; onRetry: () => v
 
 function CheckIcon() {
   return (
-    <svg className="h-6 w-6 text-[#32C7FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <svg className="h-6 w-6 text-[var(--brand-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   )

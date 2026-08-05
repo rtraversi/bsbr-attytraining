@@ -15,6 +15,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Firm name for the nav pill (same firm_id source as app/dashboard/training/page.tsx).
   const firmId = user?.app_metadata?.firm_id as string | undefined
   let firmName: string | null = null
+
   if (firmId) {
     const admin = createAdminClient()
     const { data: firm } = await admin.from('firms').select('name').eq('id', firmId).maybeSingle()

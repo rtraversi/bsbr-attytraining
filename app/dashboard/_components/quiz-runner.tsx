@@ -225,7 +225,7 @@ export function QuizRunner({
               </div>
               <div className="flex shrink-0 items-center gap-2.5">
                 <TimerPill label={timerLabel ?? 'No time limit'} />
-                <span className="text-sm font-bold whitespace-nowrap text-[#0094FF]">
+                <span className="text-sm font-bold whitespace-nowrap text-[var(--brand-emphasis)]">
                   Question {Math.min(qIndex + 1, questions.length)}/{questions.length}
                 </span>
                 {onExit && (
@@ -241,7 +241,7 @@ export function QuizRunner({
             </div>
             <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#E5EEF5] dark:bg-[#1F2429]">
               <div
-                className="h-full rounded-full bg-[#32C7FF] transition-[width] duration-500 ease-out"
+                className="h-full rounded-full bg-[var(--brand-primary)] transition-[width] duration-500 ease-out"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
@@ -259,7 +259,7 @@ export function QuizRunner({
           {phase === 'quiz' && currentQ && (
             <>
               {showReadinessBanner && (
-                <div className="mb-6 rounded-2xl border border-[#32C7FF]/30 bg-[#32C7FF]/[0.08] px-4 py-3 text-sm font-medium text-[#0094FF] dark:text-[#5FC8FF]">
+                <div className="mb-6 rounded-2xl border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/[0.08] px-4 py-3 text-sm font-medium text-[var(--brand-emphasis)] dark:text-[#5FC8FF]">
                   This is the readiness check — you need {readinessThreshold}% to clear it.
                 </div>
               )}
@@ -293,14 +293,14 @@ export function QuizRunner({
                       onClick={() => setSelected(i)}
                       className={`flex items-center gap-4 rounded-2xl border-2 p-6 text-left transition-all active:scale-[0.99] md:gap-5 md:p-7 ${
                         isSelected
-                          ? 'border-[#32C7FF] bg-[#32C7FF]/[0.08] shadow-[0_0_0_4px_rgba(50,199,255,0.15)]'
-                          : 'border-[#E5EEF5] bg-white hover:border-[#32C7FF] hover:bg-[#32C7FF]/[0.05] dark:border-[#1F2429] dark:bg-[#0D0F12] dark:hover:border-[#32C7FF]'
+                          ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/[0.08] shadow-[0_0_0_4px_rgba(50,199,255,0.15)]'
+                          : 'border-[#E5EEF5] bg-white hover:border-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/[0.05] dark:border-[#1F2429] dark:bg-[#0D0F12] dark:hover:border-[var(--brand-primary)]'
                       }`}
                     >
                       <span
                         className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 font-bold transition-all md:h-12 md:w-12 md:text-lg ${
                           isSelected
-                            ? 'border-[#32C7FF] bg-[#32C7FF] text-white'
+                            ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)] text-white'
                             : 'border-[#BCC8D0] text-[#6D7980] dark:border-[#3A4249] dark:text-[#7A8189]'
                         }`}
                       >
@@ -328,12 +328,12 @@ export function QuizRunner({
                 You have answered all {questions.length} questions. Confirm below to submit for
                 scoring.
               </p>
-              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#E5EEF5] bg-[#F5F7FA] p-5 transition-colors hover:border-[#32C7FF] md:p-6 dark:border-[#1F2429] dark:bg-[#0D0F12] dark:hover:border-[#32C7FF]">
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#E5EEF5] bg-[#F5F7FA] p-5 transition-colors hover:border-[var(--brand-primary)] md:p-6 dark:border-[#1F2429] dark:bg-[#0D0F12] dark:hover:border-[var(--brand-primary)]">
                 <input
                   type="checkbox"
                   checked={attested}
                   onChange={e => setAttested(e.target.checked)}
-                  className="mt-0.5 h-5 w-5 shrink-0 accent-[#32C7FF]"
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--brand-primary)]"
                 />
                 <span className="text-sm leading-relaxed text-[#0A0A0A] md:text-base dark:text-[#F5F7FA]">
                   {attestationLabel}
@@ -377,7 +377,7 @@ export function QuizRunner({
             <button
               onClick={onPrimary}
               disabled={primaryDisabled}
-              className="flex items-center gap-2 rounded-xl bg-[#32C7FF] px-7 py-3.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(50,199,255,0.4)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+              className="flex items-center gap-2 rounded-xl bg-[var(--brand-primary)] px-7 py-3.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(50,199,255,0.4)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
             >
               {primaryLabel}
               {phase === 'quiz' && !isLast && <ArrowRightIcon />}
@@ -428,7 +428,7 @@ function CloseIcon() {
 
 function Spinner() {
   return (
-    <svg className="h-8 w-8 animate-spin text-[#32C7FF]" fill="none" viewBox="0 0 24 24">
+    <svg className="h-8 w-8 animate-spin text-[var(--brand-primary)]" fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
     </svg>

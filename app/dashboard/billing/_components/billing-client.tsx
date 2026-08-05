@@ -12,7 +12,7 @@ const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 const LABEL = 'block text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]'
 
 const BTN_PRIMARY =
-  'shrink-0 rounded-xl bg-[#0094FF] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
+  'shrink-0 rounded-xl bg-[var(--brand-emphasis)] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
 const BTN_QUIET =
   'shrink-0 rounded-xl border border-[#E5EEF5] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-[#0A0A0A] transition-colors hover:bg-[#F5F7FA] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#1F2429] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]'
 const BTN_DANGER =
@@ -165,7 +165,7 @@ export function BillingClient() {
                         Off — will not renew
                       </span>
                     ) : (
-                      <span className="font-semibold text-[#0094FF]">On</span>
+                      <span className="font-semibold text-[var(--brand-emphasis)]">On</span>
                     )}
                   </dd>
                 </div>
@@ -230,7 +230,7 @@ export function BillingClient() {
                           href={inv.hostedInvoiceUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="shrink-0 text-sm font-bold text-[#0094FF] hover:underline dark:text-[#32C7FF]"
+                          className="shrink-0 text-sm font-bold text-[var(--brand-emphasis)] hover:underline dark:text-[var(--brand-primary)]"
                         >
                           View receipt &rarr;
                         </a>

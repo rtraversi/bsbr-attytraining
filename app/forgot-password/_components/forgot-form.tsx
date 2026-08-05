@@ -33,9 +33,9 @@ export function ForgotForm() {
   if (phase === 'done') {
     return (
       <div className="flex flex-col items-center gap-4 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#32C7FF]/10">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-primary)]/10">
           <svg
-            className="h-7 w-7 text-[#32C7FF]"
+            className="h-7 w-7 text-[var(--brand-primary)]"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -51,7 +51,7 @@ export function ForgotForm() {
         </p>
         <Link
           href="/login"
-          className="text-sm font-extralight text-[#0094FF] underline underline-offset-2 transition-opacity hover:opacity-80"
+          className="text-sm font-extralight text-[var(--brand-emphasis)] underline underline-offset-2 transition-opacity hover:opacity-80"
         >
           Back to sign in
         </Link>
@@ -85,21 +85,21 @@ export function ForgotForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={phase === 'loading'}
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#32C7FF] disabled:opacity-50"
+            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
           />
         </div>
 
         <button
           type="submit"
           disabled={phase === 'loading'}
-          className="mt-1 flex w-full items-center justify-center rounded-2xl bg-[#32C7FF] px-6 py-4 text-lg font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-1 flex w-full items-center justify-center rounded-2xl bg-[var(--brand-primary)] px-6 py-4 text-lg font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {phase === 'loading' ? 'Sending…' : 'Send reset link'}
         </button>
 
         <Link
           href="/login"
-          className="text-center text-sm font-extralight text-[#0094FF] underline underline-offset-2 transition-opacity hover:opacity-80"
+          className="text-center text-sm font-extralight text-[var(--brand-emphasis)] underline underline-offset-2 transition-opacity hover:opacity-80"
         >
           Back to sign in
         </Link>

@@ -7,9 +7,9 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 const CARD = 'rounded-3xl bg-white p-6 xl:p-8 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
 const HEADING = 'font-headline font-bold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
-const ACCENT = 'text-[#0094FF] dark:text-[#32C7FF]'
+const ACCENT = 'text-[var(--brand-emphasis)] dark:text-[var(--brand-primary)]'
 const INPUT =
-  'rounded-xl border border-[#E5EEF5] bg-white text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[#32C7FF] focus:ring-2 focus:ring-[#32C7FF]/30 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]'
+  'rounded-xl border border-[#E5EEF5] bg-white text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/30 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]'
 
 /* ── Content — guide cards link to the FAQ section (intentional for now, no
       real article pages yet); copy describes the actual product features ───── */
@@ -168,7 +168,7 @@ export function SupportClient({ userEmail }: Props) {
           </p>
           <button
             onClick={() => openContact('Something else')}
-            className="mt-4 cursor-pointer rounded-full bg-[#32C7FF] px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+            className="mt-4 cursor-pointer rounded-full bg-[var(--brand-primary)] px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
           >
             Ask support
           </button>
@@ -198,7 +198,7 @@ export function SupportClient({ userEmail }: Props) {
                   <a
                     key={title}
                     href="#questions"
-                    className={`${CARD} group flex min-h-40 flex-col justify-between border border-transparent transition-colors hover:border-[#32C7FF]/60`}
+                    className={`${CARD} group flex min-h-40 flex-col justify-between border border-transparent transition-colors hover:border-[var(--brand-primary)]/60`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <h3 className={`${HEADING} text-lg xl:text-xl`}>{title}</h3>
@@ -265,7 +265,7 @@ export function SupportClient({ userEmail }: Props) {
           </p>
           <button
             onClick={() => openContact('Training and assignments')}
-            className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#32C7FF] px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+            className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-full bg-[var(--brand-primary)] px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
           >
             Contact support <SendIcon className="h-4 w-4" />
           </button>
@@ -277,7 +277,7 @@ export function SupportClient({ userEmail }: Props) {
           </p>
           <button
             onClick={() => openContact('Technical issue')}
-            className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#32C7FF] px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+            className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-full bg-[var(--brand-primary)] px-6 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
           >
             File an issue <ArrowRightIcon className="h-4 w-4" />
           </button>
@@ -288,13 +288,13 @@ export function SupportClient({ userEmail }: Props) {
       <nav
         className={`flex flex-wrap gap-x-6 gap-y-1 border-t border-[#E5EEF5] px-1 pt-6 text-sm ${MUTED} dark:border-[#1F2429]`}
       >
-        <Link href="/privacy" className="hover:text-[#0094FF]">
+        <Link href="/privacy" className="hover:text-[var(--brand-emphasis)]">
           Privacy Policy
         </Link>
-        <Link href="/terms" className="hover:text-[#0094FF]">
+        <Link href="/terms" className="hover:text-[var(--brand-emphasis)]">
           Terms of Service
         </Link>
-        <Link href="/dpa" className="hover:text-[#0094FF]">
+        <Link href="/dpa" className="hover:text-[var(--brand-emphasis)]">
           Cookies
         </Link>
       </nav>
@@ -330,7 +330,7 @@ export function SupportClient({ userEmail }: Props) {
 
             {phase === 'success' ? (
               <div className="flex flex-col items-center py-12 text-center" role="status">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#32C7FF] text-white">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand-primary)] text-white">
                   <CheckIcon className="h-6 w-6" />
                 </span>
                 <h3 className={`${HEADING} mt-5 text-xl`}>Request received</h3>
@@ -400,7 +400,7 @@ export function SupportClient({ userEmail }: Props) {
                 <button
                   type="submit"
                   disabled={phase === 'loading'}
-                  className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#32C7FF] px-6 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-[var(--brand-primary)] px-6 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {phase === 'loading' ? 'Sending…' : 'Send request'} <SendIcon className="h-4 w-4" />
                 </button>

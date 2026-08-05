@@ -56,7 +56,7 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
-          className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#32C7FF] disabled:opacity-50"
+          className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
         />
       </div>
 
@@ -74,7 +74,7 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3.5 pr-12 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#32C7FF] disabled:opacity-50"
+            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3.5 pr-12 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
           />
           <button
             type="button"
@@ -114,11 +114,11 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
             aria-label="Remember you for 30 days"
             onClick={() => setRememberMe((v) => !v)}
             disabled={loading}
-            className="relative inline-flex h-5 w-10 shrink-0 cursor-pointer overflow-hidden rounded-full border border-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#32C7FF] focus-visible:ring-offset-1 disabled:opacity-50"
+            className="relative inline-flex h-5 w-10 shrink-0 cursor-pointer overflow-hidden rounded-full border border-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50"
           >
             <span
               aria-hidden
-              className={`absolute inset-0 origin-bottom bg-[#32C7FF] transition-transform duration-300 ease-out ${
+              className={`absolute inset-0 origin-bottom bg-[var(--brand-primary)] transition-transform duration-300 ease-out ${
                 rememberMe ? 'scale-y-100' : 'scale-y-0'
               }`}
             />
@@ -127,7 +127,7 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
         </div>
         <Link
           href="/forgot-password"
-          className="text-sm font-extralight text-[#0094FF] underline underline-offset-2 transition-opacity hover:opacity-80"
+          className="text-sm font-extralight text-[var(--brand-emphasis)] underline underline-offset-2 transition-opacity hover:opacity-80"
         >
           Forgot your password? It&apos;s okay
         </Link>
@@ -137,7 +137,7 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
       <button
         type="submit"
         disabled={loading}
-        className="mt-1 flex w-full items-center justify-center rounded-2xl bg-[#32C7FF] px-6 py-4 text-base font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-1 flex w-full items-center justify-center rounded-2xl bg-[var(--brand-primary)] px-6 py-4 text-base font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? 'Signing in…' : 'Sign in'}
       </button>

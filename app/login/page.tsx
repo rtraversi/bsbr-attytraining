@@ -62,14 +62,13 @@ export default async function LoginPage({
                   until Max drafts it and Katy or Rob approves it. Restore the
                   <Link href="/cookies"> here, styled like its siblings, once
                   that copy is approved. */}
-              {/* TEMPORARY — pending Rob's business address (cutover item C4).
-                  This pointed at info@aistaffcompliance.com, a RETIRED domain,
-                  so support mail sent from the sign-in page may have been
-                  silently dropped. solarsaiko@gmail.com is already the live
-                  support inbox (app/api/support/contact/route.ts:8), so this
-                  matches where the in-app support form already delivers. */}
+              {/* The real business address (cutover item C4, ix-supportdest).
+                  This pointed first at info@aistaffcompliance.com, a RETIRED
+                  domain that silently dropped mail, then at a personal Gmail as
+                  a stopgap. Now the same inbox the in-app support form delivers
+                  to (app/api/support/contact/route.ts). */}
               <a
-                href="mailto:solarsaiko@gmail.com"
+                href="mailto:info@iurixaccreditation.com"
                 className="transition-opacity hover:opacity-70"
               >
                 Contact support

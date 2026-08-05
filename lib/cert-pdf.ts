@@ -1,5 +1,6 @@
 import fontkit from '@pdf-lib/fontkit'
 import { PDFDocument, rgb } from 'pdf-lib'
+import qrcode from 'qrcode-generator'
 import { STACK_SANS_BOLD_B64, STACK_SANS_REGULAR_B64 } from './cert-fonts'
 import { LOGO_B64 } from './cert-logo'
 
@@ -13,6 +14,15 @@ interface CertPdfOptions {
   score: number
   completedAt: Date
   expiresAt: Date
+  /**
+   * Absolute URL the QR code encodes — https://<app>/verify/<token>.
+   *
+   * Built by the caller, not here, because the token must be the SAME value
+   * that lands in certificates.verification_token. Generating it in this
+   * function would produce a PDF whose QR points at a certificate that was
+   * never written under that token.
+   */
+  verifyUrl: string
 }
 
 // Monochrome for now, per Max — the teal/rose-gold brand treatment is not
@@ -38,7 +48,7 @@ function fitText(text: string, maxWidth: number, preferredSize: number, font: { 
 export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array> {
   // employeeEmail stays on the options but is no longer drawn — the redesign
   // identifies the recipient as "Name @ Firm" instead of by email address.
-  const { employeeName, firmName, courseTitle, certNumber, score, completedAt, expiresAt } = opts
+  const { employeeName, firmName, courseTitle, certNumber, score, completedAt, expiresAt, verifyUrl } = opts
 
   const doc  = await PDFDocument.create()
   doc.registerFontkit(fontkit)
@@ -155,20 +165,55 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
     x: M, y: SIG_Y - 15, size: 9, font: regular, color: MID_GREY,
   })
 
-  // ── QR placeholder, bottom-right ─────────────────────────────────────────────
-  // Marks where the verification QR will sit. No code is generated this pass —
-  // there is no verification endpoint for it to point at yet.
+  // ── Verification QR, bottom-right ────────────────────────────────────────────
+  // Real code now, replacing the labelled placeholder box. Same 76pt footprint,
+  // so the rest of the layout is untouched.
+  //
+  // Error correction 'M' (~15% recoverable): certificates get printed, scanned
+  // from screens, photographed and faxed. 'L' is fragile on paper; 'H' would
+  // push the module count up and each module below the size a phone camera
+  // resolves reliably at 76pt.
   const QR  = 76
   const qrX = W - M - QR
   const qrY = SIG_Y - 15
-  page.drawRectangle({
-    x: qrX, y: qrY, width: QR, height: QR,
-    borderColor: RULE_LINE, borderWidth: 1, color: PAPER,
-  })
-  const qrLabel  = 'QR'
-  const qrLabelW = regular.widthOfTextAtSize(qrLabel, 8)
-  page.drawText(qrLabel, {
-    x: qrX + (QR - qrLabelW) / 2, y: qrY + QR / 2 - 4, size: 8, font: regular, color: RULE_LINE,
+
+  const qr = qrcode(0, 'M') // 0 = pick the smallest type that fits the URL
+  qr.addData(verifyUrl)
+  qr.make()
+
+  // The quiet zone is part of the spec, not padding: without ~4 modules of
+  // clear space many scanners will not find the symbol at all. It is drawn as
+  // white paper here because the certificate ground is white anyway, but making
+  // it explicit means the QR stays scannable if the ground ever changes.
+  const QUIET = 4
+  const modules = qr.getModuleCount()
+  const cell = QR / (modules + QUIET * 2)
+  const originX = qrX + cell * QUIET
+  const originY = qrY + cell * QUIET
+
+  page.drawRectangle({ x: qrX, y: qrY, width: QR, height: QR, color: PAPER })
+
+  for (let row = 0; row < modules; row++) {
+    for (let col = 0; col < modules; col++) {
+      if (!qr.isDark(row, col)) continue
+      page.drawRectangle({
+        x: originX + col * cell,
+        // pdf-lib's origin is bottom-left; QR rows count from the top, so the
+        // row index has to be flipped or the code comes out mirrored
+        // vertically — which still scans on some readers and not others, the
+        // worst possible failure mode to debug.
+        y: originY + (modules - 1 - row) * cell,
+        width: cell,
+        height: cell,
+        color: NEAR_BLACK,
+      })
+    }
+  }
+
+  const qrCaption  = 'Scan to verify'
+  const qrCaptionW = regular.widthOfTextAtSize(qrCaption, 7)
+  page.drawText(qrCaption, {
+    x: qrX + (QR - qrCaptionW) / 2, y: qrY - 11, size: 7, font: regular, color: MID_GREY,
   })
 
   // ── Footer ───────────────────────────────────────────────────────────────────

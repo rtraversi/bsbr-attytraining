@@ -42,7 +42,7 @@ export function EnrollSelfButton() {
         type="button"
         onClick={handleClick}
         disabled={status === 'saving'}
-        className="cursor-pointer rounded-xl bg-[#0094FF] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0083E0] focus:outline-none focus:ring-2 focus:ring-[#32C7FF]/40 disabled:cursor-default disabled:opacity-60"
+        className="cursor-pointer rounded-xl bg-[var(--brand-emphasis)] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0083E0] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/40 disabled:cursor-default disabled:opacity-60"
       >
         {status === 'saving' ? 'Enrolling…' : 'Enroll me (uses 1 seat)'}
       </button>

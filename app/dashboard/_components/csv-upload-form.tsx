@@ -146,7 +146,7 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
   return (
     <div className="flex flex-col gap-3">
       <label className="cursor-pointer">
-        <span className="block w-full rounded-xl border border-[#E5EEF5] py-4 text-center text-base font-bold text-[#3D3D3D] transition-colors hover:border-[#0094FF] hover:text-[#0094FF] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[#32C7FF] dark:hover:text-[#32C7FF]">
+        <span className="block w-full rounded-xl border border-[#E5EEF5] py-4 text-center text-base font-bold text-[#3D3D3D] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[var(--brand-primary)] dark:hover:text-[var(--brand-primary)]">
           {fileName || 'Bulk invite (CSV)'}
         </span>
         <input
@@ -182,8 +182,8 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
       )}
 
       {phase === 'done' && result && (
-        <div className="flex items-center justify-between gap-2 rounded-xl bg-[#EAF8FF] px-3 py-2 dark:bg-[#0094FF]/10">
-          <p className="text-sm font-semibold text-[#0094FF]">{summaryText(result)}</p>
+        <div className="flex items-center justify-between gap-2 rounded-xl bg-[#EAF8FF] px-3 py-2 dark:bg-[var(--brand-emphasis)]/10">
+          <p className="text-sm font-semibold text-[var(--brand-emphasis)]">{summaryText(result)}</p>
           <button
             onClick={handleReset}
             className="shrink-0 text-xs text-[#8A8A8A] transition-colors hover:text-[#0A0A0A] dark:hover:text-[#F5F7FA]"

@@ -74,7 +74,7 @@ export function OnboardingChecklist({ stepInvited, stepCertified }: Props) {
                   <span
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
                       done
-                        ? 'border-[#0094FF] bg-[#0094FF]'
+                        ? 'border-[var(--brand-emphasis)] bg-[var(--brand-emphasis)]'
                         : 'border-[#E5EEF5] bg-[#F2F4F7] dark:border-[#1F2429] dark:bg-[#131A20]'
                     }`}
                   >

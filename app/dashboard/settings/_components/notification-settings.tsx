@@ -43,7 +43,7 @@ function NotificationToggle({
       onClick={handleToggle}
       disabled={saving}
       className={`relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-        checked ? 'bg-[#0094FF]' : 'bg-[#E5EEF5] dark:bg-[#1F2429]'
+        checked ? 'bg-[var(--brand-emphasis)]' : 'bg-[#E5EEF5] dark:bg-[#1F2429]'
       }`}
     >
       <span

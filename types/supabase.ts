@@ -106,30 +106,45 @@ export type Database = {
           enrollment_id: string
           expires_at: string
           firm_id: string
+          firm_name: string | null
+          holder_name: string | null
           id: string
           issued_at: string
+          revoked_at: string | null
+          revoked_reason: string | null
           storage_path: string
           user_id: string
+          verification_token: string
         }
         Insert: {
           certificate_number: string
           enrollment_id: string
           expires_at: string
           firm_id: string
+          firm_name?: string | null
+          holder_name?: string | null
           id?: string
           issued_at?: string
+          revoked_at?: string | null
+          revoked_reason?: string | null
           storage_path: string
           user_id: string
+          verification_token?: string
         }
         Update: {
           certificate_number?: string
           enrollment_id?: string
           expires_at?: string
           firm_id?: string
+          firm_name?: string | null
+          holder_name?: string | null
           id?: string
           issued_at?: string
+          revoked_at?: string | null
+          revoked_reason?: string | null
           storage_path?: string
           user_id?: string
+          verification_token?: string
         }
         Relationships: [
           {
@@ -348,6 +363,36 @@ export type Database = {
         }
         Relationships: []
       }
+      provisioning_failures: {
+        Row: {
+          created_at: string
+          email: string
+          reason: string
+          resolved_at: string | null
+          stripe_customer_id: string
+          stripe_session_id: string
+          stripe_subscription_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          reason: string
+          resolved_at?: string | null
+          stripe_customer_id: string
+          stripe_session_id: string
+          stripe_subscription_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          reason?: string
+          resolved_at?: string | null
+          stripe_customer_id?: string
+          stripe_session_id?: string
+          stripe_subscription_id?: string | null
+        }
+        Relationships: []
+      }
       quiz_attempts: {
         Row: {
           answers: Json | null
@@ -520,14 +565,38 @@ export type Database = {
           },
         ]
       }
+      verification_rate_limit: {
+        Row: {
+          attempts: number
+          ip: string
+          window_start: string
+        }
+        Insert: {
+          attempts?: number
+          ip: string
+          window_start: string
+        }
+        Update: {
+          attempts?: number
+          ip?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      check_verification_rate_limit: {
+        Args: { p_ip: string; p_limit: number; p_window_seconds: number }
+        Returns: boolean
+      }
+      find_user_id_by_email: { Args: { p_email: string }; Returns: string }
       firm_id: { Args: never; Returns: string }
       firm_role: { Args: never; Returns: string }
       generate_certificate_number: { Args: never; Returns: string }
+      generate_verification_token: { Args: never; Returns: string }
       increment_training_seconds: {
         Args: { p_delta: number; p_enrollment_id: string }
         Returns: undefined

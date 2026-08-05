@@ -6,6 +6,9 @@ export default function CheckoutForm() {
   const [seats, setSeats] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // US-only (Katy): all training and certification data stays in the US, and
+  // Stripe Checkout has no billing-country allowlist to enforce it for us.
+  const [isUsFirm, setIsUsFirm] = useState(false);
 
   const pricePerSeat = seats >= 25 ? 28 : seats >= 10 ? 32 : 35;
   const total = seats * pricePerSeat;
@@ -19,11 +22,12 @@ export default function CheckoutForm() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seats }),
+        body: JSON.stringify({ seats, billingCountry: isUsFirm ? "US" : "" }),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to start checkout. Please try again.");
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? "Failed to start checkout. Please try again.");
       }
 
       const { url } = (await res.json()) as { url: string };
@@ -59,9 +63,24 @@ export default function CheckoutForm() {
         <span className="font-semibold text-gray-800">${total}/yr</span>
       </p>
 
+      <label className="flex max-w-sm cursor-pointer items-start gap-2.5 text-sm text-gray-600">
+        <input
+          type="checkbox"
+          checked={isUsFirm}
+          onChange={(e) => setIsUsFirm(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0"
+        />
+        <span>
+          My firm is based in the United States.{" "}
+          <span className="text-gray-400">
+            IURIX is available to US firms only — all data is held in the US.
+          </span>
+        </span>
+      </label>
+
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || !isUsFirm}
         className="mt-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl px-8 py-3 text-base transition-colors"
       >
         {loading ? "Redirecting…" : "Get Started"}
