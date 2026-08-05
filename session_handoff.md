@@ -14,8 +14,10 @@
 > secrets added once (listed below) and then anyone can ship from any machine, Windows included.
 > That is also why this is no longer blocked on your Mac.
 >
-> Work waiting on you: add the secrets, run the workflow, review the preview, and check the three
-> unverified case citations before promoting to production.
+> **Your step-by-step plan for tomorrow is `.planning/DEPLOY-RUNBOOK.md`** — seven steps, roughly
+> 90 minutes: sync, add five GitHub secrets, run CI for a preview, review it (including 390px
+> mobile, which nobody has checked), verify the case citations, promote, then clean up.
+> Start there rather than here.
 
 **Date:** 2026-08-03 (**Rob**, terminal). Three commits on `redesign-iurix`: a sync-prep commit,
 the merge of Max's 74 commits, and the marketing rebuild. **Nothing pushed yet — see Next steps.**

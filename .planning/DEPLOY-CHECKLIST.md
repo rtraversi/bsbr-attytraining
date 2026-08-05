@@ -1,6 +1,16 @@
 # Deploy Checklist — Cloudflare Workers
 **Prepared:** 2026-06-17 | **For:** Rob + Max morning session 2026-06-18
 
+
+> ## ⚠️ Superseded in part, 2026-08-05
+> This document predates the discovery that **OpenNext cannot build on native Windows** —
+> `pnpm run deploy` there produces a Worker that 500s on every route. The Step 2 instruction
+> below is safe only on macOS/Linux. Deploys now run through CI:
+> see **`.planning/DEPLOY-RUNBOOK.md`** and `.github/workflows/deploy.yml`.
+> The secret-setup steps here are still accurate and still useful.
+
+---
+
 This deploys the Next.js app to Cloudflare Workers so it's accessible at a live URL instead of localhost.
 
 ---
