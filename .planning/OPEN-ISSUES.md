@@ -14,23 +14,46 @@ permanently routed around. None of the items below block shipping code.
 ## 🔴 P0 — before any real customer exists
 
 ### 1. Production runs on the STAGING database · **Rob**, in progress
-`iurixaccreditation.com` inlines `ndmzvtuywcufvkxtkjhg` (**IURIX STAGING**). **IURIX PROD**
-(`ttqthtzdjacrhjtrcmmy`) has been **INACTIVE** since it was created on 2026-06-11 — free-tier
-projects pause after 7 days idle.
+### 📄 Full detail: **`.planning/PROD-CUTOVER.md`** — read that before touching either database
 
-Rob is upgrading to Supabase Pro within 24h of 2026-08-05 and activating the prod DB.
+**Progress 2026-08-05 (second session):** Rob upgraded to Pro and unpaused **IURIX PROD**
+(`ttqthtzdjacrhjtrcmmy`). It had **zero** migrations, tables and buckets. It is now
+schema-complete: `0001`–`0022` applied, migration history rewritten to the repo's version strings,
+and the un-versioned objects created. Schema verified identical to staging on tables, columns,
+policies, functions and indexes.
 
-**The trap when the project ref changes.** The Supabase URL and anon key live in **three** places
-and must all move together:
+`iurixaccreditation.com` still inlines `ndmzvtuywcufvkxtkjhg` (**IURIX STAGING**). **Nothing has
+been switched over.**
+
+> 🔴 **Migrations alone do NOT produce a working database.** Four objects were created by hand in
+> the dashboard and are in no migration: the `certificates` bucket, the `courses` row, and **two
+> Database Webhooks that are the entire certificate pipeline**. A project built only from
+> migrations looks complete and then silently never issues a certificate. Found by diffing
+> **triggers** — every other axis matched. See `PROD-CUTOVER.md`.
+
+**Remaining, all Rob:**
+1. Enable **Database Webhooks** on IURIX PROD — it has no `supabase_functions` schema and no
+   `pg_net`, so the two triggers cannot be created until this is on
+2. Auth → Site URL + redirect allowlist must include `https://iurixaccreditation.com`, or every
+   invite and password reset breaks (`redirectTo: ${appUrl}/auth/callback`)
+3. The credential swap
+4. Rotate the webhook shared secret for PROD — staging's is stored **in plaintext in the trigger
+   definition**, readable by anyone who can query `pg_trigger`
+
+**The trap when the project ref changes.** The Supabase URL and keys live in **FOUR** places — this
+list previously said three — and must all move together:
 
 | Where | Consumed by | If missed |
 |---|---|---|
 | `.env.local` | `next dev` | local dev breaks loudly |
-| Worker secrets | server-side reads at runtime | server calls fail |
+| App Worker secrets | server-side reads at runtime | server calls fail |
+| **`workers/cert-worker` secrets** | **the cron jobs** | **crons keep writing to STAGING. Nothing errors.** |
 | **GitHub Actions secrets** | **inlined into the browser bundle at build time** | **sign-in breaks silently, CI still green** |
 
-Migrations `0001`–`0022` must exist on whichever project takes traffic. Verify it landed by
-grepping the live client bundle for the project ref, not by trusting the deploy output.
+`cert-worker` is a separate Worker with its own `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
+(`workers/cert-worker/src/index.ts`, `Env`). Verify the swap landed by grepping the **live client
+bundle** for the project ref, not by trusting the deploy output — and confirm a cert PDF actually
+appears in the bucket after a quiz pass, which is the only proof the webhooks are wired.
 
 ### 2. A customer email promises a refund nobody has automated · **Rob**
 Carried from Max's 08-03 handoff and still unresolved — it was deferred during the deploy and is
@@ -66,10 +89,26 @@ table, deliberately inside `overflow-x-auto`.
 ## 🟠 P1 — before taking real money
 
 ### 6. Stripe is still in sandbox · **Rob**
-Checkout hardcodes `price_1TjNHc6ZCSojEKRrKs79ToJ0` (`app/api/checkout/route.ts:8`), which is
-`livemode: false`. Live-mode object creation was deferred pending Stripe Tax. The 17 firms in the
-database all carry a `stripe_subscription_id` and are therefore test records — **confirm that
-before assuming it.**
+Live-mode object creation was deferred pending Stripe Tax. The 17 firms in the database all carry a
+`stripe_subscription_id` and are therefore test records — **confirm that before assuming it.**
+
+> ✅ **The hardcoded price ID is gone** (branch `stripe-lookup-key`, built and preview-verified
+> 2026-08-05, **not yet merged or deployed**). Checkout resolves the Price by `lookup_key` at
+> runtime, so going live no longer requires a source edit and a redeploy in the middle of the
+> key-and-webhook cutover. The fallback to the sandbox ID is gated on the secret key being a **test**
+> key, so live mode refuses rather than charging against a Price nobody chose. **What remains is a
+> dashboard action: create the live Price with `lookup_key: per_seat_annual`.**
+
+### 6b. 🔴 The refund the code promises but never issues · **Rob**, before live money
+`app/api/webhooks/stripe/route.ts:630` emails a **non-US buyer** telling them *in writing* that
+their payment is being refunded. `refunds.create` appears **zero times** in the codebase, by design
+— cancelling a subscription stops future billing, it does not return the payment just captured.
+
+Harmless on sandbox money. The day Stripe goes live, a non-US buyer who slips past the checkout
+guard is charged, cancelled, told a refund is coming, and nothing issues it unless Rob acts on the
+operator alert. Either soften the wording or actually call `refunds.create`. **This is issue #2
+below, localised** — it is the non-US path specifically, not the duplicate path, which only alerts
+the operator to decide.
 
 ### 7. Four Stripe config deltas, all customer-visible or tax-affecting · **Rob**, dashboard
 From the 2026-08-03 audit in `CLAUDE.md`:
@@ -113,11 +152,46 @@ Published deliberately, to build to match. Every day it stays unbuilt is a day t
 
 ---
 
+### 9b. 🔴 The quiz runs on placeholder questions · **Rob / Katy**
+**Surfaced 2026-08-05.** `quiz_questions` holds **8 rows, all tagged `PLACEHOLDER:*`, and zero real
+ones** — on staging and now on PROD (seeded there for parity so the environment is testable).
+
+`0003_quiz_questions.sql` calls them *"placeholder questions (replace with Rob's real pool before
+launch)"*. `BACKLOG.md` wants **24–32** and lists it under "Blocked on Rob";
+`CONTENT-10-STEPS.md` Task 7 is the home for it.
+
+This is the **certifiable layer** — the thing the certificate attests to, and the only graded
+component in the product. Everything else on this list is infrastructure; this is the substance.
+
+### 9c. Pre-Stripe duplicate purchase check is still open · **either**
+`/api/checkout` performs no identity check, so a customer who already has an account can reach
+Stripe and be charged before anything stops them. `BACKLOG.md` #1.
+
+**The safety net (#2) IS built** — contrary to what this list said before. The webhook resolves
+identity via `find_user_id_by_email` (`0018`), classifies the case as
+duplicate / email_in_use / unresolved / non_us_billing, cancels the duplicate subscription and files
+a `provisioning_failures` row. So the money stops billing; it is not automatically returned (see
+6b). The remaining gap is that the buyer is charged at all.
+
+---
+
 ## 🟡 P2 — housekeeping, no customer impact
 
-### 10. `supabase db push` for `0023_remove_avatars.sql` · **either**
-The only unapplied migration. Pure cleanup — it deletes the avatars bucket and its objects, and no
-code references avatars. Safe in either order; nothing waits on it.
+### 10. 🔴 `0023_remove_avatars.sql` CANNOT RUN — needs rewriting · **either**
+**Reclassified 2026-08-05. This is not housekeeping any more.** It fails:
+
+```
+ERROR: 42501: Direct deletion from storage tables is not allowed. Use the Storage API instead.
+CONTEXT: PL/pgSQL function storage.protect_delete()
+```
+
+Supabase added a guard that blocks `delete from storage.objects` / `storage.buckets` from SQL, and
+`0023` does exactly that. It is the only migration unapplied in **every** environment, and because
+it is DDL inside a transaction it takes everything batched with it down too — so **the next person
+to run `supabase db push` gets a failure that also rolls back anything else pending.**
+
+Rewrite it to drop the bucket through the Storage API rather than SQL. Until then it is
+deliberately not recorded in IURIX PROD's migration history, matching staging.
 
 ### 11. Remove the production guards on `/cookies` and `/mockup` when they stop being true
 Both 404 in production and stay viewable under `next dev`.
@@ -162,6 +236,20 @@ Node 24. Harmless today, will not be forever.
 - **`.planning/BACKLOG.md` items 1, 2, 5 and 6** remain open on their own terms: pre-Stripe
   duplicate purchase check, the webhook re-purchase safety net, removing `devLink` from production
   routes, and the "Try Again" quiz button not resetting state.
+
+---
+
+## 📝 Corrections to earlier docs (2026-08-05, second session)
+
+- **`BACKLOG.md` #2 is DONE**, not open — see 9c. #1 genuinely is still open.
+- **The credential swap is four places, not three** — `workers/cert-worker` has its own Supabase
+  secrets. Every prior doc undercounts this.
+- **CLAUDE.md says Postgres 15.** Both Supabase projects run **17.6.1**.
+- **CLAUDE.md said the price ID is hardcoded at `app/api/checkout/route.ts:17`.** True until
+  `stripe-lookup-key`; the file no longer contains a price ID.
+- **The `certificates` bucket being hand-created was documented all along**, in a comment inside
+  `0013_settings_v1.sql`. It was never carried into a checklist, which is exactly how it nearly
+  became a silent production failure. `.planning/PROD-CUTOVER.md` exists so that cannot repeat.
 
 ---
 
