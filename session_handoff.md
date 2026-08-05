@@ -229,3 +229,27 @@ be traced rather than invented) and resolved the retention contradiction in
 the Rule 5.3 evidence a certificate rests on. Consequence for the Privacy Policy — training
 activity is retained as long as the certificates it supports, which is indefinitely, and that must
 be stated.
+
+---
+
+## ⚠️ The weekly brief broke and was repaired (2026-08-05)
+
+The brief artifact rendered **completely empty** at the end of the day. Max spotted it.
+
+**Cause was mine.** Its 135 items live in a JavaScript `SEED` array of double-quoted strings, and I
+patch that file by string replacement. Two of my edits (`ix-doublebill` on 08-04 and
+`ix-legaldrafts`) inserted **raw straight double quotes inside those strings**, which terminated the
+string early, made the whole script a syntax error, and blanked the board. Nothing rendered at all,
+so it looked like total data loss.
+
+**No data was lost.** The 135 rows and every verbatim decision log were intact in the file the whole
+time; only the script failed to execute. Repaired by converting the offending quotes to curly ones,
+verified by parsing the array under `node` before republishing (3 sections, 135 tasks), and
+republished to the same URL.
+
+**Rule for anyone patching that artifact:** never insert a straight `"` into a `t:"..."` value. Use
+curly quotes, and **parse the `SEED` array before publishing** rather than trusting the diff. A
+silent syntax error in that file is indistinguishable from having lost everything.
+
+Max is doing a manual cleanup pass on the brief on 2026-08-06; several rows are now very long,
+mine included.
