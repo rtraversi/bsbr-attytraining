@@ -118,6 +118,45 @@ and framed as one state's guidance, deliberately: Iurix is sold nationally with 
 state-specific accreditation claim, and this must never read as a California
 endorsement of the product.
 
+## 🔴 This machine cannot produce a working Cloudflare build (2026-08-05)
+
+The redesign is built, pushed and uploaded as a **preview version** — and it 500s on every
+route. **Production is untouched and healthy**, which is exactly why we uploaded a preview
+instead of deploying.
+
+- Preview: `https://d5cbb723-bsbr-attytraining.aistaffcompliance.workers.dev` — every route 500,
+  `x-opennext: 1`, static assets serve fine. **Do not promote this version.**
+- Live production version is still `0cd156ef-1b0e-4b5d-a43a-3a95f0e63039` (2026-07-30), serving 200.
+
+**It is the Windows build, not the code and not the config.** Evidence:
+
+1. Reproduced locally in workerd (`opennextjs-cloudflare preview`) — 500 with no Cloudflare
+   involved, so it is the bundle.
+2. All ten env vars the code reads exist as Worker secrets; nothing is missing.
+3. `.open-next/server-functions/default/.next/required-server-files.json` contained real Windows
+   paths — `C:\Sites\attytraining`, `.next\routes-manifest.json`, `.next\server\pages-manifest.json`.
+   In workerd those do not resolve, so the Next server cannot load its own manifests.
+4. OpenNext prints the warning itself on every run: *"not fully compatible with Windows… could
+   encounter unpredictable failures during runtime."*
+
+Rewriting those 22 paths to POSIX was **not sufficient** — `handler.mjs.meta.json` carries 88 more
+and the contamination is spread through the bundle. Hand-patching a bundle that fronts Stripe and
+Supabase is the wrong answer; do not go further down that road.
+
+**Build on Linux.** In rough order of preference:
+
+1. **Cloudflare Workers Builds / GitHub Actions** — `redesign-iurix` is already pushed. CI builds
+   on Linux, which removes both this problem and the local-CF-login problem. Note the current
+   production deploy shows `Source: Unknown (deployment)`, i.e. it was pushed manually, so CI may
+   not be connected yet.
+2. **WSL** — not currently installed (`wsl --install`). OpenNext's own recommendation.
+3. **Build from Max's machine** if it is not Windows.
+
+Note for whoever picks this up: local builds also need symlink permission on Windows, which is a
+*separate* issue from the above. Developer Mode is off and the shell must be elevated, or
+`next build` fails at "Collecting build traces" with `EPERM … symlink`. Rob ran the successful
+build in an elevated PowerShell.
+
 ## Next steps
 
 1. **Push.** Three commits sit unpushed on `redesign-iurix`; `main` is still behind origin.
