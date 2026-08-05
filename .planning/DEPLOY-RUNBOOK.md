@@ -1,6 +1,6 @@
 # Deploy Runbook — remove the Mac dependency, ship the redesign
 
-**Written:** 2026-08-05 (Rob + Claude) · **For:** Max, 2026-08-06
+**Written:** 2026-08-05 (Rob + Claude) · **For:** Max, 2026-08-05
 **Branch:** `redesign-iurix` (92 commits, all pushed) · **Worker:** `bsbr-attytraining`
 
 ## What this fixes
