@@ -14,10 +14,18 @@
 > secrets added once (listed below) and then anyone can ship from any machine, Windows included.
 > That is also why this is no longer blocked on your Mac.
 >
-> **Your step-by-step plan for tomorrow is `.planning/DEPLOY-RUNBOOK.md`** — seven steps, roughly
-> 90 minutes: sync, add five GitHub secrets, run CI for a preview, review it (including 390px
-> mobile, which nobody has checked), verify the case citations, promote, then clean up.
-> Start there rather than here.
+> **Two documents, in this order:**
+>
+> 1. **`.planning/MERGE-GUIDE.md`** — `main` and `redesign-iurix` have diverged (your 26 commits
+>    vs Rob's 19) and there are **12 conflicts**. Merge `main` INTO `redesign-iurix`, not the
+>    reverse. One decision is already made: **avatars stay removed** — your signed-URL work is
+>    superseded by Rob's 07-28 decision to drop staff photos entirely. There is also a second
+>    `0018` migration collision to renumber.
+> 2. **`.planning/DEPLOY-RUNBOOK.md`** — seven steps, ~90 min: add five GitHub secrets, run CI for
+>    a preview, review it (including 390px mobile, which nobody has checked), verify the case
+>    citations, promote, clean up.
+>
+> The runbook's step 2 is the one that removes the Mac dependency permanently.
 
 **Date:** 2026-08-03 (**Rob**, terminal). Three commits on `redesign-iurix`: a sync-prep commit,
 the merge of Max's 74 commits, and the marketing rebuild. **Nothing pushed yet — see Next steps.**
