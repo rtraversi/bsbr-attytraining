@@ -31,9 +31,14 @@ export function Footer() {
             <IurixLockup />
             <p className="mt-5 text-[15px] text-ink-soft">iurixaccreditation.com</p>
             {/* Contact address decided 2026-08-03 (Rob): info@iurixaccreditation.com,
-                a Zoho alias on the domain. The PHONE placeholder is still a genuine
-                TBD — it lands when the Twilio voicemail line is provisioned
-                (.planning/BACKLOG.md item 7). Do not invent a number. */}
+                a Zoho alias on the domain.
+
+                The phone number is deliberately ABSENT rather than shown as a
+                "[PHONE — TBD]" placeholder: this ships to the live site, and a
+                visible placeholder on a compliance product's footer reads as an
+                unfinished page to exactly the buyer we are trying to reassure.
+                Add the number here once the Twilio voicemail line is provisioned
+                (.planning/BACKLOG.md item 7). Do not invent one. */}
             <p className="mt-1 text-[15px]">
               <a
                 href="mailto:info@iurixaccreditation.com"
@@ -41,7 +46,6 @@ export function Footer() {
               >
                 info@iurixaccreditation.com
               </a>
-              <span className="text-ink-mute"> · [PHONE — TBD]</span>
             </p>
           </div>
 
