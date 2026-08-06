@@ -6,6 +6,12 @@ https://claude.ai/code/artifact/fd19e15d-9757-4e0d-9433-b78348329075
 It carries **open work only**. Once an item is done it is retired to a dated file in this folder,
 verbatim, and removed from the board. That is what keeps it *weekly* rather than an ever-growing log.
 
+## The board's source lives here too
+
+`weekly-brief.html` in this folder **is** the board. Publishing it renders the artifact above;
+before 2026-08-06 the only copy was on one machine and in the published page, which is the same
+single-place problem this archive exists to fix. Edit this file, then republish to the same URL.
+
 ## Why the archive lives in the repo
 
 Rob and Max work on different machines, so the repo is the only shared source of truth. An archive
