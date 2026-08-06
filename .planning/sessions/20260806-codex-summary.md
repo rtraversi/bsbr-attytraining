@@ -2,8 +2,9 @@
 
 ## Outcome
 
-Completed and deployed the remaining code portion of Tier 0. `main` and
-`origin/main` now point to `dbb52ab`.
+Completed and deployed the remaining code portion of Tier 0 in `dbb52ab`.
+The final documentation-only wrap commit is `b297db6` on `main` and
+`origin/main`; it does not require a production deployment.
 
 ## Work completed
 
