@@ -55,6 +55,15 @@ The original rationale does not survive the fact that both projects carry an **i
 Staging already represents production structurally. The only difference is the data, which is
 exactly what should differ.
 
+## A third file exists
+
+`.env.production` (51 bytes) sits alongside these two. It contains only `NEXT_PUBLIC_APP_URL` and
+**no credentials**, and it is gitignored. Next loads it during production builds, so it can
+influence a build even though nothing in this document points at it. Found by terminal-Claude
+2026-08-06. Left alone rather than deleted on a wrap-up — decide deliberately whether it should
+exist at all, given GitHub Actions also supplies `NEXT_PUBLIC_APP_URL` at build time and two
+sources for one value is how a wrong one goes unnoticed.
+
 ## Checks
 
 Confirm the two files disagree, which is the point:
