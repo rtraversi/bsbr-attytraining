@@ -1,13 +1,26 @@
 -- =============================================================================
 -- 0023_remove_avatars.sql
--- Removes the profile-photo feature added in 0013, including the PRIVATE
--- bucket that 0019 established.
+-- Originally removed the profile-photo feature's storage objects directly in
+-- SQL. Supabase's storage.protect_delete() trigger now blocks
+-- `delete from storage.objects` / `delete from storage.buckets` outright, so
+-- that version can never run — and because it was DDL inside a transaction,
+-- it took whatever else was batched in the same `supabase db push` down with
+-- it. Found 2026-08-05, fixed 2026-08-06.
 --
 -- Decision (Rob, 2026-07-28): this product should not hold profile photographs
 -- of law firm staff at all. Staff are enrolled by their employer rather than
 -- signing up themselves, and the photo served no function in the certification
--- record. That reasoning is about what the product should store, not about how
--- the bucket was configured — so it stands regardless of the flag.
+-- record. That reasoning is unchanged by any of the above — only the removal
+-- MECHANISM was wrong.
+--
+-- The migration's own comment 3 (below, preserved) already argued that
+-- touching auth.users.raw_user_meta_data from a migration is the wrong tool
+-- and should be a one-off Admin API script instead. The same argument applies
+-- to storage, once protect_delete() makes it non-optional: this migration is
+-- now a no-op, and the actual deletion is
+-- scripts/remove-avatars-bucket.ts, run once by hand per environment via the
+-- Storage API (SUPABASE_SERVICE_ROLE_KEY), watched rather than automated,
+-- because it is destructive and irreversible.
 --
 -- Numbering: written as 0014, renumbered to 0018, and renumbered again to 0023
 -- on 2026-08-05 when this branch merged main. It collided with
@@ -15,14 +28,8 @@
 -- training_events_event_type_check, so the warning attached to 0017 does not
 -- apply to this file.
 --
--- ⚠ Ordering note: this migration no longer drops a PUBLIC bucket.
--- 0019_private_avatars.sql runs first in every environment and already set
--- `public = false`, so by the time this executes the exposure 0013 created is
--- closed and what remains is the feature itself. 0019 added no
--- storage.objects policies — it changed one flag — so the deletes below are
--- still sufficient and there is no policy to drop.
---
--- Application code for the feature is removed in the same change:
+-- Application code for the feature was removed in the same change that
+-- originally added this migration:
 --   - app/api/account/avatar/route.ts            (deleted)
 --   - app/dashboard/settings/_components/avatar-upload.tsx (deleted)
 --   - lib/avatars.ts                             (deleted — 0019's signed-URL
@@ -30,35 +37,30 @@
 --   - avatar rendering in nav-pill.tsx, certification-forecast.tsx,
 --     team-table.tsx, dashboard/page.tsx, dashboard/layout.tsx,
 --     dashboard/settings/page.tsx
+-- That part shipped and is not affected by this fix — only bucket removal was
+-- blocked.
 -- =============================================================================
 
--- ---------------------------------------------------------------------------
--- 1. Delete any stored objects first.
---    storage.buckets has a foreign key from storage.objects, so the bucket
---    cannot be dropped while it still holds files. This is written to be safe
---    whether or not anyone actually uploaded a photo.
--- ---------------------------------------------------------------------------
-delete from storage.objects where bucket_id = 'avatars';
+-- Intentionally empty. See scripts/remove-avatars-bucket.ts for the actual
+-- removal, run once per environment through the Storage API.
+select 1;
 
 -- ---------------------------------------------------------------------------
--- 2. Drop the bucket.
--- ---------------------------------------------------------------------------
-delete from storage.buckets where id = 'avatars';
-
--- ---------------------------------------------------------------------------
--- 3. NOTE — residual `avatar_url` / `avatar_path` keys in
---    auth.users.raw_user_meta_data.
+-- Preserved from the original migration — still true, still the right call,
+-- just no longer actioned here.
 --
---    Any user who uploaded a photo still carries an `avatar_url` value in their
---    user_metadata, and anyone who changed their photo after 0019 carries an
---    `avatar_path` instead (0019 introduced the second shape; lib/avatars.ts
---    resolved both). Those values are now inert: no application code reads
---    either key, and the object they point at no longer exists.
+-- NOTE — residual `avatar_url` / `avatar_path` keys in
+-- auth.users.raw_user_meta_data.
 --
---    They are deliberately NOT cleaned up here. Writing to the `auth` schema
---    from a migration is discouraged by Supabase — that schema is managed by
---    the Auth service and direct writes can conflict with it. If the keys
---    should be stripped, do it through the Admin API
---    (`auth.admin.updateUserById`, spreading the existing user_metadata minus
---    `avatar_url`) as a one-off script, not as schema history.
+-- Any user who uploaded a photo still carries an `avatar_url` value in their
+-- user_metadata, and anyone who changed their photo after 0019 carries an
+-- `avatar_path` instead (0019 introduced the second shape; lib/avatars.ts
+-- resolved both). Those values are inert: no application code reads either
+-- key, and once the script runs the object they point at no longer exists.
+--
+-- Deliberately not cleaned up here or in the script below. Writing to the
+-- `auth` schema is discouraged outside the Auth service; if the keys should
+-- be stripped, do it through `auth.admin.updateUserById` (spreading the
+-- existing user_metadata minus `avatar_url`/`avatar_path`) as its own
+-- one-off script.
 -- ---------------------------------------------------------------------------
