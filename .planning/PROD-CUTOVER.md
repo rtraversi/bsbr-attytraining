@@ -1,8 +1,9 @@
 # PROD database cutover
 
-**Written:** 2026-08-05 (Rob + Claude, terminal)
+**Written:** 2026-08-05 (Rob + Claude, terminal) · **Tier 1 plan revised:** 2026-08-06
 **Status:** IURIX PROD is schema-complete and seeded. **Nothing points at it yet** — production
-still runs on IURIX STAGING. Three steps remain and two of them are Rob's.
+still runs on IURIX STAGING. Tier 1 is deliberately planned but not started; Max drives the
+Supabase and Cloudflare steps, and Rob changes the GitHub Actions secrets before a build.
 
 ---
 
@@ -79,26 +80,15 @@ filenames.
 
 ---
 
-## 🔴 `0023_remove_avatars.sql` cannot run
+## `0023_remove_avatars.sql` is no longer a cutover blocker
 
-It is the only migration unapplied in **every** environment, and it fails:
-
-```
-ERROR: 42501: Direct deletion from storage tables is not allowed. Use the Storage API instead.
-CONTEXT: PL/pgSQL function storage.protect_delete()
-```
-
-Supabase added a guard that blocks `delete from storage.objects` / `storage.buckets` in SQL. `0023`
-does exactly that. **Whoever next runs `supabase db push` hits this**, and because it is DDL inside a
-transaction, everything in the same batch rolls back with it.
-
-It needs rewriting to drop the bucket through the Storage API rather than SQL. Until then it is
-deliberately **not** recorded in PROD's migration history, matching staging, where it is also
-unapplied.
+Closed 2026-08-06 in `3fe0ca4`. Migration `0023` is an intentional no-op; the destructive bucket
+removal moved to `scripts/remove-avatars-bucket.mjs`, which was run and verified against staging.
+PROD never had that bucket. It must not be run again as part of this cutover.
 
 ---
 
-## What remains
+## Superseded 2026-08-05 summary
 
 ### Rob — dashboard, IURIX PROD
 
@@ -141,6 +131,102 @@ half-migrated system nobody notices.
 - [ ] Complete a quiz pass end to end → **a certificate PDF actually appears in the bucket**. This is
       the one that proves the Database Webhooks are wired.
 - [ ] Confirm the cert-worker cron ran against PROD, not staging
+
+## Tier 1 execution plan — do not start until explicitly approved
+
+This sequence cuts the live application from staging to the clean PROD project while rotating the
+Database Webhook shared secret. It does **not** enable Stripe live mode; `ix-stripeaudit` remains a
+separate launch gate. Record only identifiers, timestamps, versions and redacted command output in
+the evidence log — never commit a service-role key or webhook secret.
+
+### 0. Change control and recovery point
+
+1. Re-run the shared-state checks in `session_handoff.md`; require clean, matching `main`, deployed
+   app commit `dbb52ab` ancestral, and successful Actions run `31122263372` before touching config.
+2. Freeze unrelated deploys and config changes. Record the current Cloudflare app and cert-worker
+   versions, the current live browser-bundle project ref, and screenshots or exports of the staging
+   webhook definitions and PROD Auth URL settings. Do not put secret values in the export.
+3. Have the prior staging values securely available for rollback. No migrations, bucket deletions,
+   Stripe live-mode changes, or test-firm cleanup are part of Tier 1.
+
+### 1. Prepare IURIX PROD in Supabase — Max
+
+1. In **IURIX PROD** (`ttqthtzdjacrhjtrcmmy`), enable **Database Webhooks**. Confirm the feature
+   supplies the webhook support required by the dashboard before creating anything.
+2. Recreate both triggers by copying staging's definitions field-for-field, changing only the
+   environment-specific destination and the freshly rotated secret:
+
+   | Webhook | Source | Destination / contract | Required check |
+   |---|---|---|---|
+   | `cert-worker-quiz-pass` | `quiz_attempts`, `AFTER INSERT` | production cert-worker POST endpoint with `X-Webhook-Secret` | Trigger exists and can authenticate to the cert worker. Its HTTP handler is currently known to be inert after validating a passed quiz; retain it because it is part of the staging topology, but do not claim it generated the certificate. |
+   | `cert-queue-generate` | `cert_generation_queue`, `AFTER INSERT` | `https://iurixaccreditation.com/api/certs/generate` with `x-webhook-secret` | Endpoint accepts the new secret and claims the queue row exactly once. This is the event-driven certificate route. |
+
+   Do not improvise SQL triggers or change payload shape during the cutover. Compare trigger name,
+   table, event, URL, HTTP method, headers, enabled state and body template with staging before
+   saving. Afterward, inspect the PROD trigger list again; its count should match staging: the two
+   ordinary triggers plus these two matching Database Webhooks.
+3. In **Authentication → URL Configuration**, set the Site URL to
+   `https://iurixaccreditation.com` and add both the origin and
+   `https://iurixaccreditation.com/auth/callback` to the redirect allow-list. Preserve required
+   development/staging entries until their owners agree to remove them. This covers invitations,
+   password resets and seat reassignment, all of which use `${appUrl}/auth/callback`.
+
+### 2. Rotate the webhook secret — Max
+
+1. Generate one fresh, high-entropy PROD-only value in the approved secret manager. Never reuse the
+   staging value or paste the new value into a shell history, issue, commit, screenshot or this file.
+2. Use that same new value for the two current certificate-pipeline contracts:
+   `WEBHOOK_SECRET` and `CERT_WEBHOOK_SECRET` on the cert worker, and
+   `CERT_WEBHOOK_SECRET` on the app Worker. Put it in each PROD Database Webhook's
+   `x-webhook-secret` header as the route requires. This preserves the existing one-secret design;
+   splitting the secrets is a separate, code-reviewed hardening change.
+3. Verify authentication without revealing the value: an old/staging value is rejected with 401;
+   the new value is accepted by each intended endpoint. Do this only with an authorized controlled
+   request and record status codes, not headers or bodies containing secrets.
+
+### 3. Swap Supabase credentials in all four locations — Rob then Max
+
+Set the GitHub Actions values first; they are consumed only by the next Linux build. Then make the
+remaining changes in one controlled window and immediately deploy the already-reviewed `main`.
+The project URL must be `https://ttqthtzdjacrhjtrcmmy.supabase.co`; fetch the matching PROD anon and
+service-role keys from the PROD dashboard at execution time rather than copying values from notes.
+
+| Order | Location and owner | Required PROD values | Failure if omitted |
+|---:|---|---|---|
+| 1 | **GitHub Actions secrets — Rob** | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | The browser bundle remains bound to staging; CI can still pass while sign-in later fails or splits state. |
+| 2 | **App Worker secrets — Max** | Runtime Supabase URL, anon key where used, service-role key, and rotated `CERT_WEBHOOK_SECRET` | Server routes use the wrong database or cannot authenticate. Inventory the existing Worker secret names first; do not guess or delete unrelated secrets. |
+| 3 | **`workers/cert-worker` configuration and secrets — Max** | `SUPABASE_URL` (the non-secret `wrangler.toml` var), `SUPABASE_SERVICE_ROLE_KEY`, `WEBHOOK_SECRET`, `CERT_WEBHOOK_SECRET` | Its five-minute queue drain and daily crons silently continue against staging. |
+| 4 | **`.env.local` — Max** | Matching PROD URL, anon key, service-role key and local certificate secret | Local development no longer represents production; this is harmless to live traffic but essential for safe follow-up work. |
+
+Do not treat `wrangler.jsonc` as a replacement for the GitHub public build values: `NEXT_PUBLIC_*`
+values are inlined by the Actions build. Similarly, `SUPABASE_URL` in the cert worker is a deployed
+non-secret variable, not a Worker secret; update it together with that Worker’s secrets.
+
+### 4. Deploy and prove the full path — Max and Rob
+
+1. Dispatch the existing GitHub Actions production workflow from the verified `main` only. Do not
+   build OpenNext on Windows and do not use a push as a production deployment. Record the Actions
+   URL and deployed app version.
+2. Confirm the live browser bundle contains `ttqthtzdjacrhjtrcmmy`, not the staging ref. Inspect the
+   fetched JavaScript asset itself, not the deploy log or source tree.
+3. Use a controlled test recipient to send a real invite. Prove delivery, the link reaches
+   `/auth/callback`, the user can complete the authenticated redirect on the apex domain, and the
+   relevant Auth and application rows appear in PROD rather than staging.
+4. Complete a controlled quiz pass. Prove, in order: the PROD `cert_generation_queue` row is claimed
+   and succeeds; a certificate row is written; and the expected PDF exists in the private PROD
+   `certificates` bucket. This is the end-to-end certificate proof; a 200 from a Database Webhook is
+   insufficient on its own.
+5. Wait for the cert-worker five-minute cron (and observe the next daily cron or its Worker logs as
+   practical). Confirm its request/logs and any queue handling use the PROD project ref, with no new
+   writes in staging. Record the worker version and redacted log evidence.
+
+### 5. Decision and rollback
+
+Close Tier 1 only when every proof above is attached to the handoff and both webhook triggers, Auth
+URLs, four credential locations and the rotated secret are independently checked. If any test fails,
+stop Stripe work, restore the saved staging values in the same four locations, restore the prior
+app/cert-worker versions using the established deployment path, and re-run the browser, invite and
+certificate checks. Diagnose before trying again; do not retry a failed cutover blindly.
 
 ---
 
