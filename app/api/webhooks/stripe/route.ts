@@ -625,10 +625,13 @@ async function refuseNonUsBilling(
     `<strong>Subscription — ${cancelled ? 'CANCELLED' : 'STILL BILLING'}:</strong> ${session.subscription as string}`,
     `<strong>What happened:</strong> nothing was provisioned. US-only is a policy constraint (Katy), not a technical one.`,
     // Same standing rule as case 3: no refund API is called anywhere in this
-    // codebase, so a promise made in writing is kept by a human or not at all.
+    // codebase, so the refund happens because a human does it or not at all.
+    // The customer email no longer says a refund is already under way — it
+    // tells them to write in and arrange it — so this line states the work
+    // that is outstanding rather than a promise that needs honouring.
     cancelled
-      ? `<strong>🔴 Action required — REFUND:</strong> the subscription is cancelled and the customer has been told <em>in writing</em> that their payment is being refunded. Issue it in Stripe. Nothing automated will.`
-      : `<strong>🔴 Action required:</strong> the cancel call FAILED (${cancelError}). The subscription is still billing — cancel by hand, then refund. The customer has been told their payment is being returned.`,
+      ? `<strong>🔴 Action required — REFUND:</strong> the subscription is cancelled and a refund of the payment already taken needs to be issued. The customer has been told to email us to arrange it, not that it is already in motion. Issue it in Stripe. Nothing automated will.`
+      : `<strong>🔴 Action required:</strong> the cancel call FAILED (${cancelError}). The subscription is still billing — cancel by hand, then issue the refund. The customer has been asked to get in touch so we can stop the subscription and refund them.`,
     `<strong>Worth noting:</strong> layer 1 in /api/checkout should have stopped this before any charge. A row here means it was bypassed.`,
   ])
 }

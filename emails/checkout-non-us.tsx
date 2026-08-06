@@ -69,9 +69,14 @@ export function CheckoutNonUsEmail({ email, cancelled }: CheckoutNonUsProps) {
         <Text style={calloutItem} className={EMAIL_CLASS.text}>
           <span style={bullet}>→</span>{' '}
           {cancelled ? (
+            /* Says what is true and nothing more. Cancelling the subscription
+               stops future billing; it does not return the payment already
+               taken, and no refund is issued anywhere in this codebase. An
+               earlier version told the buyer their refund was already in
+               motion, which nothing was making true. */
             <>
               <strong>You will not be charged again</strong> — we&apos;ve cancelled the
-              subscription, and your payment is being refunded
+              subscription. The payment you already made has not been returned yet
             </>
           ) : (
             <>
@@ -89,10 +94,22 @@ export function CheckoutNonUsEmail({ email, cancelled }: CheckoutNonUsProps) {
         </Text>
       </Section>
 
+      {/* Its own paragraph, and first, because for someone who has just been
+          charged the refund is the only thing on this page that needs an
+          action from them. It carries the address itself rather than leaning
+          on the one below — an instruction to write in should not point at a
+          link the reader has not reached yet. */}
+      {cancelled && (
+        <Text style={paragraph} className={EMAIL_CLASS.text}>
+          To arrange a refund of the payment you already made, write to{' '}
+          <a href={`mailto:${SUPPORT_EMAIL}`} style={link}>
+            {SUPPORT_EMAIL}
+          </a>{' '}
+          and we&apos;ll take care of it.
+        </Text>
+      )}
+
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        {cancelled
-          ? 'Refunds usually take a few business days to appear, depending on your bank. '
-          : ''}
         If your firm is US-based and this address is wrong, or you&apos;d like us to let you know
         if that changes, write to{' '}
         <a href={`mailto:${SUPPORT_EMAIL}`} style={link}>
