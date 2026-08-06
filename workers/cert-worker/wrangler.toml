@@ -10,7 +10,10 @@ crons = ["*/5 * * * *", "0 9 * * *"]
 
 [vars]
 # Non-secret config — override per environment below
-SUPABASE_URL = "https://ndmzvtuywcufvkxtkjhg.supabase.co"   # fill in before first deploy
+# IURIX PROD (ttqthtzdjacrhjtrcmmy). This is a deployed var, NOT a secret: it only changes when
+# this Worker is redeployed, so it must move in the same window as SUPABASE_SERVICE_ROLE_KEY.
+# A mismatch between the two is silent in the wrong direction — see .planning/PROD-CUTOVER.md.
+SUPABASE_URL = "https://ttqthtzdjacrhjtrcmmy.supabase.co"
 APP_URL = "https://iurixaccreditation.com"        # live app origin — reminder-email links + the cron drain POST
 
 # Secrets (never commit values — set with `wrangler secret put <KEY>`):
