@@ -69,6 +69,31 @@ IURIX STAGING       13      107        18          9       44         4
 The trigger gap is the two Database Webhooks above — the only remaining schema difference, and it is
 not fixable from SQL until webhooks are enabled on the project (see below).
 
+> ✅ **Closed 2026-08-06.** Max enabled Database Webhooks on PROD and recreated both triggers. PROD
+> now reports **4** non-internal `public`-schema triggers, matching staging on table and event:
+> `cert_generation_queue` ×2 (webhook + `trg_cert_queue_updated_at`), `firm_members`
+> (`trg_sync_used_seats`), `quiz_attempts` (webhook). Auth Site URL and the `/auth/callback`
+> redirect allowlist are set, and the shared secret was rotated to a fresh PROD-only value.
+>
+> ⚠️ **One known, deliberate cosmetic difference — do not "fix" it in a schema diff.** PROD's two
+> webhook triggers are named `Cert-queue-generate` and `Cert-worker-quiz-pass` (capital C);
+> staging's are lowercase. The trigger name is a label only: nothing in the codebase references it,
+> and the webhook fires on table + event with behaviour determined entirely by the configured URL
+> and headers. Verified harmless and left alone rather than spending another dashboard pass on it.
+> A future staging-vs-PROD comparison **will** flag this as a difference; it is not one.
+>
+> To compare the two projects properly, filter to the `public` schema — an unfiltered `pg_trigger`
+> query also returns Supabase's own `storage` and `realtime` triggers and returns 9 rows, not 4:
+>
+> ```sql
+> select c.relname as table_name, t.tgname as trigger_name
+> from pg_trigger t
+> join pg_class c on c.oid = t.tgrelid
+> join pg_namespace n on n.oid = c.relnamespace
+> where not t.tgisinternal and n.nspname = 'public'
+> order by c.relname, t.tgname;
+> ```
+
 **Migration history.** The MCP `apply_migration` tool records a **timestamp** version
 (`20260805212209`), not the repo's `0001`. Left alone, a later `supabase db push` would treat every
 migration as unapplied and try to replay them against a populated database, failing on the first
