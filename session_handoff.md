@@ -7,8 +7,8 @@
 
 **Tier 0 is complete and production is live.** The deployed application commit
 is `dbb52ab` (`feat(stripe): resolve seat Price by lookup key`). The current
-Git head is `b297db6`, this handoff-only documentation commit; local `main` and
-`origin/main` both resolve to it.
+`main` branch also contains the documentation-only handoff commits created at
+wrap-up; they do not require a production deployment.
 
 GitHub Actions production run
 [`31122263372`](https://github.com/rtraversi/bsbr-attytraining/actions/runs/31122263372)
@@ -77,14 +77,15 @@ git ls-remote origin refs/heads/main
 gh run view 31122263372 --repo rtraversi/bsbr-attytraining --json status,conclusion,url
 ```
 
-Expected: clean tree, all Git refs at `b297db6`, and Actions conclusion
-`success`. The documentation-only `b297db6` push will create the normal preview
-workflow but deliberately does **not** need a production deploy; app production
-is `dbb52ab`. If any Git ref differs, stop before building or deploying and
-report the divergence. If Actions is not successful, inspect that run; do
-**not** blindly dispatch another production deploy. If authenticated,
-additionally run `wrangler deployments list --name bsbr-attytraining` to record
-the live version.
+Expected: clean tree; local `HEAD`, `origin/main`, and `ls-remote` agree; and
+Actions conclusion `success`. Confirm that `dbb52ab` is an ancestor of `HEAD`
+(`git merge-base --is-ancestor dbb52ab HEAD`). The documentation-only wrap push
+will create the normal preview workflow but deliberately does **not** need a
+production deploy; app production is `dbb52ab`. If the refs disagree, stop
+before building or deploying and report the divergence. If Actions is not
+successful, inspect that run; do **not** blindly dispatch another production
+deploy. If authenticated, additionally run `wrangler deployments list --name
+bsbr-attytraining` to record the live version.
 
 ## Next work — sequence stays deliberate
 

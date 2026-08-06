@@ -3,8 +3,8 @@
 ## Outcome
 
 Completed and deployed the remaining code portion of Tier 0 in `dbb52ab`.
-The final documentation-only wrap commit is `b297db6` on `main` and
-`origin/main`; it does not require a production deployment.
+The final documentation-only wrap commits follow it on `main`; they do not
+require a production deployment.
 
 ## Work completed
 
