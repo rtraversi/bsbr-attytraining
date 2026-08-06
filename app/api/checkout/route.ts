@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  choosePriceId,
+  priceLookupKey,
+  PriceResolutionError,
+} from "@/lib/stripe-price";
 
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
@@ -14,7 +19,51 @@ function getStripe(): Stripe {
   return _stripe
 }
 
-const PRICE_ID = "price_1TjNHc6ZCSojEKRrKs79ToJ0";
+/**
+ * The seat Price, resolved by lookup key rather than hardcoded.
+ *
+ * This was `const PRICE_ID = "price_1TjNHc6ZCSojEKRrKs79ToJ0"` — a
+ * `livemode: false` object, which meant going live required a source edit and a
+ * redeploy in the middle of the key-and-webhook cutover. See lib/stripe-price.ts
+ * for the full reasoning and for why the sandbox fallback is gated on test keys.
+ *
+ * Cached per Worker instance because the lookup is a network round trip on a
+ * value that changes roughly never. The FALLBACK IS NEVER CACHED: if it were, an
+ * instance that started before the lookup key was set would keep using the
+ * sandbox Price for its whole lifetime, and the cutover would appear to have
+ * silently not taken.
+ */
+let cachedPriceId: string | null = null;
+
+async function resolvePriceId(stripe: Stripe): Promise<string> {
+  if (cachedPriceId) return cachedPriceId;
+
+  const lookupKey = priceLookupKey();
+  // limit: 2 is enough to detect ambiguity without paging.
+  const list = await stripe.prices.list({
+    lookup_keys: [lookupKey],
+    active: true,
+    limit: 2,
+  });
+
+  const { priceId, usedFallback } = choosePriceId({
+    matches: list.data.map((p) => ({ id: p.id, active: p.active })),
+    secretKey: process.env.STRIPE_SECRET_KEY,
+    lookupKey,
+  });
+
+  if (usedFallback) {
+    console.warn(
+      `[checkout] No Stripe Price carries lookup_key "${lookupKey}"; using the ` +
+        `sandbox Price ${priceId}. This is expected until the lookup key is set, ` +
+        `and is impossible once STRIPE_SECRET_KEY is a live key.`
+    );
+  } else {
+    cachedPriceId = priceId;
+  }
+
+  return priceId;
+}
 
 /**
  * LAYER 1 of the US-only rule — charge prevention.
@@ -93,11 +142,14 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const session = await getStripe().checkout.sessions.create({
+    const stripe = getStripe();
+    const priceId = await resolvePriceId(stripe);
+
+    const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [
         {
-          price: PRICE_ID,
+          price: priceId,
           quantity: seats,
           adjustable_quantity: { enabled: true, minimum: 1, maximum: 500 },
         },
@@ -121,7 +173,16 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
-    console.error("Stripe checkout error:", err);
+    // A price-resolution failure is an operator misconfiguration, not a Stripe
+    // outage or a bad request, and it will affect EVERY buyer until someone
+    // fixes it in the dashboard. Logged distinctly so it is greppable and does
+    // not disappear into the general checkout-error noise. The buyer still gets
+    // the generic message — the lookup key is not their problem.
+    if (err instanceof PriceResolutionError) {
+      console.error("[checkout] STRIPE PRICE MISCONFIGURED —", err.message);
+    } else {
+      console.error("Stripe checkout error:", err);
+    }
     return NextResponse.json(
       { error: "Failed to create checkout session" },
       { status: 500 }
