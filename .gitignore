@@ -46,7 +46,11 @@ yarn-error.log*
 next-env.d.ts
 
 # keys
-.env.local
+# Deliberately broad: .env.prod holds the PROD service-role key and was added
+# 2026-08-06 so local dev can stay pointed at staging. A named-file list would
+# have missed it. Anything .env* except the committed .env.example stays out.
+.env*
+!.env.example
 .dev.vars
 
 # local-only directories

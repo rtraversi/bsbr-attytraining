@@ -221,7 +221,51 @@ service-role keys from the PROD dashboard at execution time rather than copying 
 | 1 | **GitHub Actions secrets — Rob** | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | The browser bundle remains bound to staging; CI can still pass while sign-in later fails or splits state. |
 | 2 | **App Worker secrets — Max** | Runtime Supabase URL, anon key where used, service-role key, and rotated `CERT_WEBHOOK_SECRET` | Server routes use the wrong database or cannot authenticate. Inventory the existing Worker secret names first; do not guess or delete unrelated secrets. |
 | 3 | **`workers/cert-worker` configuration and secrets — Max** | `SUPABASE_URL` (the non-secret `wrangler.toml` var), `SUPABASE_SERVICE_ROLE_KEY`, `WEBHOOK_SECRET`, `CERT_WEBHOOK_SECRET` | Its five-minute queue drain and daily crons silently continue against staging. |
-| 4 | **`.env.local` — Max** | Matching PROD URL, anon key, service-role key and local certificate secret | Local development no longer represents production; this is harmless to live traffic but essential for safe follow-up work. |
+| 4 | **`.env.local` — Max** | 🔴 **REVERSED 2026-08-06 — LEAVE THIS ON STAGING.** Create a separate gitignored `.env.prod` for PROD credentials instead. | See below. Pointing local dev at PROD removes the last environment that is safe to click around in. |
+
+> ### 🔴 Why location 4 is now the opposite of what this table used to say
+>
+> This document originally said to point `.env.local` at PROD so that "local development
+> represents production." **That is wrong, and following it would undo the reason this cutover
+> exists.**
+>
+> There is **one website and two databases.** `iurixaccreditation.com` is a single Worker that
+> talks to whichever Supabase project the current deployment was built with. Today that is
+> STAGING — which is the only reason the 17 test firms are on staging rather than in production.
+> Everyone has been testing against the live site this whole time and it has been landing
+> somewhere harmless *by accident of configuration, not by design*.
+>
+> After the swap, the live site writes to PROD. Checked 2026-08-06, there is no escape hatch:
+>
+> - **Preview deploys are not one.** `.github/workflows/deploy.yml` builds preview and production
+>   from the *same* `secrets.NEXT_PUBLIC_SUPABASE_*`. Once those are swapped, every preview URL
+>   points at PROD too.
+> - **`.env.local` was the last one**, and the original instruction gave it away.
+>
+> The result would be zero safe environments, and every casual click writing to the database this
+> plan went to real trouble to create clean. That directly contradicts the "Staging keeps 17 test
+> firms" section below, whose whole argument is that stale test data on a production database
+> destroys the reconciliation report's credibility on the day of the first real sale. Testing
+> against PROD rebuilds that problem within a week, and cleanup is genuinely painful here — the
+> `RESTRICT` foreign keys mean deleting a test user requires `training_events` → `firms` →
+> `auth.users`, in that order.
+>
+> **So:** `.env.local` keeps STAGING credentials, and PROD gets its own gitignored `.env.prod`,
+> named explicitly whenever something must target production:
+>
+> ```bash
+> npx dotenv -e .env.prod -- node scripts/verify-cutover.mjs
+> ```
+>
+> Targeting production becomes a deliberate act rather than the default. The original rationale
+> ("local should represent production") does not survive contact with the fact that both projects
+> carry an identical schema — staging already represents production structurally. The only
+> difference is the data, which is exactly the thing that *should* differ.
+>
+> ⚠️ **The Phase 4 proof below is a deliberate exception.** The invite and quiz-pass test writes
+> real rows to PROD, because that is the only thing that proves the Database Webhooks are wired.
+> Decide before running it whether those rows get cleaned out afterwards or are documented as a
+> known exception — do not leave it undecided.
 
 Do not treat `wrangler.jsonc` as a replacement for the GitHub public build values: `NEXT_PUBLIC_*`
 values are inlined by the Actions build. Similarly, `SUPABASE_URL` in the cert worker is a deployed
