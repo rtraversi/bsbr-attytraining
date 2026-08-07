@@ -317,3 +317,93 @@ would destroy exactly that.
 
 **This is the strongest single argument for the clean-PROD path that was chosen**, and the reason
 promoting staging in place would have required purging it first.
+
+---
+
+## `ix-prodseed` — the Phase 4 proof, seed then purge
+
+**Decided 2026-08-07 (Max): the PROD test rows get PURGED after the proof, not kept and
+documented.** The open question at the top of `session_handoff.md` is closed.
+
+The reasoning is the section immediately above, applied to PROD. Stale test data destroys the daily
+reconciliation report's credibility on the day of the first real sale — the exact trap the 17 staging
+test firms represent, and the entire reason PROD was kept clean. "Documented as a known exception" is
+a note in a file; the reconciliation job does not read files. It would report the discrepancy anyway,
+on the one morning it most needs to be believed.
+
+### Why this is a runbook and not a checklist item
+
+PROD holds the `courses` row and the seeded questions and **nothing else** — no firms, no users.
+There is no dashboard button that creates a firm. A firm exists only as the output of
+`checkout.session.completed` reaching the provisioning webhook, so the certificate proof is a real
+Stripe purchase, in that order, with nothing skippable. **None of it can start until the cutover is
+finished** — every step writes to whichever database the deployed bundle is built against, so
+running it early proves something about staging.
+
+### The ordered seed sequence
+
+Run only after §4 step 2 — the live browser bundle verified to contain `ttqthtzdjacrhjtrcmmy`.
+Record the ids as you go; the purge needs the firm id and nothing else, but the rest is the evidence
+log.
+
+| # | Step | Where | What proves it worked |
+|---:|---|---|---|
+| 1 | Sandbox Stripe checkout against the live site, one seat | `iurixaccreditation.com/pricing` | Checkout completes; note the `cs_…` session id |
+| 2 | Provisioning webhook creates the firm | PROD `firms`, `seats`, `firm_members` | A `firms` row exists with the `cus_…`/`sub_…` from step 1. **Note its id — this is the purge target.** |
+| 3 | Firm admin sets a password from the onboarding redirect | PROD `auth.users` | Sign-in succeeds on the apex |
+| 4 | Admin invites one employee | PROD `firm_members`, email | Invite arrives and the link lands on `/auth/callback`, not an error |
+| 5 | Employee completes the training and passes the quiz | PROD `quiz_sessions`, `quiz_attempts`, `enrollments` | `quiz_attempts.passed = true`; **`question_ids` is populated** (migration 0024 — an empty column here means 0024 was never pushed to PROD) |
+| 6 | Certificate generates | PROD `cert_generation_queue` → `certificates` → Storage | **A PDF exists in the private `certificates` bucket.** This is the proof; a 200 from a Database Webhook is not. |
+| 7 | Cert-worker cron runs against PROD | Worker logs | Requests carry the PROD project ref; no new writes in staging |
+
+> ⚠️ **Migration `0024_quiz_sessions.sql` must be on PROD before step 5.** It was applied to staging
+> on 2026-08-07. Without it `/api/quiz/start` fails and the employee cannot reach the quiz at all —
+> which would read as a broken cutover rather than a missing migration.
+
+### The purge
+
+`scripts/purge-prod-test-firm.mjs`. Dry-run by default; `--confirm` deletes. Both the project ref and
+the firm id must be passed explicitly, and the script **refuses to run when the named ref disagrees
+with the project the loaded env actually points at** — the guard `remove-avatars-bucket.mjs` does not
+have, and the one that matters when two env files differ by three characters.
+
+```bash
+# 1. Dry run. Prints per-table row counts and touches nothing.
+npx dotenv -e .env.prod -- node scripts/purge-prod-test-firm.mjs \
+  --project-ref ttqthtzdjacrhjtrcmmy --firm <firm-id-from-step-2>
+
+# 2. Read the counts. Then, and only then:
+npx dotenv -e .env.prod -- node scripts/purge-prod-test-firm.mjs \
+  --project-ref ttqthtzdjacrhjtrcmmy --firm <firm-id-from-step-2> --confirm
+```
+
+Deletion order is forced by two `RESTRICT` edges, and the script does it in this order for these
+reasons:
+
+1. **Storage objects first** — no FK ties Storage to the database, so deleting the rows first would
+   orphan the PDFs with nothing left to find them by.
+2. **`training_events`** — `training_events.firm_member_id → firm_members(id) ON DELETE RESTRICT`
+   (0002) blocks the firms cascade from removing `firm_members`.
+3. **`firms`** — cascades to `seats`, `firm_members`, `enrollments`, `quiz_attempts`, `certificates`,
+   `cert_generation_queue` and `quiz_sessions`.
+4. **`auth.users`** — `firms.owner_id → auth.users(id) ON DELETE RESTRICT` (0001) holds them until
+   the firm is gone. A user who also belongs to another firm is skipped and reported.
+
+Earlier notes give this as "`training_events` → `firms` → `auth.users`", which is correct but omits
+Storage and omits why — which is how it gets "simplified" back into a failure.
+
+**Not purged, deliberately.** The script prints these at the end rather than doing them:
+
+- **The Stripe subscription and customer.** Cancel and delete in the Stripe dashboard. The script
+  holds no Stripe credentials and must not acquire any.
+- **`processed_stripe_events`.** Removing the checkout's event id would let a replayed webhook
+  re-provision the firm that was just deleted.
+- **`courses` / `quiz_questions`.** Real seeded content, not test data.
+
+**Close the loop:** after the purge, re-run the daily reconciliation and confirm it reports zero
+discrepancies. That — not the purge itself — is the thing this decision was made to protect.
+
+Verified 2026-08-07 by dry-running the script against a staging firm (`Ithica & Co`, 24
+`training_events`, 4 members, 4 auth users, 1 enrollment, 1 seat) and against a deliberately
+mismatched `--project-ref`, which refused. **The script has never been run with `--confirm` against
+any project.**

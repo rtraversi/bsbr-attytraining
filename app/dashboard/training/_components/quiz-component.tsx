@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
 import { QuizRunner, type QuizAnswer, type QuizResult } from '@/app/dashboard/_components/quiz-runner'
 
 export interface QuizQuestion {
@@ -10,52 +10,77 @@ export interface QuizQuestion {
 }
 
 interface Props {
-  questions: QuizQuestion[]
   courseId: string
   onPass: () => void
-  onRetry?: () => void
   onExit?: () => void
 }
 
-/**
- * Final certification assessment. Renders the shared full-screen QuizRunner
- * forward-only (no back-navigation) with the identity-attestation step before
- * submit. Scoring/recording stay server-side in /api/quiz/attempt.
- */
-export function QuizComponent({ questions, courseId, onPass, onRetry, onExit }: Props) {
-  const router = useRouter()
+interface Session {
+  sessionId: string
+  questions: QuizQuestion[]
+}
 
-  if (questions.length === 0) {
-    return (
-      <div className="font-headline fixed inset-0 z-[70] flex items-center justify-center bg-[#F5F7FA] px-6 dark:bg-[#0A0A0A]">
-        <div className="max-w-md text-center">
-          <p className="mb-4 text-sm text-[#6D7980] dark:text-[#7A8189]">
-            Quiz questions are not yet loaded. Run{' '}
-            <code className="rounded bg-[#E5EEF5] px-1 py-0.5 text-xs dark:bg-[#1F2429]">
-              supabase db push
-            </code>{' '}
-            then refresh.
-          </p>
-          {onExit && (
-            <button
-              onClick={onExit}
-              className="rounded-xl bg-[#0A0A0A] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#262626] dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
-            >
-              Back
-            </button>
-          )}
-        </div>
-      </div>
-    )
-  }
+/**
+ * Final certification assessment.
+ *
+ * The questions are NOT passed in as props any more. They used to be chosen in
+ * the Training Server Component and threaded down through TrainingClient, which
+ * meant the exam was whatever the client eventually posted back. This component
+ * now asks /api/quiz/start for one when it mounts — the reveal gate — and
+ * submits only the sessionId with the answers. The server decides what the exam
+ * was and grades against its own record (ix-quizforge).
+ *
+ * Unlimited retakes still hold: a session is single-use, so every retake calls
+ * /api/quiz/start again and gets a freshly shuffled set.
+ */
+export function QuizComponent({ courseId, onPass, onExit }: Props) {
+  const [session, setSession] = useState<Session | null>(null)
+  const [loadError, setLoadError] = useState('')
+  // Bumped on every retake. Used as QuizRunner's key so it remounts with clean
+  // internal state, and to re-run the session fetch below.
+  const [runKey, setRunKey] = useState(0)
+
+  const loadSession = useCallback(async () => {
+    setSession(null)
+    setLoadError('')
+    try {
+      const res = await fetch('/api/quiz/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseId }),
+      })
+      const data = (await res.json()) as {
+        sessionId?: string
+        questions?: QuizQuestion[]
+        error?: string
+      }
+      if (!res.ok || !data.sessionId || !data.questions?.length) {
+        setLoadError(data.error ?? 'Could not start the assessment. Please try again.')
+        return
+      }
+      setSession({ sessionId: data.sessionId, questions: data.questions })
+    } catch {
+      setLoadError('Network error. Please try again.')
+    }
+  }, [courseId])
+
+  useEffect(() => {
+    void loadSession()
+  }, [loadSession, runKey])
 
   async function onSubmit(answers: QuizAnswer[]): Promise<QuizResult> {
+    if (!session) throw new Error('No active assessment. Please reload and try again.')
     let res: Response
     try {
       res = await fetch('/api/quiz/attempt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseId, answers, attestation: true }),
+        body: JSON.stringify({
+          courseId,
+          sessionId: session.sessionId,
+          answers,
+          attestation: true,
+        }),
       })
     } catch {
       throw new Error('Network error. Please try again.')
@@ -74,11 +99,52 @@ export function QuizComponent({ questions, courseId, onPass, onRetry, onExit }: 
     }
   }
 
+  // Every retake needs a NEW session — the one just graded is consumed, and
+  // re-submitting against it is rejected. QuizRunner's own internal retry()
+  // resets its answers but not the session, so it must not be the retry path
+  // here; bumping runKey re-runs the fetch and remounts the runner. That also
+  // makes the retake entirely this component's business, where it used to be
+  // an `attemptKey` remount driven by TrainingClient.
+  const restart = () => setRunKey(k => k + 1)
+
+  if (!session) {
+    return (
+      <div className="font-headline fixed inset-0 z-[70] flex items-center justify-center bg-[#F5F7FA] px-6 dark:bg-[#0A0A0A]">
+        <div className="max-w-md text-center">
+          {loadError ? (
+            <>
+              <p className="mb-4 text-sm text-[#6D7980] dark:text-[#7A8189]">{loadError}</p>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={restart}
+                  className="rounded-xl bg-[var(--brand-primary)] px-6 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                >
+                  Try Again
+                </button>
+                {onExit && (
+                  <button
+                    onClick={onExit}
+                    className="rounded-xl bg-[#0A0A0A] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#262626] dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
+                  >
+                    Back
+                  </button>
+                )}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-[#6D7980] dark:text-[#7A8189]">Preparing your assessment…</p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <QuizRunner
+      key={runKey}
       title="Certificate Assessment"
       subtitle="Certification quiz — you need 80% or higher to pass."
-      questions={questions}
+      questions={session.questions}
       allowBack={false}
       requiresAttestation
       onSubmit={onSubmit}
@@ -86,12 +152,7 @@ export function QuizComponent({ questions, courseId, onPass, onRetry, onExit }: 
       onResult={r => {
         if (r.passed) onPass()
       }}
-      renderResult={({ result, retry }) => (
-        <FinalResult
-          result={result}
-          onRetry={() => (onRetry ? onRetry() : (retry(), router.refresh()))}
-        />
-      )}
+      renderResult={({ result }) => <FinalResult result={result} onRetry={restart} />}
     />
   )
 }

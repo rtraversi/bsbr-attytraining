@@ -7,23 +7,20 @@ import { clientQuestionsByLesson } from '@/lib/training/questions'
 import { SEAT_ACCESS_COLUMNS, hasTrainingAccess } from '@/lib/seats'
 import { SeatGate } from '../_components/no-seat-notice'
 import { TrainingClient } from './_components/training-client'
-import type { QuizQuestion } from './_components/quiz-component'
 
 export const metadata = {
   title: 'Training — IURIX',
 }
 
-const QUESTIONS_PER_ATTEMPT = 8
-
-function shuffleArray<T>(arr: T[]): T[] {
-  const out = [...arr]
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return out
-}
-
+// The certification question set is NOT chosen here any more.
+//
+// This page used to shuffle the active pool, slice QUESTIONS_PER_ATTEMPT off
+// it, and thread the result down to the quiz component — which meant the exam
+// was whatever the client posted back at submit time, and one known answer
+// scored 100% (ix-quizforge). Selection now happens in /api/quiz/start, which
+// records the chosen set in quiz_sessions so /api/quiz/attempt can grade
+// against it. QUESTIONS_PER_ATTEMPT and the shuffle live in
+// lib/training/assessment.ts.
 export default async function TrainingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -81,7 +78,6 @@ export default async function TrainingPage() {
         phase="not_started"
         courseTitle={courseTitle}
         courseId={null}
-        questions={[]}
         questionsByLesson={questionsByLesson}
         checksCleared={false}
         contentViewed={false}
@@ -89,9 +85,11 @@ export default async function TrainingPage() {
     )
   }
 
-  // Fetch enrollment + questions + both halves of the assessment gate in parallel.
+  // Fetch enrollment + both halves of the assessment gate in parallel.
+  // The certification question pool is deliberately NOT among these — see the
+  // note above the component.
   type KcRow = { metadata: unknown; event_timestamp: string }
-  const [enrollmentResult, questionsResult, kcResult, contentResult, lessonLocationResult] =
+  const [enrollmentResult, kcResult, contentResult, lessonLocationResult] =
     await Promise.all([
       admin
         .from('enrollments')
@@ -101,12 +99,6 @@ export default async function TrainingPage() {
         .order('enrolled_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
-    // Select id, question_text, answers only — correct_index stays server-side
-    admin
-      .from('quiz_questions')
-      .select('id, question_text, answers')
-      .eq('course_id', course.id)
-      .eq('is_active', true),
     // Gate half 1 — lesson checks cleared (same derivation as overview/quizzes pages)
     member
       ? admin
@@ -187,23 +179,12 @@ export default async function TrainingPage() {
   // which is exactly when the assessment becomes legitimately next.
   const nextUnclearedLesson = progress.lessons.find(l => l.status !== 'cleared')?.number ?? null
 
-  // Cast and shuffle — correct_index is never sent to the client
-  type RawQuestion = { id: string; question_text: string; answers: unknown }
-  const allQuestions = ((questionsResult.data ?? []) as unknown as RawQuestion[]).map(q => ({
-    id: q.id,
-    question_text: q.question_text,
-    answers: (q.answers as string[]) ?? [],
-  })) satisfies QuizQuestion[]
-
-  const questions = shuffleArray(allQuestions).slice(0, QUESTIONS_PER_ATTEMPT)
-
   if (!enrollment || enrollment.status !== 'passed') {
     return (
       <TrainingClient
         phase="not_started"
         courseTitle={courseTitle}
         courseId={course.id}
-        questions={questions}
         questionsByLesson={questionsByLesson}
         checksCleared={checksCleared}
         nextUnclearedLesson={nextUnclearedLesson}
@@ -230,7 +211,6 @@ export default async function TrainingPage() {
         phase="certified"
         courseTitle={courseTitle}
         courseId={course.id}
-        questions={[]}
         questionsByLesson={questionsByLesson}
         checksCleared={checksCleared}
         contentViewed={contentViewed}
@@ -248,7 +228,6 @@ export default async function TrainingPage() {
       phase="cert_pending"
       courseTitle={courseTitle}
       courseId={course.id}
-      questions={[]}
       questionsByLesson={questionsByLesson}
       checksCleared={checksCleared}
       contentViewed={contentViewed}

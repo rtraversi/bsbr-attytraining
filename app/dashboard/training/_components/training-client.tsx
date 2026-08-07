@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { ClientQuestion } from '@/lib/training/questions'
 import { LESSONS, READINESS_LESSON } from '@/lib/training/lessons'
-import { QuizComponent, type QuizQuestion } from './quiz-component'
+import { QuizComponent } from './quiz-component'
 import { ScormContent } from './scorm-content'
 import { KnowledgeCheckModal } from '@/app/dashboard/overview/_components/knowledge-check-modal'
 
@@ -18,7 +18,6 @@ interface Props {
   phase: TrainingPhase
   courseTitle: string
   courseId: string | null
-  questions: QuizQuestion[]
   /** Per-lesson knowledge-check questions, for the soft-nag quiz (same modal as Quizzes/Overview). */
   questionsByLesson: Record<number, ClientQuestion[]>
   /** Lesson checks 1–5 cleared (derived server-side from knowledge_check_completed events). */
@@ -57,7 +56,6 @@ const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 export function TrainingClient({
   phase: initialPhase,
   courseId,
-  questions,
   questionsByLesson,
   checksCleared,
   nextUnclearedLesson = null,
@@ -68,7 +66,6 @@ export function TrainingClient({
 }: Props) {
   const router = useRouter()
   const [phase, setPhase] = useState(initialPhase)
-  const [attemptKey, setAttemptKey] = useState(0)
   // Set only when the employee explicitly exits the assessment overlay. The gate
   // itself is never re-locked — this just lets them get back to the course content.
   const [quizDismissed, setQuizDismissed] = useState(false)
@@ -227,13 +224,13 @@ export function TrainingClient({
   return (
     <>
       {showQuiz && courseId && (
-        /* Both gates cleared → full-screen certification quiz, no click required */
+        /* Both gates cleared → full-screen certification quiz, no click required.
+           No `questions` prop and no retake key: QuizComponent asks
+           /api/quiz/start for its own server-chosen question set on mount and on
+           every retake (ix-quizforge). */
         <QuizComponent
-          key={attemptKey}
-          questions={questions}
           courseId={courseId}
           onPass={() => setPhase('cert_pending')}
-          onRetry={() => { setAttemptKey(k => k + 1); router.refresh() }}
           onExit={() => setQuizDismissed(true)}
         />
       )}
