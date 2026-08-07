@@ -57,3 +57,21 @@ Run this once a week. Steps 1 and 4 are Max's; 2 and 3 are Claude's.
 | File | Retired on | Items |
 |---|---|---|
 | `2026-08-06-done.md` | 2026-08-06 | 76 |
+| `2026-08-07-done.md` | 2026-08-07 | 3 |
+
+> ⚠ The `76` above does not reconcile with that file's own "Iurix (81 items)" heading or with the
+> `ARCHIVED` counter, which read 81 before today. Five items were retired into it after this table
+> row was written (`ix-devsandbox` in `af41706` among them) without the row being updated. Left as
+> found rather than guessed at. Today's `+3` is exact: the counter moved 81 → 84.
+
+### A third failure mode, found 2026-08-07
+
+The two traps below are about *editing* the board. This one is about **not editing it**: three items
+(`ix-enrollorder`, `ix-multialert`, `ix-socialsdead`) sat on the board describing bugs that had
+already been fixed in code days earlier, because the sessions that closed the code never closed the
+board row. It was caught only because the next batch of work was scoped by reading the code rather
+than trusting the board, and it would otherwise have sent someone to fix three things that were
+already correct.
+
+**So: when a fix lands, retire the row in the same pass.** If that is not possible, the weekly ritual
+must verify each open row against the code, not just collect the ones already marked done.
