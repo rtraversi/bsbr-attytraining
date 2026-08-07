@@ -267,3 +267,24 @@ Nothing failed. Nothing was repaired.
 - Never enable Cloudflare Email Routing on the apex; Zoho owns apex MX.
 - `scripts/remove-avatars-bucket.mjs` is destructive; PROD never had the bucket and it must not be
   run as part of this cutover.
+
+---
+
+## Closing note — 2026-08-06, after the handoff above was written
+
+Three things landed after this document was rewritten. It is otherwise current.
+
+1. **`ix-quizforge` is on the board** as a critical, unfixed item — the quiz self-certification
+   hole terminal found. Desktop verified it independently against the code before recording it.
+   It blocks launch on its own terms, separately from `ix-stripeaudit`.
+2. **`ix-quizsubset` was corrected.** Its original claim ("no random subset selection anywhere")
+   was false — `shuffleArray(...).slice(0, QUESTIONS_PER_ATTEMPT)` is at
+   `app/dashboard/training/page.tsx:198`. The conclusion inverted with it: a bigger pool makes the
+   existing slice start working, rather than showing every candidate every question.
+3. **Board reconciled and republished.** 69 live, 81 archived. Zero done items left on the live
+   board. Two smaller findings folded in: `0023` points twice at a `.ts` script that is actually
+   `.mjs` (now in `ix-cicleanup`), and a third env file `.env.production` exists (documented in
+   `.planning/DEV-SANDBOX.md`).
+
+**Start the next session from the board**, not from this file:
+https://claude.ai/code/artifact/fd19e15d-9757-4e0d-9433-b78348329075
