@@ -39,7 +39,7 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 | **Tailwind CSS** | **4.1.x** | Styling | Fastest path to applying IURIX brand colors to a marketing-plus-dashboard product. v4 ships CSS-first config (`@theme` directive) and is dramatically faster — use it. |
 | **Cloudflare Workers** | `@opennextjs/cloudflare` (OpenNext adapter) | Hosting + serverless via `@opennextjs/cloudflare`; CF Workers for all automation (cert gen, email, scheduled jobs) | No 26-second timeout concern — Workers have a generous CPU budget (50 ms free, 30 s paid). Cert PDF generation fits in a Worker because `pdf-lib` needs no headless browser. Workers Builds + preview URLs for staging-vs-prod environments. **Required config:** `wrangler.jsonc` with `main: ".open-next/worker.js"`, `assets: { directory: ".open-next/assets", binding: "ASSETS" }`, `compatibility_flags: ["nodejs_compat"]`, `compatibility_date` >= 2024-09-23, `preview_urls: true`; `open-next.config.ts` at project root: `import { defineCloudflareConfig } from "@opennextjs/cloudflare"; export default defineCloudflareConfig();`. **Scripts:** `"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview"`, `"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"`, `"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"`. **Local dev:** `next dev` for daily work; `pnpm run preview` runs in workerd — use before deploys/integration tests. **Staging:** Workers Builds connects GitHub repo; enable non-production branch builds + `preview_urls` — each branch gets a stable `<branch>-<worker>.<subdomain>.workers.dev` alias. Unlike Pages, Workers does NOT natively support different bindings/env-vars per preview vs production build — use Wrangler Environments (`[env.staging]`) for env-specific bindings. Do NOT add `export const runtime = 'edge'` anywhere. |
 | **Supabase** | **JS client `supabase-js` v2.49+** with **`@supabase/ssr` v0.6+** | Auth + Postgres + Storage | Single integrated provider. RLS handles firm-vs-employee tenancy at DB level. Storage signs cert URLs natively. Stay on free tier during dev; **upgrade to Pro ($25/mo) before launch** — free-tier 500MB RAM + project-pause-after-7-days is incompatible with paid customers. |
-| **Postgres** | **15** (Supabase managed) | Source of truth | Schema: `firms`, `firm_members`, `seats`, `enrollments`, `quiz_attempts`, `certificates`. JWT custom claims (`firm_id`, `role`) drive RLS. |
+| **Postgres** | **17.6.1** (Supabase managed) | Source of truth | Verified 2026-08-05 against both projects — PROD `ttqthtzdjacrhjtrcmmy` and STAGING `ndmzvtuywcufvkxtkjhg` both report 17.6.1. This row read "15" until 2026-08-07; it was never right for these projects. Schema: `firms`, `firm_members`, `seats`, `enrollments`, `quiz_sessions`, `quiz_attempts`, `certificates`. JWT custom claims (`firm_id`, `role`) drive RLS. |
 | **Articulate Rise 360** | (current, via Articulate 360 subscription) | Interactive course content — the learning layer | **LOCKED 2026-06-18 (Rob).** Rise 360 replaced Cloudflare Stream as the primary content delivery. Rob authors interactive modules (flip cards, scenarios, click-to-reveal, ungraded knowledge checks) with Katy (attorney co-author). Export as a Rise web package → host on CF R2 or Articulate's hosting → embed via iframe on the training page. Rise reports no scores to the app; all certifiable events live in the custom React quiz. Cloudflare Stream is NOT required at launch — defer unless short video clips are needed within Rise content. |
 | **Cloudflare Stream** | (current) | Optional: short video clips embedded within Rise content | NOT the primary delivery mechanism. Defer entirely unless Rob decides to embed video clips within the Rise course. If used, signed URLs still apply (same pattern as before). Do NOT build a CF Stream integration path unless explicitly decided. |
 | **Stripe** | **Node SDK `stripe` v17.x**, API version `2025-09-30.acacia` (latest) | Checkout, subscriptions, webhooks, customer portal | Standard SaaS billing. ONE Product + ONE volume-tiered Price (`tiers_mode=volume`); Checkout `quantity` = seats; Stripe auto-computes the per-seat band rate. Customer Portal handles renewals — no custom UI needed. |
@@ -185,17 +185,34 @@ The interactive learning content is built in **Articulate Rise 360** by Rob + Ka
 
 ### 6. Custom React quiz — the certifiable layer
 
-The quiz is a **custom React component (~150–200 lines)** rendered on the training page **after** the Articulate Rise 360 iframe. It is the only certifiable layer — Rise content is ungraded and reports nothing to the app.
+> **Rewritten 2026-08-07.** This section previously described the architecture as
+> it stood **before** `3745d49` — a client that received a question set and handed
+> ids back at submit time. That was not a design, it was `ix-quizforge`: the
+> server graded whatever the client submitted, so `correct / submitted.length`
+> meant one known answer scored 100% and issued a real certificate. The
+> description below is the architecture that replaced it.
+
+The quiz is a **custom React component** rendered on the training page **after** the Articulate Rise 360 iframe. It is the only certifiable layer — Rise content is ungraded and reports nothing to the app.
+
+**The load-bearing rule: the SERVER chooses the exam, records it, and grades against its own record.** The client is never trusted to say what it was asked.
 
 **How it works:**
 - Employee completes the Rise interactive content (self-paced, ungraded)
-- Employee clicks "I have completed the training" confirmation — this gates quiz reveal (no postMessage dependency)
-- Quiz presents randomized multiple-choice questions one at a time, no back button, answers locked on advance
-- On submit: identity attestation checkbox required; score computed server-side in `/api/quiz/attempt` against `courses.pass_threshold` (default 80%)
-- Pass → `quiz_attempts` row inserted with `passed=true` → Supabase DB webhook → cert generation Worker
-- Fail → unlimited retakes, fresh randomized question subset each time
+- Employee clears the reveal gate — this is what triggers the quiz, with no postMessage dependency
+- The component `POST`s **`/api/quiz/start`**. That route re-applies the same seat gate as submit (`fetchSeatAccess` / `hasTrainingAccess`) **before any write**, selects `QUESTIONS_PER_ATTEMPT` questions server-side, writes a **`quiz_sessions`** row recording exactly which ones, and returns `{ sessionId, questions }`. **`correct_index` is never sent to the client.**
+- An **open session is reused** rather than re-minted, so `/api/quiz/start` is not a reroll button once the pool exceeds the attempt size
+- Quiz presents the questions one at a time, no back button, answers locked on advance
+- On submit: identity attestation checkbox required. The client sends **`sessionId`** and its answers — **not** the question ids
+- **`/api/quiz/attempt`** loads the session, refuses it if it is missing (404), belongs to another user/firm/course (403), is already consumed (409) or expired (410), then **claims it with a conditional `UPDATE`** so one session can be graded exactly once, and scores against `courses.pass_threshold` (default 80%)
+- **The denominator is always `quiz_sessions.question_ids.length`** — the SERVED set — regardless of how many answers come back. Unanswered questions score wrong; answers for questions outside the session are ignored entirely
+- Pass → `quiz_attempts` row inserted with `passed=true` **and `question_ids` copied onto it**, so a score can be audited against the exam that produced it → `cert_generation_queue` → Supabase DB webhook → cert generation Worker
+- Fail → unlimited retakes; each retake starts a **new session** with a freshly shuffled subset
 
-**No fallback to H5P.** No xAPI. No SCORM. No CF Stream postMessage events. The quiz is already built (Phase 1 stub) — Phase 2 replaces the "Mark Pass" button with this real quiz component.
+> **"Fresh randomised subset each time" is only true as of `3745d49`.** The line was in this document before that, but the pool (8) still equals `QUESTIONS_PER_ATTEMPT` (8), so the shuffle changes order and nothing else. It becomes a real subset when `ix-questionpool` grows the pool to ~32 — which is also the point at which a denominator-only fix would have failed, since a caller could then cherry-pick the 8 they know.
+
+Grading, session validation and the single-use claim live in **`lib/training/assessment.ts`**, not in the route handlers — the routes need `cookies()` and `after()`, which vitest cannot supply, so keeping the logic in `lib/` is what lets `tests/quiz-session.test.ts` drive the real code instead of a re-implementation of it.
+
+**No fallback to H5P.** No xAPI. No SCORM. No CF Stream postMessage events.
 
 ## Alternatives Considered
 

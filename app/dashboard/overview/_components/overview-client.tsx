@@ -4,7 +4,12 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import type { ClientQuestion } from '@/lib/training/questions'
-import type { LessonState, Progress } from '@/lib/training/progress'
+import {
+  countLessonsFinished,
+  grantedClearedLessons,
+  type LessonState,
+  type Progress,
+} from '@/lib/training/progress'
 import { LESSONS, type Lesson } from '@/lib/training/lessons'
 import { KnowledgeCheckModal } from './knowledge-check-modal'
 
@@ -91,9 +96,16 @@ export function OverviewClient({
       ? Math.round(scored.reduce((sum, l) => sum + (l.lastScore ?? 0), 0) / scored.length)
       : null
 
-  // Honest content-based progress for the "Lessons X/5" pill — same math as
-  // training-client.tsx. This is COURSE content, not quiz clearance.
-  const lessonsComplete = contentViewed ? 5 : currentLessonNumber ? currentLessonNumber - 1 : 0
+  // The "Lessons X/5" pill. Shared derivation with training-client.tsx — both
+  // used to carry their own copy of `currentLessonNumber - 1`, which counts
+  // where the learner NAVIGATED rather than what they finished, so this pill
+  // read 3/5 on the same screen where "Lesson checks" below read 5/5 cleared
+  // and a certificate had already been issued (ix-lessoncounter).
+  const lessonsComplete = countLessonsFinished(
+    grantedClearedLessons(progress),
+    currentLessonNumber,
+    contentViewed
+  )
 
   return (
     <main className="mx-auto w-full max-w-[1600px] px-6 py-10 md:px-10 xl:px-14 xl:py-14">
@@ -119,12 +131,14 @@ export function OverviewClient({
                 <span className={`text-xs font-bold tracking-wide uppercase xl:text-sm ${MUTED}`}>
                   Lessons
                 </span>
-                <span className={`text-sm font-bold xl:text-base ${ACCENT}`}>{lessonsComplete}/5</span>
+                <span className={`text-sm font-bold xl:text-base ${ACCENT}`}>
+                  {lessonsComplete}/{LESSONS.length}
+                </span>
               </div>
               <div className="h-4 w-full overflow-hidden rounded-full bg-[#E5EEF5] xl:h-6 dark:bg-[#1F2429]">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-emphasis)] transition-[width] duration-500"
-                  style={{ width: `${(lessonsComplete / 5) * 100}%` }}
+                  style={{ width: `${(lessonsComplete / LESSONS.length) * 100}%` }}
                 />
               </div>
             </div>
@@ -539,7 +553,9 @@ function QuizProgressCard({
       <h2 className={SECTION_HEADING}>Lesson checks</h2>
       <div className={`${CARD} ${CARD_PAD}`}>
         <div className="mb-4 flex items-center justify-between xl:mb-5">
-          <span className={`text-base font-bold xl:text-lg ${ACCENT}`}>{clearedCount}/5 cleared</span>
+          <span className={`text-base font-bold xl:text-lg ${ACCENT}`}>
+            {clearedCount}/{LESSONS.length} cleared
+          </span>
         </div>
 
         <div className="flex flex-col gap-1">

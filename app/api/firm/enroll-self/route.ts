@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { SEAT_ACCESS_COLUMNS, canSelfEnroll, hasTrainingAccess, type SeatAccessRow } from '@/lib/seats'
+import { ensureEnrollment } from '@/lib/enrollments'
 
 /**
  * An admin who declined training at onboarding claiming a seat for themselves.
@@ -81,26 +82,20 @@ export async function POST() {
   const { data: course } = await admin.from('courses').select('id').limit(1).maybeSingle()
 
   if (course) {
-    const { data: existing } = await admin
-      .from('enrollments')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('course_id', course.id)
-      .maybeSingle()
+    // ix-maybesingle: this used to be a bare `.eq(user_id).eq(course_id)
+    // .maybeSingle()` with the error discarded, which returned null on every
+    // renewed account and inserted a duplicate. See lib/enrollments.ts.
+    const result = await ensureEnrollment(
+      admin,
+      { userId: user.id, courseId: course.id, firmId },
+      'not_started'
+    )
 
-    if (!existing) {
-      const { error: enrollError } = await admin.from('enrollments').insert({
-        user_id: user.id,
-        course_id: course.id,
-        firm_id: firmId,
-        status: 'not_started',
-      })
-      // The seat is already claimed and access already works — an enrollment
-      // insert failure is not worth failing the request over. quiz/attempt
-      // creates the row lazily if it is still missing.
-      if (enrollError) {
-        console.error('[firm/enroll-self] enrollment insert failed:', enrollError)
-      }
+    // The seat is already claimed and access already works — an enrollment
+    // failure is not worth failing the request over. lib/training/assessment.ts
+    // creates the row lazily if it is still missing.
+    if (result.outcome === 'error') {
+      console.error('[firm/enroll-self] enrollment get-or-create failed:', result.error)
     }
   }
 

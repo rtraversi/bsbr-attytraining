@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { render } from '@react-email/render'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { ensureEnrollment } from '@/lib/enrollments'
 import { sendEmail } from '@/lib/resend'
 import { AdminMagicLinkEmail } from '@/emails/admin-magic-link'
 
@@ -100,21 +101,20 @@ export async function POST(req: NextRequest) {
     }
 
     if (course) {
-      // Idempotent — skip if enrollment already exists
-      const { data: existing } = await supabase
-        .from('enrollments')
-        .select('id')
-        .eq('user_id', firm.owner_id)
-        .eq('course_id', course.id)
-        .maybeSingle()
+      // Idempotent — skips only when an enrollment exists for the CURRENT term.
+      //
+      // ix-maybesingle: this was a bare `.eq(user_id).eq(course_id)
+      // .maybeSingle()` with the error discarded, so on a renewed account it
+      // read null and inserted a duplicate — exactly what it was written to
+      // prevent. See lib/enrollments.ts.
+      const result = await ensureEnrollment(
+        supabase,
+        { userId: firm.owner_id, courseId: course.id, firmId: firm.id },
+        'not_started'
+      )
 
-      if (!existing) {
-        await supabase.from('enrollments').insert({
-          user_id: firm.owner_id,
-          course_id: course.id,
-          firm_id: firm.id,
-          status: 'not_started',
-        })
+      if (result.outcome === 'error') {
+        console.error('[onboarding/complete] enrollment get-or-create failed:', result.error)
       }
     }
   }

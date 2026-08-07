@@ -1,7 +1,11 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { deriveProgress, type KnowledgeCheckEvent } from '@/lib/training/progress'
+import {
+  deriveProgress,
+  grantedClearedLessons,
+  type KnowledgeCheckEvent,
+} from '@/lib/training/progress'
 import { READINESS_LESSON } from '@/lib/training/lessons'
 import { clientQuestionsByLesson } from '@/lib/training/questions'
 import { SEAT_ACCESS_COLUMNS, hasTrainingAccess } from '@/lib/seats'
@@ -169,6 +173,9 @@ export default async function TrainingPage() {
   const contentViewed = contentResult.data !== null
   const progress = deriveProgress(kcEvents, contentViewed)
   const checksCleared = progress.quizzesUnlocked
+  // ACCESS-sense cleared lessons, for the progress bar. See the note on
+  // grantedClearedLessons — this is deliberately not attemptClearedCount.
+  const clearedLessonNumbers = grantedClearedLessons(progress)
 
   // The check the learner should take next, for the "Next Up" card.
   //
@@ -187,6 +194,7 @@ export default async function TrainingPage() {
         courseId={course.id}
         questionsByLesson={questionsByLesson}
         checksCleared={checksCleared}
+        clearedLessonNumbers={clearedLessonNumbers}
         nextUnclearedLesson={nextUnclearedLesson}
         contentViewed={contentViewed}
         currentLessonNumber={currentLessonNumber}
@@ -213,6 +221,7 @@ export default async function TrainingPage() {
         courseId={course.id}
         questionsByLesson={questionsByLesson}
         checksCleared={checksCleared}
+        clearedLessonNumbers={clearedLessonNumbers}
         contentViewed={contentViewed}
         currentLessonNumber={currentLessonNumber}
         initialLocation={initialLocation}
@@ -230,6 +239,7 @@ export default async function TrainingPage() {
       courseId={course.id}
       questionsByLesson={questionsByLesson}
       checksCleared={checksCleared}
+      clearedLessonNumbers={clearedLessonNumbers}
       contentViewed={contentViewed}
       currentLessonNumber={currentLessonNumber}
       initialLocation={initialLocation}

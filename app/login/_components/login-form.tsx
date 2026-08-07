@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { writeRememberCookie } from '@/lib/supabase/cookie-options'
 
 export function LoginForm({ errorParam }: { errorParam?: string }) {
   const router = useRouter()
@@ -22,6 +23,12 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
     setError('')
 
     // rememberMe drives the auth-cookie lifetime (30-day vs. session cookie).
+    //
+    // Recorded BEFORE sign-in, not after: middleware refreshes the session on
+    // the very first navigation that follows, and if the companion cookie were
+    // not already there that refresh would rewrite the auth cookie as
+    // session-scoped and discard the choice (ix-cookiesecure).
+    writeRememberCookie(rememberMe)
     const supabase = createClient(rememberMe)
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
 

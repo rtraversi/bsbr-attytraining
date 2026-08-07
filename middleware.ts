@@ -1,13 +1,40 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import {
+  REMEMBER_COOKIE,
+  authCookieOptions,
+  hostnameFromHeader,
+  isLoopbackHost,
+  mergeAuthCookieOptions,
+} from '@/lib/supabase/cookie-options'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })
+
+  // ── ix-cookiesecure ────────────────────────────────────────────────────────
+  // This is the write that actually decides the cookie's lifetime. It runs on
+  // EVERY request and it runs last, so whatever lib/supabase/client.ts set at
+  // sign-in is overwritten here seconds later. Before this, it built a client
+  // with no cookieOptions at all — no `secure`, and @supabase/ssr's 400-day
+  // default maxAge, which is where the expiry contradicting "remember me" came
+  // from.
+  //
+  // The intent cannot be read back off the auth cookie (a request carries only
+  // name=value, never its maxAge), so it travels in a companion cookie. Absent
+  // is read as "no", which is the safe default.
+  const rememberMe = request.cookies.get(REMEMBER_COOKIE)?.value === '1'
+  // From the Host HEADER, not nextUrl.hostname — see hostnameFromHeader. In dev
+  // nextUrl.hostname is always 'localhost' regardless of the requested host, so
+  // deciding Secure from it would key the flag on the server's binding.
+  // Unrecognised or absent host → secure, which is the safe direction.
+  const requestHost = hostnameFromHeader(request.headers.get('host'))
+  const secure = requestHost === null || !isLoopbackHost(requestHost)
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: authCookieOptions(rememberMe, secure),
       cookies: {
         getAll() {
           return request.cookies.getAll()
@@ -16,7 +43,11 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            // Merged rather than passed through: cookieOptions above covers the
+            // library's own writes, but this callback receives per-cookie
+            // options that can still carry a maxAge/expires of their own.
+            // Merging ours last is what guarantees one answer.
+            response.cookies.set(name, value, mergeAuthCookieOptions(options, rememberMe, secure))
           )
         },
       },

@@ -15,7 +15,8 @@
 // =============================================================================
 
 import type { createAdminClient } from '@/lib/supabase/admin'
-import type { Json } from '@/types/supabase'
+import type { Database, Json } from '@/types/supabase'
+import { ensureEnrollment } from '@/lib/enrollments'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
@@ -79,25 +80,18 @@ export type RecordAttemptResult =
     }
   | Failure
 
-// quiz_sessions arrived in migration 0024 and is not in types/supabase.ts yet.
-// Regenerate with `supabase gen types typescript --linked > types/supabase.ts`
-// after `supabase db push`, then these two casts can go. Kept as narrow named
-// helpers so the escape hatch is in one place rather than sprinkled through the
-// call sites.
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const sessionsTable = (admin: AdminClient) => (admin as any).from('quiz_sessions')
-const attemptsTable = (admin: AdminClient) => (admin as any).from('quiz_attempts')
-/* eslint-enable @typescript-eslint/no-explicit-any */
-
-interface SessionRow {
-  id: string
-  user_id: string
-  firm_id: string
-  course_id: string
-  question_ids: string[]
-  expires_at: string
-  consumed_at: string | null
-}
+// quiz_sessions and quiz_attempts.question_ids arrived in migration 0024. Both
+// are in types/supabase.ts as of the 2026-08-07 regeneration, so every query
+// below is an ordinary typed call — the `as any` escape hatches that stood here
+// are gone.
+//
+// checkSessionUsable is typed on the fields it actually READS rather than on the
+// whole row. A predicate that demands `issued_at` in order to answer a question
+// it never asks about is a predicate nobody can call with a fixture.
+type SessionUsabilityRow = Pick<
+  Database['public']['Tables']['quiz_sessions']['Row'],
+  'user_id' | 'firm_id' | 'course_id' | 'expires_at' | 'consumed_at'
+>
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Grading — pure, so the arithmetic that decides whether someone is certified
@@ -149,7 +143,7 @@ export function gradeAnswers(
  * Pure and exported so every rejection path is testable without seeding a row.
  */
 export function checkSessionUsable(
-  session: SessionRow,
+  session: SessionUsabilityRow,
   expected: { userId: string; firmId: string; courseId: string },
   now: Date
 ): Failure | null {
@@ -231,7 +225,8 @@ export async function startQuizSession(
   }
 
   // Reuse an unexpired, unconsumed session if one exists.
-  const { data: openRows, error: openErr } = await sessionsTable(admin)
+  const { data: openRows, error: openErr } = await admin
+    .from('quiz_sessions')
     .select('id, user_id, firm_id, course_id, question_ids, expires_at, consumed_at')
     .eq('user_id', userId)
     .eq('firm_id', firmId)
@@ -246,7 +241,7 @@ export async function startQuizSession(
     return { ok: false, status: 500, error: 'Failed to start the quiz' }
   }
 
-  const open = ((openRows ?? []) as SessionRow[])[0]
+  const open = (openRows ?? [])[0]
   if (open) {
     const served = open.question_ids
       .map(id => questionsById.get(id))
@@ -266,7 +261,8 @@ export async function startQuizSession(
   const chosen = shuffleArray([...questionsById.values()]).slice(0, QUESTIONS_PER_ATTEMPT)
   const expiresAt = new Date(now.getTime() + QUIZ_SESSION_TTL_MS).toISOString()
 
-  const { data: inserted, error: insertErr } = await sessionsTable(admin)
+  const { data: inserted, error: insertErr } = await admin
+    .from('quiz_sessions')
     .insert({
       user_id: userId,
       firm_id: firmId,
@@ -318,7 +314,8 @@ export async function recordQuizAttempt(
   const { userId, firmId, courseId, sessionId, answers } = params
 
   // ── Load the exam ──────────────────────────────────────────────────────────
-  const { data: sessionRow, error: sessionErr } = await sessionsTable(admin)
+  const { data: sessionRow, error: sessionErr } = await admin
+    .from('quiz_sessions')
     .select('id, user_id, firm_id, course_id, question_ids, expires_at, consumed_at')
     .eq('id', sessionId)
     .maybeSingle()
@@ -331,7 +328,7 @@ export async function recordQuizAttempt(
     return { ok: false, status: 404, error: 'Quiz session not found. Start a new attempt.' }
   }
 
-  const session = sessionRow as SessionRow
+  const session = sessionRow
   const unusable = checkSessionUsable(session, { userId, firmId, courseId }, now)
   if (unusable) return unusable
 
@@ -386,7 +383,8 @@ export async function recordQuizAttempt(
   // This runs BEFORE any write below, so the failure direction is a burned
   // session (retake with a fresh one) rather than a session that can be graded
   // twice.
-  const { data: claimed, error: claimErr } = await sessionsTable(admin)
+  const { data: claimed, error: claimErr } = await admin
+    .from('quiz_sessions')
     .update({ consumed_at: now.toISOString() })
     .eq('id', session.id)
     .is('consumed_at', null)
@@ -405,30 +403,21 @@ export async function recordQuizAttempt(
   }
 
   // ── Get or create enrollment ──────────────────────────────────────────────
+  // This read was already the correct shape (enrolled_at DESC, limit 1, scoped
+  // by firm_id) while two other call sites were not; ix-maybesingle moved that
+  // one correct definition into lib/enrollments.ts and pointed all three at it.
   // Ordered by enrolled_at, not created_at — deliberate, do not change.
-  let { data: enrollment } = await admin
-    .from('enrollments')
-    .select('id, status')
-    .eq('user_id', userId)
-    .eq('course_id', courseId)
-    .eq('firm_id', firmId)
-    .order('enrolled_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const enrollmentResult = await ensureEnrollment(
+    admin,
+    { userId, courseId, firmId },
+    'in_progress'
+  )
 
-  if (!enrollment) {
-    const { data: newEnrollment, error: enrollErr } = await admin
-      .from('enrollments')
-      .insert({ user_id: userId, course_id: courseId, firm_id: firmId, status: 'in_progress' })
-      .select('id, status')
-      .single()
-
-    if (enrollErr || !newEnrollment) {
-      console.error('[quiz/attempt] enrollment insert failed:', enrollErr)
-      return { ok: false, status: 500, error: 'Failed to create enrollment' }
-    }
-    enrollment = newEnrollment
+  if (enrollmentResult.outcome === 'error') {
+    console.error('[quiz/attempt] enrollment get-or-create failed:', enrollmentResult.error)
+    return { ok: false, status: 500, error: 'Failed to create enrollment' }
   }
+  const enrollment = enrollmentResult.enrollment
 
   // ── Idempotency: if already passed, return success ───────────────────────
   if (enrollment.status === 'passed') {
@@ -444,7 +433,8 @@ export async function recordQuizAttempt(
   }
 
   // ── Insert quiz attempt ───────────────────────────────────────────────────
-  const { data: attempt, error: attemptErr } = await attemptsTable(admin)
+  const { data: attempt, error: attemptErr } = await admin
+    .from('quiz_attempts')
     .insert({
       enrollment_id: enrollment.id,
       user_id: userId,
@@ -462,7 +452,7 @@ export async function recordQuizAttempt(
     console.error('[quiz/attempt] quiz_attempts insert failed:', attemptErr)
     return { ok: false, status: 500, error: 'Failed to record attempt' }
   }
-  const attemptId = (attempt as { id: string }).id
+  const attemptId = attempt.id
 
   // ── Record training events (non-fatal) ───────────────────────────────────
   const { data: firmMember } = await admin

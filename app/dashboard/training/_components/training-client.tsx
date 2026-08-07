@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { ClientQuestion } from '@/lib/training/questions'
 import { LESSONS, READINESS_LESSON } from '@/lib/training/lessons'
+import { countLessonsFinished } from '@/lib/training/progress'
 import { QuizComponent } from './quiz-component'
 import { ScormContent } from './scorm-content'
 import { KnowledgeCheckModal } from '@/app/dashboard/overview/_components/knowledge-check-modal'
@@ -22,6 +23,14 @@ interface Props {
   questionsByLesson: Record<number, ClientQuestion[]>
   /** Lesson checks 1–5 cleared (derived server-side from knowledge_check_completed events). */
   checksCleared: boolean
+  /**
+   * Lesson numbers finished in the ACCESS sense — `status === 'cleared'`, so
+   * including lessons granted by the lesson-5 test-out shortcut. Feeds the
+   * progress bar via countLessonsFinished; see the note on
+   * grantedClearedLessons in lib/training/progress.ts before changing which
+   * field this is derived from.
+   */
+  clearedLessonNumbers?: number[]
   /**
    * Lowest-numbered lesson whose check is not yet cleared, or null when all are.
    * Drives the "Next Up" card. Sequential ordering was removed in P0, so this is
@@ -58,6 +67,7 @@ export function TrainingClient({
   courseId,
   questionsByLesson,
   checksCleared,
+  clearedLessonNumbers = [],
   nextUnclearedLesson = null,
   contentViewed,
   currentLessonNumber,
@@ -157,11 +167,22 @@ export function TrainingClient({
   const showQuiz = phase === 'not_started' && gatesOpen && !!courseId && !quizDismissed
 
   // Honest progress: content is the first half (0–50%), lesson checks the second
-  // (50%). Before the SCORM course reports full completion, credit partial content
-  // progress from how far through the 5 lessons the learner has actually reached
-  // (lesson N reached ⇒ N-1 done). Passing the assessment supersedes everything.
-  const lessonsCompletedCount = liveLessonNumber ? liveLessonNumber - 1 : 0
-  const contentPct = contentViewed ? 50 : Math.round((lessonsCompletedCount / 5) * 50)
+  // (50%). Passing the assessment supersedes everything.
+  //
+  // This was `liveLessonNumber - 1` — how far the learner NAVIGATED, which is
+  // not what they finished (ix-lessoncounter). countLessonsFinished takes the
+  // union of "walked past" and "cleared", so a test-out learner who skipped
+  // ahead is no longer reported as part-way through a course the rest of this
+  // page already calls complete. liveLessonNumber (not the server prop) keeps it
+  // updating the instant Rise crosses a boundary.
+  const lessonsCompletedCount = countLessonsFinished(
+    clearedLessonNumbers,
+    liveLessonNumber,
+    contentViewed
+  )
+  const contentPct = contentViewed
+    ? 50
+    : Math.round((lessonsCompletedCount / LESSONS.length) * 50)
   const checksPct = checksCleared ? 50 : 0
   const progressPct = phase === 'not_started' ? contentPct + checksPct : 100
 

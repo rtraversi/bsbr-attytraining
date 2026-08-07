@@ -401,6 +401,7 @@ export type Database = {
           firm_id: string
           id: string
           passed: boolean
+          question_ids: string[] | null
           score: number
           user_id: string
         }
@@ -411,6 +412,7 @@ export type Database = {
           firm_id: string
           id?: string
           passed: boolean
+          question_ids?: string[] | null
           score: number
           user_id: string
         }
@@ -421,6 +423,7 @@ export type Database = {
           firm_id?: string
           id?: string
           passed?: boolean
+          question_ids?: string[] | null
           score?: number
           user_id?: string
         }
@@ -481,6 +484,54 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_sessions: {
+        Row: {
+          consumed_at: string | null
+          course_id: string
+          expires_at: string
+          firm_id: string
+          id: string
+          issued_at: string
+          question_ids: string[]
+          user_id: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          course_id: string
+          expires_at: string
+          firm_id: string
+          id?: string
+          issued_at?: string
+          question_ids: string[]
+          user_id: string
+        }
+        Update: {
+          consumed_at?: string | null
+          course_id?: string
+          expires_at?: string
+          firm_id?: string
+          id?: string
+          issued_at?: string
+          question_ids?: string[]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_sessions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_sessions_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
             referencedColumns: ["id"]
           },
         ]

@@ -217,6 +217,64 @@ export function deriveProgress(events: KnowledgeCheckEvent[], contentViewed: boo
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   "Lessons X/5" — the display counter (ix-lessoncounter)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * The lesson numbers this learner is done with, in the ACCESS sense.
+ *
+ * ⚠️ Deliberately `status === 'cleared'` and NOT `clearedByAttempt`. Read the
+ * ACCESS vs ACHIEVEMENT note at the top of this file before changing it:
+ *
+ *   - `status === 'cleared'` answers "is anything more required of this learner
+ *     here?" — it includes lessons GRANTED by the lesson-5 test-out shortcut,
+ *     because that is precisely what the shortcut is.
+ *   - `attemptClearedCount` answers "did they personally pass this check?" and
+ *     is what lib/refund-eligibility.ts computes from. Substituting it here
+ *     would be harmless; substituting THIS there would report 5 for a test-out
+ *     learner and silently make them non-refundable for training they never
+ *     consumed. That direction is the dangerous one and it is not taken.
+ *
+ * A counter that sits beside a header reading "complete", next to an issued
+ * certificate, is making an ACCESS claim. So it uses the ACCESS field.
+ */
+export function grantedClearedLessons(progress: Progress): number[] {
+  return progress.lessons.filter(l => l.status === 'cleared').map(l => l.number)
+}
+
+/**
+ * How many lessons to show as finished.
+ *
+ * A lesson counts when ANY of these is true:
+ *   - the whole course reported completion (`contentViewed`)
+ *   - its check is cleared in the ACCESS sense (see above)
+ *   - the learner has navigated past it (`number < currentLessonNumber`)
+ *
+ * ix-lessoncounter: both call sites previously computed
+ * `currentLessonNumber - 1` alone — where the learner NAVIGATED, not what they
+ * CLEARED. Take the lesson-5 test-out shortcut and the Overview page
+ * contradicted itself on one screen: "Lesson checks" read 5/5 cleared while the
+ * "Lessons" pill read 3/5, with a certificate already issued. This is the
+ * display half of ix-skipcascade, which a21aa59 fixed in the data layer only.
+ *
+ * The union is taken per lesson rather than as `max(walked, cleared)` because
+ * checks are not sequential: a learner who walked to lesson 3 and cleared only
+ * check 4 is done with {1,2,4} — three lessons — which neither scalar reports.
+ */
+export function countLessonsFinished(
+  clearedLessonNumbers: readonly number[],
+  currentLessonNumber: number | null,
+  contentViewed: boolean
+): number {
+  if (contentViewed) return LESSONS.length
+
+  const cleared = new Set(clearedLessonNumbers)
+  return LESSONS.filter(
+    l => cleared.has(l.number) || (currentLessonNumber !== null && l.number < currentLessonNumber)
+  ).length
+}
+
 /**
  * Authoritative server-side gate: may this user attempt `lesson` right now?
  * Enforces the lesson-5 shortcut lock and attempt limits. There is no

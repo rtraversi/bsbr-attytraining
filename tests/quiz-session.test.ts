@@ -52,10 +52,7 @@ const admin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   realtime: { transport: globalThis.WebSocket },
 })
 
-// quiz_sessions is not in types/supabase.ts until the types are regenerated —
-// same escape hatch as lib/training/assessment.ts, in one place.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sessions = () => (admin as any).from('quiz_sessions')
+const sessions = () => admin.from('quiz_sessions')
 
 const runId = crypto.randomUUID().slice(0, 8)
 const POOL_SIZE = 12 // deliberately > QUESTIONS_PER_ATTEMPT, so the slice is real
@@ -318,8 +315,8 @@ describe('startQuizSession', () => {
   it('records the chosen set on the row, so grading has something to grade against', async () => {
     const { sessionId, questionIds } = await start(learnerId)
     const { data } = await sessions().select('question_ids, consumed_at').eq('id', sessionId).single()
-    expect(data.question_ids).toEqual(questionIds)
-    expect(data.consumed_at).toBeNull()
+    expect(data?.question_ids).toEqual(questionIds)
+    expect(data?.consumed_at).toBeNull()
   })
 })
 
@@ -419,8 +416,8 @@ describe('recordQuizAttempt — the ix-quizforge regression', () => {
       userId: learnerId,
       firmId,
       courseId,
-      sessionId: row.id,
-      answers: correctFor(row.question_ids),
+      sessionId: row!.id,
+      answers: correctFor(row!.question_ids),
     })
 
     expect(result.ok).toBe(false)
@@ -446,7 +443,7 @@ describe('recordQuizAttempt — the ix-quizforge regression', () => {
     // And the borrowed session must survive unconsumed — a thief must not be
     // able to burn someone else's exam.
     const { data } = await sessions().select('consumed_at').eq('id', sessionId).single()
-    expect(data.consumed_at).toBeNull()
+    expect(data?.consumed_at).toBeNull()
   })
 
   it('rejects a session minted for a different course', async () => {
@@ -502,19 +499,18 @@ describe('recordQuizAttempt — the ix-quizforge regression', () => {
 
     // …the session is now consumed…
     const { data: consumed } = await sessions().select('consumed_at').eq('id', sessionId).single()
-    expect(consumed.consumed_at).not.toBeNull()
+    expect(consumed?.consumed_at).not.toBeNull()
 
     // …and the attempt carries the exam it was graded against, which is what
     // makes the score auditable at all.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: attemptRow } = await (admin as any)
+    const { data: attemptRow } = await admin
       .from('quiz_attempts')
       .select('question_ids, score, passed')
-      .eq('id', result.attemptId)
+      .eq('id', result.attemptId!)
       .single()
-    expect(attemptRow.question_ids).toEqual(questionIds)
-    expect(attemptRow.score).toBe(100)
-    expect(attemptRow.passed).toBe(true)
+    expect(attemptRow?.question_ids).toEqual(questionIds)
+    expect(attemptRow?.score).toBe(100)
+    expect(attemptRow?.passed).toBe(true)
   }, 30_000)
 
   it('reports a missing session rather than throwing', async () => {
