@@ -646,8 +646,9 @@ async function refuseEmailInUse(
   const { cancelled, error: cancelError } = await cancelOrphanedSubscription(session)
 
   try {
-    // refundPromised mirrors what the email actually claims. If the cancel
-    // failed we do not tell them billing has stopped, because it has not.
+    // The email says the payment needs human review, never that a refund has
+    // already been issued or is under way. If the cancel failed it also does
+    // not tell the buyer billing has stopped, because it has not.
     const html = await render(CheckoutEmailInUseEmail({ email, cancelled }))
     await sendEmail({
       to: email,
@@ -665,13 +666,12 @@ async function refuseEmailInUse(
     `<strong>Checkout session:</strong> ${session.id}`,
     `<strong>Subscription — ${cancelled ? 'CANCELLED' : 'STILL BILLING'}:</strong> ${session.subscription as string}`,
     `<strong>What happened:</strong> nothing was provisioned. Their employer's firm is untouched.`,
-    // 🔴 The customer email states a refund is on its way. Nothing in this
-    // codebase issues one — no refund API is called anywhere, by design. That
-    // promise is kept by a human or not at all, which is why it is stated here
-    // as a required action rather than left implied.
+    // No refund API is called anywhere in this codebase. The customer was told
+    // only that we will review the payment with them, so this alert is the
+    // durable instruction for Max and Rob to take the manual action.
     cancelled
-      ? `<strong>🔴 Action required — REFUND:</strong> the subscription is cancelled, and the customer has been told <em>in writing</em> that their payment is being refunded. Issue the refund in Stripe. Nothing automated will do it.`
-      : `<strong>🔴 Action required:</strong> the cancel call FAILED (${cancelError}). The subscription is still billing and must be cancelled by hand, then refunded — the customer has been told their payment is being returned.`,
+      ? `<strong>🔴 Action required — PAYMENT REVIEW:</strong> the subscription is cancelled. The customer was asked to contact us so Max and Rob can review the payment and manually issue any refund in Stripe. Nothing automated will do it.`
+      : `<strong>🔴 Action required:</strong> the cancel call FAILED (${cancelError}). The subscription is still billing and must be cancelled by hand. The customer was asked to contact us so Max and Rob can review the payment and manually issue any refund in Stripe.`,
     `<strong>Then:</strong> help them re-purchase on a different address.`,
   ])
 }

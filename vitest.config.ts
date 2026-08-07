@@ -2,6 +2,11 @@ import { defineConfig } from 'vitest/config'
 import { resolve } from 'path'
 
 export default defineConfig({
+  oxc: {
+    // Email template tests import TSX outside Next's compiler. Keep React's
+    // automatic runtime explicit so those tests render the same way as app code.
+    jsx: { runtime: 'automatic' },
+  },
   test: {
     // Supabase Auth sign-in + multiple insert round-trips in beforeAll can take
     // several seconds on a cold connection — extend the defaults.

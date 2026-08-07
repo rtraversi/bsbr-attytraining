@@ -185,9 +185,9 @@ scratch files remain in the repo.
    on and does not with it off. That is the one part of item 3 not verified here.
 4. **`ix-questionpool`** is the item that makes `ix-quizforge` pay — the slice does nothing while the
    pool is 8.
-5. Still open: the duplicate-purchase refund wording (`emails/checkout-email-in-use.tsx:75`,
-   `app/api/webhooks/stripe/route.ts:670`), and `oxc: { jsx: 'automatic' }` in `vitest.config.ts`
-   without which no email template can be tested.
+5. The duplicate-purchase refund copy is now aligned with Max's manual-refund decision and covered
+   by a rendered-email regression test. It remains operationally blocked on Resend verification and
+   Rob's final policy decision; no automatic refund flow is approved.
 
 ## Open questions
 

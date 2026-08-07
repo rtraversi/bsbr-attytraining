@@ -41,9 +41,9 @@ interface CheckoutEmailInUseProps {
 // requires a session, and the whole problem is that this buyer has no account to
 // sign in to.
 //
-// This one mattered most of the six. It is the email sent to someone we just
-// charged and then refused, telling them a refund is coming — and it was
-// directing them to a personal Gmail address to chase it.
+// This is sent to someone we just charged and then refused. No code issues a
+// Stripe refund here: that remains a human decision, so the email must never
+// imply a refund is already under way.
 const SUPPORT_EMAIL = 'info@iurixaccreditation.com'
 
 export function CheckoutEmailInUseEmail({ email, cancelled }: CheckoutEmailInUseProps) {
@@ -72,12 +72,12 @@ export function CheckoutEmailInUseEmail({ email, cancelled }: CheckoutEmailInUse
           {cancelled ? (
             <>
               <strong>You will not be charged again</strong> — we&apos;ve cancelled the
-              subscription, and your payment is being refunded
+              subscription. Please contact us so we can review the payment with you.
             </>
           ) : (
             <>
-              <strong>We&apos;re sorting out your payment</strong> — please get in touch so we can
-              stop the subscription and refund you
+              <strong>Your subscription needs attention</strong> — please get in touch so we can
+              stop it and review the payment with you
             </>
           )}
         </Text>
@@ -93,15 +93,11 @@ export function CheckoutEmailInUseEmail({ email, cancelled }: CheckoutEmailInUse
       </Section>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        {cancelled
-          ? 'Refunds usually take a few business days to appear, depending on your bank. '
-          : ''}
-        If anything is unclear, or you&apos;d like a hand getting set up on a different address,
-        write to{' '}
+        Please write to{' '}
         <a href={`mailto:${SUPPORT_EMAIL}`} style={link}>
           {SUPPORT_EMAIL}
         </a>
-        .
+        {' '}so we can review your payment and help you get set up on a different address.
       </Text>
 
       <Text style={mutedText} className={EMAIL_CLASS.muted}>

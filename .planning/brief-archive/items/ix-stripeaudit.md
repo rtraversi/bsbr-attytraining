@@ -47,6 +47,23 @@ separate live-mode product.
 
 ---
 
+## Manual-refund copy shipped — 2026-08-07
+
+The email-in-use customer email and its paired operator alert were changed to
+match Max's interim manual-refund decision. A cancelled subscription now tells
+the buyer that it will not renew and asks them to contact IURIX so the payment
+can be reviewed; a failed cancellation says the subscription needs attention.
+Neither state says a refund has been issued or is already under way.
+
+The operator alert now directs **Max and Rob** to manually review the payment
+and issue any refund in Stripe. `tests/checkout-email-in-use.test.ts` renders
+both states and rejects the old false-refund wording. The existing
+comma-separated `OPERATOR_ALERT_EMAIL` support remains the delivery mechanism.
+Until Resend verifies `iurixaccreditation.com`, that alert cannot be delivered;
+until Rob makes the final policy call, no automatic refund flow is approved.
+
+---
+
 ## Full text, captured 2026-08-06
 
 🔴🔴 LAUNCH GATE — FULL STRIPE VERIFICATION BEFORE LIVE MODE. LOGGED 2026-07-31 13:51 MST (Max), verbatim: “stripe verification before launch. need to know all code regarding the stripe api is FULLY functionaly the way we planned it. its REAL money. we must be sure. this is a deal breaker and must be given maximum attention before it ever goes live.” THIS IS A HARD GATE, NOT A CHECKLIST ITEM. Nothing about Stripe has ever run against real money — everything to date is sandbox acct_1ThDpr6ZCSojEKRr. SURFACE TO AUDIT (every file that touches the Stripe API): app/api/checkout/route.ts (volume pricing, adjustable_quantity, automatic_tax, the active-firm guard), app/api/webhooks/stripe/route.ts (~373 lines, raw-body signature verify, processed_stripe_events idempotency, FIVE handlers incl. grace-vs-lapsed renewal re-enrollment), app/api/portal/route.ts, app/api/billing/summary + auto-renew (NEW, Batch 3), app/api/onboarding/complete + status. KNOWN ISSUES THAT MUST BE CLOSED FIRST: ix-doublebill (a customer can be charged and provisioned nothing — pinned Monday), automatic_tax is already enabled so LIVE CHECKOUT HARD-FAILS until Stripe Tax is on, and the PRICE_ID is hardcoded at checkout/route.ts:17 and must be swapped for the live-mode object. Also confirm the live webhook is registered ONCE, on the NEW domain, and that the statement descriptor reads Iurix
