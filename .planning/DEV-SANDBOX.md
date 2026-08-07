@@ -55,14 +55,17 @@ The original rationale does not survive the fact that both projects carry an **i
 Staging already represents production structurally. The only difference is the data, which is
 exactly what should differ.
 
-## A third file exists
+## CI owns browser-build configuration
 
-`.env.production` (51 bytes) sits alongside these two. It contains only `NEXT_PUBLIC_APP_URL` and
-**no credentials**, and it is gitignored. Next loads it during production builds, so it can
-influence a build even though nothing in this document points at it. Found by terminal-Claude
-2026-08-06. Left alone rather than deleted on a wrap-up — decide deliberately whether it should
-exist at all, given GitHub Actions also supplies `NEXT_PUBLIC_APP_URL` at build time and two
-sources for one value is how a wrong one goes unnoticed.
+Deleted local `.env.production` on 2026-08-07. It contained only
+`NEXT_PUBLIC_APP_URL`, duplicating the value GitHub Actions supplies to every
+Cloudflare build from `secrets.NEXT_PUBLIC_APP_URL`. The Actions secret is now
+the one source of truth for that browser-bundled value.
+
+Do not recreate `.env.production` as a local fallback. Production deployments
+are Actions-only; local development and tests use `.env.local` (staging), while
+the explicit `.env.prod` file is reserved for guarded production verification
+and purge scripts.
 
 ## Checks
 

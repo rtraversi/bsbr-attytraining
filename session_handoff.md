@@ -195,8 +195,6 @@ scratch files remain in the repo.
 
 - **Stripe Product still named "AI Staff Compliance Training — Annual Certification"** on hosted
   Checkout, invoices and receipts. Dashboard change, not code. `ix-stripeaudit`.
-- **Does `.env.production` stay?** Undocumented third env file; Actions also supplies
-  `NEXT_PUBLIC_APP_URL`, and two sources for one value is how a wrong one goes unnoticed.
 - **Should the `ix-remember` companion cookie be renamed or namespaced** before launch? It is
   application-visible and there is no other `ix-` cookie convention yet.
 
