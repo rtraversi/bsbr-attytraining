@@ -187,7 +187,9 @@ scratch files remain in the repo.
    pool is 8.
 5. The duplicate-purchase refund copy is now aligned with Max's manual-refund decision and covered
    by a rendered-email regression test. It remains operationally blocked on Resend verification and
-   Rob's final policy decision; no automatic refund flow is approved.
+   Rob's final policy decision; no automatic refund flow is approved. **Set the app Worker's
+   `OPERATOR_ALERT_EMAIL` to `solarsaiko@gmail.com,info@iurixaccreditation.com`** once Resend is
+   verified; the code already parses that comma-separated value.
 
 ## Open questions
 

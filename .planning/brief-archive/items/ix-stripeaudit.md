@@ -33,8 +33,11 @@ remain the operational record.
 
 **Notification rule:** this case must alert **both Max and Rob** through the
 comma-separated `OPERATOR_ALERT_EMAIL` configuration, then they issue the
-manual refund in Stripe. The alert is not currently deliverable because Resend
-returns 403 until `iurixaccreditation.com` is verified (see `ix-dnszoho`).
+manual refund in Stripe. **Max specified 2026-08-07:** configure it as
+`solarsaiko@gmail.com,info@iurixaccreditation.com`. This must be set on the
+app Worker; it is a pending external secret change, not a code change. The
+alert is not currently deliverable because Resend returns 403 until
+`iurixaccreditation.com` is verified (see `ix-dnszoho`).
 
 **Rob's final decision before live mode:** confirm that refunds remain manual,
 or explicitly approve an idempotent automatic full-refund flow. This is a
