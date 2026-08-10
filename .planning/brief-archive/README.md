@@ -31,6 +31,17 @@ corrections made to earlier claims. If a decision needs tracing, it is here, not
 
 ## The weekly ritual
 
+**What it is for, in Max's words (logged 2026-08-10 08:02 CST):**
+
+> "things done are updated on record, and on brief. done items are also moved to the archive.
+> everything is kept on record and the brief stays clean."
+
+So the ritual has two obligations that pull in opposite directions, and both must hold:
+**nothing is lost** (every done item keeps its full text in a dated archive file) and
+**the brief stays clean** (the board carries open work only). An item is not "handled" when it
+is marked done on the board. It is handled when its record is written to the archive and its
+row is gone from the `SEED`.
+
 Run this once a week. Steps 1 and 4 are Max's; 2 and 3 are Claude's.
 
 1. **Max exports local changes.** The board's *Export my changes* button lists every status flip,
