@@ -361,7 +361,7 @@ log.
 > | Migration | Staging | PROD | What breaks without it |
 > |---|---|---|---|
 > | `0024_quiz_sessions.sql` | ✅ applied 2026-08-07 | ❌ **not applied** | `/api/quiz/start` fails outright. The employee never reaches the quiz. |
-> | `0025` (lesson classification on `quiz_questions`) | ⏳ **not written yet** | ❌ | Question selection cannot stratify by lesson. See below. |
+> | `0025_quiz_lesson_classification.sql` | ✅ applied 2026-08-12 | ❌ **not applied** | **`/api/quiz/start` fails outright**, same as a missing `0024`. It adds TWO columns, not one: `quiz_questions.lesson` *and* `courses.questions_per_attempt`, which `lib/training/assessment.ts:301` selects on every quiz start. |
 >
 > Verified 2026-08-11: the CLI is linked to staging (`supabase/.temp/project-ref` =
 > `ndmzvtuywcufvkxtkjhg`) and `supabase migration list --linked` reaches `0024` on local, remote and
@@ -371,12 +371,14 @@ log.
 > like a missing migration. It looks like a broken cutover, and the instinct will be to roll back
 > something that is actually fine.
 >
-> **`0025` is pending, not forgotten.** It is being written under `ix-quizsubset` (lesson column on
-> `quiz_questions` plus a backfill of the eight existing rows from
-> `.planning/QUESTION-POOL.md:53-158`). It is **staging-only** until the cutover, like `0024`. If the
-> cutover runs before `0025` exists, push `0024` alone and strike the `0025` row from this table
-> rather than waiting on it: the quiz works without lesson stratification, since the pool is 8 and
-> the attempt size is 8, so every learner already sees every question.
+> **`0025` landed 2026-08-12 in `adb43f5`** (`ix-quizsubset`). It is **staging-only** until the
+> cutover, like `0024`. Backfill verified as L1=1, L2=1, L3=4, L4=0, L5=2, matching
+> `.planning/QUESTION-POOL.md:53-158`.
+>
+> ⚠️ **Do not treat `0025` as optional because stratification is currently a no-op.** That reasoning
+> is true of the `lesson` column and false of `courses.questions_per_attempt`. The selector reads the
+> attempt size from `courses` on every start, so a PROD without `0025` fails at step 5 even though
+> the pool is 8 and no stratification would occur. **Both migrations, or the quiz does not run.**
 
 ### The purge
 
