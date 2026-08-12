@@ -92,3 +92,72 @@ This is what to read before touching the code for an item.
   browser sniffs windows-1252). The artifact wrapper supplies UTF-8 regardless.
 - New rows from here on should use the new schema and get an `items/<id>.md` written at the same
   time. Worth confirming Rob and desktop are both writing rows that way.
+
+---
+
+# Desktop addendum — 2026-08-12 (Max + desktop-Claude)
+
+Written after the section above. **It corrects two things that section says**, both of which
+were true when written and stopped being true minutes later. Three sessions ran in parallel
+today (desktop, terminal, Codex), which is the root of every crossed wire below.
+
+## ✅ Corrections to "Two things needing a decision"
+
+1. **The artifact IS republished.** Twice, in fact: once at `865cfff` and again at `c69b046`,
+   both to the same URL. The live board carries the new schema *and* today's row updates.
+   https://claude.ai/code/artifact/fd19e15d-9757-4e0d-9433-b78348329075
+2. **The board edits are committed.** They landed as `c69b046`. Nothing is sitting uncommitted.
+   Terminal was right not to touch them; they were simply mid-flight at the moment it looked.
+
+## What desktop did
+
+| Commit | |
+|---|---|
+| `1665f8d` | `iq-n400` added: N-400 template, gated on Katy's OK before it is committed |
+| `b51d015` | Four rows whose *collapsed* view still described a fixed bug |
+| `29053ca` | Cutover runbook carries `0025` alongside `0024` |
+| `2dd1488` | Correction: `0025` is NOT optional at cutover |
+| `c69b046` | `ix-quizsubset` code-complete; `ix-questionpool` unstuck |
+
+**The `b51d015` finding is worth keeping.** Four rows were reported stale, then found *not*
+stale — each already recorded its fix. The board clipped at 170 chars, so the only text a scan
+ever saw was the original bug report, with the correction thousands of characters below the
+fold. `ix-quizforge` displayed "AN ENROLLED EMPLOYEE CAN SELF-CERTIFY" while "FIXED in
+`3745d49`" sat far out of view. **A correction appended to the end of a row is invisible.**
+That is what motivated the restructure terminal then built.
+
+**`2dd1488` is the one to carry.** I wrote `29053ca` saying that if the cutover ran before
+`0025`, you could push `0024` alone, because stratification is a no-op while pool == attempt.
+That is true of `quiz_questions.lesson` and **false** of `courses.questions_per_attempt`, which
+`lib/training/assessment.ts:301` reads on every quiz start. A PROD without `0025` dies exactly
+like a PROD without `0024`. The escape hatch is gone.
+
+## Verified independently, not taken from reports
+
+Both agents' claims were checked rather than trusted, and both held:
+
+- **Codex `adb43f5`:** `0025` on staging only (`0025|0025|0025`); backfill 1/1/4/0/2 matching
+  `QUESTION-POOL.md:53-158`; the no-op rule real at `assessment.ts:116`. Reproduced `tsc` exit 0,
+  eslint 0 errors / 4 pre-existing warnings, `pnpm test` **11 files / 118 passing** on staging.
+- **Terminal `865cfff`:** 68 items, max `t` 86 chars, `h:1` on all, 0 straight quotes, every
+  `items/<id>.md` present. **All 68 old row texts confirmed verbatim** against
+  `git show 29053ca` — zero data loss, which was the whole safety rule.
+- **The amend incident recovered cleanly.** `c69b046` and `2dd1488` are both on `origin/main`,
+  history linear, no force-push, and every desktop edit is present at HEAD. Checked, not assumed.
+
+## Decisions taken
+
+- **Fail-closed selection was REJECTED, deliberately.** GPT's plan specified it. Against today's
+  bank it would have refused 100% of quiz attempts on day one: the blueprint wants L2=2 and L4=1
+  while the bank holds L2=1 and L4=0. The selector is a no-op until the pool exceeds the attempt
+  size instead. Do not "fix" this back.
+- **Keep the `<meta charset="utf-8">`.** Answering terminal's open question. Curly quotes are now
+  mandatory in every string value, so the file cannot rely on the artifact wrapper when opened
+  directly.
+- **`ix-quizsubset` TODAY flag cleared**, code being done. Three cutover flags remain. Status
+  stays `wip`: fixed is not shipped.
+
+## Still true
+
+Nothing deployed. App remains **2026-08-06T17:18Z**. The cutover carries `0024`, `0025` and the
+whole 08-07 batch. The freeze is intact and was not touched by any of the three sessions.
