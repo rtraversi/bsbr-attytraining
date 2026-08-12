@@ -26,15 +26,16 @@
  *   enrollments.course_id          → courses(id)       ON DELETE RESTRICT
  */
 
-import { beforeAll, afterAll, describe, it, expect } from 'vitest'
+import { beforeAll, afterAll, describe, it, expect, vi } from 'vitest'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../types/supabase'
 import {
-  QUESTIONS_PER_ATTEMPT,
   checkSessionUsable,
   gradeAnswers,
   recordQuizAttempt,
+  selectQuestionsForAttempt,
   startQuizSession,
+  type QuestionForSelection,
 } from '@/lib/training/assessment'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -55,7 +56,8 @@ const admin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 const sessions = () => admin.from('quiz_sessions')
 
 const runId = crypto.randomUUID().slice(0, 8)
-const POOL_SIZE = 12 // deliberately > QUESTIONS_PER_ATTEMPT, so the slice is real
+const DEFAULT_ATTEMPT_SIZE = 8
+const POOL_SIZE = 12 // deliberately > the configured default, so selection is real
 
 let firmId: string
 let courseId: string
@@ -65,8 +67,10 @@ let passerId: string
 let outsiderId: string
 /** questionId → correct_index, for the course under test. */
 const correctIndexById = new Map<string, number>()
+const lessonById = new Map<string, number | null>()
 /** Ids belonging to the OTHER course — real questions, never in a session. */
 let foreignQuestionIds: string[] = []
+let inactiveQuestionId: string
 
 function must<R extends { data: unknown; error: { message: string } | null }>(
   result: R,
@@ -100,10 +104,11 @@ async function seedCourse(title: string, size: number) {
     answers: ['A', 'B', 'C', 'D'],
     correct_index: i % 4,
     section_tag: `TEST:${runId}`,
+    lesson: (i % 5) + 1,
   }))
 
   const inserted = must(
-    await admin.from('quiz_questions').insert(rows).select('id, correct_index'),
+    await admin.from('quiz_questions').insert(rows).select('id, correct_index, lesson'),
     `insert questions ${title}`
   )
 
@@ -121,9 +126,17 @@ async function createLearner(label: string) {
 }
 
 beforeAll(async () => {
-  const main = await seedCourse(`QuizForge Course ${runId}`, POOL_SIZE)
+  const main = await seedCourse(`QuizForge Course ${runId}`, POOL_SIZE + 1)
   courseId = main.courseId
-  for (const q of main.questions) correctIndexById.set(q.id, q.correct_index)
+  inactiveQuestionId = main.questions[main.questions.length - 1].id
+  must(
+    await admin.from('quiz_questions').update({ is_active: false }).eq('id', inactiveQuestionId).select('id').single(),
+    'deactivate question'
+  )
+  for (const q of main.questions) {
+    correctIndexById.set(q.id, q.correct_index)
+    lessonById.set(q.id, q.lesson)
+  }
 
   const other = await seedCourse(`QuizForge Decoy ${runId}`, 4)
   otherCourseId = other.courseId
@@ -289,20 +302,117 @@ describe('checkSessionUsable', () => {
 })
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Question selection — pure coverage rules before the session is written.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const question = (id: string, lesson: number | null): QuestionForSelection => ({
+  id,
+  lesson,
+  question_text: `Question ${id}`,
+  answers: ['A', 'B', 'C', 'D'],
+})
+
+const lessonCounts = (questions: { id: string }[], source: QuestionForSelection[]) => {
+  const lessonForId = new Map(source.map(item => [item.id, item.lesson]))
+  return [1, 2, 3, 4, 5].map(lesson =>
+    questions.filter(item => lessonForId.get(item.id) === lesson).length
+  )
+}
+
+describe('selectQuestionsForAttempt', () => {
+  it('serves the whole pool when it fits, without stratifying or failing closed', () => {
+    const pool = [question('l1', 1), question('l2', 2), question('l3', 3), question('l5', 5)]
+    const selection = selectQuestionsForAttempt(pool, DEFAULT_ATTEMPT_SIZE)
+
+    expect(selection.questions.map(item => item.id).sort()).toEqual(pool.map(item => item.id).sort())
+    expect(selection.quotaShortfalls).toEqual([])
+  })
+
+  it('uses the exact 1/2/2/1/2 blueprint only when the pool exceeds the attempt size', () => {
+    const pool = [
+      ...Array.from({ length: 3 }, (_, index) => question(`l1-${index}`, 1)),
+      ...Array.from({ length: 4 }, (_, index) => question(`l2-${index}`, 2)),
+      ...Array.from({ length: 4 }, (_, index) => question(`l3-${index}`, 3)),
+      ...Array.from({ length: 3 }, (_, index) => question(`l4-${index}`, 4)),
+      ...Array.from({ length: 4 }, (_, index) => question(`l5-${index}`, 5)),
+    ]
+    const selection = selectQuestionsForAttempt(pool, DEFAULT_ATTEMPT_SIZE)
+
+    expect(selection.questions).toHaveLength(DEFAULT_ATTEMPT_SIZE)
+    expect(lessonCounts(selection.questions, pool)).toEqual([1, 2, 2, 1, 2])
+    expect(new Set(selection.questions.map(item => item.id))).toHaveLength(DEFAULT_ATTEMPT_SIZE)
+    expect(selection.quotaShortfalls).toEqual([])
+  })
+
+  it('randomizes selection within lessons and shuffles the final mixed exam', () => {
+    const pool = [
+      ...Array.from({ length: 3 }, (_, index) => question(`l1-${index}`, 1)),
+      ...Array.from({ length: 4 }, (_, index) => question(`l2-${index}`, 2)),
+      ...Array.from({ length: 4 }, (_, index) => question(`l3-${index}`, 3)),
+      ...Array.from({ length: 3 }, (_, index) => question(`l4-${index}`, 4)),
+      ...Array.from({ length: 4 }, (_, index) => question(`l5-${index}`, 5)),
+    ]
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0)
+    const selection = selectQuestionsForAttempt(pool, DEFAULT_ATTEMPT_SIZE)
+    random.mockRestore()
+
+    const lessonsInOrder = selection.questions.map(item => pool.find(source => source.id === item.id)?.lesson)
+    expect(selection.questions.filter(item => item.id.startsWith('l2-')).map(item => item.id)).not.toEqual(['l2-0', 'l2-1'])
+    expect(lessonsInOrder).not.toEqual([1, 2, 2, 3, 3, 4, 5, 5])
+  })
+
+  it('fills a lesson shortfall from other eligible questions and reports it', () => {
+    const pool = [
+      question('l1-a', 1), question('l1-b', 1),
+      question('l2-a', 2), question('l2-b', 2),
+      question('l3-a', 3), question('l3-b', 3), question('l3-c', 3),
+      question('l5-a', 5), question('l5-b', 5),
+    ]
+    const selection = selectQuestionsForAttempt(pool, DEFAULT_ATTEMPT_SIZE)
+
+    expect(selection.questions).toHaveLength(DEFAULT_ATTEMPT_SIZE)
+    expect(new Set(selection.questions.map(item => item.id))).toHaveLength(DEFAULT_ATTEMPT_SIZE)
+    expect(selection.quotaShortfalls).toEqual([{ lesson: 4, requested: 1, available: 0 }])
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Against the real database
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe('startQuizSession', () => {
-  it('serves QUESTIONS_PER_ATTEMPT questions from a larger pool, with no correct_index', async () => {
+  it('uses the course-configured attempt size and excludes inactive or other-course questions', async () => {
     const result = await startQuizSession(admin, { userId: learnerId, firmId, courseId })
     expect(result.ok).toBe(true)
     if (!result.ok) return
 
-    expect(result.questions).toHaveLength(QUESTIONS_PER_ATTEMPT)
-    expect(QUESTIONS_PER_ATTEMPT).toBeLessThan(POOL_SIZE)
+    expect(result.questions).toHaveLength(DEFAULT_ATTEMPT_SIZE)
+    expect(DEFAULT_ATTEMPT_SIZE).toBeLessThan(POOL_SIZE)
+    expect(result.questions.map(question => question.id)).not.toContain(inactiveQuestionId)
+    expect(result.questions.every(question => lessonById.has(question.id))).toBe(true)
+    expect([1, 2, 3, 4, 5].map(lesson =>
+      result.questions.filter(question => lessonById.get(question.id) === lesson).length
+    )).toEqual([1, 2, 2, 1, 2])
     for (const q of result.questions) {
       expect(Object.keys(q).sort()).toEqual(['answers', 'id', 'question_text'])
     }
+  })
+
+  it('reads attempt size from the course configuration for a newly minted session', async () => {
+    must(
+      await admin.from('courses').update({ questions_per_attempt: 7 }).eq('id', courseId).select('id').single(),
+      'configure attempt size'
+    )
+
+    const result = await startQuizSession(admin, { userId: outsiderId, firmId, courseId })
+
+    must(
+      await admin.from('courses').update({ questions_per_attempt: DEFAULT_ATTEMPT_SIZE }).eq('id', courseId).select('id').single(),
+      'restore attempt size'
+    )
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.questions).toHaveLength(7)
   })
 
   it('reuses an open session rather than minting a new one — /api/quiz/start is not a reroll button', async () => {
@@ -405,7 +515,7 @@ describe('recordQuizAttempt — the ix-quizforge regression', () => {
         user_id: learnerId,
         firm_id: firmId,
         course_id: courseId,
-        question_ids: [...correctIndexById.keys()].slice(0, QUESTIONS_PER_ATTEMPT),
+        question_ids: [...correctIndexById.keys()].slice(0, DEFAULT_ATTEMPT_SIZE),
         issued_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
         expires_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
       })

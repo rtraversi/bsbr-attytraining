@@ -171,6 +171,7 @@ export type Database = {
           id: string
           is_published: boolean
           pass_threshold: number
+          questions_per_attempt: number
           rise_embed_url: string | null
           title: string
         }
@@ -181,6 +182,7 @@ export type Database = {
           id?: string
           is_published?: boolean
           pass_threshold?: number
+          questions_per_attempt?: number
           rise_embed_url?: string | null
           title: string
         }
@@ -191,6 +193,7 @@ export type Database = {
           id?: string
           is_published?: boolean
           pass_threshold?: number
+          questions_per_attempt?: number
           rise_embed_url?: string | null
           title?: string
         }
@@ -453,6 +456,7 @@ export type Database = {
           explanation: string | null
           id: string
           is_active: boolean
+          lesson: number | null
           question_text: string
           section_tag: string | null
         }
@@ -464,6 +468,7 @@ export type Database = {
           explanation?: string | null
           id?: string
           is_active?: boolean
+          lesson?: number | null
           question_text: string
           section_tag?: string | null
         }
@@ -475,6 +480,7 @@ export type Database = {
           explanation?: string | null
           id?: string
           is_active?: boolean
+          lesson?: number | null
           question_text?: string
           section_tag?: string | null
         }

@@ -21,15 +21,6 @@ import { ensureEnrollment } from '@/lib/enrollments'
 type AdminClient = ReturnType<typeof createAdminClient>
 
 /**
- * How many questions one certification attempt serves.
- *
- * Was a module constant in app/dashboard/training/page.tsx, where it governed a
- * client-visible shuffle. It is now the size of the exam the SERVER commits to,
- * which is the only place it can be enforced.
- */
-export const QUESTIONS_PER_ATTEMPT = 8
-
-/**
  * How long a minted exam stays gradeable.
  *
  * Not a time limit on the quiz — the product deliberately has none. This exists
@@ -53,6 +44,111 @@ export interface ServedQuestion {
   id: string
   question_text: string
   answers: string[]
+}
+
+type LessonNumber = 1 | 2 | 3 | 4 | 5
+
+/** The approved eight-question coverage blueprint, indexed by lesson 1–5. */
+const LESSON_BLUEPRINT: readonly [1, 2, 2, 1, 2] = [1, 2, 2, 1, 2]
+
+export interface QuestionForSelection extends ServedQuestion {
+  lesson: number | null
+}
+
+export interface LessonQuotaShortfall {
+  lesson: LessonNumber
+  requested: number
+  available: number
+}
+
+export interface QuestionSelection {
+  questions: ServedQuestion[]
+  quotaShortfalls: LessonQuotaShortfall[]
+}
+
+function servedQuestion({ id, question_text, answers }: QuestionForSelection): ServedQuestion {
+  return { id, question_text, answers }
+}
+
+/**
+ * Scale the approved 1/2/2/1/2 blueprint when an operator configures a course
+ * to use another attempt size. At the default size of eight this is exactly the
+ * approved blueprint; largest-remainder allocation keeps every other size at
+ * its configured total without hard-coding a second policy.
+ */
+function lessonQuotasForAttemptSize(attemptSize: number): readonly number[] {
+  const blueprintTotal = LESSON_BLUEPRINT.reduce((sum, count) => sum + count, 0)
+  if (attemptSize === blueprintTotal) return [...LESSON_BLUEPRINT]
+
+  const raw = LESSON_BLUEPRINT.map(count => (count * attemptSize) / blueprintTotal)
+  const quotas = raw.map(Math.floor)
+  let remaining = attemptSize - quotas.reduce((sum, count) => sum + count, 0)
+  const byRemainder = raw
+    .map((count, index) => ({ index, remainder: count - quotas[index] }))
+    .sort((a, b) => b.remainder - a.remainder || a.index - b.index)
+
+  for (const { index } of byRemainder) {
+    if (remaining === 0) break
+    quotas[index]++
+    remaining--
+  }
+
+  return quotas
+}
+
+/**
+ * Choose one exam from an eligible pool.
+ *
+ * The full pool is served whenever it fits in the configured attempt size. That
+ * makes today's eight-question bank a shuffle-only no-op, rather than blocking
+ * certification because lessons 2 and 4 cannot satisfy the future blueprint.
+ * Once there is a real choice, each lesson is shuffled and sampled to the
+ * blueprint, then the combined exam is shuffled so lesson order is not exposed.
+ * Any unmet quota is returned for durable server logging; alternatives fill the
+ * gap so a content shortfall never turns into a learner-facing outage.
+ */
+export function selectQuestionsForAttempt(
+  pool: QuestionForSelection[],
+  attemptSize: number
+): QuestionSelection {
+  const uniquePool = [...new Map(pool.map(question => [question.id, question])).values()]
+
+  if (uniquePool.length <= attemptSize) {
+    return { questions: shuffleArray(uniquePool).map(servedQuestion), quotaShortfalls: [] }
+  }
+
+  const quotas = lessonQuotasForAttemptSize(attemptSize)
+  const selected: QuestionForSelection[] = []
+  const selectedIds = new Set<string>()
+  const quotaShortfalls: LessonQuotaShortfall[] = []
+
+  for (let lesson = 1 as LessonNumber; lesson <= 5; lesson++) {
+    const requested = quotas[lesson - 1]
+    if (requested === 0) continue
+
+    const candidates = shuffleArray(uniquePool.filter(question => question.lesson === lesson))
+    const chosen = candidates.slice(0, requested)
+    for (const question of chosen) {
+      selected.push(question)
+      selectedIds.add(question.id)
+    }
+
+    if (chosen.length < requested) {
+      quotaShortfalls.push({ lesson, requested, available: candidates.length })
+    }
+  }
+
+  // Fill quota gaps from every unused eligible question, including questions
+  // awaiting lesson classification. This guarantees a full-sized exam whenever
+  // the pool is larger than the configured attempt size.
+  const needed = attemptSize - selected.length
+  if (needed > 0) {
+    selected.push(
+      ...shuffleArray(uniquePool.filter(question => !selectedIds.has(question.id))).slice(0, needed)
+    )
+  }
+
+  return { questions: shuffleArray(selected).map(servedQuestion), quotaShortfalls }
 }
 
 export interface SubmittedAnswer {
@@ -200,9 +296,24 @@ export async function startQuizSession(
 ): Promise<StartSessionResult> {
   const { userId, firmId, courseId } = params
 
+  const { data: course, error: courseErr } = await admin
+    .from('courses')
+    .select('questions_per_attempt')
+    .eq('id', courseId)
+    .maybeSingle()
+
+  if (courseErr) {
+    console.error('[quiz/start] course fetch failed:', courseErr)
+    return { ok: false, status: 500, error: 'Failed to load the course' }
+  }
+  if (!course) {
+    return { ok: false, status: 404, error: 'Course not found' }
+  }
+  const attemptSize = course.questions_per_attempt
+
   const { data: pool, error: poolErr } = await admin
     .from('quiz_questions')
-    .select('id, question_text, answers')
+    .select('id, question_text, answers, lesson')
     .eq('course_id', courseId)
     .eq('is_active', true)
 
@@ -211,12 +322,13 @@ export async function startQuizSession(
     return { ok: false, status: 500, error: 'Failed to load questions' }
   }
 
-  const questionsById = new Map<string, ServedQuestion>()
+  const questionsById = new Map<string, QuestionForSelection>()
   for (const q of pool ?? []) {
     questionsById.set(q.id, {
       id: q.id,
       question_text: q.question_text,
       answers: (q.answers as string[] | null) ?? [],
+      lesson: q.lesson,
     })
   }
 
@@ -245,7 +357,7 @@ export async function startQuizSession(
   if (open) {
     const served = open.question_ids
       .map(id => questionsById.get(id))
-      .filter((q): q is ServedQuestion => q !== undefined)
+      .filter((q): q is QuestionForSelection => q !== undefined)
 
     // Reuse only if EVERY question still resolves. The grading denominator is
     // question_ids.length regardless of how many are servable, so a session
@@ -258,7 +370,16 @@ export async function startQuizSession(
     }
   }
 
-  const chosen = shuffleArray([...questionsById.values()]).slice(0, QUESTIONS_PER_ATTEMPT)
+  const selection = selectQuestionsForAttempt([...questionsById.values()], attemptSize)
+  if (selection.quotaShortfalls.length > 0) {
+    console.warn('[quiz/start] lesson quota shortfall; filled from other eligible questions', {
+      courseId,
+      attemptSize,
+      shortfalls: selection.quotaShortfalls,
+    })
+  }
+
+  const chosen = selection.questions
   const expiresAt = new Date(now.getTime() + QUIZ_SESSION_TTL_MS).toISOString()
 
   const { data: inserted, error: insertErr } = await admin
