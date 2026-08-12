@@ -42,3 +42,12 @@ preview to `persontest919@gmail.com` and confirm mail health.
 ## Full text, captured 2026-08-06
 
 🔴 THE DNS CHANGED UNDER US ON 2026-08-04 — READ BEFORE TOUCHING MAIL. The apex went from ZERO MX and ZERO TXT (verified by dig 08-03) to ZOHO MX (mx.zoho.com, mx2, mx3) plus v=spf1 include:one.zoho.com and a zoho-verification TXT. Caught by terminal, confirmed by dig. CONSEQUENCE 1: session_handoff.md next-step 5 said Cloudflare Email Routing was “verified safe because the apex is empty”. That is now HARMFUL ADVICE — configuring it would overwrite the Zoho MX and break inbound mail. Corrected in the handoff with a DO NOT DO THIS marker. CONSEQUENCE 2 🔴 UNVERIFIED RISK: nobody has confirmed Resend still sends. DKIM at resend._domainkey is intact, the send. subdomain keeps its own MX and SPF, and DMARC uses relaxed alignment, so it SHOULD be unaffected — but the Resend API key is send-only (restricted_api_key) and cannot list domains, so this cannot be checked from the CLI. The only real test is sending one message. A mail change broke onboarding, invites, cert delivery and reminders for DAYS on 07-29; do not assume. Max: check tomorrow. CONSEQUENCE 3: two code comments now state the opposite of the truth — lib/resend.ts:2-5 and workers/cert-worker/src/index.ts both justify the noreply@ sender with “the zone has no inbound MX, so replies would bounce”. Queued for terminal. CONSEQUENCE 4: info@ and accreditation@ may now be real mailboxes, which changes ix-certmailbox, ix-supportdest and possibly ix-smtp. NOBODY HAS CONFIRMED THE MAILBOXES EXIST.
+
+---
+
+## Board text as of 2026-08-12
+
+> The board text moved on after the capture above. Recorded here verbatim before the row was
+> reduced to a single imperative sentence.
+
+🔴 VERIFIED FAILURE 08-07: a real Resend API send using the loaded restricted key was rejected 403: `iurixaccreditation.com` is not verified. No email was sent. Max added the apex domain in Resend but cannot see its DNS-records screen without Rob’s account. ROB: open that domain, copy the exact Resend DNS instructions to Max, then add only those records in Cloudflare. DO NOT enable Cloudflare Email Routing and do NOT replace Zoho’s apex MX/SPF. Resend normally uses `send.` for its return-path records; confirm the exact generated names/values rather than guessing. Once the domain verifies, Max sends the pending cancellation-email preview and confirms mail health.

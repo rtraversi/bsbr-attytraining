@@ -22,3 +22,12 @@ Four one-liners. deploy.yml never prints the preview URL (its grep expects a str
 ## Full text, captured 2026-08-06
 
 SMALL CI AND DOC CLEANUPS, GROUPED BECAUSE THEY ARE ALL ONE-LINERS WITH THE SAME OWNER. (1) deploy.yml NEVER PRINTS THE PREVIEW URL: its grep expects a workers.dev string that opennextjs-cloudflare upload does not emit, so the run summary shows ‘Preview uploaded’ over a blank line. Build it from the version ID meanwhile: first 8 characters + -bsbr-attytraining.aistaffcompliance.workers.dev. (2) .planning/DEPLOY-RUNBOOK.md step 2 still tells you to copy NEXT_PUBLIC_APP_URL from .env.local, which holds localhost:3000. See ix-cisecrets for why that ships broken password-reset links from a green build. (3) .planning/DEPLOY-CHECKLIST.md (June) still says pnpm run deploy; that predates the Windows discovery and is safe only on macOS/Linux. (4) actions/checkout@v4, actions/setup-node@v4 and pnpm/action-setup@v4 warn about Node 20 deprecation and are being forced onto Node 24. Harmless today, will not be forever.
+
+---
+
+## Board text as of 2026-08-12
+
+> The board text moved on after the capture above. Recorded here verbatim before the row was
+> reduced to a single imperative sentence.
+
+Small cleanups, grouped. (1) deploy.yml never prints the preview URL — its grep expects a string wrangler does not emit. (2) DEPLOY-RUNBOOK step 2 still says copy NEXT_PUBLIC_APP_URL from .env.local, which holds localhost. (3) DEPLOY-CHECKLIST still says pnpm run deploy, unsafe off macOS/Linux. (4) CI actions warn on Node 20. (5) NEW 2026-08-06: supabase/migrations/0023_remove_avatars.sql references scripts/remove-avatars-bucket.ts twice (lines 21, 44) but the file is .mjs — desktop wrote the comment and created the script with different extensions in the same change. Found by Codex.

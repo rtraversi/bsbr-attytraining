@@ -1,9 +1,40 @@
 # Item histories
 
-One file per brief item whose text outgrew the board. The board carries the current ask;
-these carry everything else. Item ids are stable, so `grep` for one to trace a decision.
+One file per brief item. The board carries the current ask; these carry everything else.
+Item ids are stable, so `grep` for one to trace a decision.
 
-Captured 2026-08-06: **32 items**, 42,377 characters on the board reduced to 11,960 (72% smaller). Nothing was discarded.
+## 2026-08-12 — the board became a data model
+
+Before this date the board was one giant `t` string per row, mixing the action, the history,
+the corrections and the decisions together. 68 rows held **34,747 characters**, and no amount
+of clipping made it scannable, because the first line of a row was as likely to be a correction
+from three weeks ago as the thing to do next. A human could not use it.
+
+The row is now typed:
+
+| Field | Holds |
+|---|---|
+| `t` | ONE imperative sentence — the action, nothing else. Max 90 chars. |
+| `p` | The problem, in 1–2 sentences. |
+| `x` | The fix, or what done looks like. |
+| `n` | Optional: the blocker, the decision, the gotcha. |
+
+The collapsed board is now **4,830 characters** — 86% smaller — and every row reads as one line.
+
+**Nothing was discarded.** Every one of the 68 rows has its full pre-restructure text preserved
+verbatim in `items/<id>.md` here, under a `## Board text as of 2026-08-12` heading. That is what
+a Claude reads before touching the code, and it is the reason the archive was written and
+verified on disk *before* a single row was shortened. This directory now holds **118,795
+characters** across 68 files.
+
+Every row carries `h:1`, so every row links here. Two rows (`ix-questionpool`, `ix-quizsubset`)
+had claimed `h:1` with no file behind it; that is fixed.
+
+## 2026-08-06 — the first capture
+
+32 items whose text had outgrown the board, 42,377 characters reduced to 11,960 (72% smaller).
+Those files now carry both captures: the 2026-08-06 text and, where the board moved on before
+the restructure, a dated section holding what it said on 2026-08-12.
 
 | Item | Owner | Was | Now |
 |---|---|--:|--:|
@@ -39,3 +70,6 @@ Captured 2026-08-06: **32 items**, 42,377 characters on the board reduced to 11,
 | [`ix-www522`](ix-www522.md) | Rob | 613 | 264 |
 | [`ix-claudemd`](ix-claudemd.md) | Terminal | 546 | 273 |
 | [`ix-webhooksecret`](ix-webhooksecret.md) | Rob | 510 | 314 |
+
+Five of those ids (`ix-lookupkey`, `ix-mig0023`, `ix-refundnonus`, `ix-socialsdead`, `ix-www522`)
+have since left the board. Their files stay — a retired item is still a decision someone made.

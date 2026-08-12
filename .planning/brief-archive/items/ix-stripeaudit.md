@@ -70,3 +70,12 @@ until Rob makes the final policy call, no automatic refund flow is approved.
 ## Full text, captured 2026-08-06
 
 🔴🔴 LAUNCH GATE — FULL STRIPE VERIFICATION BEFORE LIVE MODE. LOGGED 2026-07-31 13:51 MST (Max), verbatim: “stripe verification before launch. need to know all code regarding the stripe api is FULLY functionaly the way we planned it. its REAL money. we must be sure. this is a deal breaker and must be given maximum attention before it ever goes live.” THIS IS A HARD GATE, NOT A CHECKLIST ITEM. Nothing about Stripe has ever run against real money — everything to date is sandbox acct_1ThDpr6ZCSojEKRr. SURFACE TO AUDIT (every file that touches the Stripe API): app/api/checkout/route.ts (volume pricing, adjustable_quantity, automatic_tax, the active-firm guard), app/api/webhooks/stripe/route.ts (~373 lines, raw-body signature verify, processed_stripe_events idempotency, FIVE handlers incl. grace-vs-lapsed renewal re-enrollment), app/api/portal/route.ts, app/api/billing/summary + auto-renew (NEW, Batch 3), app/api/onboarding/complete + status. KNOWN ISSUES THAT MUST BE CLOSED FIRST: ix-doublebill (a customer can be charged and provisioned nothing — pinned Monday), automatic_tax is already enabled so LIVE CHECKOUT HARD-FAILS until Stripe Tax is on, and the PRICE_ID is hardcoded at checkout/route.ts:17 and must be swapped for the live-mode object. Also confirm the live webhook is registered ONCE, on the NEW domain, and that the statement descriptor reads Iurix
+
+---
+
+## Board text as of 2026-08-12
+
+> The board text moved on after the capture above. Recorded here verbatim before the row was
+> reduced to a single imperative sentence.
+
+🔴🔴 LAUNCH GATE. 08-07 audit: test webhook events exactly match the five code handlers; the test product is now correctly named ‘IURIX Annual Accreditation’. 🔴 CHARGED-BUT-REFUSED POLICY, Max interim decision: no automatic refund yet. For an email-in-use checkout, cancel the new subscription, NEVER say a refund is already in motion, and alert BOTH Max + Rob so they issue the manual refund. Terminal must soften CheckoutEmailInUseEmail and keep the existing failure ledger/alert. ROB OWNS THE FINAL POLICY CALL before live: retain manual refunds or approve an idempotent automatic full-refund flow. This alert cannot be trusted until ix-dnszoho closes (Resend currently 403s). Still blocking: ix-doublebill pre-charge guard, live Stripe Tax, live price lookup_key `per_seat_annual`, one live webhook on the new domain, and a controlled full-path test.

@@ -1,5 +1,10 @@
 
 
+<!-- Straight double quotes are forbidden inside SEED string values — one blanks the whole board.
+     So every apostrophe and quotation mark below is curly, which makes the board unreadable if the
+     browser sniffs windows-1252. The artifact wrapper supplies UTF-8; this covers opening the file
+     directly, where it previously rendered Maxâ€™s instead of Max’s. -->
+<meta charset="utf-8">
 <title>IURIX:/CNTRL /WEEKLY.BRIEF</title>
 <style>
 @font-face{
@@ -106,15 +111,27 @@ select option{background:#0a0c0d;color:var(--ink);letter-spacing:normal;text-tra
   color:#e2e5db}
 li.done .txt{color:var(--faint)}
 
-/* long items collapse — 29 of 70 items hold 76% of the text, so full-render is unreadable */
+/* Collapsed rows are one imperative sentence, so the body is never truncated. `.clip` now means
+   only "this row has more behind it" — it keeps the click target, not the ellipsis. */
 .txt .body.clip{cursor:pointer}
 .txt .body.clip:hover{color:#fff}
+
+/* Expanded detail — the typed blocks. Indented and set a step down from the action so the
+   scannable line stays the thing your eye lands on when several rows are open at once. */
+.detail{display:block;margin:9px 0 3px;padding-left:13px;border-left:1px solid var(--line2)}
+.detail .blk{display:block;margin-bottom:7px;font-size:15.6px;line-height:1.55;color:#c3c7bc}
+.detail .blk:last-child{margin-bottom:0}
+.detail .lab{display:block;font-family:var(--display);font-weight:600;font-size:11.6px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:1px}
+.detail .blk.src .lab{color:var(--faint)}
+.detail .val.path{font-family:var(--mono);font-size:13.2px;color:#a87c33;
+  -webkit-user-select:all;user-select:all}
+li.done .detail .blk{color:var(--faint)}
 .more{background:transparent;border:none;color:var(--orange);font-family:var(--display);
   font-weight:500;font-size:13.2px;
   letter-spacing:.14em;text-transform:uppercase;cursor:pointer;padding:0 0 0 9px;white-space:nowrap}
 .more:hover{color:var(--ink)}
 .more:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
-.more .sz{color:var(--faint);letter-spacing:.06em}
 
 /* item id — makes a row referenceable in conversation, and marks the ones with a history file */
 .idtag{font-family:var(--mono);font-size:12.6px;letter-spacing:.02em;color:var(--muted);
@@ -224,79 +241,330 @@ footer button:hover{border-color:var(--red);color:var(--red)}
   const SEED=[
     {key:"iurix", title:"Iurix", path:"/ops.training", note:"Training Platform", tasks:[
 
-      {id:"ix-adminswap", s:"todo", o:"terminal", h:1, t:"DECIDED 07-31: admins can swap a seat, guarded at 80%. ✅ The lock already exists and matches Max's number exactly (reassign/route.ts blocks at 4 of 5 lessons, keyed on highest lesson reached, fails closed). 🔴 What is missing is THE APPEAL: there is no way for Rob or Max to grant an override. Build three things: a refusal that explains itself in-product rather than a bare 409, an appeal path, and an actual override."},
-      {id:"ix-cancelemail", s:"todo", o:"you", h:1, t:"📌 Two things. (1) emails/auto-renew-cancelled.tsx has never been rendered by a human. The content carries all three required facts; how it LOOKS is unverified. (2) Verify the sandbox is clean: terminal claims all ten sandbox subscriptions were restored to cancel_at_period_end=False after its round-trip test, and that claim has never been independently checked. Feeds ix-stripeaudit."},
-      {id:"ix-stripeaudit", s:"todo", o:"you", h:1, t:"🔴🔴 LAUNCH GATE. 08-07 audit: test webhook events exactly match the five code handlers; the test product is now correctly named ‘IURIX Annual Accreditation’. 🔴 CHARGED-BUT-REFUSED POLICY, Max interim decision: no automatic refund yet. For an email-in-use checkout, cancel the new subscription, NEVER say a refund is already in motion, and alert BOTH Max + Rob so they issue the manual refund. Terminal must soften CheckoutEmailInUseEmail and keep the existing failure ledger/alert. ROB OWNS THE FINAL POLICY CALL before live: retain manual refunds or approve an idempotent automatic full-refund flow. This alert cannot be trusted until ix-dnszoho closes (Resend currently 403s). Still blocking: ix-doublebill pre-charge guard, live Stripe Tax, live price lookup_key `per_seat_annual`, one live webhook on the new domain, and a controlled full-path test."},
-      {id:"ix-doublebill", s:"wip", o:"you", h:1, t:"🟡 Deployed 08-05, but never exercised against a live webhook. Case 3 still leaves a subscription billing against nothing (Max ruled ‘cancel’ 08-03, unimplemented). The webhook safety net IS built; the remaining gap is that /api/checkout does no identity check, so the buyer is charged before anything stops them. Blocks ix-stripeaudit. Same problem as ix-winbackflow from the other end."},
-      {id:"ix-authperf", s:"todo", o:"you", h:1, t:"⚠ NOT done, despite the app feeling faster. Checked 07-31: getClaims usage repo-wide is still ZERO and getUser() is still called three times per dashboard navigation (middleware, layout, page). Nothing in the auth path has changed, so any perceived speedup is Supabase free-tier variability, not code. The getUserById fan-out was already batched back in Phase 3 and was never the cause."},
-      {id:"ix-remindaudit3",s:"todo", o:"you", t:"DECIDED IN PART — renewal reminders are MANDATORY, no off switch. LOGGED 2026-07-31 08:42 MST (Max): “renewal mandatory. agreed.” Rationale: it is advance notice of an automatic charge, not a nudge, and several US states expect exactly that notice. Inactivity gets an off switch (see ix-inactivityredesign). Expiry still under discussion (ix-remindaudit4)"},
-      {id:"ix-inactivityredesign", s:"todo", o:"terminal", h:1, t:"Spec is SETTLED. Employee gets one nudge, admin gets a roughly-weekly digest naming who is outstanding, trigger at 5 days, hard stop once certified, toggle on by default with Settings as its home. ⚠ It is a rewrite, not a tweak: it changes the recipient (employee only today) and the trigger (firms.reminder_days 3/7/14 becomes a fixed 5, leaving reminder_days as dead config). Build the Settings toggle now; ix-onboarding must surface it later."},
-      {id:"ix-winbackflow", s:"todo", o:"you", h:1, t:"📌 Same problem as ix-doublebill seen from the other end. Checkout deliberately lets a cancelled firm's owner through, and the webhook then fails on createUser because their auth account already exists. So the win-back path is not merely unbuilt, it is the exact path that charges a returning customer and gives them nothing. Order: ix-doublebill case B first, then the destination."},
-      {id:"ix-supportgeneral",s:"todo", o:"you", t:"The sign-in “Contact support” drafts an email, but a real support PAGE already exists behind auth. Consider a public copy of it for signed-out users. May be better held until the marketing site lands, but it must stop pointing at the old address either way"},
-      {id:"ix-aiglow",s:"todo", o:"you", t:"The lesson-cleared card is loved, BUT the outer glow and contour box read as generic AI styling. Find a way to give it depth without that look. Same principle applies anywhere else the glow pattern is used"},
-      {id:"ix-cookiespage", s:"wip", o:"you", h:1, t:"✅ Copy drafted 08-04, 7/7 sections, no placeholders. Unblocked by Max checking the browser storage panel: exactly one cookie, ours, and nothing from Articulate. So ‘strictly necessary only, no consent banner’ holds and becomes a marketing point. 🔴 Still not written into the page file, and the route is still 404-guarded in production. Two links queue behind it: the sign-in footer and the landing footer."},
-      {id:"ix-dparename",s:"todo", o:"you", t:"RENAME THE DPA PAGE? LOGGED 2026-07-31 11:25 MST (Max): “also i think, dpa could be called, how we process data.” ⚠ CLAUDE FLAG, MAX'S CALL: a DPA is a specific contractual instrument (Data Processing Agreement, controller-to-processor under GDPR/CCPA), and law firms running vendor due-diligence search for it BY NAME. Renaming it outright could make it unfindable to exactly the buyer who needs it, and softens its contractual character. RECOMMENDED BEST-OF-BOTH: friendly NAV LABEL (“How we process data”) pointing at /dpa, while the DOCUMENT still titles itself “Data Processing Agreement” in its heading and first line. Buyer finds it, human understands it. Decide alongside ix-legaldrafts since it changes the drafted heading"},
-      {id:"ix-ogimage", s:"wip", o:"you", h:1, t:"🟡 Metadata shipped 08-04 (c8ea4c6): og and twitter tags plus a canonical URL on app/layout.tsx. ⚠ The image itself is still missing and it is Max's: export a 1200x630 from Affinity, since no rasteriser exists on this machine. Until then a shared link shows a title and description but no image."},
-      {id:"ix-risehosting", s:"todo", o:"you", h:1, t:"📋 TABLED by Max 08-04, kept so it is not lost. The training content is public: rise_embed_url returns 200 with no auth, so Articulate is a sub-processor and anyone with the link can view the courseware. ✅ What is SOLD is still protected, since the quiz is server-scored behind enrollment. 🔴 Self-hosting alone does not fix it: a public R2 bucket reproduces the problem on our own domain. Needs a private bucket plus a session-gated route."},
-      {id:"ix-termsaccept", s:"todo", o:"terminal", h:1, t:"🔴 Blocks the legal pages shipping. There is no acceptance mechanism anywhere; grep returns zero hits. Terms §1 as drafted is therefore currently false. Max's decision: acceptance before checkout for admins, at password-set for staff. ⚠ Store WHEN and WHICH VERSION, not a boolean, so you can say which version each firm agreed to once Katy revises. Do not reorder provisioning."},
-      {id:"ix-cookiesecure",s:"wip", o:"terminal", t:"✅ FIXED 2026-08-07 in 10de458, PUSHED, NOT DEPLOYED. Closes on the cutover deploy, with the unproven browser-restart check folded into its smoke test. ORIGINAL REPORT FOLLOWS, kept verbatim. The Supabase auth cookie has Secure:false — observed in the browser 2026-08-04. Nothing sets it; lib/supabase/client.ts:13 configures cookieOptions but only maxAge. Narrow but real: any plain-HTTP request to the domain carries the session token in the clear before the redirect fires. ⚠ HttpOnly:false is NOT a bug and must NOT be “fixed” — @supabase/ssr needs the browser client to read that cookie. Separately the cookie expires 400 days out (the browser maximum) while client.ts:14 intends rememberMe ? 30 days : session, likely the middleware refresh overwriting cookieOptions — a hypothesis to trace, not a finding. Tasks 11 and 12. ✅ FIXED 2026-08-07 in 10de458, committed and PUSHED, not deployed. The hypothesis was CORRECT: middleware.ts built its own client with no cookieOptions and overwrote the browser client's intent on every request, so patching client.ts alone would not have held. Now one shared definition used by both, verified on the wire. 🔴 NOT VERIFIED and carried forward: nobody actually closed and reopened a browser in both rememberMe states. The attributes were checked on the wire and the resolution logic is unit-tested, but the real-world restart is unproven. Fold into the cutover smoke test."},
-      {id:"ix-dnszoho", s:"todo", o:"rob", h:1, t:"🔴 VERIFIED FAILURE 08-07: a real Resend API send using the loaded restricted key was rejected 403: `iurixaccreditation.com` is not verified. No email was sent. Max added the apex domain in Resend but cannot see its DNS-records screen without Rob’s account. ROB: open that domain, copy the exact Resend DNS instructions to Max, then add only those records in Cloudflare. DO NOT enable Cloudflare Email Routing and do NOT replace Zoho’s apex MX/SPF. Resend normally uses `send.` for its return-path records; confirm the exact generated names/values rather than guessing. Once the domain verifies, Max sends the pending cancellation-email preview and confirms mail health."},
-      {id:"ix-lessoncounter", s:"wip", o:"terminal", h:1, t:"✅ FIXED 2026-08-07 in 10de458, PUSHED, NOT DEPLOYED. Closes on the cutover deploy. ORIGINAL REPORT FOLLOWS, kept verbatim. 🔴 Bug found by Max 08-05. Using the final-review skip leaves three widgets on one page disagreeing: the header says all done with the certificate issued, checks say 5/5 cleared, the LESSONS pill says 3/5. Almost certainly the display half of ix-skipcascade, which was fixed in the data layer only (a21aa59). The counter must derive from the engine that grants completion, not from lessons walked. ✅ FIXED 2026-08-07 in 10de458, committed and PUSHED, not deployed. Reproduced first (Lessons 3/5 sitting beside 5/5 cleared), then fixed, then measured 5/5. 🔴 Stays open until deployed."},
-      {id:"ix-aitutor", s:"wip", o:"you", h:1, t:"🔴 Articulate AI Tutor was live in the course and auto-opens on first scroll. Max is re-exporting with it off; confirm before the course is treated as final. Why it matters most is pedagogical: Lesson 2 is about protecting client confidentiality, and the natural way to ask the tutor a question is to paste the contract. It also routes through OpenAI and makes Rob's ‘the training content contains no AI’ false. ⚠ OFF does not remove Articulate; only self-hosting does."},
-      {id:"ix-legalv2", s:"todo", o:"you", h:1, t:"🔴 Two independent legal draft sets exist, ours and Rob's, and must merge into a v2. Max's clause-level calls are recorded verbatim in .planning/POLICY-DECISIONS.md: refunds ours, liability Rob's, retention Rob's, response time ours, Articulate ours, AI Use Policy and Accessibility Statement Rob's. 🔴 One sentence of his must not publish, see ix-privacyrise."},
-      {id:"ix-mobile390", s:"todo", o:"you", h:1, t:"⚠ Nobody has ever viewed the live site at 390px, on either machine. No longer a gate (the redesign promoted without it), so this is live-site quality now. The header is the likely failure: enlarged lockup plus four nav links. One DevTools device-toolbar pass, checking every section for horizontal scroll."},
-      {id:"ix-featuresunbuilt", s:"todo", o:"rob", h:1, t:"⚠ Four features are advertised on the marketing page before they exist: the tailored written policy, the Iurix Accredited website token, the members-only sanction summaries page, and nationwide sanction monitoring (an operational commitment, not software). Signed attestations are partial: firm-level PDF yes, per-staff no. Rob's deliberate call, kept live rather than left to drift."},
-      {id:"ix-accreditedcopy",s:"todo", o:"katy", t:"⚠ ROB'S OPEN QUESTION, UNRESOLVED: the design brief says avoid “accredited” and “guarantee” entirely for legal reasons, while Katy's copy makes “Iurix Accredited” the central promise. Shipped as Katy wrote it, with the footer disclaimer drawing the line (“not CLE-accredited… does not constitute bar accreditation”). Katy and Rob should confirm the two are reconciled ON PURPOSE. ⚠ Interacts with our Terms: the Acceptable Use clause prohibits customers describing a certificate as accreditation or endorsement by a bar, and we cannot forbid in the Terms what the marketing page implies."},
-      {id:"ix-pricecopy",s:"todo", o:"rob", t:"⚠ PRICE DISCREPANCY ROB RESOLVED ONE WAY AND FLAGGED. Katy's draft says a flat $39 in one place and $35 in another. The live Stripe price is the volume ladder $35/$32/$28 and the slider hardcodes the same maths, so the page ships the LIVE bands — correct, since advertising a number checkout does not charge is a billing problem, not a copy problem. If $39 is the real intent it changes in STRIPE FIRST, then included-section.tsx and pricing-slider.tsx. ⚠ Rob's handoff also cites the RETIRED price id price_1ThbLNCzT2268ei9nkadS8kD; corrected in the merged handoff to price_1TjNHc6ZCSojEKRrKs79ToJ0 / prod_UiovBHrxJSDVpf."},
-      {id:"ix-maybesingle",s:"wip", o:"terminal", t:"✅ BUILT 2026-08-07 in 10de458, PUSHED, NOT DEPLOYED. The yes/no below was overtaken by events: it got built. Closes on the cutover deploy. ORIGINAL FOLLOWS, kept verbatim. ⚠ ON TODAY'S LIST BUT STILL NEEDS MAX'S YES OR NO — it is the one focus item that is a decision, not a build. OPEN AND UNANSWERED — Claude recommended fixing it, Max has not said yes or no. app/api/firm/enroll-self/route.ts:85 and app/api/onboarding/complete/route.ts:105 test enrollment existence with .maybeSingle(), which ERRORS on multiple matches rather than returning one. Post-renewal that error surfaces as existing = null, so the guard concludes “no enrollment” and inserts another. It MANUFACTURES the duplicates that caused the dashboard bug fixed in 95c040e, so every occurrence degrades that fix. Terminal correctly kept it out of a commit about ordering, and it is deliberately NOT on merge-attempt so Max's review diff stays clean. ✅ FIXED 2026-08-07 in 10de458, committed and PUSHED, not deployed. Max said yes. Terminal found the query lived in THREE places, one of which was already correct, and extracted the whole thing to lib/enrollments.ts rather than patching two of three and leaving the divergence that caused this. 🔴 Stays open until deployed."},
-      {id:"ix-legaldrafts", s:"wip", o:"you", h:1, t:"✅ All four drafted 08-04, no placeholders anywhere. 🔴 Not yet written into the page files, so the live placeholders are still there. For Katy and Rob: every clause is tagged [MAX] / [VERIFIED] / [STANDARD], and the [STANDARD] ones need reading hardest because nobody chose those. Two are Katy's to settle: the liability cap (currently 12 months of fees, so $320 for a 10-seat firm) and whether a data breach sits inside it. Ships only after ix-termsaccept."},
-      {id:"ix-faqcontent",s:"todo", o:"you", t:"FAQ and support page contain AI filler rather than real answers. Rewrite with actual content. Same rule as the em-dash note: if it reads like placeholder, delete it"},
-      {id:"ix-attestdoc",s:"todo", o:"you", t:"Firm attestation PDF and the audit-log CSV export both need formatting and real drafting, then Katy's confirmation. Neither has ever been reviewed"},
-      {id:"ix-autoremind",s:"todo", o:"you", t:"The “Auto-reminders” quick action is not an action. admin-dashboard.tsx:88 is a QuickAction linking to /dashboard/settings, so it just navigates. It looks like a button that does something. Replan what it should be"},
-      {id:"ix-socialcontent",s:"todo", o:"you", t:"Socials, tutorials and blog posts are needed for the site's legitimacy. Not built, not planned"},
-      {id:"ix-questionpool", s:"todo", o:"katy", h:1, t:"🔴 KATY. Re-examined against the live DB 2026-08-06 and the framing was wrong in a useful way. The 8 questions are NOT junk: PLACEHOLDER lives in section_tag, not the text. They are real, well-formed Rule 5.3 items covering 8 distinct topics. So the ask is REVIEW AND EXPAND, not write from scratch. 🔴 THE REAL PROBLEM IS THE SIZE, and it is worse than variety: pass_threshold is 80%, the pool is 8, and the page fetches ALL active questions with unlimited retakes. Every candidate sees the identical 8, needs 7 right, and can fail, learn which they missed, and retake. That is memorisation, not assessment, on the only graded thing in the product. CLAUDE.md says retakes should draw a fresh randomised subset — impossible when pool equals attempt size. 24-32 is what makes randomisation start working. See ix-quizsubset: the pool alone does not fix it. ✅ KATY IS NOW UNBLOCKED — Codex built the drafting workspace 2026-08-07 in ef16e29: .planning/QUESTION-POOL.md, mapping the existing 8 against the five SCORM lessons and setting a target of 30 (six per lesson). The gap is quantified: 22 NEW QUESTIONS, and it is very uneven — lesson 3 needs 2, lesson 4 needs SIX because it has zero reusable today, lessons 1 and 2 need 5 each. The file changes nothing live; it is a workspace. 🔴 A SECOND PIECE OF WORK FELL OUT OF IT, not yet on anyone's list: the doc proposes a STRATIFIED blueprint (1/2/2/1/2 per lesson) so every attempt covers all five lessons. The code does not do that — lib/training/assessment.ts selects uniformly at random across the whole pool, so at 30 questions an attempt could miss a lesson entirely. Stratified selection is a CODE change on top of the pool, and it belongs with ix-quizsubset. ⚠ Note the doc calls the existing 8 ‘good starting material, not presumed launch-ready’, which is slightly more conservative than this row's earlier reframing. Both hold: the PLACEHOLDER tag is in section_tag rather than the question text, and they still need Katy's review."},
-      {id:"ix-certreview",s:"todo", o:"katy", t:"KATY: review and approve the certificate design. It has never had a go-ahead"},
-      {id:"ix-pricingcopy",s:"todo", o:"terminal", t:"KATY'S ACTUAL POINT, previously misapplied. Her all-or-none objection was about the PRICING PAGE, not the reminder emails. pricing/page.tsx:29 still says “The more of your team you certify, the lower the per-seat rate”, which frames partial certification as a valid choice. It is not: a firm is either accredited or it is not"},
-      {id:"ix-onboarding",s:"todo", o:"terminal", t:"LAUNCH REQUIREMENT — skippable onboarding walkthrough: a pop-up checklist on each page showing what the functionality does. Not urgent now, but must ship before launch"},
-      {id:"ix-icons",s:"todo", o:"you", t:"DOWNTIME — redesign the Quick actions icons and the Remind / Reassign / Delete row icons"},
-      {id:"ix-wholeftv2",s:"todo", o:"you", t:"LATER, if wanted — a real “who's left” that FILTERS the team table to uncertified members. Under all-or-none accreditation this is the admin's most important question, since those people are what block the firm. Distinct from deleting the broken link above"},
-      {id:"ix-seatverify",s:"todo", o:"you",      t:"UNBLOCKED now that email works — verify the seat fix through the real app. Checkout with enroll-self unticked → expect used_seats 0; invite emp1 → 1; emp1 sets password → must STAY 1; second checkout ticked → 1. Terminal reads the DB after each step"},
-
-      {id:"ix-invitetest",s:"todo", o:"you",      t:"Live negative test for the invite-failure work — the feature shipped without ever being seen to fail. Break RESEND_API_KEY, send an invite, then confirm: the UI says the member was added but the email couldn't be sent, the “Invite not delivered” badge SURVIVES A RELOAD (it is a real column, not toast state), and a successful resend clears it"},
-      {id:"ix-opsexplain",s:"todo", o:"you", t:"EXPLAIN THE THREE OPS ITEMS TO MAX, ROB AND KATY BEFORE DECIDING. LOGGED 2026-07-31 13:30 MST (Max): “these three need to be explained properly to me, to rob, and katy, so for this one you must write on brief a reminder of this so we can take care of it if its necessary.” The three are ix-supabasepro (Supabase Pro, $25/mo), ix-uptime (external uptime monitor) and ix-smtp (custom SMTP for password resets). Max declined to pick blind — all three are money or infrastructure and two of them touch what Rob owns. WHAT AN EXPLANATION MUST COVER for each: what it actually is in plain terms, what breaks without it, what it costs, who owns the decision, and whether it is genuinely required before launch or just nice to have. Do NOT present them as a checklist again until that briefing exists"},
-      {id:"ix-uptime",    s:"todo", o:"you",      t:"No external uptime monitor has ever been picked (UptimeRobot vs BetterStack). /api/health is live and returns {status, db, timestamp}, so this is a wiring job, not a build. Phase 4 left it open"},
-      {id:"ix-smtp",      s:"todo", o:"you",      t:"⚠ RECONSIDER AFTER THE ZOHO CHANGE (2026-08-04) — the apex now has real inbound mail, which was the missing precondition. Custom SMTP may now be simpler than when this row was written, and Zoho itself may be the relay. Do not act before the Resend health question in ix-dnszoho is closed; stacking a second mail change on an unverified one is how 07-29 happened. ORIGINAL: Password-reset emails go through Supabase's default SMTP — unbranded and rate-limited to a few per hour. Custom SMTP fixes branding + limits and unlocks template editing. Pre-launch item"},
-      {id:"ix-legaldoc",  s:"todo", o:"you",      t:"Stale attorney-facing note in a legal-prep doc — claims “Built Smart by Rob” appears throughout (untrue since the DPA update) and seeds placeholder @builtsmartbyrob.com emails"},
-      {id:"ix-favicon", s:"wip", o:"you", h:1, t:"🟡 Half done 08-04. app/icon.svg is the clean 7-path mark in #5CC6C3 and modern browsers prefer it. ⚠ app/icon.png (512px) still holds the older, more detailed artwork as the fallback, so the two disagree. Max exports a 512px PNG of the same mark from Affinity, since no SVG rasteriser exists on this machine. Eyeball it at real tab size before closing."},
-      {id:"ix-contactc4", s:"wip", o:"terminal", h:1, t:"✅ Address confirmed by Rob: info@iurixaccreditation.com. Same local part as the retired one, so the three live surfaces (privacy, terms, dpa) are a domain swap, not a rewrite. Also retires the solarsaiko@gmail.com hardcode at api/support/contact/route.ts:8 and the temporary Worker fallback. ⚠ Touches Max's legal-page drafting surface, so confirm timing before running."},
-      {id:"ix-stripe",    s:"todo", o:"rob",      t:"Owner-gated: Stripe live mode — bank details, LLC/EIN, merchant activation. Also sets the statement descriptor to Iurix"},
-      {id:"ix-monogram", s:"todo", o:"you", h:1, t:"The retired atc monogram still ships on five signed-out surfaces: site header, /login, /onboarding, /forgot-password, /update-password. app/_components/atc-logo.tsx still inlines the old geometry. 🔴 Blocked on Max, not Rob: it is a LOCKUP and no wordmark exists, so swapping the mark alone leaves a hole. Needs a typeface decision. The four legal pages deliberately have no header for the same reason; both fixes land together."},
-      {id:"ix-assets",    s:"todo", o:"rob",      t:"Owner-gated: “Iurix Accreditation” wordmark (doesn't exist yet) · small-size logo variant · business contact email + phone"},
-      {id:"ix-entity",    s:"todo", o:"rob",      t:"Final legal entity name — expected as “IURIX [something]”. Once Rob confirms it, reconcile against the DPA + cert lines already shipped as “BSBR Holdings, LLC d/b/a Iurix”"},
-      {id:"ix-marketing", s:"todo", o:"rob",      t:"Marketing/landing redesign — Rob owns it on the redesign-iurix branch (fresh Iurix identity: teal + rose-gold)"},
-      {id:"ix-quizforge", s:"wip", o:"terminal", t:"✅✅ FIXED 2026-08-07 in 3745d49, PUSHED, NOT DEPLOYED. Closes on the cutover deploy. ORIGINAL REPORT FOLLOWS, kept verbatim as the record. 🔴🔴 CRITICAL — AN ENROLLED EMPLOYEE CAN SELF-CERTIFY IN ONE REQUEST. Found by terminal 2026-08-06, verified independently by desktop, NOT FIXED. app/api/quiz/attempt/route.ts takes the question IDs from the CLIENT (:96), fetches only those (:105), and computes score as correct / questions.length (:125) — the count the client chose to send, not the count it was served. Validation rejects only an empty array. POST a single answer you know is right and the score is 100%, passed is true, and a real certificate is generated and emailed. With unlimited retakes one question can be brute-forced in at most four attempts. It is authenticated and seat-gated, so the attacker is an enrolled employee holding a paid seat — precisely the person a Rule 5.3 product exists to hold accountable, and the certificate is the artefact the whole product sells. ✅ PARTIAL MITIGATION, forensic only: quiz_attempts stores the submitted answers array, so a forged pass is visible afterwards as an attempt containing one answer. Nothing surfaces or alerts on that. THE FIX: the server must decide which questions an attempt contains and score against THAT set, rejecting a submission that does not match. Needs the served-set recording described in ix-quizsubset, so the two are one piece of work. 🔴 THIS BLOCKS LAUNCH INDEPENDENTLY OF ix-stripeaudit. ✅ 2026-08-07: TODAY'S PRIMARY. Fix shape agreed and handed to terminal. New migration 0024 adds a quiz_sessions table (user, firm, course, question_ids, issued_at, expires_at, consumed_at) plus question_ids on quiz_attempts, which today has answers jsonb and nothing recording what was served. New route /api/quiz/start does the auth and seat gate, selects the set server-side, and returns sessionId plus questions carrying NO correct_index. The attempt route then takes sessionId instead of client question IDs, rejects a session that is missing, expired, consumed or belongs to another user, grades with question_ids.length as the denominator ALWAYS with unanswered counted wrong, ignores any submitted id outside the set, and marks the session consumed so it cannot be graded twice. ⚠ Do NOT just clamp the denominator: the pool is 8 today and equals the attempt size, but once ix-questionpool grows it to 32 a denominator-only fix still lets a caller cherry-pick the 8 they know. ⚠ Ships COMMITTED AND NOT DEPLOYED, because the cutover freeze is live. That is the point: the first PROD deploy then carries the fix instead of shipping this hole to a real database. ✅✅ FIXED 2026-08-07 in 3745d49, COMMITTED AND NOT DEPLOYED. ⚠ This clause read ‘NOT PUSHED’ until 2026-08-11; it was wrong. 3745d49 and 10de458 are both on origin/main, confirmed with git branch -r --contains. Migration 0024 adds quiz_sessions (user/firm/course-bound, single-use, 4h expiry, RLS on with no policies so service-role only) plus quiz_attempts.question_ids. lib/training/assessment.ts:144 computes correct / questionIds.length where :378 passes session.question_ids, so the denominator is the set the SERVER minted. Verified independently by desktop: tsc exit 0, 7 files / 71 tests passing (baseline 6 / 51), forgery asserted at tests/quiz-session.test.ts:218 and :327 to score 12.5 not 100. 🔴 STAYS ON THE BOARD UNTIL IT IS DEPLOYED. Fixed is not shipped, and the freeze means it cannot ship yet."},
-      {id:"ix-quizsubset", s:"wip", o:"terminal", h:1, f:1, t:"⚠ CORRECTED 2026-08-06 — THE ORIGINAL CLAIM ON THIS BOARD WAS FALSE. Random subset selection DOES exist: app/dashboard/training/page.tsx:198, shuffleArray(allQuestions).slice(0, QUESTIONS_PER_ATTEMPT), in the server component. Desktop asserted ‘no randomisation anywhere in the code’ after reading only the question fetch and the scoring route, never line 198, and put it on the board and in a commit message. Terminal caught it. THE CONCLUSION INVERTS: the slice already works, so growing the pool to 24-32 makes it START selecting properly, rather than showing everyone all 32 as this item previously predicted. WHAT ACTUALLY REMAINS: QUESTIONS_PER_ATTEMPT is hardcoded at 8 rather than config, and nothing records WHICH questions an attempt served — an audit gap, and the missing half of the fix for ix-quizforge. ✅ THE AUDIT HALF IS DONE 2026-08-07 in 3745d49: quiz_attempts.question_ids now records which questions an attempt served, so a score can be audited against the exam that produced it. Committed, NOT deployed. ⚠ WHAT REMAINS AND IS NOT DONE: QUESTIONS_PER_ATTEMPT is still a hardcoded constant (now in lib/training/assessment.ts, not page.tsx) rather than config on courses. That only starts to matter when ix-questionpool grows the pool past 8."},
-      {id:"ix-prodseed", s:"wip", o:"terminal", f:1, t:"✅ THE OPEN DECISION IS CLOSED. LOGGED 2026-08-07 (Max): the PROD test rows get PURGED after the proof, not kept and documented. Rationale: stale test data destroys the daily reconciliation report's credibility on the day of the first real sale, which is the same trap the 17 staging test firms represent (see ix-testfirmfuse) and the reason PROD was kept clean at all. ⚠ SEQUENCING, easy to get wrong: this CANNOT BE EXECUTED before the cutover. The proof needs a firm on PROD, a firm only exists via Stripe checkout to the provisioning webhook, and checkout only reaches PROD once the app points there. So today is PREP ONLY. Terminal delivers two things: (1) scripts/purge-prod-test-firm.mjs, taking one explicit firm id, dry-run by default, requiring --confirm to delete, printing per-table row counts first, and refusing to run unless the target project ref is passed explicitly and matches the loaded env. RESTRICT foreign keys force training_events, then firms, then auth.users, but derive the FULL order from the schema rather than that three-item sketch, since enrollments, quiz_attempts, cert_generation_queue, certificates, firm_members and seats all hang off firms too. Model the safety posture on scripts/remove-avatars-bucket.mjs. (2) The ordered seed runbook appended to .planning/PROD-CUTOVER.md. Dry-run against staging only. Do not run the purge against anything. ✅ PREP DELIVERED 2026-08-07 in 3745d49: scripts/purge-prod-test-firm.mjs exists with dry-run default, explicit --firm and --project-ref, and a refusal when the named ref disagrees with the loaded env. Order derived from the schema, not the three-item sketch: storage objects, then training_events, then firms (cascading to seven tables), then auth.users. Dry-run verified against staging; a mismatched ref was refused. Runbook appended to PROD-CUTOVER.md. 🔴 EXECUTION IS STILL GATED ON THE CUTOVER and has not happened. Nothing has been run with --confirm anywhere."},
-      {id:"ix-prodcutover", s:"wip", o:"you", h:1, f:1, t:"🟡 IN PROGRESS, and the DANGEROUS HALF IS NOW OPEN. Max's Supabase prep is DONE 2026-08-06: Database Webhooks enabled on PROD, both triggers recreated (verified, 4 public-schema triggers matching staging), Auth Site URL and /auth/callback allowlist set, shared secret rotated. Terminal pointed cert-worker's SUPABASE_URL at PROD (09f21b3) and deliberately did NOT deploy it. 🔴 ROB SET BOTH ACTIONS SECRETS 2026-08-06 21:07Z, confirmed by gh secret list. Note that gh reports update TIMES only, never values, so ‘they hold the PROD ref’ stays unverified until the first build proves it. 🔴🔴 THE FREEZE IS THEREFORE LIVE RIGHT NOW: no target:production dispatch for any reason, and PREVIEW URLS ARE NO LONGER A SANDBOX because deploy.yml builds preview and production from the same NEXT_PUBLIC_SUPABASE_* secrets. localhost:3000 on .env.local (staging) is the only safe place to click. Production is still fine only because nothing has deployed since dbb52ab. REMAINING, in order: Max sets app Worker secrets, then cert-worker secrets (commands are in the 09f21b3 commit message), then cd workers/cert-worker && wrangler deploy --config wrangler.toml (the flag is mandatory or it redeploys the main app), then CI production deploy, then scripts/verify-cutover.mjs. Held deliberately behind ix-quizforge and ix-prodseed so the first PROD deploy does not carry a known cert-forgery hole. 🔴 NEW STEP ADDED 2026-08-07, DID NOT EXIST YESTERDAY: PROD does not have migration 0024. Staging got it (the CLI is linked to ndmzvtuywcufvkxtkjhg, confirmed at supabase/.temp/project-ref, so db push could not have reached PROD). 0024 MUST be pushed to PROD before the Phase 4 quiz step or /api/quiz/start fails and it reads as a broken cutover rather than a missing table. Recorded in PROD-CUTOVER.md."},
-      {id:"ix-webhooksecret", s:"wip", o:"you", h:1, f:1, t:"🟡 HALF DONE 2026-08-06. A fresh PROD-only secret was generated and is live in both PROD Database Webhook headers, replacing staging's bsbr3344-* value which had been in plaintext since June. 🔴 REMAINING: the same value still has to reach WEBHOOK_SECRET and CERT_WEBHOOK_SECRET on the cert-worker and CERT_WEBHOOK_SECRET on the app Worker. Until then PROD's webhooks would 401 against the live app. One secret, four places. Closes with ix-prodcutover."},
-      {id:"ix-testfirmfuse", s:"todo", o:"you", h:1, t:"⏳ Not a problem today, dated to become one. Staging's 17 test firms are invisible to the daily reconciliation job because it filters on livemode. The first real subscription older than 15 minutes flips that, and all 17 report as ‘access without payment’ on the day of the first real sale. Only bites if the clean-PROD decision is reopened."},
-      {id:"ix-privacyrise", s:"todo", o:"you", h:1, t:"🔴 Must not ship. The privacy draft says we self-host the Rise course and that Articulate observes nothing. Both false: rise_embed_url is share.articulate.com, serving 200 with no auth. Not published, so it is a drafting blocker rather than a live one. Either self-host properly (private R2 plus a session-gated route) or name Articulate as a sub-processor. Feeds ix-legalv2, tied to ix-risehosting."},
-      {id:"ix-nopages", s:"todo", o:"you", t:"/about, /contact and /ai-policy DO NOT EXIST and have no copy. Katy’s page structure calls for the first two; /ai-policy is specced in the brief. Nav currently uses in-page anchors, so nothing 404s today, but a compliance product with no About and no Contact page reads as thin to an attorney evaluating it. Related: ix-faqcontent (same rule, no AI filler) and ix-supportgeneral."},
-      {id:"ix-cicleanup", s:"todo", o:"terminal", h:1, t:"Small cleanups, grouped. (1) deploy.yml never prints the preview URL — its grep expects a string wrangler does not emit. (2) DEPLOY-RUNBOOK step 2 still says copy NEXT_PUBLIC_APP_URL from .env.local, which holds localhost. (3) DEPLOY-CHECKLIST still says pnpm run deploy, unsafe off macOS/Linux. (4) CI actions warn on Node 20. (5) NEW 2026-08-06: supabase/migrations/0023_remove_avatars.sql references scripts/remove-avatars-bucket.ts twice (lines 21, 44) but the file is .mjs — desktop wrote the comment and created the script with different extensions in the same change. Found by Codex."},
-      {id:"ix-claudemd", s:"todo", o:"terminal", h:1, t:"⚠ RESCOPED 2026-08-07 — half of this is already stale and half got WORSE this morning. ✅ The price-ID half is DONE: ix-lookupkey merged and CLAUDE.md:150 now reads ‘No longer hardcoded’. 🔴 STILL WRONG: CLAUDE.md:42 says Postgres 15; both projects run 17.6.1. 🔴 NEW AND MORE SERIOUS: §6 (Custom React quiz) now describes the PRE-3745d49 architecture, i.e. the exact hole we closed this morning, written up as if it were the design. It needs quiz_sessions, /api/quiz/start, the server-chosen question set, and the fact that the denominator is the served set. ⚠ Note §6's line about a ‘fresh randomised question subset each time’ is TRUE NOW and was effectively inert before, since pool size still equals attempt size until ix-questionpool lands. This file is what every fresh session reads as ground truth, which is why it is in the batch rather than parked. ✅ DONE 2026-08-07 in 10de458, committed and PUSHED. Postgres now reads 17.6.1 with a note that it was never 15 for these projects, and §6 is rewritten off the post-3745d49 architecture with the old text quoted as what it was: a description of the hole, not a design."},
-      {id:"ix-typesregen", s:"todo", o:"terminal", t:"Debt created 2026-08-07 by 3745d49 and recorded the same day rather than discovered later. types/supabase.ts was NOT regenerated after migration 0024, so quiz_sessions is reached through two narrow named casts in lib/training/assessment.ts with the regeneration command sitting in the comment. Staging has 0024 and the CLI is linked to staging, so this is a one-command fix. Regenerate, drop both casts, confirm tsc stays clean. ⚠ While regenerating, check whether the PRE-EXISTING quiz_questions cast in app/api/quiz/attempt/route.ts (the ‘isn't in generated types yet’ comment that survived the rewrite) also becomes unnecessary; if so remove it in the same commit. Do this BEFORE the cutover deploy so the code that ships is the cast-free version. ✅ DONE 2026-08-07 in 10de458, committed and PUSHED. Types regenerated, casts gone, tsc clean. 🔴 Stays open only until deployed."},
+      {id:"ix-adminswap", s:"todo", o:"terminal", h:1,
+       t:"Build the seat-swap override: an explaining refusal, an appeal path, a real override.",
+       p:"The 80% lock already exists and matches Max’s number exactly — reassign/route.ts blocks at 4 of 5 lessons, keyed on highest lesson reached, and fails closed. What is missing is the appeal: there is no way for Rob or Max to grant an override.",
+       x:"Three things: a refusal that explains itself in-product rather than a bare 409, an appeal path, and an actual override.",
+       n:"Decided 07-31 — admins can swap a seat, guarded at 80%."},
+      {id:"ix-cancelemail", s:"todo", o:"you", h:1,
+       t:"Render the auto-renew-cancelled email and confirm the sandbox subscriptions are clean.",
+       p:"emails/auto-renew-cancelled.tsx has never been rendered by a human — the content carries all three required facts, but how it LOOKS is unverified. Separately, terminal claims all ten sandbox subscriptions were restored to cancel_at_period_end=False after its round-trip test, and that claim has never been independently checked.",
+       x:"Look at the rendered email, then read the ten sandbox subscriptions back from Stripe.",
+       n:"Feeds ix-stripeaudit."},
+      {id:"ix-stripeaudit", s:"todo", o:"you", h:1,
+       t:"Close the Stripe launch gate: Rob’s refund policy call, then a live full-path test.",
+       p:"LAUNCH GATE. The 08-07 audit matched test webhook events to the five code handlers and the test product is now correctly named ‘IURIX Annual Accreditation’. What is unresolved is the charged-but-refused policy, and everything that still only exists in test mode.",
+       x:"Rob owns the final policy call before live: retain manual refunds, or approve an idempotent automatic full-refund flow. Then live Stripe Tax, live price lookup_key per_seat_annual, one live webhook on the new domain, and a controlled full-path test.",
+       n:"Max’s interim decision: no automatic refund yet — for an email-in-use checkout, cancel the new subscription, NEVER say a refund is already in motion, and alert BOTH Max and Rob so they issue it manually. Still blocked by the ix-doublebill pre-charge guard, and the alert cannot be trusted until ix-dnszoho closes (Resend currently 403s)."},
+      {id:"ix-doublebill", s:"wip", o:"you", h:1,
+       t:"Add the pre-charge identity check to /api/checkout and implement the case 3 cancel.",
+       p:"Deployed 08-05, but never exercised against a live webhook. /api/checkout does no identity check, so the buyer is charged before anything stops them, and case 3 still leaves a subscription billing against nothing.",
+       x:"Check identity before the charge. The webhook safety net IS built; the remaining gap is upstream of it. Case 3 gets the cancel Max ruled on 08-03.",
+       n:"Blocks ix-stripeaudit. Same problem as ix-winbackflow from the other end."},
+      {id:"ix-authperf", s:"todo", o:"you", h:1,
+       t:"Switch the auth path to getClaims and stop calling getUser three times per navigation.",
+       p:"NOT done, despite the app feeling faster. Checked 07-31: getClaims usage repo-wide is still ZERO and getUser() is still called three times per dashboard navigation — middleware, layout, page.",
+       x:"One verified-claims read per request instead of three network round trips.",
+       n:"Nothing in the auth path has changed, so any perceived speedup is Supabase free-tier variability, not code. The getUserById fan-out was already batched in Phase 3 and was never the cause."},
+      {id:"ix-remindaudit3", s:"todo", o:"you", h:1,
+       t:"Record that renewal reminders are mandatory, with no off switch.",
+       p:"Whether renewal reminders could be disabled was open. It is advance notice of an automatic charge, not a nudge, and several US states expect exactly that notice.",
+       x:"Renewal reminders ship with no toggle, and the decision is logged rather than re-litigated.",
+       n:"Logged 2026-07-31 08:42 MST (Max): “renewal mandatory. agreed.” Inactivity still gets an off switch (ix-inactivityredesign); expiry is still under discussion (ix-remindaudit4)."},
+      {id:"ix-inactivityredesign", s:"todo", o:"terminal", h:1,
+       t:"Rebuild inactivity reminders to the settled spec and ship the Settings toggle.",
+       p:"Today only the employee is notified, and the trigger is firms.reminder_days at 3/7/14. The settled spec differs on both counts, so this is a rewrite, not a tweak.",
+       x:"One employee nudge, an admin digest roughly weekly naming who is outstanding, trigger at a fixed 5 days, hard stop once certified, toggle on by default with Settings as its home.",
+       n:"It changes the recipient and the trigger, leaving reminder_days as dead config. Build the Settings toggle now; ix-onboarding must surface it later."},
+      {id:"ix-winbackflow", s:"todo", o:"you", h:1,
+       t:"Build the win-back path for a returning cancelled firm.",
+       p:"Checkout deliberately lets a cancelled firm’s owner through, and the webhook then fails on createUser because their auth account already exists. So the win-back path is not merely unbuilt — it is the exact path that charges a returning customer and gives them nothing.",
+       x:"A returning owner reaches a destination that reactivates them, rather than a failed provision after a successful charge.",
+       n:"Order: ix-doublebill case B first, then the destination. Same problem as ix-doublebill seen from the other end."},
+      {id:"ix-supportgeneral", s:"todo", o:"you", h:1,
+       t:"Give signed-out users a public support page instead of a mailto draft.",
+       p:"The sign-in “Contact support” link drafts an email, while a real support PAGE already exists behind auth. It also still points at the old address.",
+       x:"A public copy of the support page for signed-out users, on the current address.",
+       n:"May be better held until the marketing site lands, but it must stop pointing at the old address either way."},
+      {id:"ix-aiglow", s:"todo", o:"you", h:1,
+       t:"Redesign the lesson-cleared card so it stops reading as generic AI styling.",
+       p:"The card itself is loved, but the outer glow and contour box are the look every AI-generated UI has.",
+       x:"Depth without that signature, applied anywhere else the glow pattern is used."},
+      {id:"ix-cookiespage", s:"wip", o:"you", h:1,
+       t:"Write the drafted cookie copy into the page file and lift the 404 guard.",
+       p:"Copy was drafted 08-04 — 7 of 7 sections, no placeholders — but it was never written into the page file, and the route is still 404-guarded in production.",
+       x:"The page renders the drafted copy in production, and the two queued links land: the sign-in footer and the landing footer.",
+       n:"Unblocked by Max checking the browser storage panel: exactly one cookie, ours, and nothing from Articulate. So ‘strictly necessary only, no consent banner’ holds, and becomes a marketing point."},
+      {id:"ix-dparename", s:"todo", o:"you", h:1,
+       t:"Decide the DPA page’s name — friendly nav label versus document title.",
+       p:"Max suggested the DPA could be called ‘how we process data’. But a DPA is a specific contractual instrument (controller-to-processor under GDPR/CCPA) and law firms running vendor due-diligence search for it BY NAME, so renaming it outright could make it unfindable to exactly the buyer who needs it, and softens its contractual character.",
+       x:"Recommended best-of-both: a friendly NAV LABEL (“How we process data”) pointing at /dpa, while the DOCUMENT still titles itself “Data Processing Agreement” in its heading and first line. Buyer finds it, human understands it.",
+       n:"Claude flag, Max’s call. Logged 2026-07-31 11:25 MST. Decide alongside ix-legaldrafts, since it changes the drafted heading."},
+      {id:"ix-ogimage", s:"wip", o:"you", h:1,
+       t:"Export the 1200x630 OG image from Affinity and drop it in.",
+       p:"Metadata shipped 08-04 in c8ea4c6 — og and twitter tags plus a canonical URL on app/layout.tsx — but the image itself is still missing, so a shared link shows a title and a description and no image.",
+       x:"A 1200x630 raster in place, and shared links preview properly.",
+       n:"It is Max’s, not terminal’s: no rasteriser exists on this machine."},
+      {id:"ix-risehosting", s:"todo", o:"you", h:1,
+       t:"Self-host the Rise course behind a private bucket and a session-gated route.",
+       p:"The training content is public: rise_embed_url returns 200 with no auth, so Articulate is a sub-processor and anyone with the link can view the courseware.",
+       x:"A private R2 bucket plus a session-gated route. Self-hosting alone does not fix it — a public R2 bucket reproduces the problem on our own domain.",
+       n:"TABLED by Max 08-04, kept so it is not lost. What is SOLD is still protected: the quiz is server-scored behind enrollment."},
+      {id:"ix-termsaccept", s:"todo", o:"terminal", h:1,
+       t:"Build terms acceptance: before checkout for admins, at password-set for staff.",
+       p:"There is no acceptance mechanism anywhere — grep returns zero hits — so Terms §1 as drafted is currently false. It blocks the legal pages shipping.",
+       x:"Store WHEN and WHICH VERSION was accepted, not a boolean, so you can say which version each firm agreed to once Katy revises.",
+       n:"Max’s decision on placement. Do not reorder provisioning."},
+      {id:"ix-cookiesecure", s:"wip", o:"terminal", h:1,
+       t:"Deploy the Secure-cookie fix and prove it across a real browser restart.",
+       p:"The Supabase auth cookie had Secure:false, observed in the browser 2026-08-04, so any plain-HTTP request to the domain carried the session token in the clear before the redirect fired. The cause was middleware.ts building its own client with no cookieOptions and overwriting the browser client’s intent on every request.",
+       x:"FIXED 2026-08-07 in 10de458, PUSHED, NOT DEPLOYED. One shared cookie definition used by both, verified on the wire. Closes on the cutover deploy.",
+       n:"NOT VERIFIED and carried forward: nobody actually closed and reopened a browser in both rememberMe states — fold that into the cutover smoke test. HttpOnly:false is NOT a bug and must NOT be ‘fixed’; @supabase/ssr needs the browser client to read that cookie."},
+      {id:"ix-dnszoho", s:"todo", o:"rob", h:1,
+       t:"Rob: send Max the exact Resend DNS records so the apex domain verifies.",
+       p:"VERIFIED FAILURE 08-07: a real Resend API send using the loaded restricted key was rejected 403 because iurixaccreditation.com is not verified, and no email was sent. Max added the apex domain in Resend but cannot see its DNS-records screen without Rob’s account.",
+       x:"Rob opens that domain, copies the exact Resend DNS instructions to Max, and Max adds ONLY those records in Cloudflare. Once it verifies, Max sends the pending cancellation-email preview and confirms mail health.",
+       n:"Do NOT enable Cloudflare Email Routing and do NOT replace Zoho’s apex MX/SPF. Resend normally uses a send. subdomain for its return-path records — confirm the exact generated names and values rather than guessing."},
+      {id:"ix-lessoncounter", s:"wip", o:"terminal", h:1,
+       t:"Deploy the lesson-counter fix so the pill stops disagreeing with the header.",
+       p:"Bug found by Max 08-05. Using the final-review skip left three widgets on one page disagreeing: the header said all done with the certificate issued, the checks said 5/5 cleared, the LESSONS pill said 3/5. It was the display half of ix-skipcascade, which was fixed in the data layer only (a21aa59).",
+       x:"FIXED 2026-08-07 in 10de458, PUSHED, NOT DEPLOYED. The counter now derives from the engine that grants completion, not from lessons walked. Reproduced first, then fixed, then measured 5/5.",
+       n:"Stays open until deployed. Closes on the cutover deploy."},
+      {id:"ix-aitutor", s:"wip", o:"you", h:1,
+       t:"Re-export the Rise course with the AI Tutor off before treating it as final.",
+       p:"Articulate AI Tutor was live in the course and auto-opens on first scroll. It matters most pedagogically: Lesson 2 is about protecting client confidentiality, and the natural way to ask the tutor a question is to paste the contract — the course would induce the exact behaviour it exists to prevent. It also routes through OpenAI.",
+       x:"Max re-exports with it disabled, and someone confirms on the live course before it is treated as final. OFF also makes Rob’s ‘the training content contains no AI’ true as written.",
+       n:"OFF does not remove Articulate — the iframe src is share.articulate.com, so the browser connects to them and they see the client IP. Only self-hosting removes them (ix-risehosting, tabled)."},
+      {id:"ix-legalv2", s:"todo", o:"you", h:1,
+       t:"Merge the two legal draft sets into a v2 using the recorded clause-level calls.",
+       p:"Two independent legal draft sets exist, ours and Rob’s, and they must become one v2.",
+       x:"Max’s clause-level calls are recorded verbatim in .planning/POLICY-DECISIONS.md: refunds ours, liability Rob’s, retention Rob’s, response time ours, Articulate ours, AI Use Policy and Accessibility Statement Rob’s.",
+       n:"One sentence of Rob’s must not publish — see ix-privacyrise."},
+      {id:"ix-mobile390", s:"todo", o:"you", h:1,
+       t:"Do one DevTools pass over the live site at 390px, checking every section for h-scroll.",
+       p:"Nobody has ever viewed the live site at 390px, on either machine. The header is the likely failure: enlarged lockup plus four nav links.",
+       x:"One device-toolbar pass at 390px, with every section checked for horizontal scroll.",
+       n:"No longer a gate — the redesign promoted without it — so this is live-site quality now."},
+      {id:"ix-featuresunbuilt", s:"todo", o:"rob", h:1,
+       t:"Rob: decide what happens to the four marketing claims with nothing behind them.",
+       p:"Four features are advertised on the marketing page before they exist: the tailored written policy, the Iurix Accredited website token, the members-only sanction summaries page, and nationwide sanction monitoring (an operational commitment, not software). Signed attestations are partial: firm-level PDF yes, per-staff no.",
+       x:"Each claim gets built, gets qualified, or comes off the page.",
+       n:"Rob’s deliberate call, kept live rather than left to drift."},
+      {id:"ix-accreditedcopy", s:"todo", o:"katy", h:1,
+       t:"Katy and Rob: confirm the Iurix Accredited promise and the disclaimer are reconciled.",
+       p:"Rob’s open question, unresolved: the design brief says avoid ‘accredited’ and ‘guarantee’ entirely for legal reasons, while Katy’s copy makes ‘Iurix Accredited’ the central promise. It shipped as Katy wrote it, with the footer disclaimer drawing the line (‘not CLE-accredited… does not constitute bar accreditation’).",
+       x:"Katy and Rob state that the two are reconciled ON PURPOSE, rather than by accident.",
+       n:"Interacts with our Terms: the Acceptable Use clause prohibits customers describing a certificate as accreditation or endorsement by a bar, and we cannot forbid in the Terms what the marketing page implies."},
+      {id:"ix-pricecopy", s:"todo", o:"rob", h:1,
+       t:"Rob: confirm $35 is the real price, or change it in Stripe first.",
+       p:"Katy’s draft says a flat $39 in one place and $35 in another. The live Stripe price is the volume ladder $35/$32/$28, and the slider hardcodes the same maths.",
+       x:"The page ships the LIVE bands — correct, since advertising a number checkout does not charge is a billing problem, not a copy problem. If $39 is the real intent it changes in STRIPE FIRST, then included-section.tsx and pricing-slider.tsx.",
+       n:"Rob’s handoff also cites the RETIRED price id price_1ThbLNCzT2268ei9nkadS8kD; corrected in the merged handoff to price_1TjNHc6ZCSojEKRrKs79ToJ0 / prod_UiovBHrxJSDVpf."},
+      {id:"ix-maybesingle", s:"wip", o:"terminal", h:1,
+       t:"Deploy the enrollment-lookup fix that stopped .maybeSingle manufacturing duplicates.",
+       p:"enroll-self/route.ts:85 and onboarding/complete/route.ts:105 tested enrollment existence with .maybeSingle(), which ERRORS on multiple matches rather than returning one. Post-renewal that error surfaced as existing = null, so the guard concluded ‘no enrollment’ and inserted another — manufacturing the duplicates that caused the dashboard bug fixed in 95c040e.",
+       x:"BUILT 2026-08-07 in 10de458, PUSHED, NOT DEPLOYED. Max said yes. Terminal found the query lived in THREE places, one already correct, and extracted the whole thing to lib/enrollments.ts rather than patching two of three and leaving the divergence that caused this.",
+       n:"Stays open until deployed. Closes on the cutover deploy."},
+      {id:"ix-legaldrafts", s:"wip", o:"you", h:1,
+       t:"Write the four legal drafts into the page files, after ix-termsaccept lands.",
+       p:"All four were drafted 08-04 with no placeholders anywhere, but none were written into the page files, so the live placeholders are still there.",
+       x:"The four pages render the drafts. Ships only after ix-termsaccept.",
+       n:"For Katy and Rob: every clause is tagged [MAX] / [VERIFIED] / [STANDARD], and the [STANDARD] ones need reading hardest because nobody chose those. Two are Katy’s to settle — the liability cap (currently 12 months of fees, so $320 for a 10-seat firm) and whether a data breach sits inside it."},
+      {id:"ix-faqcontent", s:"todo", o:"you", h:1,
+       t:"Rewrite the FAQ and support page with real answers instead of AI filler.",
+       p:"Both contain AI filler rather than real answers.",
+       x:"Actual content. Same rule as the em-dash note: if it reads like placeholder, delete it."},
+      {id:"ix-attestdoc", s:"todo", o:"you", h:1,
+       t:"Draft and format the firm attestation PDF and the audit-log CSV, then get Katy’s yes.",
+       p:"The firm attestation PDF and the audit-log CSV export both need formatting and real drafting, and neither has ever been reviewed.",
+       x:"Two finished documents, with Katy’s confirmation on them."},
+      {id:"ix-autoremind", s:"todo", o:"you", h:1,
+       t:"Replan the Auto-reminders quick action — today it only navigates.",
+       p:"admin-dashboard.tsx:88 is a QuickAction linking to /dashboard/settings, so it just navigates. It looks like a button that does something.",
+       x:"Either it performs an action, or it stops presenting itself as one."},
+      {id:"ix-socialcontent", s:"todo", o:"you", h:1,
+       t:"Plan the socials, tutorials and blog posts the site needs to read as legitimate.",
+       p:"Not built and not planned.",
+       x:"A plan first, then content."},
+      {id:"ix-questionpool", s:"todo", o:"katy", h:1,
+       t:"Katy: review the 8 existing questions and write the 22 new ones.",
+       p:"THE PROBLEM IS THE SIZE, and it is worse than variety. pass_threshold is 80%, the pool is 8, and the page fetches ALL active questions with unlimited retakes. Every candidate sees the identical 8, needs 7 right, and can fail, learn which they missed, and retake. That is memorisation, not assessment, on the only graded thing in the product.",
+       x:"24-32 is what makes randomisation start working. Katy is unblocked: .planning/QUESTION-POOL.md (Codex, ef16e29) maps the existing 8 against the five SCORM lessons and targets 30, six per lesson. The gap is 22 new questions and it is very uneven — lesson 3 needs 2, lesson 4 needs SIX because it has zero reusable today, lessons 1 and 2 need 5 each.",
+       n:"The 8 are NOT junk — PLACEHOLDER lives in section_tag, not the question text — so the ask is review and expand, not write from scratch. A SECOND piece of work fell out of the doc and is on nobody’s list: it proposes a STRATIFIED blueprint (1/2/2/1/2 per lesson), while lib/training/assessment.ts selects uniformly at random, so at 30 an attempt could miss a lesson entirely. That is a CODE change and belongs with ix-quizsubset."},
+      {id:"ix-certreview", s:"todo", o:"katy", h:1,
+       t:"Katy: review and approve the certificate design.",
+       p:"It has never had a go-ahead.",
+       x:"Katy’s explicit approval on the design as it stands."},
+      {id:"ix-pricingcopy", s:"todo", o:"terminal", h:1,
+       t:"Fix pricing/page.tsx:29 — it frames partial certification as a valid choice.",
+       p:"The line still reads ‘The more of your team you certify, the lower the per-seat rate’. Under all-or-none accreditation a firm is either accredited or it is not.",
+       x:"Copy that does not present certifying part of a team as an option.",
+       n:"Katy’s actual point, previously misapplied — her all-or-none objection was about the PRICING PAGE, not the reminder emails."},
+      {id:"ix-onboarding", s:"todo", o:"terminal", h:1,
+       t:"Build the skippable onboarding walkthrough before launch.",
+       p:"There is no in-product explanation of what the functionality does.",
+       x:"A pop-up checklist on each page showing what each thing does, skippable.",
+       n:"LAUNCH REQUIREMENT. Not urgent now, but must ship before launch, and it has to surface the ix-inactivityredesign toggle."},
+      {id:"ix-icons", s:"todo", o:"you", h:1,
+       t:"Redesign the Quick actions icons and the Remind / Reassign / Delete row icons.",
+       p:"Downtime item — the current icons were never designed.",
+       x:"A consistent icon set across both rows."},
+      {id:"ix-wholeftv2", s:"todo", o:"you", h:1,
+       t:"Later: add a real who’s-left filter over the team table.",
+       p:"Under all-or-none accreditation, which people are still uncertified is the admin’s most important question, since those people are what block the firm — and nothing answers it.",
+       x:"A filter that narrows the team table to uncertified members.",
+       n:"Distinct from deleting the broken link. Only if wanted."},
+      {id:"ix-seatverify", s:"todo", o:"you", h:1,
+       t:"Run the four-step seat-count check through the real app.",
+       p:"The seat fix has never been verified end to end. Email now works, so it can be.",
+       x:"Checkout with enroll-self unticked → expect used_seats 0; invite emp1 → 1; emp1 sets password → must STAY 1; second checkout ticked → 1. Terminal reads the DB after each step."},
+      {id:"ix-invitetest", s:"todo", o:"you", h:1,
+       t:"Break RESEND_API_KEY and watch the invite-failure path actually fail.",
+       p:"The invite-failure feature shipped without ever being seen to fail.",
+       x:"With the key broken, send an invite and confirm three things: the UI says the member was added but the email couldn’t be sent, the ‘Invite not delivered’ badge SURVIVES A RELOAD (it is a real column, not toast state), and a successful resend clears it."},
+      {id:"ix-opsexplain", s:"todo", o:"you", h:1,
+       t:"Brief Max, Rob and Katy on the three ops items before any of them is decided.",
+       p:"Max declined to pick blind — all three are money or infrastructure, and two of them touch what Rob owns. The three are ix-supabasepro (Supabase Pro, $25/mo), ix-uptime (external uptime monitor) and ix-smtp (custom SMTP for password resets).",
+       x:"For each: what it actually is in plain terms, what breaks without it, what it costs, who owns the decision, and whether it is genuinely required before launch or just nice to have.",
+       n:"Logged 2026-07-31 13:30 MST (Max). Do NOT present them as a checklist again until that briefing exists."},
+      {id:"ix-uptime", s:"todo", o:"you", h:1,
+       t:"Pick an uptime monitor and wire it to /api/health.",
+       p:"No external uptime monitor has ever been picked — UptimeRobot versus BetterStack. Phase 4 left it open.",
+       x:"/api/health is live and returns {status, db, timestamp}, so this is a wiring job, not a build."},
+      {id:"ix-smtp", s:"todo", o:"you", h:1,
+       t:"Reconsider custom SMTP now that the apex has real inbound mail.",
+       p:"Password-reset emails go through Supabase’s default SMTP — unbranded and rate-limited to a few per hour. Custom SMTP fixes branding and limits, and unlocks template editing.",
+       x:"A decision, then wiring. The Zoho change on 2026-08-04 gave the apex real inbound mail, which was the missing precondition, and Zoho itself may be the relay.",
+       n:"Do not act before the Resend health question in ix-dnszoho is closed — stacking a second mail change on an unverified one is how 07-29 happened. Pre-launch item."},
+      {id:"ix-legaldoc", s:"todo", o:"you", h:1,
+       t:"Correct the stale attorney-facing note in the legal-prep doc.",
+       p:"It claims ‘Built Smart by Rob’ appears throughout — untrue since the DPA update — and seeds placeholder @builtsmartbyrob.com emails.",
+       x:"The note reflects current branding and carries no placeholder addresses."},
+      {id:"ix-favicon", s:"wip", o:"you", h:1,
+       t:"Export a 512px PNG of the current mark so icon.png stops disagreeing with icon.svg.",
+       p:"Half done 08-04. app/icon.svg is the clean 7-path mark in #5CC6C3 and modern browsers prefer it, but app/icon.png (512px) still holds the older, more detailed artwork as the fallback, so the two disagree.",
+       x:"One mark in both files. Eyeball it at real tab size before closing.",
+       n:"Max’s, not terminal’s: no SVG rasteriser exists on this machine."},
+      {id:"ix-contactc4", s:"wip", o:"terminal", h:1,
+       t:"Swap the contact address to info@iurixaccreditation.com on the three live surfaces.",
+       p:"Privacy, terms and dpa carry the retired address, api/support/contact/route.ts:8 hardcodes solarsaiko@gmail.com, and the temporary Worker fallback is still in place.",
+       x:"Address confirmed by Rob, and it is the same local part as the retired one, so the three live surfaces are a domain swap rather than a rewrite.",
+       n:"Touches Max’s legal-page drafting surface — confirm timing before running."},
+      {id:"ix-stripe", s:"todo", o:"rob", h:1,
+       t:"Rob: activate Stripe live mode — bank details, LLC/EIN, merchant activation.",
+       p:"Owner-gated. Nothing can charge a real card until it is done.",
+       x:"Live mode active, with the statement descriptor set to Iurix."},
+      {id:"ix-monogram", s:"todo", o:"you", h:1,
+       t:"Decide the wordmark typeface, then retire the atc monogram on five surfaces.",
+       p:"The retired atc monogram still ships on five signed-out surfaces — site header, /login, /onboarding, /forgot-password, /update-password — and app/_components/atc-logo.tsx still inlines the old geometry.",
+       x:"A lockup, not just a mark: swapping the mark alone leaves a hole, because no wordmark exists.",
+       n:"Blocked on Max, not Rob — it needs a typeface decision. The four legal pages deliberately have no header for the same reason, and both fixes land together."},
+      {id:"ix-assets", s:"todo", o:"rob", h:1,
+       t:"Rob: supply the wordmark, the small-size logo variant, and business contact details.",
+       p:"The ‘Iurix Accreditation’ wordmark does not exist yet, and there is no small-size variant and no business contact email or phone.",
+       x:"Three assets delivered. ix-monogram is waiting on the first."},
+      {id:"ix-entity", s:"todo", o:"rob", h:1,
+       t:"Rob: confirm the final legal entity name, then reconcile what already shipped.",
+       p:"Expected as ‘IURIX [something]’, but the DPA and certificate lines already shipped as ‘BSBR Holdings, LLC d/b/a Iurix’.",
+       x:"Name confirmed, then the shipped lines reconciled against it."},
+      {id:"ix-marketing", s:"todo", o:"rob", h:1,
+       t:"Rob: land the marketing and landing redesign on the redesign-iurix branch.",
+       p:"The fresh Iurix identity — teal plus rose-gold — is not on the live marketing site.",
+       x:"Rob owns it on the redesign-iurix branch."},
+      {id:"ix-quizforge", s:"wip", o:"terminal", h:1,
+       t:"Deploy the quiz-session fix that closed the one-request self-certification hole.",
+       p:"CRITICAL — an enrolled employee could self-certify in one request. quiz/attempt/route.ts took the question IDs from the CLIENT (:96), fetched only those (:105) and computed score as correct / questions.length (:125) — the count the client chose to send. POST a single answer you know is right and the score was 100%, passed was true, and a real certificate was generated and emailed.",
+       x:"FIXED 2026-08-07 in 3745d49, COMMITTED AND PUSHED, NOT DEPLOYED. Migration 0024 adds quiz_sessions (user/firm/course-bound, single-use, 4h expiry, RLS on with no policies so service-role only) plus quiz_attempts.question_ids, and the denominator is always the set the SERVER minted. Verified independently by desktop: tsc exit 0, 71 tests passing, forgery asserted to score 12.5 not 100.",
+       n:"STAYS ON THE BOARD UNTIL DEPLOYED — fixed is not shipped, and the freeze means it cannot ship yet. This blocked launch independently of ix-stripeaudit. The clause read ‘NOT PUSHED’ until 2026-08-11; that was wrong, both 3745d49 and 10de458 are on origin/main."},
+      {id:"ix-quizsubset", s:"wip", o:"terminal", f:1, h:1,
+       t:"Move QUESTIONS_PER_ATTEMPT out of code and onto courses as config.",
+       p:"It is still a hardcoded constant, now in lib/training/assessment.ts rather than page.tsx. Nothing else remains here: random subset selection already existed at training/page.tsx:198, contrary to this board’s original claim.",
+       x:"Attempt size configured per course. The audit half is DONE 2026-08-07 in 3745d49 — quiz_attempts.question_ids records which questions an attempt served, so a score can be audited against the exam that produced it. Committed, not deployed.",
+       n:"Only starts to matter when ix-questionpool grows the pool past 8. The original ‘no randomisation anywhere’ claim was FALSE: desktop asserted it after reading only the question fetch and the scoring route, never line 198, and put it on the board and in a commit message; terminal caught it."},
+      {id:"ix-prodseed", s:"wip", o:"terminal", f:1, h:1,
+       t:"After the cutover, seed the PROD proof firm and purge it with the delivered script.",
+       p:"The proof needs a firm on PROD, a firm only exists via Stripe checkout to the provisioning webhook, and checkout only reaches PROD once the app points there. So it CANNOT be executed before the cutover.",
+       x:"PREP DELIVERED 2026-08-07 in 3745d49: scripts/purge-prod-test-firm.mjs with dry-run default, explicit --firm and --project-ref, and a refusal when the named ref disagrees with the loaded env. Order derived from the schema — storage objects, then training_events, then firms (cascading to seven tables), then auth.users. Dry-run verified against staging, a mismatched ref was refused, and the runbook is appended to PROD-CUTOVER.md.",
+       n:"DECIDED (Max, 2026-08-07): the PROD test rows get PURGED after the proof, not kept and documented — stale test data destroys the daily reconciliation report’s credibility on the day of the first real sale, the same trap the 17 staging test firms represent (ix-testfirmfuse). Execution is gated on the cutover; nothing has been run with --confirm anywhere."},
+      {id:"ix-prodcutover", s:"wip", o:"you", f:1, h:1,
+       t:"Push migration 0024 to PROD, set the Worker secrets, then run the cutover in order.",
+       p:"IN PROGRESS, and the dangerous half is now open. Max’s Supabase prep is done, Rob set both Actions secrets, and cert-worker’s SUPABASE_URL points at PROD (09f21b3) without being deployed. PROD does not have migration 0024 — staging got it, and the CLI is linked to ndmzvtuywcufvkxtkjhg.",
+       x:"In order: Max sets app Worker secrets, then cert-worker secrets (commands are in the 09f21b3 commit message), then cd workers/cert-worker && wrangler deploy --config wrangler.toml (the flag is mandatory or it redeploys the main app), then the CI production deploy, then scripts/verify-cutover.mjs. 0024 MUST reach PROD before the Phase 4 quiz step, or /api/quiz/start fails and it reads as a broken cutover rather than a missing table.",
+       n:"THE FREEZE IS LIVE: no target:production dispatch for any reason, and PREVIEW URLS ARE NO LONGER A SANDBOX, because deploy.yml builds preview and production from the same NEXT_PUBLIC_SUPABASE_* secrets. localhost:3000 on .env.local (staging) is the only safe place to click. Held deliberately behind ix-quizforge and ix-prodseed so the first PROD deploy does not carry a known cert-forgery hole. gh reports secret update TIMES only, never values, so ‘they hold the PROD ref’ stays unverified until the first build proves it."},
+      {id:"ix-webhooksecret", s:"wip", o:"you", f:1, h:1,
+       t:"Put the new PROD webhook secret into the three remaining Worker slots.",
+       p:"Half done 2026-08-06. A fresh PROD-only secret is live in both PROD Database Webhook headers, replacing staging’s bsbr3344-* value which had been in plaintext since June. It has not reached the Workers, so PROD’s webhooks would 401 against the live app.",
+       x:"WEBHOOK_SECRET and CERT_WEBHOOK_SECRET on the cert-worker, and CERT_WEBHOOK_SECRET on the app Worker. One secret, four places.",
+       n:"Closes with ix-prodcutover."},
+      {id:"ix-testfirmfuse", s:"todo", o:"you", h:1,
+       t:"Exclude staging’s 17 test firms from the daily reconciliation job.",
+       p:"They are invisible to the job today because it filters on livemode. The first real subscription older than 15 minutes flips that, and all 17 report as ‘access without payment’ on the day of the first real sale.",
+       x:"The job distinguishes test firms by something other than livemode.",
+       n:"Not a problem today, dated to become one. Only bites if the clean-PROD decision is reopened."},
+      {id:"ix-privacyrise", s:"todo", o:"you", h:1,
+       t:"Fix the privacy draft’s false claim that we self-host Rise.",
+       p:"MUST NOT SHIP. The draft says we self-host the Rise course and that Articulate observes nothing. Both are false: rise_embed_url is share.articulate.com, serving 200 with no auth. It is not published, so it is a drafting blocker rather than a live one.",
+       x:"Either self-host properly (private R2 plus a session-gated route), or name Articulate as a sub-processor.",
+       n:"Feeds ix-legalv2, tied to ix-risehosting."},
+      {id:"ix-nopages", s:"todo", o:"you", h:1,
+       t:"Write and ship /about, /contact and /ai-policy.",
+       p:"All three DO NOT EXIST and have no copy. Nav currently uses in-page anchors, so nothing 404s today, but a compliance product with no About and no Contact page reads as thin to an attorney evaluating it.",
+       x:"Katy’s page structure calls for the first two; /ai-policy is specced in the brief.",
+       n:"Related: ix-faqcontent (same rule, no AI filler) and ix-supportgeneral."},
+      {id:"ix-cicleanup", s:"todo", o:"terminal", h:1,
+       t:"Clear the five small CI and runbook defects.",
+       p:"Grouped cleanups, none urgent on its own.",
+       x:"(1) deploy.yml never prints the preview URL — its grep expects a string wrangler does not emit. (2) DEPLOY-RUNBOOK step 2 still says copy NEXT_PUBLIC_APP_URL from .env.local, which holds localhost. (3) DEPLOY-CHECKLIST still says pnpm run deploy, unsafe off macOS/Linux. (4) CI actions warn on Node 20. (5) supabase/migrations/0023_remove_avatars.sql references scripts/remove-avatars-bucket.ts at lines 21 and 44, but the file is .mjs.",
+       n:"Item 5 is new 2026-08-06, found by Codex: desktop wrote the comment and created the script with different extensions in the same change."},
+      {id:"ix-claudemd", s:"todo", o:"terminal", h:1,
+       t:"Correct CLAUDE.md: Postgres 17.6.1, and a §6 that matches the post-3745d49 quiz.",
+       p:"CLAUDE.md is what every fresh session reads as ground truth. Line 42 said Postgres 15 while both projects run 17.6.1, and §6 described the PRE-3745d49 architecture — the exact hole closed that morning — written up as if it were the design.",
+       x:"DONE 2026-08-07 in 10de458, committed and PUSHED. Postgres now reads 17.6.1 with a note that it was never 15 for these projects, and §6 is rewritten off the post-3745d49 architecture with the old text quoted as what it was: a description of the hole, not a design.",
+       n:"The price-ID half was already stale — ix-lookupkey merged, and CLAUDE.md:150 now reads ‘No longer hardcoded’. §6’s line about a fresh randomised subset each time is TRUE NOW and was effectively inert before, since pool size equals attempt size until ix-questionpool lands."},
+      {id:"ix-typesregen", s:"todo", o:"terminal", h:1,
+       t:"Deploy the regenerated Supabase types that removed the quiz_sessions casts.",
+       p:"Debt created 2026-08-07 by 3745d49 and recorded the same day rather than discovered later: types/supabase.ts was not regenerated after migration 0024, so quiz_sessions was reached through two narrow named casts in lib/training/assessment.ts.",
+       x:"DONE 2026-08-07 in 10de458, committed and PUSHED. Types regenerated, both casts gone, tsc clean.",
+       n:"Stays open only until deployed. The pre-existing quiz_questions cast in app/api/quiz/attempt/route.ts was checked in the same pass."},
     ]},
     {key:"pentagon", title:"Pentagon", path:"/ops.ethics", note:"Ethics Vault", tasks:[
-      {id:"pt-build001", s:"todo", o:"you",      t:"Review the built BUILD-001 and approve the republish (Terminal is ready)"},
-      {id:"pt-verify",   s:"todo", o:"you",      t:"Case-verification passes: verify → export IDs → Terminal bakes them in"},
-      {id:"pt-opinions", s:"todo", o:"terminal", t:"Ethics opinions bucket: grab the 2 gated docs (FL 24-1, MN report), then fold opinions into the artifact"},
-      {id:"pt-cites",    s:"todo", o:"katy",     t:"Confirm the 2 citation corrections (KY E-457 not E-471; NYSBA not NYC Bar)"},
+
+      {id:"pt-build001", s:"todo", o:"you", h:1,
+       t:"Review the built BUILD-001 and approve the republish.",
+       p:"Terminal is ready to republish and is waiting on approval.",
+       x:"Max reviews the build and gives the go-ahead."},
+      {id:"pt-verify", s:"todo", o:"you", h:1,
+       t:"Run the case-verification passes and export the verified IDs.",
+       p:"The cases in the artifact have not been verified.",
+       x:"Verify → export IDs → Terminal bakes them in."},
+      {id:"pt-opinions", s:"todo", o:"terminal", h:1,
+       t:"Collect the 2 gated ethics opinions, then fold the bucket into the artifact.",
+       p:"The ethics opinions bucket is incomplete — FL 24-1 and the MN report are gated.",
+       x:"Both docs obtained, then opinions folded into the artifact."},
+      {id:"pt-cites", s:"todo", o:"katy", h:1,
+       t:"Katy: confirm the 2 citation corrections.",
+       p:"Two citations look wrong and need an attorney’s confirmation before they change.",
+       x:"KY E-457 not E-471; NYSBA not NYC Bar."},
     ]},
     {key:"iurisiq", title:"Iurisiq", path:"/ops.portal", note:"Immigration Portal", tasks:[
-      {id:"iq-sync",  s:"todo", o:"you", t:"Sync local to master — currently sitting on the closed-PR branch module/uscis-forms-i130a"},
-      {id:"iq-read",  s:"todo", o:"you", t:"Read CLAUDE.md + home-redesign-handoff.md (a home-page task looks like it's waiting)"},
-      {id:"iq-prs",   s:"todo", o:"you", t:"Clear the 2 open PRs — #2 (I-751 map) and #7 (edition-staleness guard)"},
-      {id:"iq-n400",  s:"todo", o:"you", t:"Add the N-400 template to the IurisIQ portal. 🔴 KATY GATES THIS, AND THE ORDER IS THE WHOLE POINT. LOGGED 2026-08-11 14:25 CST (Max): “i have to add the n400 template to portal iurisiq, but first send to katy to okay before committing it.” So the sequence is build it, send it to Katy, wait for her yes, and only then commit. Nothing about the template lands in the repo before she has okayed it. ⚠ Related: iq-prs already has 2 open unreviewed PRs, so ‘I will get review on it after’ is the pattern this item exists to avoid."},
+
+      {id:"iq-sync", s:"todo", o:"you", h:1,
+       t:"Sync local to master — it is sitting on a closed-PR branch.",
+       p:"Local is on module/uscis-forms-i130a, whose PR is closed.",
+       x:"Local tracking master again."},
+      {id:"iq-read", s:"todo", o:"you", h:1,
+       t:"Read CLAUDE.md and home-redesign-handoff.md in the IurisIQ repo.",
+       p:"A home-page task looks like it is waiting, and nobody has read the handoff.",
+       x:"Both read, and whatever is waiting is on the board."},
+      {id:"iq-prs", s:"todo", o:"you", h:1,
+       t:"Clear the 2 open PRs — #2 (I-751 map) and #7 (edition-staleness guard).",
+       p:"Both have been sitting open and unreviewed.",
+       x:"Reviewed, then merged or closed."},
+      {id:"iq-n400", s:"todo", o:"you", h:1,
+       t:"Build the N-400 template, send it to Katy, and commit only after her yes.",
+       p:"The template is not in the IurisIQ portal, and the ORDER is the whole point: nothing about it lands in the repo before Katy has okayed it.",
+       x:"Build it, send it to Katy, wait for her yes, and only then commit.",
+       n:"KATY GATES THIS. Logged 2026-08-11 14:25 CST (Max): “i have to add the n400 template to portal iurisiq, but first send to katy to okay before committing it.” Related: iq-prs already has 2 open unreviewed PRs, so ‘I will get review on it after’ is the pattern this item exists to avoid."},
     ]},
   ];
 
@@ -305,17 +573,18 @@ footer button:hover{border-color:var(--red);color:var(--red)}
   const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
   let ovrSt=load(K_ST), ovrOw=load(K_OW), custom=load(K_CU), filter="all", ownerF="all", todayF=false;
 
-  // Long items collapse. Measured 2026-08-06: 29 of 70 items carry 76% of all text on the board,
-  // so rendering every item in full is what makes it unscannable. Expansion is view state only —
-  // deliberately NOT persisted, so the board always opens scannable.
-  const EXPAND_AT=170;
+  // Restructured 2026-08-12. The board used to hold one giant `t` per row — 34,747 characters
+  // of action, history, corrections and decisions mixed together — and no amount of clipping
+  // made that scannable, because the first 170 characters were as likely to be a correction as
+  // the ask. So `t` is now ONE imperative sentence and nothing else, and the rest is typed:
+  // p = the problem, x = the fix, n = the blocker/decision/gotcha. There is no clip machinery
+  // left for `t`; it is short by construction and the render asserts that. The full original
+  // text of every row is preserved verbatim in items/<id>.md, which is what a Claude reads
+  // before touching the code. Expansion is view state only — deliberately NOT persisted, so
+  // the board always opens scannable.
   const expanded=new Set();
   let allOpen=false;
-  const clip=(s,n)=>{
-    if(s.length<=n) return s;
-    const cut=s.slice(0,n), sp=cut.lastIndexOf(" ");
-    return (sp>n*0.6?cut.slice(0,sp):cut).replace(/[\s.,;:·—–-]+$/,"")+"…";
-  };
+  const hasDetail=t=>!!(t.p||t.x||t.n);
   const rows=()=>SEED.flatMap(sec=>sec.tasks.concat((custom[sec.key]||[]).map(c=>({...c,custom:true}))));
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const board=document.getElementById("board");
@@ -391,22 +660,47 @@ footer button:hover{border-color:var(--red);color:var(--red)}
           span.appendChild(pill);
         }
 
-        const long=t.t.length>EXPAND_AT, open=expanded.has(t.id);
+        // COLLAPSED = the action, nothing else. `t` is never clipped: it is one sentence.
+        const detail=hasDetail(t), open=expanded.has(t.id);
         const body=document.createElement("span");
-        body.className="body"+(long&&!open?" clip":"");
-        body.textContent = long&&!open ? clip(t.t,EXPAND_AT) : t.t;   // textContent, never innerHTML
+        body.className="body"+(detail&&!open?" clip":"");
+        body.textContent = t.t;   // textContent, never innerHTML
         span.appendChild(body);
 
-        if(long){
+        if(detail){
           const toggle=()=>{ open?expanded.delete(t.id):expanded.add(t.id); render(); };
           const b=document.createElement("button");
           b.className="more";
           b.setAttribute("aria-expanded",String(open));
-          b.title=open?"Collapse":`Show all ${t.t.length} characters`;
-          b.innerHTML = open ? "▾ Less" : `▸ More <span class="sz">${(t.t.length/1000).toFixed(1)}k</span>`;
+          b.title=open?"Collapse":"Show the problem, the fix, and anything load-bearing";
+          b.innerHTML = open ? "▾ Less" : "▸ Why";
           b.addEventListener("click",toggle);
           span.appendChild(b);
           if(!open) body.addEventListener("click",toggle);
+        }
+
+        // EXPANDED = the typed blocks, labelled, plus the path to the full record. Order is
+        // problem → fix → note, because that is the order you need them in when you pick a row up.
+        if(detail&&open){
+          const det=document.createElement("span");
+          det.className="detail";
+          [["Problem",t.p],["Fix",t.x],["Note",t.n]].forEach(([lab,val])=>{
+            if(!val) return;
+            const blk=document.createElement("span");
+            blk.className="blk";
+            const h=document.createElement("b"); h.className="lab"; h.textContent=lab;
+            const v=document.createElement("span"); v.className="val"; v.textContent=val;
+            blk.appendChild(h); blk.appendChild(v); det.appendChild(blk);
+          });
+          if(!t.custom){
+            const src=document.createElement("span");
+            src.className="blk src";
+            const h=document.createElement("b"); h.className="lab"; h.textContent="Full record";
+            const v=document.createElement("span"); v.className="val path";
+            v.textContent=`.planning/brief-archive/items/${t.id}.md`;
+            src.appendChild(h); src.appendChild(v); det.appendChild(src);
+          }
+          span.appendChild(det);
         }
 
         if(!t.custom){
@@ -479,17 +773,18 @@ footer button:hover{border-color:var(--red);color:var(--red)}
   document.getElementById("expandAll").addEventListener("click",e=>{
     allOpen=!allOpen;
     expanded.clear();
-    if(allOpen) rows().forEach(t=>{ if(t.t.length>EXPAND_AT) expanded.add(t.id); });
+    if(allOpen) rows().forEach(t=>{ if(hasDetail(t)) expanded.add(t.id); });
     e.currentTarget.setAttribute("aria-pressed",String(allOpen));
     e.currentTarget.textContent=allOpen?"Collapse all":"Expand all";
     render();
   });
   document.getElementById("export").addEventListener("click",()=>{
     const box=document.getElementById("exportBox"), ta=document.getElementById("exportText");
+    // `t` is now one short sentence, so the label is the whole action rather than a 70-char stub.
     const label={}; SEED.forEach(s=>s.tasks.forEach(t=>label[t.id]=t.t));
     const lines=[];
-    Object.entries(ovrSt).forEach(([id,v])=>lines.push(`STATUS  ${id} -> ${v}   (${(label[id]||"").slice(0,70)})`));
-    Object.entries(ovrOw).forEach(([id,v])=>lines.push(`OWNER   ${id} -> ${v}   (${(label[id]||"").slice(0,70)})`));
+    Object.entries(ovrSt).forEach(([id,v])=>lines.push(`STATUS  ${id} -> ${v}   (${label[id]||""})`));
+    Object.entries(ovrOw).forEach(([id,v])=>lines.push(`OWNER   ${id} -> ${v}   (${label[id]||""})`));
     Object.entries(custom).forEach(([sec,arr])=>(arr||[]).forEach(c=>
       lines.push(`NEW [${sec}] status=${c.s} owner=${c.o}: ${c.t}`)));
     ta.value = lines.length ? lines.join("\n") : "No local changes — everything matches the file.";
