@@ -111,10 +111,17 @@ does, the live artifact still shows the old blob-per-row board.
 
 - **The `meta charset` line** — kept or reverted? It is one line at the top of the file and
   nothing depends on it once the artifact wrapper is in play.
-- **Uncommitted work appeared in the tree that is not from this session.** The tree was clean at
-  session start; by the end there were modifications to `lib/training/assessment.ts`,
-  `tests/quiz-session.test.ts`, `types/supabase.ts`, and an untracked
-  `supabase/migrations/0025_quiz_lesson_classification.sql`. **None of it was touched or
-  committed here** — the commit was scoped to `.planning/brief-archive`. Somebody needs to say
-  whose it is and whether it is finished. A new migration sitting untracked is the part worth
-  looking at first.
+- **Resolved during wrap-up: the stray work was a parallel Codex session, and it landed.**
+  `adb43f5` (stratified selection + migration `0025`) and `2dd1488` (cutover doc correction)
+  appeared on `main` while this summary was being written. Nothing here touched them. The
+  carry-forward from `2dd1488`: **`0025` is not optional at cutover**, because
+  `courses.questions_per_attempt` is read by `assessment.ts:301` on every quiz start, so a PROD
+  without `0025` fails as hard as a PROD without `0024`.
+
+- **That session is still editing the board.** `weekly-brief.html` and `items/ix-quizsubset.md`
+  were modified in the working tree after this session's commit — in the new schema, which is
+  the intended use. Left uncommitted deliberately; not mine to land. Note it clears
+  `ix-quizsubset`'s `f:1`, so the today-flag count moves 4 → 3 once they commit.
+
+- **Two sessions were writing the same repo at once.** Worth knowing that happened, and worth
+  a convention if it will recur.

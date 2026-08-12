@@ -60,22 +60,30 @@ This is what to read before touching the code for an item.
    does, the live artifact still shows the old unreadable board — the work is on `main` but not
    yet in front of anyone.
 
-2. **Uncommitted work is sitting in the tree and it is not from this session.** The tree was
-   clean at session start. At the end there were modifications to `lib/training/assessment.ts`,
-   `tests/quiz-session.test.ts` and `types/supabase.ts`, plus an **untracked**
-   `supabase/migrations/0025_quiz_lesson_classification.sql`. None of it was touched or
-   committed here; the commit was scoped to `.planning/brief-archive`. **Whose is it, and is it
-   finished?** An untracked migration is the part worth looking at first — a migration that
-   exists only on one machine is the kind of thing that gets discovered during a cutover.
+2. **A second session was working this repo in parallel, and it has landed.** Mid-wrap-up,
+   `adb43f5` (stratified question selection, migration `0025`) and `2dd1488` (cutover doc
+   correction) appeared on `main` from Codex. What looked like stray uncommitted work in
+   `lib/training/assessment.ts`, `tests/quiz-session.test.ts`, `types/supabase.ts` and an
+   untracked `supabase/migrations/0025_...sql` was that session mid-flight; it is all committed
+   now. Nothing here touched it. **The one thing to carry:** `2dd1488` establishes that
+   **`0025` is not optional at cutover** — `courses.questions_per_attempt` is read by
+   `assessment.ts:301` on every quiz start, so a PROD without `0025` fails exactly like a PROD
+   without `0024`. The earlier "push 0024 alone and strike 0025" escape hatch is gone.
+
+   That session is also still editing the board: `weekly-brief.html` and
+   `items/ix-quizsubset.md` were modified in the working tree after this session's commit, in
+   the new schema. Those edits are **deliberately left uncommitted here** — they are not mine to
+   land.
 
 ---
 
 ## Next steps
 
-1. Desktop republishes the brief artifact from `main`.
-2. Resolve the stray `lib/` + migration `0025` changes above.
-3. The cutover sequence itself is unchanged and still gated — see `ix-prodcutover` on the board
-   for the ordered steps, and `.planning/PROD-CUTOVER.md` for the runbook.
+1. Desktop republishes the brief artifact from `main` — but let the parallel session's board
+   edits land first, or they will be lost on republish.
+2. The cutover sequence is unchanged and still gated — see `ix-prodcutover` on the board for the
+   ordered steps, and `.planning/PROD-CUTOVER.md` for the runbook. **Both `0024` and `0025` must
+   reach PROD before the Phase 4 quiz step.**
 
 ## Open questions
 
