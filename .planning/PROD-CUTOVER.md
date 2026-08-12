@@ -352,13 +352,31 @@ log.
 | 2 | Provisioning webhook creates the firm | PROD `firms`, `seats`, `firm_members` | A `firms` row exists with the `cus_…`/`sub_…` from step 1. **Note its id — this is the purge target.** |
 | 3 | Firm admin sets a password from the onboarding redirect | PROD `auth.users` | Sign-in succeeds on the apex |
 | 4 | Admin invites one employee | PROD `firm_members`, email | Invite arrives and the link lands on `/auth/callback`, not an error |
-| 5 | Employee completes the training and passes the quiz | PROD `quiz_sessions`, `quiz_attempts`, `enrollments` | `quiz_attempts.passed = true`; **`question_ids` is populated** (migration 0024 — an empty column here means 0024 was never pushed to PROD) |
+| 5 | Employee completes the training and passes the quiz | PROD `quiz_sessions`, `quiz_attempts`, `enrollments` | `quiz_attempts.passed = true`; **`question_ids` is populated** (migration 0024 — an empty column here means 0024 was never pushed to PROD). If `0025` shipped, also confirm `quiz_questions.lesson` is non-null on PROD. |
 | 6 | Certificate generates | PROD `cert_generation_queue` → `certificates` → Storage | **A PDF exists in the private `certificates` bucket.** This is the proof; a 200 from a Database Webhook is not. |
 | 7 | Cert-worker cron runs against PROD | Worker logs | Requests carry the PROD project ref; no new writes in staging |
 
-> ⚠️ **Migration `0024_quiz_sessions.sql` must be on PROD before step 5.** It was applied to staging
-> on 2026-08-07. Without it `/api/quiz/start` fails and the employee cannot reach the quiz at all —
-> which would read as a broken cutover rather than a missing migration.
+> ⚠️ **Migrations `0024` and `0025` must both be on PROD before step 5.**
+>
+> | Migration | Staging | PROD | What breaks without it |
+> |---|---|---|---|
+> | `0024_quiz_sessions.sql` | ✅ applied 2026-08-07 | ❌ **not applied** | `/api/quiz/start` fails outright. The employee never reaches the quiz. |
+> | `0025` (lesson classification on `quiz_questions`) | ⏳ **not written yet** | ❌ | Question selection cannot stratify by lesson. See below. |
+>
+> Verified 2026-08-11: the CLI is linked to staging (`supabase/.temp/project-ref` =
+> `ndmzvtuywcufvkxtkjhg`) and `supabase migration list --linked` reaches `0024` on local, remote and
+> time. **Staging needs no push. PROD is the gap, and only the cutover closes it.**
+>
+> 🔴 **Push both, in order, before the Phase 4 quiz step.** A missing migration here does not look
+> like a missing migration. It looks like a broken cutover, and the instinct will be to roll back
+> something that is actually fine.
+>
+> **`0025` is pending, not forgotten.** It is being written under `ix-quizsubset` (lesson column on
+> `quiz_questions` plus a backfill of the eight existing rows from
+> `.planning/QUESTION-POOL.md:53-158`). It is **staging-only** until the cutover, like `0024`. If the
+> cutover runs before `0025` exists, push `0024` alone and strike the `0025` row from this table
+> rather than waiting on it: the quiz works without lesson stratification, since the pool is 8 and
+> the attempt size is 8, so every learner already sees every question.
 
 ### The purge
 
