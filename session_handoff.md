@@ -1,9 +1,29 @@
 # Session Handoff
 
-**Date:** 2026-08-14
+**Date:** 2026-08-14 (session B — second session this day)
 **Who:** Max, with terminal-Claude.
 
-## Status in one paragraph
+> **Two sessions ran on 2026-08-14.** Session A was Phase B + C of the PROD cutover
+> (`.planning/sessions/20260814-max-summary.md`) — that status is below and is unchanged. Session B
+> was `ix-signinlogo` (`.planning/sessions/20260814b-max-summary.md`) and is summarised immediately
+> below. Rob: session A's handoff and the 2026-08-13 one were **unpushed until session B** — this is
+> the first time either has been visible to you.
+
+## Session B in one paragraph
+
+**`ix-signinlogo` is closed and live on production.** The four auth screens (login, onboarding,
+forgot-password, update-password) now render the real Iurix scales mark instead of the retired
+Athena monogram. Rob supplied it as a white vector; it is inlined into `AtcMark` with every
+`fill:white` converted to `fill:currentColor`, so it inherits the parent's text colour rather than
+being locked to white — white on today's black header, and reusable on a light ground later with no
+second asset. Nothing else changed: same `1.35em` box, same `0.42em` gap, same type-set "IURIX",
+same black header, same `clamp()` at every call site. Production version is now
+**`bb885281-d032-4abf-bb1e-f60b7e0661dd`**; the previous version
+`b0e62a6f-c0e8-4a65-89a4-834e181d3be9` is the rollback target. **The auth screens still read
+"IURIX", not "IURIX Accreditation"** — that is deliberate and unchanged, because
+`iurix-wordmark.png` is light-grounds-only and those headers are black.
+
+## Status in one paragraph (session A — unchanged)
 
 **Phase B (`ix-prodseed`) and Phase C (the purge) are both DONE — the PROD cutover is now proven
 end-to-end with real money and a real certificate.** A sandbox Stripe purchase provisioned a real
@@ -66,6 +86,16 @@ if configured would carry a sandbox key → `subs` empty → directions 2 and 3 
 firms (all `status: active`) were verified, not assumed. **Moot through configuration, not a code
 change** — hence this note, so it is not reopened on sight of the 17.
 
+**`ix-signinlogo` — DONE and live.** The retired Athena monogram is gone from all four auth screens;
+they render the real Iurix scales mark (`public/brand/iurix-mark-white.svg`, inlined into
+`AtcMark`). Shipped in `12f118d`, production version `bb885281-d032-4abf-bb1e-f60b7e0661dd`.
+Verified live by the mark's `viewBox` reading `0 0 8334 8334` rather than `0 0 1080 1080` — **a 200
+would have passed with either glyph**, so the workflow's own smoke test does not prove this.
+
+> While closing it, a **stale comment in `atc-logo.tsx:14-16`** was corrected: it claimed `AtcMark`
+> was exported so `iurix-lockup.tsx` could reuse its geometry. It never did — the marketing lockup
+> renders `<img>` tags and imports nothing from that file. `AtcMark`'s only consumer is `AtcLogo`.
+
 ## 📌 CARRIED FORWARD
 
 - **`ix-stripeaudit`** — set `lookup_key: per_seat_annual` on the **live** Price at creation. The
@@ -76,8 +106,6 @@ change** — hence this note, so it is not reopened on sight of the 17.
 - **`ix-prodseed` residual** — the first live subscription also switches directions 2 and 3 on for
   the first time. A future PROD test firm left un-purged becomes a **real alert**. Keep the purge
   discipline.
-- **`ix-signinlogo`** — `AtcLogo`, retired Athena monogram, four surfaces from one component:
-  login, onboarding, forgot-password, update-password.
 - **`ix-questionpool`** — the quiz retake served the same 8 ids reshuffled. Expected while pool (8)
   == `questions_per_attempt` (8); becomes a real subset when the pool grows.
 
@@ -93,12 +121,18 @@ change** — hence this note, so it is not reopened on sight of the 17.
 2. **`ix-certpage`** — there is **no completion screen and no durable certificate page**. The only
    handle on a finished certificate is an **expiring signed URL**. A compliance artifact the holder
    cannot reliably re-reach undercuts the product's core promise.
-3. **The Supabase CLI is still linked to PROD** (`supabase/.temp/project-ref` =
+3. **`ix-authoverflow` (NEW, needs a ticket)** — `/login` and `/onboarding` **overflow horizontally
+   at 390 px**; form inputs and the onboarding card run off the right edge. **Not caused by the logo
+   work** — verified by stashing the changes and re-shooting at `HEAD`, where the baseline clips
+   identically at both 1× and 2×. Deliberately left alone as out of scope for `ix-signinlogo`.
+
+4. **The Supabase CLI is still linked to PROD** (`supabase/.temp/project-ref` =
    `ttqthtzdjacrhjtrcmmy`). **Any `supabase db push` from this repo hits production** until it is
    re-linked to staging. Re-link before any further migration work.
 
 ## NEXT STEPS
 
+- File `ix-authoverflow` and fix the 390 px horizontal overflow on `/login` and `/onboarding`
 - Decide `ix-lessongate`: new bug, or a PROD reproduction of `INTERFACE-CORRECTIONS.md` item 2
 - Re-link the Supabase CLI to staging
 - Set the live Stripe Price `lookup_key` when the live Price is created
