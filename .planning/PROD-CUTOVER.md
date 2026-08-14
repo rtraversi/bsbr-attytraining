@@ -356,29 +356,34 @@ log.
 | 6 | Certificate generates | PROD `cert_generation_queue` → `certificates` → Storage | **A PDF exists in the private `certificates` bucket.** This is the proof; a 200 from a Database Webhook is not. |
 | 7 | Cert-worker cron runs against PROD | Worker logs | Requests carry the PROD project ref; no new writes in staging |
 
-> ⚠️ **Migrations `0024` and `0025` must both be on PROD before step 5.**
+> ✅ **Migrations `0024` and `0025` are both on PROD as of 2026-08-13 (Phase A).** This block was a
+> 🔴 blocker until then; it is retained as a record, not as a gate. **Nothing here is outstanding.**
 >
-> | Migration | Staging | PROD | What breaks without it |
+> | Migration | Staging | PROD | What it would have broken |
 > |---|---|---|---|
-> | `0024_quiz_sessions.sql` | ✅ applied 2026-08-07 | ❌ **not applied** | `/api/quiz/start` fails outright. The employee never reaches the quiz. |
-> | `0025_quiz_lesson_classification.sql` | ✅ applied 2026-08-12 | ❌ **not applied** | **`/api/quiz/start` fails outright**, same as a missing `0024`. It adds TWO columns, not one: `quiz_questions.lesson` *and* `courses.questions_per_attempt`, which `lib/training/assessment.ts:301` selects on every quiz start. |
+> | `0024_quiz_sessions.sql` | ✅ applied 2026-08-07 | ✅ **applied 2026-08-13** | `/api/quiz/start` fails outright. The employee never reaches the quiz. |
+> | `0025_quiz_lesson_classification.sql` | ✅ applied 2026-08-12 | ✅ **applied 2026-08-13** | **`/api/quiz/start` fails outright**, same as a missing `0024`. It adds TWO columns, not one: `quiz_questions.lesson` *and* `courses.questions_per_attempt`, which `lib/training/assessment.ts:301` selects on every quiz start. |
 >
-> Verified 2026-08-11: the CLI is linked to staging (`supabase/.temp/project-ref` =
-> `ndmzvtuywcufvkxtkjhg`) and `supabase migration list --linked` reaches `0024` on local, remote and
-> time. **Staging needs no push. PROD is the gap, and only the cutover closes it.**
+> **Verified against PROD 2026-08-14**, by selecting the columns themselves rather than trusting the
+> migration ledger — the ledger says a file ran, the columns say the schema is actually there:
 >
-> 🔴 **Push both, in order, before the Phase 4 quiz step.** A missing migration here does not look
-> like a missing migration. It looks like a broken cutover, and the instinct will be to roll back
-> something that is actually fine.
+> - `quiz_sessions` present (0 rows) and `quiz_attempts.question_ids` present → `0024` real
+> - `quiz_questions.lesson` present, 8 questions, distribution **L1=1, L2=1, L3=4, L4=0, L5=2**,
+>   matching `.planning/QUESTION-POOL.md:53-158` — the backfill ran, not just the DDL
+> - `courses.questions_per_attempt` = **8** on the single `courses` row
+>   (`b7650c08-e036-4165-bbea-c75f0021f3ff`, "IURIX — Annual Certification", `pass_threshold` 80)
 >
-> **`0025` landed 2026-08-12 in `adb43f5`** (`ix-quizsubset`). It is **staging-only** until the
-> cutover, like `0024`. Backfill verified as L1=1, L2=1, L3=4, L4=0, L5=2, matching
-> `.planning/QUESTION-POOL.md:53-158`.
+> `supabase migration list --linked` reads `0025 | 0025 | 0025`. **Note the CLI is now linked to
+> PROD** (`supabase/.temp/project-ref` = `ttqthtzdjacrhjtrcmmy`), not staging as it was on 08-11 — any
+> `supabase db push` from this repo now hits production until it is re-linked.
 >
-> ⚠️ **Do not treat `0025` as optional because stratification is currently a no-op.** That reasoning
-> is true of the `lesson` column and false of `courses.questions_per_attempt`. The selector reads the
-> attempt size from `courses` on every start, so a PROD without `0025` fails at step 5 even though
-> the pool is 8 and no stratification would occur. **Both migrations, or the quiz does not run.**
+> **`0025` landed 2026-08-12 in `adb43f5`** (`ix-quizsubset`).
+>
+> ⚠️ **Historical note, still worth keeping:** `0025` was never optional on the grounds that
+> stratification is currently a no-op. That reasoning is true of the `lesson` column and false of
+> `courses.questions_per_attempt` — the selector reads the attempt size from `courses` on every start,
+> so a PROD without `0025` would fail at step 5 even though the pool is 8 and no stratification
+> occurs.
 
 ### The purge
 
@@ -420,10 +425,45 @@ Storage and omits why — which is how it gets "simplified" back into a failure.
   re-provision the firm that was just deleted.
 - **`courses` / `quiz_questions`.** Real seeded content, not test data.
 
-**Close the loop:** after the purge, re-run the daily reconciliation and confirm it reports zero
-discrepancies. That — not the purge itself — is the thing this decision was made to protect.
+**Close the loop — corrected 2026-08-14.** This section previously read: *"re-run the daily
+reconciliation and confirm it reports zero discrepancies. That — not the purge itself — is the thing
+this decision was made to protect."* **That gate does not work, and would have been believed.**
 
-Verified 2026-08-07 by dry-running the script against a staging firm (`Ithica & Co`, 24
+🔴 **The reconciliation cannot verify the purge.** It reports clean whether or not the purge ran:
+
+- `workers/cert-worker/src/index.ts:936` sets `canCompareFirmsToStripe = subs.length > 0`, and
+  **suppresses directions 2 and 3 entirely when there are no live subscriptions.** Direction 1
+  iterates `subs` and so is also a no-op. With an empty `subs`, the job does nothing at all.
+- `subs` is filtered to `livemode === true` (`:888-895`), corroborated by
+  `workers/cert-worker/wrangler.toml:24-26`: *"The job filters on each object's own `livemode` flag,
+  so a sandbox key here produces silence rather than false alarms."*
+- The seed purchase is a **sandbox** purchase. It never appears in `subs`. The test firm would
+  therefore have been reported clean **while it still existed** — the reconciliation was never
+  capable of seeing it.
+
+This suppression is correct behaviour, not a bug: the comment at `:920-932` explains that without it
+a sandbox key empties `subs` and direction 2 then reports *every active firm* as "access without
+payment". It just means a clean reconciliation is **not evidence of anything** until live
+subscriptions exist.
+
+✅ **The real close condition: a direct read of every table the purge touched**, confirming each is
+back to its pre-seed baseline. This is what was actually done on 2026-08-14, and it is the only
+check that observes the purge rather than something correlated with it. All zero:
+`firms`, `firm_members`, `seats`, `enrollments`, `quiz_sessions`, `quiz_attempts`, `certificates`,
+`cert_generation_queue`, `training_events`, `auth.users`, and Storage objects under the firm prefix
+— with `processed_stripe_events` **retained at 2** (deliberate) and `courses` + the 8 `quiz_questions`
+**untouched**. Take a baseline read before step 1 so "back to baseline" is a comparison, not a guess.
+
+The daily reconciliation is still worth watching as routine health, but it is **not the gate**.
+
+**Executed 2026-08-14 (`ix-prodseed`).** Firm `07fb3282-a869-46c4-a7f6-c5cc9277231c` ("Prod test"),
+purged with `--confirm`: 1 storage object, 18 `training_events`, then the firm cascade
+(1 seat, 2 `firm_members`, 1 enrollment, 2 `quiz_attempts`, 1 certificate, 1 `cert_generation_queue`,
+2 `quiz_sessions`), then 2 `auth.users`. Dry-run counts matched the live run exactly and matched an
+independent read of the database. Evidence captured before deletion to
+`/Users/maxlugo/Attorney training/phase-b-evidence-2026-08-14/` (outside the repo), including the
+certificate PDF `IX-20260814-4129.pdf`. **This was the first `--confirm` run against any project.**
+
+Previously verified 2026-08-07 by dry-running the script against a staging firm (`Ithica & Co`, 24
 `training_events`, 4 members, 4 auth users, 1 enrollment, 1 seat) and against a deliberately
-mismatched `--project-ref`, which refused. **The script has never been run with `--confirm` against
-any project.**
+mismatched `--project-ref`, which refused.
