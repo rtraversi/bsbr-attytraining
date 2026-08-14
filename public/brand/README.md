@@ -5,6 +5,29 @@ and a full-res raster of the primary mark.
 
 ---
 
+## Updated 2026-08-14 — a white vector of the mark, and the auth screens are no longer a placeholder
+
+| File | Size | Background | Use for |
+|---|---|---|---|
+| **`iurix-mark-white.svg`** | 8334×8334 viewBox, 3.2 KB | ✅ Transparent | **Source of record for the mark as vector.** Supplied by Rob as `iurix logo.svg` at the repo root; moved here and renamed (the space in the filename was the reason). |
+
+**This file is NOT fetched at runtime.** Its 7 paths are inlined into `app/_components/atc-logo.tsx`,
+exactly as the retired Athena monogram was — `atc-logo.tsx` has never loaded an SVG over the wire,
+which is why deleting `public/atc-athena-logo.svg` on 2026-07-31 changed no rendering. Keep this
+file as the thing to re-inline from if the mark is revised; do not assume a `<img src>` anywhere
+depends on it.
+
+**Its paths are `fill:white` in the source and `fill:currentColor` in the component.** That is the
+one deliberate edit. `AtcLogo` wraps the mark in a `text-white` div so it renders white on the black
+auth header today, and it will recolor itself on a light ground later without a second asset.
+
+**This closes the `atc-logo.tsx` row in "Where these get used" below** for the mark. The wordmark
+half of that row is still open: the auth screens keep the type-set "IURIX" and still do not say
+"Accreditation", because `iurix-wordmark.png` is light-grounds-only (see the 2026-08-04 note) and
+that header is black.
+
+---
+
 ## ⚠️ Updated 2026-08-04 — the marketing site uses these two, and a wordmark now exists
 
 | File | Size | Background | Use for |
