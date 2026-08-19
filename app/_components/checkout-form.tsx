@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CURRENT_TERMS_VERSION } from "@/lib/legal/terms";
 
 export default function CheckoutForm() {
   const [seats, setSeats] = useState(1);
@@ -9,6 +10,11 @@ export default function CheckoutForm() {
   // US-only (Katy): all training and certification data stays in the US, and
   // Stripe Checkout has no billing-country allowlist to enforce it for us.
   const [isUsFirm, setIsUsFirm] = useState(false);
+  // ix-termsaccept. This component is currently referenced by nothing, but it
+  // posts to the REAL /api/checkout, so it carries the same gate as /pricing.
+  // Without it the server refuses with terms_not_accepted and the form simply
+  // breaks the moment anyone wires it up.
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const pricePerSeat = seats >= 25 ? 28 : seats >= 10 ? 32 : 35;
   const total = seats * pricePerSeat;
@@ -22,7 +28,12 @@ export default function CheckoutForm() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seats, billingCountry: isUsFirm ? "US" : "" }),
+        body: JSON.stringify({
+          seats,
+          billingCountry: isUsFirm ? "US" : "",
+          termsAccepted,
+          termsVersion: CURRENT_TERMS_VERSION,
+        }),
       });
 
       if (!res.ok) {
@@ -78,9 +89,33 @@ export default function CheckoutForm() {
         </span>
       </label>
 
+      <label className="flex max-w-sm cursor-pointer items-start gap-2.5 text-sm text-gray-600">
+        <input
+          type="checkbox"
+          checked={termsAccepted}
+          onChange={(e) => setTermsAccepted(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0"
+        />
+        <span>
+          I have read and agree to the{" "}
+          <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline">
+            Terms of Service
+          </a>
+          ,{" "}
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">
+            Privacy Policy
+          </a>{" "}
+          and{" "}
+          <a href="/dpa" target="_blank" rel="noopener noreferrer" className="underline">
+            DPA
+          </a>
+          , and I am authorised to accept them for my firm.
+        </span>
+      </label>
+
       <button
         type="submit"
-        disabled={loading || !isUsFirm}
+        disabled={loading || !isUsFirm || !termsAccepted}
         className="mt-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl px-8 py-3 text-base transition-colors"
       >
         {loading ? "Redirecting…" : "Get Started"}

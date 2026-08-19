@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Check, Minus, Plus, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { CURRENT_TERMS_VERSION } from "@/lib/legal/terms"
 import { Reveal } from "@/app/mockup/_components/reveal"
 
 const BANDS = [
@@ -31,6 +32,10 @@ export function Pricing() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [isUsFirm, setIsUsFirm] = useState(false)
+  // ix-termsaccept. Same reasoning as the US-only gate directly below: this is
+  // a design surface, but it posts to the REAL /api/checkout, so it carries the
+  // real gate rather than a decorative copy of one.
+  const [termsAccepted, setTermsAccepted] = useState(false)
 
   const rate = perSeatRate(seats)
   const total = seats * rate
@@ -46,7 +51,12 @@ export function Pricing() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seats, billingCountry: isUsFirm ? "US" : "" }),
+        body: JSON.stringify({
+          seats,
+          billingCountry: isUsFirm ? "US" : "",
+          termsAccepted,
+          termsVersion: CURRENT_TERMS_VERSION,
+        }),
       })
       const data = (await res.json()) as { url?: string; error?: string }
       if (data.url) {
@@ -208,11 +218,35 @@ export function Pricing() {
                 </span>
               </label>
 
+              <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-sm text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                />
+                <span>
+                  I have read and agree to the{" "}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline">
+                    Terms of Service
+                  </a>
+                  ,{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">
+                    Privacy Policy
+                  </a>{" "}
+                  and{" "}
+                  <a href="/dpa" target="_blank" rel="noopener noreferrer" className="underline">
+                    Data Processing Addendum
+                  </a>
+                  , and I am authorised to accept them on behalf of my firm.
+                </span>
+              </label>
+
               <Button
                 size="lg"
                 className="mt-4 h-12 w-full rounded-xl text-[0.95rem]"
                 onClick={handleCheckout}
-                disabled={loading || !isUsFirm}
+                disabled={loading || !isUsFirm || !termsAccepted}
               >
                 {loading ? (
                   <>
