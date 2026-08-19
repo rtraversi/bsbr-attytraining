@@ -443,6 +443,22 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
  * only change is that the user id arrives as an argument instead of coming from
  * a createUser call two lines earlier.
  */
+/**
+ * Pull the Terms acceptance stamped onto the session by app/api/checkout.
+ *
+ * Returns an empty object rather than nulls when the metadata is absent, so
+ * spreading it into an UPDATE cannot erase an acceptance already on the row.
+ * Both fields move together: firms_terms_pair_ck (migration 0027) rejects a
+ * timestamp without a version, so a half-populated session is treated as no
+ * acceptance at all rather than being written and bounced by the constraint.
+ */
+function termsFromSession(session: Stripe.Checkout.Session) {
+  const at = session.metadata?.terms_accepted_at
+  const version = session.metadata?.terms_version
+  if (!at || !version) return {}
+  return { terms_accepted_at: at, terms_version: version }
+}
+
 async function provisionFirm(
   supabase: AdminClient,
   userId: string,
@@ -462,6 +478,10 @@ async function provisionFirm(
       max_seats: seats,
       status: 'active',
       current_period_end: periodEnd,
+      // ix-termsaccept. Stamped in app/api/checkout BEFORE the session was
+      // created, so this is the buyer's own act rather than anything inferred
+      // from the payment. Null only for a session that predates the feature.
+      ...termsFromSession(session),
     })
     .select('id')
     .single()
@@ -713,6 +733,10 @@ async function reactivateFirm(
       current_period_end: periodEnd,
       // name is deliberately untouched — it is theirs, and keeping it is the
       // point of reattaching rather than provisioning fresh.
+      // ix-termsaccept: a returning firm ticked the box again at this checkout,
+      // so refresh the record. Spreads to nothing when the session carries no
+      // metadata, which leaves any earlier acceptance intact.
+      ...termsFromSession(session),
     })
     .eq('id', firmId)
 

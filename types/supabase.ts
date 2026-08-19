@@ -260,6 +260,8 @@ export type Database = {
           scorm_lesson_location: string | null
           scorm_suspend_data: string | null
           status: string
+          terms_accepted_at: string | null
+          terms_version: string | null
           user_id: string
         }
         Insert: {
@@ -274,6 +276,8 @@ export type Database = {
           scorm_lesson_location?: string | null
           scorm_suspend_data?: string | null
           status?: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           user_id: string
         }
         Update: {
@@ -288,6 +292,8 @@ export type Database = {
           scorm_lesson_location?: string | null
           scorm_suspend_data?: string | null
           status?: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           user_id?: string
         }
         Relationships: [
@@ -315,6 +321,8 @@ export type Database = {
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
           tier: string
         }
         Insert: {
@@ -331,6 +339,8 @@ export type Database = {
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           tier: string
         }
         Update: {
@@ -347,6 +357,8 @@ export type Database = {
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           tier?: string
         }
         Relationships: []

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { CURRENT_TERMS_VERSION } from "@/lib/legal/terms";
 
 // Cofounder.co mechanism (brief §3.4): drag the seat slider → live cost breakdown
 // → big monospace total. Volume pricing — ALL seats bill at the band rate the
@@ -23,6 +24,10 @@ export function PricingSlider() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUsFirm, setIsUsFirm] = useState(false);
+  // ix-termsaccept. Unticked by default and never pre-checked: a pre-ticked box
+  // is not acceptance. The server refuses the request without it, so this is a
+  // real gate rather than a cosmetic one.
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const rate = useMemo(() => rateFor(seats), [seats]);
   const total = seats * rate;
@@ -38,7 +43,12 @@ export function PricingSlider() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seats, billingCountry: isUsFirm ? "US" : "" }),
+        body: JSON.stringify({
+          seats,
+          billingCountry: isUsFirm ? "US" : "",
+          termsAccepted,
+          termsVersion: CURRENT_TERMS_VERSION,
+        }),
       });
       // Surface the server's own message rather than a generic retry prompt.
       // A US-only refusal is not a transient failure, and telling someone to
@@ -171,10 +181,44 @@ export function PricingSlider() {
           </span>
         </label>
 
+        {/* Terms acceptance — ix-termsaccept.
+
+            Terms §1 asserts the customer has accepted these terms. Until this
+            existed, nothing ever asked, so that sentence was false for every
+            account. This is the moment of acceptance for a firm admin, and it
+            sits BEFORE the Stripe redirect deliberately: the record is written
+            whether or not the card ultimately clears.
+
+            Do not default this to checked, and do not merge it into the US-firm
+            box. Two separate assertions, two separate ticks. */}
+        <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-ink-soft">
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-teal-mid"
+          />
+          <span>
+            I have read and agree to the{" "}
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink">
+              Terms of Service
+            </a>
+            ,{" "}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink">
+              Privacy Policy
+            </a>{" "}
+            and{" "}
+            <a href="/dpa" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink">
+              Data Processing Addendum
+            </a>
+            , and I am authorised to accept them on behalf of my firm.
+          </span>
+        </label>
+
         {/* CTA */}
         <button
           onClick={startCheckout}
-          disabled={loading || !isUsFirm}
+          disabled={loading || !isUsFirm || !termsAccepted}
           className="mt-5 w-full rounded-[1px] bg-teal-ink px-8 py-4 text-base font-medium text-marble transition-colors hover:bg-ink disabled:opacity-60"
         >
           {loading ? "Redirecting to checkout…" : "Get started"}

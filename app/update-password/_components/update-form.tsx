@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { CURRENT_TERMS_VERSION } from '@/lib/legal/terms'
 
 // Password input with its own independent show/hide eye toggle. `children` slot
 // renders directly under the input (used for the strength row below the new
@@ -75,6 +76,8 @@ export function UpdatePasswordForm({
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  // ix-termsaccept. Never pre-checked — a pre-ticked box is not acceptance.
+  const [termsAccepted, setTermsAccepted] = useState(false)
 
   // v1 strength: the existing 8-char minimum is treated as "strong enough".
   const isStrong = password.length >= 8
@@ -95,9 +98,35 @@ export function UpdatePasswordForm({
       setError('Password must be at least 8 characters.')
       return
     }
+    if (!termsAccepted) {
+      setError('Please accept the Terms of Service and Privacy Policy to continue.')
+      return
+    }
 
     setLoading(true)
     setError('')
+
+    // ix-termsaccept. Recorded BEFORE the password changes, so a failure here
+    // leaves the account exactly as it was and the person can simply retry.
+    // Doing it afterwards would risk an active account with no record of what
+    // it agreed to, which is the hole this closes. Fails closed on purpose.
+    try {
+      const res = await fetch('/api/legal/accept', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ termsAccepted: true, termsVersion: CURRENT_TERMS_VERSION }),
+      })
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string }
+        setError(body.error ?? 'Could not record your acceptance. Please try again.')
+        setLoading(false)
+        return
+      }
+    } catch {
+      setError('Could not record your acceptance. Please check your connection and try again.')
+      setLoading(false)
+      return
+    }
 
     const supabase = createClient()
     // Name and password in ONE call, deliberately. `data` writes user_metadata —
@@ -210,9 +239,35 @@ export function UpdatePasswordForm({
         disabled={loading}
       />
 
+      {/* Terms acceptance — ix-termsaccept, staff half.
+
+          An invited employee never sees checkout, so this is the only point at
+          which they are asked. Recorded against their firm_members row before
+          the password is written. */}
+      <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-zinc-700">
+        <input
+          type="checkbox"
+          checked={termsAccepted}
+          onChange={(e) => setTermsAccepted(e.target.checked)}
+          disabled={loading}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--brand-primary)]"
+        />
+        <span>
+          I have read and agree to the{' '}
+          <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-zinc-900">
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-zinc-900">
+            Privacy Policy
+          </a>
+          .
+        </span>
+      </label>
+
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || !termsAccepted}
         className="mt-1 flex w-full items-center justify-center rounded-2xl bg-[var(--brand-primary)] px-6 py-4 text-lg font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? 'Saving…' : 'Set & continue'}

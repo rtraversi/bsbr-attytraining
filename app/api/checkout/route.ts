@@ -7,6 +7,7 @@ import {
   priceLookupKey,
   PriceResolutionError,
 } from "@/lib/stripe-price";
+import { CURRENT_TERMS_VERSION, isCurrentTermsVersion } from "@/lib/legal/terms";
 
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
@@ -89,16 +90,44 @@ const ALLOWED_BILLING_COUNTRY = "US";
 export async function POST(req: NextRequest) {
   let seats: number;
   let billingCountry: string;
+  let termsAccepted: boolean;
+  let termsVersion: unknown;
 
   try {
-    const body = (await req.json()) as { seats?: unknown; billingCountry?: unknown };
+    const body = (await req.json()) as {
+      seats?: unknown;
+      billingCountry?: unknown;
+      termsAccepted?: unknown;
+      termsVersion?: unknown;
+    };
     seats = typeof body.seats === "number" ? Math.floor(body.seats) : 1;
     if (seats < 1 || seats > 500) seats = Math.max(1, Math.min(500, seats));
     billingCountry =
       typeof body.billingCountry === "string" ? body.billingCountry.trim().toUpperCase() : "";
+    termsAccepted = body.termsAccepted === true;
+    termsVersion = body.termsVersion;
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
+
+  // ix-termsaccept. Refused before the Stripe session exists, so a firm can
+  // never come into being without a recorded acceptance. The version must match
+  // what we are serving right now: a stale version means the browser is running
+  // old JS against newly published terms, and consent to superseded wording is
+  // not consent to the current wording.
+  if (!termsAccepted || !isCurrentTermsVersion(termsVersion)) {
+    return NextResponse.json(
+      {
+        error:
+          "Please review and accept the Terms of Service, Privacy Policy and Data " +
+          "Processing Addendum before continuing. If you already ticked the box, " +
+          "reload the page — our terms may have been updated since you opened it.",
+        code: "terms_not_accepted",
+      },
+      { status: 400 }
+    );
+  }
+  const termsAcceptedAt = new Date().toISOString();
 
   // Refused BEFORE the session is created, so no card is ever charged. 403 with
   // a specific message rather than a generic failure: a firm that cannot buy
@@ -157,6 +186,13 @@ export async function POST(req: NextRequest) {
       success_url: `${appUrl}/onboarding?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/`,
       allow_promotion_codes: true,
+      // ix-termsaccept. Carried on the session so the webhook can persist it
+      // onto the firm row it creates. The acceptance happened HERE, before any
+      // charge; the webhook is only the transport to the database.
+      metadata: {
+        terms_accepted_at: termsAcceptedAt,
+        terms_version: CURRENT_TERMS_VERSION,
+      },
       automatic_tax: { enabled: true },
       tax_id_collection: { enabled: true },
       // Explicit, not incidental. automatic_tax already forces Stripe to collect
