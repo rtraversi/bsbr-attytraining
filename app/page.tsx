@@ -8,6 +8,7 @@ import { RecordSection } from "@/app/_components/record-section";
 import { IncludedSection } from "@/app/_components/included-section";
 import { ClosingCta } from "@/app/_components/closing-cta";
 import { Footer } from "@/app/_components/footer";
+import { HitBeacon } from "@/app/_components/hit-beacon";
 
 export const metadata: Metadata = {
   title: "Iurix Accreditation — the standard other firms will be held to",
@@ -22,6 +23,8 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <div className="bg-marble">
+      {/* Renders nothing; counts ?v=1 vs ?v=2 opens for Katy. */}
+      <HitBeacon />
       <SiteHeader />
       <main>
         <HeroSection />
