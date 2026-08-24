@@ -63,7 +63,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://iurixaccreditation.
 
 const TITLE = "IURIX — AI compliance certification for law firms";
 const DESCRIPTION =
-  "Certify your staff on proper AI use under ABA Model Rule 5.3. One annual fee, instant certificates.";
+  "A written AI use policy for your firm, training and signed attestations for your staff, and a record you can produce. One annual fee per seat.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

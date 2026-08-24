@@ -4,9 +4,9 @@
 
 **IURIX**
 
-A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay a one-time annual fee to certify their staff on proper AI usage under ABA Model Rule 5.3 (Vendor Supervision / attorney ethics compliance). Staff work through an interactive Articulate Rise 360 training module (flip cards, scenarios, click-to-reveal, knowledge checks — authored by Rob + Katy, an attorney), then pass a custom React certification quiz with a score-gate (unlimited retakes), and receive a downloadable PDF certificate. Attorneys get a dashboard to audit staff completion, scores, and certificate status, and to issue reminders or reprints. The product is published under the **IURIX** brand.
+A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay a one-time annual fee to put formal AI governance in place. **The deliverable is a written AI use policy, personalized to the firm** — what staff may use AI for, what they may not, and how client confidences are handled. **The training exists to keep the firm's staff aligned to that policy.** Staff work through an interactive Articulate Rise 360 training module (flip cards, scenarios, click-to-reveal, knowledge checks — authored by Rob + Katy, an attorney), then pass a custom React certification quiz with a score-gate (unlimited retakes), and receive a downloadable PDF certificate. Attorneys get a dashboard to audit staff completion, scores, and certificate status, and to issue reminders or reprints. The product is published under the **IURIX** brand.
 
-**Core Value:** An attorney can pay, invite their staff, see them complete the training, and produce certificates that demonstrate Rule 5.3 supervision compliance — without operator intervention.
+**Core Value:** An attorney can pay, receive a written AI policy tailored to their firm, invite their staff, see them complete the training that holds them to that policy, and produce the certificates and attestations that evidence it — without operator intervention.
 
 ### Constraints
 
@@ -18,8 +18,29 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 - **Tech stack — API/automation:** Cloudflare Workers for all serverless functions, cert generation, email, and scheduled jobs; no n8n, no VPS
 - **Pricing constraint:** $35/user/yr for 1–9 users, $32/user/yr for 10–24 users, $28/user/yr for 25+ users — billed annually per enrolled user; volume bands (all seats billed at the band rate the firm's headcount lands in); FLAT on renewal — no renewal discount (course substantially updated each year).
 - **Target market constraint:** Solo and small firms (1–15 staff) — UX, marketing, and pricing tiers reflect this; product is self-serve only
-- **Compliance framing:** ABA Model Rule 5.3 — generic national framing; no state-specific accreditation claims in v1
+- **Framing:** The firm's personalized written AI policy is the product and the thesis; the training, attestations and certificates are the evidence of adherence to it. ABA Model Rule 5.3 / Formal Opinion 512 are background context and at most a supporting citation — never the pitch (see the framing correction below). Generic national framing; no state-specific accreditation claims in v1
 - **Operator burden:** Self-run platform — operator (Rob) should not be in the loop for normal customer flows (purchase, invite, certify, renew); all of that is automated end-to-end
+
+### ⚠️ Framing correction — 2026-08-24 (Katy, via Max)
+
+**ABA Model Rule 5.3 is NOT this project's north star.** The Rule 5.3 framing was set by the
+earliest planning sessions, was never revisited, and spread from there into the docs, the
+marketing copy, the transactional emails and the certificate itself. Katy is adamant on this and
+it is a **correction, not a preference**.
+
+- **The product is the firm's own written AI use policy** — generated and personalized for each
+  firm. That policy is what the customer buys.
+- **The training exists to keep the firm's staff aligned to that policy**; the quiz, the
+  attestations and the certificates are the evidence that they are.
+- **ABA Model Rule 5.3 is outdated.** It is background context and, at most, a supporting
+  citation in fine print. It is not the thesis, not the headline, and not why anyone buys this.
+
+Future sessions must **not** reintroduce Rule 5.3 as the product thesis. The one place it stays
+deliberately is the legal disclaimers in `.planning/legal/terms-of-service.md` (§3 and §11) —
+naming the rule in order to disclaim it is protective, and those are left alone on purpose.
+
+Full record of the correction, plus the authored training content still awaiting Katy's revision:
+`.planning/FRAMING-CORRECTION-2026-08-24.md`.
 
 <!-- GSD:project-end -->
 

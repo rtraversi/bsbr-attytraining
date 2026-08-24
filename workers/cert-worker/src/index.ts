@@ -204,7 +204,7 @@ function expiryEmployeeHtml(name: string, days: number, dateStr: string, appUrl:
   return `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:14px">Hi ${name},</p>
 <p style="font-size:14px">Your AI compliance training certificate <strong>expires in ${days} days</strong> — on ${dateStr}.</p>
-<p style="font-size:14px">Renew your certification now to maintain your firm's compliance record under ABA Model Rule 5.3.</p>
+<p style="font-size:14px">Renew your certification now so your firm's AI policy training record stays complete.</p>
 <p><a href="${appUrl}/dashboard/training" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Renew certification</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
 <p style="font-size:12px;color:#6b7280">IURIX</p>
@@ -214,7 +214,7 @@ function expiryEmployeeHtml(name: string, days: number, dateStr: string, appUrl:
 function expiryAdminHtml(empName: string, firmName: string, days: number, dateStr: string): string {
   return `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:14px"><strong>${empName}</strong>'s AI compliance training certificate for ${firmName} <strong>expires in ${days} days</strong> — on ${dateStr}.</p>
-<p style="font-size:14px">They will need to re-certify to maintain your firm's Rule 5.3 compliance record. A reminder has been sent directly to ${empName}.</p>
+<p style="font-size:14px">They will need to re-certify to keep your firm's AI policy training record complete. A reminder has been sent directly to ${empName}.</p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
 <p style="font-size:12px;color:#6b7280">IURIX</p>
 </body></html>`
@@ -241,7 +241,7 @@ function expiryAdminLapsedHtml(
 ): string {
   return `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:14px"><strong>${empName}</strong>'s AI compliance training certificate for ${firmName} <strong>expires in ${days} days</strong> — on ${dateStr}.</p>
-<p style="font-size:14px">Your IURIX subscription is not currently active, so ${empName} cannot re-certify and your firm's Rule 5.3 record will not be renewed.</p>
+<p style="font-size:14px">Your IURIX subscription is not currently active, so ${empName} cannot re-certify and your firm's accreditation record will not be renewed.</p>
 <p style="font-size:14px">You can review your subscription and billing details in the customer portal.</p>
 <p><a href="${appUrl}/api/portal" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Manage subscription</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
@@ -261,7 +261,7 @@ function inactivityHtml(name: string, firmName: string, appUrl: string): string 
   return `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:14px">Hi ${name},</p>
 <p style="font-size:14px"><strong>Your firm can't be certified until everyone completes their training.</strong></p>
-<p style="font-size:14px">${firmName} can't be certified under ABA Model Rule 5.3 until every member of the firm has completed their training — and yours is still to do.</p>
+<p style="font-size:14px">${firmName} can't be accredited until every member of the firm has completed the training on the firm's AI use policy — and yours is still to do.</p>
 <p><a href="${appUrl}/dashboard/training" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Complete training</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
 <p style="font-size:12px;color:#6b7280">IURIX</p>
@@ -546,7 +546,7 @@ function renewalReminderHtml(
 <p><a href="${appUrl}/api/portal" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Manage subscription &amp; billing</a></p>
 <p style="font-size:14px">Here's a quick look at where your team stands:</p>
 <table style="width:100%;border-collapse:collapse;margin:16px 0">${statusRows}</table>
-${pending > 0 ? `<p style="font-size:14px">You have <strong>${pending} staff member${pending !== 1 ? 's' : ''}</strong> who ${pending !== 1 ? 'have' : 'has'} not yet completed this year's training. Reach out to them before your renewal date to close out your firm's Rule 5.3 compliance record.</p>` : `<p style="font-size:14px">Great news — all of your staff have completed their training for this certification period.</p>`}
+${pending > 0 ? `<p style="font-size:14px">You have <strong>${pending} staff member${pending !== 1 ? 's' : ''}</strong> who ${pending !== 1 ? 'have' : 'has'} not yet completed this year's training. Reach out to them before your renewal date to close out your firm's accreditation record for this period.</p>` : `<p style="font-size:14px">Great news — all of your staff have completed their training for this certification period.</p>`}
 <p><a href="${appUrl}/dashboard" style="font-size:14px;color:#0f766e">View your team dashboard</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
 <p style="font-size:12px;color:#6b7280">IURIX</p>

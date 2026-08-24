@@ -9,6 +9,20 @@
 
 ---
 
+> ### ⚠️ Framing correction — 2026-08-24 (Katy, via Max)
+>
+> **ABA Model Rule 5.3 is NOT this project's north star.** This document was written when it
+> was assumed to be, and the assumption was never revisited. The product is the **firm's own
+> written AI use policy**, generated and personalized for each firm; the **training exists to
+> keep the firm's staff aligned to that policy**, and the quiz, attestations and certificates
+> are the evidence of that alignment. Rule 5.3 / Formal Opinion 512 are outdated background
+> context and at most a supporting citation — never the thesis, never the headline.
+>
+> Requirement text below has been reworded accordingly. Future sessions must **not** reintroduce
+> Rule 5.3 as the product thesis. The one deliberate exception is the legal disclaimers in
+> `.planning/legal/terms-of-service.md` (§3 and §11), where naming the rule to disclaim it is
+> protective.
+
 ## Strategy
 
 This roadmap follows the **Vertical MVP** build order recommended in `research/SUMMARY.md`. Phase 1 is deliberately an end-to-end *stub* — Architecture's "Hello cert" approach — that validates the riskiest integration path (Stripe → Postgres → DB webhook → n8n → PDF → Storage → email → dashboard) with a "Mark Pass" button **before** the real video player or custom quiz is built. Real video + custom React quiz arrive in Phase 2 to replace the stub.
@@ -59,7 +73,7 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
   1. A buyer can complete Stripe Checkout choosing a seat quantity at per-seat volume pricing ($35/$32/$28 per user/yr by band) with Stripe Tax applied, the refund-policy text visible at checkout, and the firm + admin `firm_members` row provisioned in a single Postgres transaction (PAY-01, PAY-02, PAY-04, PAY-06, PAY-07).
   2. Re-sending the same `checkout.session.completed` event from the Stripe dashboard produces no duplicate firm, no duplicate seat allocation, and no duplicate invite email (PAY-03).
   3. The firm admin receives a magic-link email from `noreply@builtsmartbyrob.com`, sets a password on first visit, can log in / log out / use "forgot password," can invite an employee by name + email, and can resend any pending invite with one click (AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05).
-  4. An employee on the "Mark Pass" stub page can trigger a `quiz_attempts.passed=true` insert; the Supabase DB Webhook fires to the CF Worker cert endpoint; within ~2 minutes a PDF certificate (containing recipient name, course name + version, issue date, expiry date = +365 days, score, firm name, unique `BSBR-YYYY-XXXX-XXXX` ID, Rule 5.3 framework reference, and the strict disclaimer) is uploaded to Supabase Storage, a `certificates` row is inserted, and the cert is emailed to the employee via Resend (CERT-01, CERT-02, CERT-03, CERT-04, CERT-05, CERT-06).
+  4. An employee on the "Mark Pass" stub page can trigger a `quiz_attempts.passed=true` insert; the Supabase DB Webhook fires to the CF Worker cert endpoint; within ~2 minutes a PDF certificate (containing recipient name, course name + version, issue date, expiry date = +365 days, score, firm name, unique `BSBR-YYYY-XXXX-XXXX` ID, a reference to the firm's written AI use policy, and the strict disclaimer) is uploaded to Supabase Storage, a `certificates` row is inserted, and the cert is emailed to the employee via Resend (CERT-01, CERT-02, CERT-03, CERT-04, CERT-05, CERT-06).
   5. If the CF Worker cert endpoint fails (e.g. Supabase Storage timeout), the `cert_generation_queue` row persists and is picked up by the CF Cron drain within 5 minutes — no cert is silently lost (AUTO-01, AUTO-02).
   6. Both the firm admin and the cert owner can re-download any certificate from the dashboard via `/api/certificates/[id]/url`, which authenticates the caller and returns a 60-second signed Supabase Storage URL; the expiry-tracking column (`expires_at`) is populated and queryable (CERT-07, CERT-08, CERT-09, PAY-05).
 **Plans:** TBD
@@ -94,8 +108,8 @@ Curriculum (real video script + real quiz questions + cert visual design) is pro
   1. A firm admin lands on `/dashboard` and sees a single sortable table of all firm employees with columns: name, email, status (not started / in progress / passed / expired), latest score, completion date, cert link — default sort = incomplete-first (DASH-01).
   2. The admin can add an employee individually by name + email (triggers the AUTH-02 invite flow) and can bulk-upload via CSV with name + email columns; the system validates the CSV, dedupes against existing employees, and dispatches invites only to new rows (DASH-02, DASH-03).
   3. The admin can click "Remind" on any incomplete row to dispatch a reminder email; can reassign a seat (soft-deletes the departed employee's `firm_members` row while preserving their `certificates` and `training_events` for the audit log); and can self-serve "delete employee record" to redact PII while preserving cert-ID + dates + event log entries (DASH-04, DASH-05, DASH-09).
-  4. The admin can export the firm's full audit log as a CSV (one row per `training_events` entry joined with employee name/email at event time) and can generate a one-page "firm attestation" PDF listing every currently-certified staff member with cert ID, issue date, expiry date, and the Rule 5.3 disclaimer (DASH-06, DASH-07).
-  5. A static "What this certificate means under ABA Model Rule 5.3" expandable explainer appears on the dashboard with plain-English copy (DASH-08).
+  4. The admin can export the firm's full audit log as a CSV (one row per `training_events` entry joined with employee name/email at event time) and can generate a one-page "firm attestation" PDF listing every currently-certified staff member with cert ID, issue date, expiry date, and the standard disclaimer (DASH-06, DASH-07).
+  5. A static "What your firm's AI policy and these certificates mean" expandable explainer appears on the dashboard with plain-English copy (DASH-08).
 **Plans:** TBD
 **UI hint:** yes
 

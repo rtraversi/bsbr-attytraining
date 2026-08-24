@@ -116,16 +116,22 @@ export async function generateCertPdf(opts: CertPdfOptions): Promise<Uint8Array>
     x: (W - headlineW) / 2, y: HEADLINE_Y, size: headlineSize, font: bold, color: NEAR_BLACK,
   })
 
-  // ── Course + ABA rule line ───────────────────────────────────────────────────
+  // ── Course + policy line ─────────────────────────────────────────────────────
   const { size: courseSize, width: courseW } = fitText(courseTitle, W - M * 2, 13, regular)
   page.drawText(courseTitle, {
     x: (W - courseW) / 2, y: HEADLINE_Y - 26, size: courseSize, font: regular, color: NEAR_BLACK,
   })
 
-  const ruleNote  = 'demonstrating required competency in AI usage under ABA Model Rule 5.3'
-  const ruleNoteW = regular.widthOfTextAtSize(ruleNote, 10)
-  page.drawText(ruleNote, {
-    x: (W - ruleNoteW) / 2, y: HEADLINE_Y - 46, size: 10, font: regular, color: MID_GREY,
+  // The policy is the product; the training certifies staff against it. This line
+  // used to read "demonstrating required competency in AI usage under ABA Model
+  // Rule 5.3" — corrected 2026-08-24 (Katy, via Max). Rule 5.3 is background
+  // context, not what the certificate attests to. Do not put a rule number back
+  // on the certificate face. NOTE: stored PDFs are never re-rendered, so a change
+  // here only affects newly issued certificates.
+  const policyNote  = "trained and assessed on their firm's written AI use policy"
+  const policyNoteW = regular.widthOfTextAtSize(policyNote, 10)
+  page.drawText(policyNote, {
+    x: (W - policyNoteW) / 2, y: HEADLINE_Y - 46, size: 10, font: regular, color: MID_GREY,
   })
 
   // ── Score / Completed / Expires ──────────────────────────────────────────────

@@ -26,8 +26,9 @@ export function EmployeeInviteEmail({ firmName, actionLink }: EmployeeInviteEmai
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        <strong>{firmName}</strong> has enrolled you in IURIX — a required certification program
-        covering proper AI usage under ABA Model Rule 5.3.
+        <strong>{firmName}</strong> has enrolled you in IURIX — the training that certifies you on
+        your firm&apos;s written AI use policy: what you may use AI for, what you may not, and how
+        client information is handled.
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>

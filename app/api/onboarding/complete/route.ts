@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         .from('courses')
         .insert({
           title: 'IURIX — Annual Certification',
-          description: 'Certify your staff on proper AI use under ABA Model Rule 5.3.',
+          description: "Training that holds your staff to your firm's written AI use policy.",
           cloudflare_stream_video_id: 'stub-not-yet-uploaded',
           pass_threshold: 80,
           is_published: true,

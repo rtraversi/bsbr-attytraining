@@ -1008,7 +1008,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
           subject: `${firm.name} has renewed — complete your AI compliance training`,
           html: `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:14px">Hi ${name},</p>
-<p style="font-size:14px">${firm.name} has renewed its annual AI compliance training certification. You have been re-enrolled and need to complete your training to maintain your compliance record under ABA Model Rule 5.3.</p>
+<p style="font-size:14px">${firm.name} has renewed its annual accreditation. You have been re-enrolled and need to complete this year's training on the firm's AI use policy to keep your certification current.</p>
 <p><a href="${appUrl}/dashboard/training" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Complete training</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
 <p style="font-size:12px;color:#6b7280">IURIX</p>

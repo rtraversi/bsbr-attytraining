@@ -5,6 +5,20 @@
 
 ---
 
+> ### ⚠️ Framing correction — 2026-08-24 (Katy, via Max)
+>
+> **ABA Model Rule 5.3 is NOT this project's north star.** This document was written when it
+> was assumed to be, and the assumption was never revisited. The product is the **firm's own
+> written AI use policy**, generated and personalized for each firm; the **training exists to
+> keep the firm's staff aligned to that policy**, and the quiz, attestations and certificates
+> are the evidence of that alignment. Rule 5.3 / Formal Opinion 512 are outdated background
+> context and at most a supporting citation — never the thesis, never the headline.
+>
+> Requirement text below has been reworded accordingly. Future sessions must **not** reintroduce
+> Rule 5.3 as the product thesis. The one deliberate exception is the legal disclaimers in
+> `.planning/legal/terms-of-service.md` (§3 and §11), where naming the rule to disclaim it is
+> protective.
+
 ## v1 Requirements
 
 REQ-IDs use `CATEGORY-NN` format. Each requirement is user-centric, specific, and testable.
@@ -58,7 +72,7 @@ REQ-IDs use `CATEGORY-NN` format. Each requirement is user-centric, specific, an
 - [ ] **CERT-01**: When a `quiz_attempts` row is inserted with `passed = true`, a Supabase Database Webhook fires an authenticated HTTP POST to a dedicated CF Worker endpoint that handles all cert generation
 - [ ] **CERT-02**: The CF Worker cert endpoint generates the certificate PDF using `pdf-lib` (pure JS, no headless browser), writes the PDF bytes to Supabase Storage, and continues the pipeline
 - [ ] **CERT-03**: The generated PDF is uploaded to a private Supabase Storage bucket pathed `{firm_id}/{firm_member_id}.pdf`
-- [ ] **CERT-04**: The PDF contains: recipient name, course name, course version, issue date, expiry date (issue + 365 days), score, issuing firm name, unique cert ID in the format `BSBR-{YYYY}-{4 alphanumeric}-{4 alphanumeric}`, the ABA Model Rule 5.3 Framework reference, and the strict disclaimer (FND-06)
+- [ ] **CERT-04**: The PDF contains: recipient name, course name, course version, issue date, expiry date (issue + 365 days), score, issuing firm name, unique cert ID in the format `BSBR-{YYYY}-{4 alphanumeric}-{4 alphanumeric}`, a reference to the firm's written AI use policy the training is keyed to, and the strict disclaimer (FND-06)
 - [ ] **CERT-05**: A `certificates` row is inserted recording the cert ID, recipient `firm_members.id`, issue date, expiry date, course version, score, and storage path
 - [ ] **CERT-06**: A certificate-issued email is sent to the employee with a link to a Next.js endpoint (not a raw storage URL)
 - [ ] **CERT-07**: The Next.js endpoint `/api/certificates/[id]/url` authenticates the caller (cert owner OR firm admin of the issuing firm) and returns a 60-second signed Supabase Storage URL
@@ -73,8 +87,8 @@ REQ-IDs use `CATEGORY-NN` format. Each requirement is user-centric, specific, an
 - [ ] **DASH-04**: A firm admin can click "Remind" per row to resend a reminder email to incomplete employees
 - [ ] **DASH-05**: A firm admin can reassign a seat — soft-deleting one `firm_members.employee` and replacing them with a new invitee; the departed employee's `firm_members` row is marked inactive but their `certificates` and `training_events` remain in the audit log permanently
 - [ ] **DASH-06**: A firm admin can export their firm's full audit log as CSV (one row per `training_events` entry, joined with employee name/email at time of event)
-- [ ] **DASH-07**: A firm admin can click "Generate firm attestation" to receive a one-page PDF stating: "As of [today], the following members of [Firm Name] hold active training certification under the ABA Model Rule 5.3 Framework: [name, cert ID, issue date, expiry date for each]." Includes the FND-06 disclaimer.
-- [ ] **DASH-08**: The dashboard displays a static "What this certificate means under ABA Model Rule 5.3" expandable explainer with plain-English copy
+- [ ] **DASH-07**: A firm admin can click "Generate firm attestation" to receive a one-page PDF stating: "As of [today], the following members of [Firm Name] have been trained on and attested to [Firm Name]'s written AI use policy: [name, cert ID, issue date, expiry date for each]." Includes the FND-06 disclaimer.
+- [ ] **DASH-08**: The dashboard displays a static "What your firm's AI policy and these certificates mean" expandable explainer with plain-English copy
 - [ ] **DASH-09**: A firm admin can self-serve "delete this employee record" — redacts PII (name → "Redacted", email → null) on the `firm_members` row while preserving the cert ID, issue/expiry dates, and event log entries for compliance traceability
 
 ### Automation & Reminders (AUTO)
@@ -90,7 +104,7 @@ REQ-IDs use `CATEGORY-NN` format. Each requirement is user-centric, specific, an
 
 - [ ] **AUDIT-01**: An append-only `training_events` table records (firm_id, firm_member_id, event_type, event_timestamp, ip_address, user_agent, metadata_json) for every user action: invite_sent, login, video_started, video_completed, quiz_attempt, identity_attestation, cert_issued, cert_downloaded, seat_reassigned, employee_record_deleted
 - [ ] **AUDIT-02**: `training_events` rows are insert-only (RLS policy denies UPDATE and DELETE on this table; service-role bypass is restricted to the operator)
-- [ ] **AUDIT-03**: PII retention is documented in the Privacy Policy as 7 years post-cert (regulatory minimum for Rule 5.3 supervision documentation); after that window an operator-scripted cleanup redacts old rows
+- [ ] **AUDIT-03**: PII retention is documented in the Privacy Policy as 7 years post-cert (regulatory minimum for retaining firm supervision documentation); after that window an operator-scripted cleanup redacts old rows
 
 ### Renewal (RENEW)
 
@@ -115,7 +129,7 @@ REQ-IDs use `CATEGORY-NN` format. Each requirement is user-centric, specific, an
 
 ## Out of Scope (Explicit Exclusions)
 
-- State-specific course variants (TX, CA, NY, FL) — single ABA Model Rule 5.3 generic course only
+- State-specific course variants (TX, CA, NY, FL) — one nationally-framed policy + course only
 - Mid-to-large firm sales motion (15+ staff custom pricing, SSO, POs) — v1 is self-serve only
 - Course catalog / multiple courses / learning paths — one course only
 - Gamification (badges, leaderboards, streaks)

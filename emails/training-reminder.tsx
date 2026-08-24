@@ -34,8 +34,8 @@ export function TrainingReminderEmail({ firmName, actionLink }: TrainingReminder
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        <strong>{firmName}</strong> can’t be certified under ABA Model Rule 5.3 until every member
-        of the firm has completed their training — and yours is still to do.
+        <strong>{firmName}</strong> can’t be accredited until every member of the firm has completed
+        the training on the firm’s AI use policy — and yours is still to do.
       </Text>
 
       <Section style={buttonContainer}>

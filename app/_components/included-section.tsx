@@ -128,13 +128,16 @@ export function IncludedSection() {
               ))}
             </ul>
 
-            {/* The one place the rule is named. It belongs in the fine print of the
-                specification, not in a headline — the buyer is purchasing a standard,
-                and this says which one it is keyed to. */}
+            {/* Fine print, and it names the firm's OWN policy as the standard — not a
+                rule number. Rule 5.3 used to be named here as the thing the product was
+                keyed to; that framing was corrected 2026-08-24 (Katy, via Max). The
+                policy is the product; bar guidance is background the policy is drafted
+                against. Do not put a rule citation back in this position. */}
             <p className="mt-7 text-[13px] leading-[1.6] text-ink-mute">
-              The training and the policy template are aligned with ABA Model Rule 5.3 and
-              Formal Opinion 512, and with state bar guidance on AI competence and
-              confidentiality.
+              Your firm&apos;s written policy is the standard your staff is trained and
+              attested against. It is drafted against current ABA and state bar guidance on
+              AI competence, confidentiality and supervision, and updated as that guidance
+              moves.
             </p>
           </div>
         </div>
