@@ -203,7 +203,7 @@ export function PricingSlider() {
             <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink">
               Terms of Service
             </a>
-            ,{" "}
+            {" "}and{" "}
             <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink">
               Privacy Policy
             </a>
