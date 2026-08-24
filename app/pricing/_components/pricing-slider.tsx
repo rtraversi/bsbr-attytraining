@@ -207,7 +207,7 @@ export function PricingSlider() {
             <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink">
               Privacy Policy
             </a>
-            , and I am authorised to accept them on behalf of my firm.
+            , and I am authorized to accept them on behalf of my firm.
           </span>
         </label>
 

@@ -85,7 +85,7 @@ export default function TermsPage() {
             certificate number
           </li>
           <li>
-            An administrative dashboard through which a firm can monitor enrolment,
+            An administrative dashboard through which a firm can monitor enrollment,
             completion, scores, and certificate validity, and can issue reminders
           </li>
         </ul>
@@ -128,7 +128,7 @@ export default function TermsPage() {
 
         <LegalSubheading>Enrolled Staff</LegalSubheading>
         <p>
-          The firm administrator may enrol staff members (“Enrolled Users”) up to the number
+          The firm administrator may enroll staff members (“Enrolled Users”) up to the number
           of seats purchased. You are responsible for ensuring Enrolled Users comply with
           these Terms, and for promptly removing any individual who should no longer have
           access.
@@ -144,7 +144,7 @@ export default function TermsPage() {
         <LegalSubheading>Account Security</LegalSubheading>
         <p>
           You are responsible for the security of your credentials and for notifying us
-          promptly of any unauthorised access.
+          promptly of any unauthorized access.
         </p>
       </LegalSection>
 
@@ -257,7 +257,7 @@ export default function TermsPage() {
           If a payment fails, we will attempt to collect and will notify the firm
           administrator. If payment is not received, the firm’s account may be suspended.{' '}
           <strong>Certificates already issued remain valid and accessible.</strong>{' '}
-          Suspension prevents new enrolments and new assessments; it does not retroactively
+          Suspension prevents new enrollments and new assessments; it does not retroactively
           invalidate a completed certification.
         </p>
       </LegalSection>
@@ -298,7 +298,7 @@ export default function TermsPage() {
           <li>Complete training or an assessment on another person’s behalf;</li>
           <li>Misrepresent the meaning, scope, or authority of a certificate;</li>
           <li>
-            Attempt to gain unauthorised access to the Service or to another firm’s data;
+            Attempt to gain unauthorized access to the Service or to another firm’s data;
           </li>
           <li>Introduce malware or other harmful code;</li>
           <li>Scrape or systematically extract data from the Service; or</li>
@@ -377,7 +377,7 @@ export default function TermsPage() {
         <LegalSubheading>Feedback</LegalSubheading>
         <p>
           If you provide suggestions or feedback about the Service, you grant us a
-          royalty-free, worldwide, perpetual licence to use it without obligation to you.
+          royalty-free, worldwide, perpetual license to use it without obligation to you.
         </p>
       </LegalSection>
 
@@ -404,7 +404,7 @@ export default function TermsPage() {
             Procuring training through Iurix does not discharge, transfer, or reduce any
             professional obligation you hold.
           </strong>{' '}
-          It is one piece of evidence that you took a supervisory step. It is not a defence,
+          It is one piece of evidence that you took a supervisory step. It is not a defense,
           and it is not a substitute for supervision.
         </p>
       </LegalSection>

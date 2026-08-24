@@ -41,7 +41,7 @@ export default function PrivacyPage() {
           Iurix Accreditation (“Iurix,” “we,” “us,” or “our”) provides AI-use training and
           certification for law firm staff (the “Service”). This Privacy Policy describes how
           we collect, use, disclose, and safeguard information about firm administrators and
-          the staff members they enrol when you use our Service or visit our website at{' '}
+          the staff members they enroll when you use our Service or visit our website at{' '}
           <a href="https://iurixaccreditation.com" className={LINK}>
             iurixaccreditation.com
           </a>{' '}
@@ -58,8 +58,8 @@ export default function PrivacyPage() {
 
       <LegalSection title="1. Who We Are and Our Role">
         <p>
-          Iurix provides training and certification services directly to law firms and to the
-          individual staff members those firms enrol.
+          Iurix provides policy, training and certification services directly to law firms and
+          to the individual staff members those firms enroll.
         </p>
         <p>
           <strong>
@@ -212,7 +212,7 @@ export default function PrivacyPage() {
         <p>
           <strong>
             We do not sell your information, and we do not sell or share the information of the
-            staff members you enrol.
+            staff members you enroll.
           </strong>
         </p>
         <p>
@@ -369,7 +369,7 @@ export default function PrivacyPage() {
 
       <LegalSection title="6. Data Security">
         <p>
-          We implement technical and organisational measures designed to protect your data,
+          We implement technical and organizational measures designed to protect your data,
           including:
         </p>
         <ul className={LIST}>
