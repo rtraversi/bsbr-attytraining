@@ -206,10 +206,6 @@ export function PricingSlider() {
             ,{" "}
             <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink">
               Privacy Policy
-            </a>{" "}
-            and{" "}
-            <a href="/dpa" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink">
-              Data Processing Addendum
             </a>
             , and I am authorised to accept them on behalf of my firm.
           </span>

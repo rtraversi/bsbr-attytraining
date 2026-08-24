@@ -1,13 +1,22 @@
+import { notFound } from 'next/navigation'
 import { LegalPage, LegalSection } from '@/app/_components/legal-page'
 
 export const metadata = {
   title: 'Data Processing Addendum — Iurix Accreditation',
 }
 
-// Content unchanged (still attorney-review drafts); container moved to the
-// shared light template. 01-brief.md notes this route may be retired — the
-// footer's Legal column reads fine at three links if it is.
+// STRUCTURE ONLY — every section below is still an [ATTORNEY TO COMPLETE]
+// placeholder. This is the one legal document that has never been drafted.
+//
+// Unlinked and guarded 2026-08-24, at the same time Terms and Privacy were
+// published for real. Until then this page was reachable AND named in both
+// checkout acceptance checkboxes, so a paying customer was being asked to
+// accept a document made of placeholders. The links were removed from the
+// footer, the dashboard, and both checkout forms in the same commit — check
+// those before lifting this guard, and lift it only when the copy exists.
 export default function DpaPage() {
+  if (process.env.NODE_ENV === 'production') notFound()
+
   return (
     <LegalPage
       title="Data Processing Addendum"

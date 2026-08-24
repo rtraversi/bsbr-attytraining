@@ -7,10 +7,12 @@ import { IurixLockup } from "./iurix-lockup";
 // The legal links are grouped under a heading because the set is in flux:
 // four at launch, five once /accessibility lands, three if the DPA is retired
 // (03-copy.md). A column reads fine at any of those counts.
+// The DPA was pulled 2026-08-24: it is the one legal document that has never
+// been drafted, and linking to a page of placeholders from the footer of a live
+// product is worse than not offering it. It comes back when it is written.
 const LEGAL_LINKS: { label: string; href: string }[] = [
   { label: "Privacy Policy", href: "/privacy" },
   { label: "Terms of Service", href: "/terms" },
-  { label: "Data Processing Addendum", href: "/dpa" },
 ];
 
 const SITE_LINKS: { label: string; href: string }[] = [

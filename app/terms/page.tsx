@@ -526,9 +526,9 @@ export default function TermsPage() {
 
       <LegalSection title="17. General Provisions">
         <p>
-          <strong>Entire agreement</strong> — these Terms, with the Privacy Policy, the AI
-          Use Policy, and any order form, constitute the entire agreement and supersede all
-          prior agreements and representations.
+          <strong>Entire agreement</strong> — these Terms, with the Privacy Policy and any
+          order form, constitute the entire agreement and supersede all prior agreements and
+          representations.
         </p>
         <p>
           <strong>Severability</strong> — if any provision is held invalid or unenforceable,

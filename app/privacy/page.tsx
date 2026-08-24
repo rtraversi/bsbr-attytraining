@@ -216,9 +216,10 @@ export default function PrivacyPage() {
           </strong>
         </p>
         <p>
-          <strong>We do not use your data to train artificial intelligence models.</strong> See
-          our separate AI Use Policy for a full account of the role — and the deliberate
-          absence — of AI within this Service.
+          <strong>We do not use your data to train artificial intelligence models.</strong> There
+          is no artificial intelligence in the certification pathway: the assessment questions are
+          fixed, scoring is deterministic and performed on our servers, and the answer key is
+          human-written.
         </p>
       </LegalSection>
 

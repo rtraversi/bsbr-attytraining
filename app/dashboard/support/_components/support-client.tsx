@@ -294,9 +294,6 @@ export function SupportClient({ userEmail }: Props) {
         <Link href="/terms" className="hover:text-[var(--brand-emphasis)]">
           Terms of Service
         </Link>
-        <Link href="/dpa" className="hover:text-[var(--brand-emphasis)]">
-          Data Processing Addendum
-        </Link>
       </nav>
 
       {/* ── Contact modal ───────────────────────────────────────────────────── */}

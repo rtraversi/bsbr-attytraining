@@ -13,13 +13,9 @@ export function DashboardFooter() {
           <Link href="/terms" className="transition-colors hover:text-[var(--brand-emphasis)] dark:hover:text-[var(--brand-primary)]">
             Terms
           </Link>
-          {/* Label says DPA because the href is /dpa. It read "Cookies" until
-              2026-08-24, which was simply wrong — /cookies is a different route,
-              is 404-guarded in production and has no copy. Do not repoint this
-              at /cookies to make the old label true. */}
-          <Link href="/dpa" className="transition-colors hover:text-[var(--brand-emphasis)] dark:hover:text-[var(--brand-primary)]">
-            DPA
-          </Link>
+          {/* A DPA link stood here until 2026-08-24, mislabelled "Cookies".
+              Removed rather than relabelled: /dpa has never been drafted and is
+              now 404-guarded. Restore it when the document exists. */}
         </nav>
         <p className="text-xs text-[#8A8A8A] dark:text-[#7A8189]">
           © {new Date().getFullYear()} IURIX. All rights reserved.

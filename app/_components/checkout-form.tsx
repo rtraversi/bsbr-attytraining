@@ -104,10 +104,6 @@ export default function CheckoutForm() {
           ,{" "}
           <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">
             Privacy Policy
-          </a>{" "}
-          and{" "}
-          <a href="/dpa" target="_blank" rel="noopener noreferrer" className="underline">
-            DPA
           </a>
           , and I am authorised to accept them for my firm.
         </span>
