@@ -48,12 +48,17 @@ When a firm purchases seats and an administrator sets up an account, we collect:
 - Billing information, processed by our payment processor. **We never receive or store full payment
   card numbers**
 - Subscription details — seat count, billing period, and renewal date
+- **A record of acceptance:** which version of these terms the administrator accepted, and the date
+  and time they accepted it. We store the version rather than a simple yes, because an acceptance is
+  only meaningful if it identifies the exact wording that was agreed to
 
 ### Staff Member Information
 
 When a firm administrator invites a staff member, we collect:
 
 - Name and email address, as supplied by the administrator
+- **A record of acceptance:** which version of these terms the staff member accepted when they set
+  their password, and the date and time they accepted it
 
 We do **not** collect profile photographs or any other image of a staff member.
 
@@ -67,6 +72,10 @@ This is the core of what the Service exists to produce. For each enrolled staff 
 
 - Progress through the training content, including which lesson was last reached and total time spent
 - Knowledge check and assessment attempts, including the score for each attempt and whether it passed
+- The specific set of questions served in each assessment attempt. Each sitting draws from a larger
+  pool, so we record which questions were actually asked; without that, a result cannot be
+  re-examined against the exam the person actually sat
+- A session record tying each attempt to the sitting it belongs to
 - Certificate issuance — a unique certificate number, the issue date, and the expiry date
 - The generated PDF certificate itself
 - **The IP address and browser user-agent captured at the moment of assessment submission**
@@ -127,10 +136,15 @@ operates under its own data processing terms.
 | **Cloudflare** | Application hosting, content delivery, and scheduled jobs | Request traffic and operational logs |
 | **Resend** | Transactional email delivery | Recipient email addresses and message content |
 
-`[CONFIRM]` **The training course content is served from our own infrastructure.** The interactive
-course was authored using Articulate Rise 360 and exported as a self-contained package that we host
-ourselves. Articulate does not receive, process, or observe staff member activity during training.
-*(This must be re-confirmed if course delivery is ever moved to Articulate's hosting.)*
+**The training course content is served from our own infrastructure.** The interactive course was
+authored using Articulate Rise 360 and exported as a self-contained package that we host ourselves.
+Articulate does not receive, process, or observe staff member activity during training.
+
+`[PUBLICATION GATE — this paragraph describes the intended end state and is NOT true today. The
+course is currently served from share.articulate.com, so Articulate is presently a sub-processor
+observing staff activity. Do not publish this document until the Rise export is self-hosted behind a
+session-gated route. If that plan changes, delete this paragraph and add Articulate Global, LLC to
+the sub-processor table above instead.]`
 
 We do not share training or certification data with any party beyond what is necessary to operate the
 Service.
@@ -141,6 +155,20 @@ By design, **your firm administrator can see your training status, your assessme
 certificate.** This is the purpose of the Service — it exists so that a supervising attorney can
 document that their staff have been trained. Staff members should understand that their results are
 visible to their employer.
+
+### Certificate Verification
+
+Every certificate carries a verification code and a QR code resolving to a page on our site. Anyone
+holding a certificate, or its code, can use that page to confirm the certificate is genuine. The page
+discloses the certificate number, the holder's name, the firm name, the issue and expiry dates, the
+current status, and, where a certificate has been revoked, the reason recorded for the revocation. It
+does **not** disclose assessment scores.
+
+This is deliberate, and it is what makes a certificate worth anything: a credential nobody can check
+is not evidence. Presenting a certificate to a client, auditor or regulator therefore lets that party
+confirm its status independently. Someone who has not been given a certificate cannot look one up by
+guessing, because the manually typed route requires the holder's surname alongside the certificate
+number.
 
 ### Legal Requirements
 
@@ -159,9 +187,10 @@ privacy policy.
 Retention here works differently from most software services, and the reason matters.
 
 **Certification records are retained for a minimum of seven (7) years from the date of certificate
-issuance.** A certificate is evidence that a supervising attorney took reasonable steps to train
-their staff under ABA Model Rule 5.3. That evidence has to survive longer than the subscription that
-produced it — a record that vanishes when a firm stops paying is worthless as a compliance
+issuance.** A certificate is evidence that a firm trained a named person against its own AI policy
+and standards on a given date, and assessed them on it. That evidence has to survive longer than the
+subscription that produced it: a record that vanishes when a firm stops paying is worthless as a
+compliance
 artifact. Retained records include the certificate, the assessment result that produced it, and the
 attestation metadata described in Section 2.
 

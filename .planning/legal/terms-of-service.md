@@ -189,9 +189,32 @@ permission.
 
 ### Your Certificate
 
-**You may freely use, reproduce, and present your own certificate** — to clients, in an audit, to a
-regulator, or in your firm's internal compliance records. That is what it is for. This permission
-covers the certificate as issued, unaltered.
+A certificate is issued to a named individual and records that they completed the training on a
+stated date. **You may present it, and reproduce it as far as presenting it requires, to evidence
+that training:** to a client, to a regulator or auditor, to a court or insurer, or in your firm's own
+compliance records. That is what it is for.
+
+That permission is limited, and the limits are the point:
+
+- **Unaltered only.** You may not modify, crop, re-typeset, redact, or remove any element of a
+  certificate, including the recipient's name, the certificate number, the issue and expiry dates,
+  the score, and the verification code. An altered document is not a certificate issued by us and
+  must not be presented as one.
+- **No accreditation or endorsement claims.** A certificate records that a named person completed
+  training. It does not make that person or your firm accredited, certified, endorsed, approved, or
+  partnered by Iurix, and it must not be described that way.
+- **Your own certificates only.** You may present certificates issued to you or to your Enrolled
+  Users. You may not present, publish, or supply a certificate issued to anyone else.
+- **The mark travels with the document, not beyond it.** The permission above covers the Iurix name
+  and mark only as they appear on the certificate itself. It does not license the name or mark for
+  any other use, including websites, advertising, directories, or firm marketing materials.
+- **Revoked and expired certificates.** A certificate revoked under Section 4 must not be presented
+  for any purpose once we have notified you. An expired certificate may be presented only as a record
+  of training completed at that time, never as evidence of current training.
+
+Every certificate carries a verification code and a QR code resolving to a page on our site that
+reports its current status, including whether it has been revoked. Anyone you present a certificate
+to can check it independently.
 
 ### Feedback
 
