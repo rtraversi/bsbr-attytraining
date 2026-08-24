@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { SiteHeader } from "@/app/_components/site-header";
 import { HeroSection } from "@/app/_components/hero-section";
 import { OvertureSection } from "@/app/_components/overture-section";
@@ -10,11 +9,13 @@ import { ClosingCta } from "@/app/_components/closing-cta";
 import { Footer } from "@/app/_components/footer";
 import { HitBeacon } from "@/app/_components/hit-beacon";
 
-export const metadata: Metadata = {
-  title: "Iurix Accreditation — the standard other firms will be held to",
-  description:
-    "AI governance for small law firms: a written policy, staff training, and signed attestations. $35 per seat, per year — and the accreditation belongs to your firm.",
-};
+// No metadata export here on purpose. This page used to set its own title and
+// description, which silently beat the root layout for the two plain tags while
+// og:/twitter: still came from the layout — so one URL shipped three different
+// strings: a "the standard other firms will be held to" browser tab, a "$35 per
+// seat" search snippet, and a third headline on the share card. The root layout
+// in app/layout.tsx is now the single source for both, and adding a title or
+// description back here re-splits them.
 
 // Four sections, following Katy's copy in her order: the solution, exposure,
 // the record, the details. The standalone "Why Rule 5.3 just changed" section
