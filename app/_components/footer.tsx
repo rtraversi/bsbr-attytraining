@@ -91,18 +91,26 @@ export function Footer() {
           </nav>
         </div>
 
-        {/* Disclaimer — reproduced verbatim from 03-copy.md. It is load-bearing:
-            it is the sentence that keeps the marketing copy's use of
-            "accreditation" from reading as a bar-accreditation claim. Do not
-            shorten it, and do not drop it below 12px. */}
+        {/* Disclaimer — Katy's wording, 2026-08-24, reproduced verbatim. It
+            supersedes the 03-copy.md text that stood here.
+            ⚠️ Two clauses were DELETED by that rewrite and their removal was
+            deliberate, not an oversight: "does not provide legal advice" and
+            "do not constitute bar accreditation or a guarantee of compliance".
+            The previous comment called the second one load-bearing — the
+            sentence that kept the marketing copy's use of "accreditation" from
+            reading as a bar-accreditation claim. Katy is the reviewing attorney
+            and made the call knowing that; the disclaiming work now sits in
+            Terms §2 ("Certificates are not accreditation") and §11. Do not
+            restore either clause here without going back to her.
+            Do not shorten this, and do not drop it below 12px. */}
         <div className="mt-14 border-t border-steel/70 pt-8">
           <p className="max-w-3xl text-[13px] leading-relaxed text-ink-soft">
             Iurix Accreditation provides educational training and certification of
-            completion for law firm staff. It is not a law firm, does not provide legal
-            advice, and its certificates are not CLE-accredited and do not constitute bar
-            accreditation or a guarantee of compliance. Attorneys remain responsible for
-            their own professional obligations under applicable rules of professional
-            conduct.
+            completion for law firm staff. It is not a law firm, but all language is
+            reviewed and written by an attorney. Training is for non-attorney staff and
+            therefore does not qualify for attorney CLE credit. Attorneys remain
+            responsible for their own professional obligations under applicable rules of
+            professional conduct.
           </p>
           <p className="mt-6 text-[13px] text-ink-mute">
             © {new Date().getFullYear()} BSBR Holdings, LLC d/b/a Iurix. All rights

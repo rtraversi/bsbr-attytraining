@@ -157,7 +157,7 @@ export default async function SettingsPage() {
           <nav className={`flex flex-wrap gap-x-6 gap-y-1 px-1 pt-2 text-sm ${MUTED}`}>
             <Link href="/privacy" className="hover:text-[var(--brand-emphasis)]">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-[var(--brand-emphasis)]">Terms of Service</Link>
-            <Link href="/dpa" className="hover:text-[var(--brand-emphasis)]">Cookies</Link>
+            <Link href="/dpa" className="hover:text-[var(--brand-emphasis)]">Data Processing Addendum</Link>
           </nav>
 
           <form action="/api/auth/logout" method="POST" className="px-1">

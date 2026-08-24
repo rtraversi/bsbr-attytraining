@@ -295,7 +295,7 @@ export function SupportClient({ userEmail }: Props) {
           Terms of Service
         </Link>
         <Link href="/dpa" className="hover:text-[var(--brand-emphasis)]">
-          Cookies
+          Data Processing Addendum
         </Link>
       </nav>
 
