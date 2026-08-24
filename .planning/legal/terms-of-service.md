@@ -11,7 +11,7 @@
 ---
 
 These Terms of Service ("Terms") constitute a legally binding agreement between you ("Customer,"
-"you," or "your") and **BSBR Holdings, LLC d/b/a Iurix** `[CONFIRM — entity structure]` ("Iurix,"
+"you," or "your") and **BSBR Holdings, LLC d/b/a Iurix** ("Iurix,"
 "we," "us," or "our") governing access to and use of the Iurix Accreditation training and
 certification service (the "Service").
 
@@ -39,7 +39,7 @@ Iurix Accreditation provides:
 - An interactive training course covering responsible use of artificial intelligence in legal practice
 - A scored certification assessment
 - A dated certificate of completion, issued on a passing result, bearing a unique certificate number
-- An administrative dashboard through which a firm can monitor enrolment, completion, scores, and
+- An administrative dashboard through which a firm can monitor enrollment, completion, scores, and
   certificate validity, and can issue reminders
 
 Course content and assessment questions are revised periodically. **The course is substantially
@@ -71,7 +71,7 @@ the firm's account.
 
 ### Enrolled Staff
 
-The firm administrator may enrol staff members ("Enrolled Users") up to the number of seats
+The firm administrator may enroll staff members ("Enrolled Users") up to the number of seats
 purchased. You are responsible for ensuring Enrolled Users comply with these Terms, and for promptly
 removing any individual who should no longer have access.
 
@@ -81,7 +81,7 @@ status are visible to their firm administrator.** This visibility is the purpose
 ### Account Security
 
 You are responsible for the security of your credentials and for notifying us promptly of any
-unauthorised access.
+unauthorized access.
 
 ## 4. Assessment Integrity
 
@@ -142,7 +142,7 @@ and it remains valid whether or not you continue as a customer.
 
 If a payment fails, we will attempt to collect and will notify the firm administrator. If payment is
 not received, the firm's account may be suspended. **Certificates already issued remain valid and
-accessible.** Suspension prevents new enrolments and new assessments; it does not retroactively
+accessible.** Suspension prevents new enrollments and new assessments; it does not retroactively
 invalidate a completed certification.
 
 ## 6. Certificates
@@ -167,7 +167,7 @@ You agree not to:
 - Reproduce, redistribute, or publish the course content or assessment materials;
 - Complete training or an assessment on another person's behalf;
 - Misrepresent the meaning, scope, or authority of a certificate;
-- Attempt to gain unauthorised access to the Service or to another firm's data;
+- Attempt to gain unauthorized access to the Service or to another firm's data;
 - Introduce malware or other harmful code;
 - Scrape or systematically extract data from the Service; or
 - Reverse engineer, decompile, or disassemble any component of the Service.
@@ -219,7 +219,7 @@ to can check it independently.
 ### Feedback
 
 If you provide suggestions or feedback about the Service, you grant us a royalty-free, worldwide,
-perpetual licence to use it without obligation to you.
+perpetual license to use it without obligation to you.
 
 ## 9. Professional Responsibility
 
@@ -233,7 +233,7 @@ You retain full and sole professional responsibility for:
 
 **Procuring training through Iurix does not discharge, transfer, or reduce any professional
 obligation you hold.** It is one piece of evidence that you took a supervisory step. It is not a
-defence, and it is not a substitute for supervision.
+defense, and it is not a substitute for supervision.
 
 ## 10. Third-Party Services
 
@@ -293,29 +293,21 @@ For non-material breaches we will give 30 days' notice and an opportunity to cur
 
 **Effect of termination** — access to the Service ceases. **Certificates already issued remain valid
 for their stated term, and the underlying certification records are retained** in accordance with
-Section 5 of the Privacy Policy. Sections 8, 9, 11, 12, 13, and 15 through 18 survive termination.
+Section 5 of the Privacy Policy. Sections 8, 9, 11, 12, 13, and 15 through 17 survive termination.
 
 ## 15. Governing Law
 
-These Terms are governed by the laws of the State of `[TBD — North Carolina is the presumed venue;
-confirm against the entity's registered address]`, without regard to conflict of laws principles.
+These Terms are governed by the laws of the State of North Carolina, without regard to conflict of laws principles.
 
-## 16. Dispute Resolution
-
-`[CONFIRM — the source document uses binding AAA arbitration with a class action waiver. This is a
-substantive commercial choice, not a formatting decision, and should be made deliberately rather
-than inherited. Consider: is mandatory arbitration appropriate for a low-value annual subscription
-sold to attorneys? Drafting left to counsel.]`
-
-## 17. Changes to These Terms
+## 16. Changes to These Terms
 
 We may update these Terms. If we make material changes, we will provide at least 30 days' advance
 notice by email and by posting a notice on the Site. Continued use after the effective date
 constitutes acceptance. If you do not agree, you must stop using the Service before that date.
 
-## 18. General Provisions
+## 17. General Provisions
 
-**Entire agreement** — these Terms, with the Privacy Policy, the AI Use Policy, and any order form,
+**Entire agreement** — these Terms, with the Privacy Policy and any order form,
 constitute the entire agreement and supersede all prior agreements and representations.
 
 **Severability** — if any provision is held invalid or unenforceable, it will be limited to the
@@ -332,7 +324,7 @@ reasonable control.
 **Notices** — legal notices to us must be sent to `[TBD]`. Notices to you will be sent to the email
 address on your account.
 
-## 19. Contact
+## 18. Contact
 
 | | |
 |---|---|

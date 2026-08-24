@@ -13,19 +13,18 @@
 
 Iurix Accreditation ("Iurix," "we," "us," or "our") provides AI-use training and certification for
 law firm staff (the "Service"). This Privacy Policy describes how we collect, use, disclose, and
-safeguard information about firm administrators and the staff members they enrol when you use our
+safeguard information about firm administrators and the staff members they enroll when you use our
 Service or visit our website at [iurixaccreditation.com](https://iurixaccreditation.com) (the "Site").
 
-Iurix Accreditation is operated by **BSBR Holdings, LLC d/b/a Iurix** `[CONFIRM — entity structure
-is being finalised; see note in the README]`.
+Iurix Accreditation is operated by **BSBR Holdings, LLC d/b/a Iurix**.
 
 By accessing or using the Service, you agree to the practices described in this Privacy Policy. If
 you do not agree, please do not use the Service.
 
 ## 1. Who We Are and Our Role
 
-Iurix provides training and certification services directly to law firms and to the individual staff
-members those firms enrol.
+Iurix provides policy, training and certification services directly to law firms and to the individual staff
+members those firms enroll.
 
 **Unlike a practice management or case management platform, Iurix does not hold your clients' data.**
 The Service contains no case files, no client records, no immigration or litigation documents, and no
@@ -118,11 +117,11 @@ We use the information we collect to:
 - Comply with applicable legal obligations
 
 **We do not sell your information, and we do not sell or share the information of the staff members
-you enrol.**
+you enroll.**
 
-**We do not use your data to train artificial intelligence models.** See our separate
-[AI Use Policy](./ai-use-policy.md) for a full account of the role — and the deliberate absence — of
-AI within this Service.
+**We do not use your data to train artificial intelligence models.** There is no artificial
+intelligence in the certification pathway: the assessment questions are fixed, scoring is
+deterministic and performed on our servers, and the answer key is human-written.
 
 ## 4. Data Sharing and Sub-Processors
 
@@ -135,16 +134,7 @@ operates under its own data processing terms.
 | **Stripe** | Payment processing and subscription management | Billing contact and payment details. Card data is handled by Stripe and is not stored on our systems |
 | **Cloudflare** | Application hosting, content delivery, and scheduled jobs | Request traffic and operational logs |
 | **Resend** | Transactional email delivery | Recipient email addresses and message content |
-
-**The training course content is served from our own infrastructure.** The interactive course was
-authored using Articulate Rise 360 and exported as a self-contained package that we host ourselves.
-Articulate does not receive, process, or observe staff member activity during training.
-
-`[PUBLICATION GATE — this paragraph describes the intended end state and is NOT true today. The
-course is currently served from share.articulate.com, so Articulate is presently a sub-processor
-observing staff activity. Do not publish this document until the Rise export is self-hosted behind a
-session-gated route. If that plan changes, delete this paragraph and add Articulate Global, LLC to
-the sub-processor table above instead.]`
+| **Articulate Global, LLC** | Interactive training course delivery | Staff member activity during training |
 
 We do not share training or certification data with any party beyond what is necessary to operate the
 Service.
@@ -215,7 +205,7 @@ in Section 10; we will assess the request against our and the firm's retention o
 
 ## 6. Data Security
 
-We implement technical and organisational measures designed to protect your data, including:
+We implement technical and organizational measures designed to protect your data, including:
 
 - **Encryption in transit** — all traffic is served over TLS
 - **Encryption at rest** — data is encrypted at the storage layer by our infrastructure providers

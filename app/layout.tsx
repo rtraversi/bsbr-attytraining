@@ -61,7 +61,11 @@ const kapakana = localFont({
 // relative path and every scraper silently ignores it.
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://iurixaccreditation.com";
 
-const TITLE = "IURIX — AI compliance certification for law firms";
+// Leads with governance, not certification. This string is the most-shared
+// surface there is — it is the og:title and twitter:title on every link anyone
+// pastes into a chat — and "AI compliance certification" put the training first,
+// which is the framing corrected on 2026-08-24. The policy is the product.
+const TITLE = "IURIX — AI governance for small law firms";
 const DESCRIPTION =
   "A written AI use policy for your firm, training and signed attestations for your staff, and a record you can produce. One annual fee per seat.";
 
@@ -96,7 +100,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "IURIX — AI compliance certification for law firms",
+        alt: "IURIX — AI governance for small law firms",
       },
     ],
     locale: "en_US",
