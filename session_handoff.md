@@ -1,90 +1,80 @@
 # Session Handoff
 
-**Date:** 2026-08-24 (wrapped just after midnight on the 25th)
-**Who:** Max, with terminal-Claude — **and a second Claude session (Desktop) working the same
-files in parallel.** Both sets of commits are on `main`.
+**Date:** 2026-08-25
+**Who:** Max, with terminal-Claude
 
-> ⚠️ **Rob: nothing from 2026-08-24 has been deployed.** The live site still serves the old
-> framing, the old footer disclaimer, and `[ATTORNEY TO COMPLETE]` on both legal pages. All of
-> the work below exists in `main` only. **Deploying is step one.**
-
----
-
-## 🟢 Two things shipped to `main` today
-
-### 1. Rule 5.3 is no longer the product thesis
-
-**Katy's correction, and she is adamant — a correction, not a preference.**
-
-The product is the **firm's own written AI use policy**, personalized per firm. The training
-exists to keep staff aligned to that policy; the quiz, attestations and certificates are the
-evidence. **Rule 5.3 is outdated background context**, at most a supporting citation. It is not
-the headline and not why anyone buys this.
-
-It had been the framing since the earliest planning sessions, never revisited, and had spread
-from `CLAUDE.md` into every planning doc, the marketing copy, the transactional emails and the
-certificate face. All of that is corrected. `CLAUDE.md` and `.planning/PROJECT.md` now carry an
-explicit block telling future sessions not to reintroduce it.
-
-**The one place it deliberately stays:** the ToS §3/§11 disclaimers. Naming the rule *in order
-to disclaim it* is protective.
-
-### 2. Terms and Privacy are published
-
-Both pages had been shipping `[ATTORNEY TO COMPLETE]` placeholders **while customers accepted
-them at checkout**. They now carry Katy's reviewed drafts. No bracket note survives into either
-page. Terms §16 (Dispute Resolution) was an empty drafting note and was **deleted** rather than
-shipped empty or filled with inherited arbitration — everything after it is renumbered.
-Governing law is **North Carolina** (Max confirmed).
-
-`CURRENT_TERMS_VERSION` → `v1-published-2026-08-24`. Old `v1-draft-2026-08-18` acceptances are
-left alone on purpose: those people agreed to the placeholder text.
+> ⚠️ **Two things are undeployed, not one.**
+> 1. Today's UI work sits on **two unmerged branches** (below).
+> 2. **All of 2026-08-24 is still undeployed** — Terms, Privacy, the framing correction. The live
+>    site still serves the old framing and `[ATTORNEY TO COMPLETE]` on both legal pages.
+>    **Deploying that is still step one, and it is now a day older.**
 
 ---
 
-## 🔴 Three things that need a human, not code
+## What happened today
 
-**1. Katy — the training content still teaches the old framing.**
-`.planning/FRAMING-CORRECTION-2026-08-24.md` lists it line by line: `lib/training/lessons.ts`
-Lesson 1, `lib/training/questions.ts` stem `l1q2`, and question text in migrations `0003` and
-`0026`. This is authored curriculum, so it was flagged rather than rewritten. The `0026` pool
-changes need a **new migration** — do not edit an applied one.
+Two batches of UI work. Nothing merged, nothing deployed. `tsc --noEmit` clean on both;
+`pnpm run lint` 0 errors (4 pre-existing `no-img-element` warnings, untouched files).
 
-**2. Katy — three drafting questions left open rather than invented.**
-Cancellation notice period (published Terms have none), refund procedure (currently just an
-email address), and operational-log retention (Privacy §5 still says "a rolling short-term
-basis"). None were guessed.
+```
+main
+ └── ui-polish-batch-a   6b849fb   Max's styling list
+      └── ui-polish-batch-b   692ba9a  Invitations card
+                              97bf6eb  "% Certified" card
+```
 
-**3. Katy — the footer disclaimer lost two clauses.**
-Her rewrite deletes *"does not provide legal advice"* and *"do not constitute bar accreditation
-or a guarantee of compliance"*. The old code comment called the second one load-bearing against
-the brand name. Her call, made knowingly; the disclaiming now lives in Terms §2 and §11. Do not
-restore either clause without her.
+Stacked, because Batch B edits files Batch A touched.
+
+**Batch A** — sign-in inputs to pills, the remember-me toggle from stadium to square, bigger
+footer links, icon chips stripped off the quick actions and the manage-team row buttons, more
+things pilled, the active nav tab from black to the app blue, and a real sun/moon theme switch.
+
+**Batch B** — the CSV controls Batch A missed, a measured attempt at the Invitations card's
+permanent scrollbar, and a correction to the "% Certified" card.
+
+Full detail, including every measurement: **`.planning/sessions/20260825-max-summary.md`**.
 
 ---
 
-## Notes for whoever picks this up
+## The finding worth reading before touching the Invitations card
 
-- **PROD certificate count is 0.** Verified live before changing the certificate text
-  (`certificates` 0, `quiz_attempts` 0, `enrollments` 0, `firms` 1). Nothing to reissue.
-- **The DPA has never been drafted** — not in any branch, in this repo's whole history. It is
-  now removed from both checkout acceptance checkboxes and `/dpa` is `notFound()`-guarded in
-  production. The guard comment lists every link to restore when it exists.
-- **The AI Use Policy is drafted** (`.planning/legal/ai-use-policy.md`) but has no route, so its
-  references were removed from Terms §17 and Privacy §3. Publish it and they come back.
-- **The Accessibility Statement was not shipped** — not linked, claims untested.
-- Two Claude sessions worked these files in parallel today. Nothing was undone; the second
-  session's `/dpa` removal resolved a risk the first had flagged, by the other route.
+Its scrollbar was permanent, not exceptional. **It cannot be fixed by shrinking the controls.**
+Measured in headless Chrome, not estimated:
 
-Full detail: **`.planning/sessions/20260824-max-summary.md`**.
+- Container is **149.73px at both 1280×800 and 1440×900** — identical, because the admin shell
+  floors at `max(100vh, 880px)`, so both viewports hand the grid the same 784px.
+- Content **before: 248px** (over by 98.27). **After the shrink: 192px** (over by 42.27).
+- Of five variants measured, **only one clears it**: dropping the `CSV format: name,email` hint
+  *and* going to `py-2.5`. That hint is 32px + an 8px gap, and it is the whole difference.
+
+Removing it is a copy change and `py-2.5` puts buttons at exactly 40px — the floor, with zero
+margin. **So it was left short on purpose. That is Max's call to make.**
+
+---
+
+## The "% Certified" card was telling firms something untrue
+
+A firm that bought 10 seats, invited 2 and certified both read **"100% Certified"**. The
+arithmetic was fine — `certified / invited` — the label implied the whole firm. It now says
+**"of invited staff"**, gained 25% bands whose colour and words come from one lookup so they
+cannot disagree, and `Math.round` was replaced with a floor so 199/200 no longer reads 100%.
+
+**Whether to base it on seats purchased instead is Max's decision and was deliberately not made.**
+The summary lists five things that break — the em-dash state, 100% becoming unreachable for any
+firm with a spare seat (which recreates Katy's all-or-none accreditation problem by another
+route), disagreement with the forecast card, the `seats` vs `firms` max_seats ambiguity, and the
+fact that the number would *drop* when a firm buys more seats.
 
 ---
 
 ## Next steps
 
-1. **`pnpm run deploy`**, then verify on the deployed URL: `/terms`, `/privacy`, the footer
-   disclaimer, `/dpa` 404ing in prod, both checkout acceptance sentences, the share-card title.
-2. Katy: training-content revision (item 1 above), then Rob ships `0026` as a new migration.
-3. Katy: the three open drafting questions.
-4. Re-run `tsc --noEmit` — it was clean at `2dc654a` but has not been run since the four commits
-   that landed on top.
+1. **Deploy the 2026-08-24 work.** Still outstanding, still step one.
+2. **Decide the Invitations scrollbar** — drop the CSV hint and take 40px buttons, or accept the
+   scrollbar. Both are one-liners.
+3. **Review and merge the two branches** (or ask for changes).
+4. **Decide the certification denominator** — invited vs seats purchased.
+5. `certification-forecast.tsx:75` carries the **identical `Math.round` → 100% defect** just fixed
+   on the score card. Same bug, same screen, deliberately not touched.
+6. Still with Katy from 2026-08-24, unchanged: the training content that teaches the old framing,
+   the three open drafting questions, and the footer disclaimer's two deleted clauses.
