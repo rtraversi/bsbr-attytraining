@@ -15,7 +15,7 @@ export function ResendInviteAction({ tileClassName }: { tileClassName: string })
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className={tileClassName}>
-        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EAF8FF] text-[var(--brand-emphasis)] dark:bg-[var(--brand-emphasis)]/15 dark:text-[var(--brand-primary)]">
+        <span className="flex items-center justify-center text-[var(--brand-emphasis)] dark:text-[var(--brand-primary)]">
           <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
             <path
               strokeLinecap="round"
@@ -115,14 +115,14 @@ function ResendInviteModal({
               type="button"
               onClick={onClose}
               disabled={phase === 'loading'}
-              className="flex-1 rounded-xl border border-[#E5EEF5] bg-[#F2F4F7] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#E5EEF5] disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
+              className="flex-1 rounded-full border border-[#E5EEF5] bg-[#F2F4F7] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#E5EEF5] disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={phase === 'loading'}
-              className="flex-1 rounded-xl bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#262626] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
+              className="flex-1 rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#262626] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
             >
               {phase === 'loading' ? 'Sending…' : 'Send invite'}
             </button>

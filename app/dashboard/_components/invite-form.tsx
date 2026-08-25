@@ -60,7 +60,7 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
       <button
         type="button"
         disabled
-        className="w-full cursor-not-allowed rounded-xl bg-[#F2F4F7] py-4 text-base font-bold text-[#B0B7BF] dark:bg-[#1A1F24] dark:text-[#4E555C]"
+        className="w-full cursor-not-allowed rounded-full bg-[#F2F4F7] py-4 text-base font-bold text-[#B0B7BF] dark:bg-[#1A1F24] dark:text-[#4E555C]"
       >
         Invite by email
       </button>
@@ -82,7 +82,7 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
         <button
           type="submit"
           disabled={phase === 'loading'}
-          className="w-full rounded-xl bg-black py-4 text-base font-bold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
+          className="w-full rounded-full bg-black py-4 text-base font-bold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
         >
           {phase === 'loading' ? 'Sending…' : 'Invite by email'}
         </button>
