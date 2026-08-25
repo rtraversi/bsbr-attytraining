@@ -127,7 +127,7 @@ export function AdminDashboard({
                 the excess inside the card. */}
             <section className={`flex flex-col ${CARD}`}>
               <h2 className={`${HEADING} mb-3`}>Invitations</h2>
-              <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:justify-center-safe lg:overflow-y-auto">
+              <div className="flex flex-col gap-2 lg:min-h-0 lg:flex-1 lg:justify-center-safe lg:overflow-y-auto">
                 <InviteForm seatsRemaining={seatsRemaining} />
                 <CsvUploadForm seatsRemaining={seatsRemaining} />
                 {seatsRemaining <= 0 && <OutOfSeatsNotice />}

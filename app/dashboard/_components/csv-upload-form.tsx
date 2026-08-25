@@ -136,7 +136,7 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
       <button
         type="button"
         disabled
-        className="w-full cursor-not-allowed rounded-xl border border-[#E5EEF5] py-4 text-base font-bold text-[#B0B7BF] dark:border-[#1F2429] dark:text-[#4E555C]"
+        className="w-full cursor-not-allowed rounded-full border border-[#E5EEF5] py-3 text-sm font-bold text-[#B0B7BF] dark:border-[#1F2429] dark:text-[#4E555C]"
       >
         Bulk invite (CSV)
       </button>
@@ -144,9 +144,9 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       <label className="cursor-pointer">
-        <span className="block w-full rounded-xl border border-[#E5EEF5] py-4 text-center text-base font-bold text-[#3D3D3D] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[var(--brand-primary)] dark:hover:text-[var(--brand-primary)]">
+        <span className="block w-full rounded-full border border-[#E5EEF5] py-3 text-center text-sm font-bold text-[#3D3D3D] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[var(--brand-primary)] dark:hover:text-[var(--brand-primary)]">
           {fileName || 'Bulk invite (CSV)'}
         </span>
         <input
@@ -158,7 +158,7 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
         />
       </label>
 
-      <p className="text-center text-sm text-[#8A8A8A] dark:text-[#7A8189]">
+      <p className="text-center text-xs text-[#8A8A8A] dark:text-[#7A8189]">
         CSV format: <code className="rounded bg-[#F5F7FA] px-1 py-0.5 dark:bg-[#131A20]">name,email</code> — one per row.
       </p>
 
@@ -166,7 +166,7 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
         <>
           <button
             onClick={handleUpload}
-            className="w-full rounded-xl bg-black py-4 text-base font-bold text-white transition-colors hover:bg-gray-800 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
+            className="w-full rounded-full bg-black py-3 text-sm font-bold text-white transition-colors hover:bg-gray-800 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
           >
             Invite {rows.length} {rows.length === 1 ? 'employee' : 'employees'}
           </button>
