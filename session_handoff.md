@@ -1,80 +1,117 @@
 # Session Handoff
 
-**Date:** 2026-08-25
+**Date:** 2026-08-26
 **Who:** Max, with terminal-Claude
 
-> ⚠️ **Two things are undeployed, not one.**
-> 1. Today's UI work sits on **two unmerged branches** (below).
-> 2. **All of 2026-08-24 is still undeployed** — Terms, Privacy, the framing correction. The live
->    site still serves the old framing and `[ATTORNEY TO COMPLETE]` on both legal pages.
->    **Deploying that is still step one, and it is now a day older.**
+> ⚠️ **Three things are undeployed.**
+> 1. **All of 2026-08-24** — Terms, Privacy, the framing correction. The live site still serves the
+>    old framing and `[ATTORNEY TO COMPLETE]` on both legal pages. **This was step one yesterday and
+>    the day before. It is now two days old.**
+> 2. 2026-08-25's two UI branches (`ui-polish-batch-a` / `-b`), still unmerged.
+> 3. Today's whole policy intake, on `policy-intake`, unmerged.
 
 ---
 
 ## What happened today
 
-Two batches of UI work. Nothing merged, nothing deployed. `tsc --noEmit` clean on both;
-`pnpm run lint` 0 errors (4 pre-existing `no-img-element` warnings, untouched files).
+**The policy intake was built end to end**, in five batches on one branch: schema, question set,
+branching engine, UI, routes, promote, and the flow around it.
 
 ```
 main
- └── ui-polish-batch-a   6b849fb   Max's styling list
-      └── ui-polish-batch-b   692ba9a  Invitations card
-                              97bf6eb  "% Certified" card
+ └── policy-intake   fc8bce4  0028 — schema + firm_members.is_attorney
+                     cd4b087  question set + branching engine
+                     93e15be  intake screen + save/resume/upload/submit routes
+                     3da83d5  password onboarding, promote, dashboard gate
+                     51a3189  gate softened, roster capped, deliverability
 ```
 
-Stacked, because Batch B edits files Batch A touched.
+`tsc --noEmit` clean. `eslint .` 0 errors (4 pre-existing `no-img-element` warnings, untouched
+files). `next build` clean. **192 tests passing across 14 files.**
 
-**Batch A** — sign-in inputs to pills, the remember-me toggle from stadium to square, bigger
-footer links, icon chips stripped off the quick actions and the manage-team row buttons, more
-things pilled, the active nav tab from black to the app blue, and a real sun/moon theme switch.
-
-**Batch B** — the CSV controls Batch A missed, a measured attempt at the Invitations card's
-permanent scrollbar, and a correction to the "% Certified" card.
-
-Full detail, including every measurement: **`.planning/sessions/20260825-max-summary.md`**.
+**Nothing in this branch has been seen in a browser.** It was built to Katy's approved mockup and
+verified by tests, `tsc` and `next build` only.
 
 ---
 
-## The finding worth reading before touching the Invitations card
+## Two reversals landed mid-session — read these first
 
-Its scrollbar was permanent, not exceptional. **It cannot be fixed by shrinking the controls.**
-Measured in headless Chrome, not estimated:
+**Katy killed the hard gate at 12:11.** *"The problem is that the intake is time consuming. People
+will want to explore without having to fill it all in."* Batch 4 built the gate; batch 5 removed it.
+The dashboard opens for everyone and the intake is a **persistent, undismissible notice** — it has
+to be undismissible, because nothing forces the intake now and it is the only thing that ever gets
+it completed.
 
-- Container is **149.73px at both 1280×800 and 1440×900** — identical, because the admin shell
-  floors at `max(100vh, 880px)`, so both viewports hand the grid the same 784px.
-- Content **before: 248px** (over by 98.27). **After the shrink: 192px** (over by 42.27).
-- Of five variants measured, **only one clears it**: dropping the `CSV format: name,email` hint
-  *and* going to `py-2.5`. That hint is 32px + an 8px gap, and it is the whole difference.
+**Max reversed flag-never-block on the roster.** The old copy promised "we will sort the extra seats
+out with you afterwards" and **nobody owned "afterwards"**. The roster is capped at the seats
+purchased; attorneys are unlimited and never consume a seat. Known and accepted: a capped firm
+cannot reach full accreditation until it buys the extra seat.
 
-Removing it is a copy change and `py-2.5` puts buttons at exactly 40px — the floor, with zero
-margin. **So it was left short on purpose. That is Max's call to make.**
+**And the buyer's path no longer touches email at all.** They set a password on `/onboarding` and are
+signed straight into `/intake`. That is the only reason any of this is testable — Resend has 403'd
+every send for a week (`ix-dnszoho`).
 
 ---
 
-## The "% Certified" card was telling firms something untrue
+## Migrations — STAGING ONLY
 
-A firm that bought 10 seats, invited 2 and certified both read **"100% Certified"**. The
-arithmetic was fine — `certified / invited` — the label implied the whole firm. It now says
-**"of invited staff"**, gained 25% bands whose colour and words come from one lookup so they
-cannot disagree, and `Math.round` was replaced with a floor so 199/200 no longer reads 100%.
+Both on `ndmzvtuywcufvkxtkjhg`. **PROD (`ttqthtzdjacrhjtrcmmy`) untouched.** Types regenerated.
 
-**Whether to base it on seats purchased instead is Max's decision and was deliberately not made.**
-The summary lists five things that break — the em-dash state, 100% becoming unreachable for any
-firm with a spare seat (which recreates Katy's all-or-none accreditation problem by another
-route), disagreement with the forecast card, the `seats` vs `firms` max_seats ambiguity, and the
-fact that the number would *drop* when a firm buys more seats.
+- **0028** — the intake schema. `intake_sensitive` has **RLS on and NO POLICY AT ALL**, deliberately;
+  the migration carries a red-flagged comment telling future sessions not to add one.
+- **0029** — email deliverability. 🔴 Do **not** reuse `auth.users.email_confirmed_at` for this: every
+  creation path passes `email_confirm: true`, so it is true for everybody and means something else.
+
+---
+
+## Status
+
+| Thing | State |
+|---|---|
+| 0028 + 0029 | staging only, not on PROD |
+| `policy-intake` | 5 commits, not merged, not deployed |
+| Tests / `tsc` / `eslint` / `next build` | all clean |
+| 2026-08-24 Terms + Privacy | **still undeployed, 2 days old** |
+| `Intake-uploads` bucket | staging only — **does not exist on PROD** |
+| Rise 360 content | still not authored |
 
 ---
 
 ## Next steps
 
-1. **Deploy the 2026-08-24 work.** Still outstanding, still step one.
-2. **Decide the Invitations scrollbar** — drop the CSV hint and take 40px buttons, or accept the
-   scrollbar. Both are one-liners.
-3. **Review and merge the two branches** (or ask for changes).
-4. **Decide the certification denominator** — invited vs seats purchased.
-5. `certification-forecast.tsx:75` carries the **identical `Math.round` → 100% defect** just fixed
-   on the score card. Same bug, same screen, deliberately not touched.
-6. Still with Katy from 2026-08-24, unchanged: the training content that teaches the old framing,
-   the three open drafting questions, and the footer disclaimer's two deleted clauses.
+1. **Deploy 2026-08-24's work.** Still step one.
+2. **`pnpm run deploy`, then look at `/intake`** as a firm admin. First browser look.
+3. **Create the `Intake-uploads` bucket on PROD** — capital I, case-sensitive, cannot be renamed. A
+   Storage dashboard action; a migration cannot do it, and the intake cannot ship without it.
+4. **Katy reads `lib/intake/questions.ts`** — two things are guesses: the module letters for
+   `doc_review_scale` / `tar` (K/K/L), and the section grouping, which was invented because the spec
+   gives module letters and not sections.
+5. Then: roster invites, the purge, and Katy's `.docx` export — all unbuilt.
+
+---
+
+## Open questions
+
+1. **Nothing sends invites from the roster yet.** Promote creates `firm_members` rows as `invited`
+   and deliberately sends nothing. The dashboard action is unbuilt.
+2. **The purge does not exist.** 0028 has the columns and the backstop index; the route, the audit
+   row and the 30-day cron do not.
+3. **The admin's own address cannot self-clear** from the deliverability notice — they never pass
+   through `/update-password`, so while Resend is down an operator has to hand them a link with
+   `scripts/dev-auth.mjs verify-link`. Nuisance, not a brick.
+4. **Privacy §2 and §5 still have no category covering intake answers.** Flagged since batch 1; the
+   copy is Katy's to approve.
+5. **`/api/*` was never covered by the (now removed) gate.** Moot today, relevant to any future one.
+
+---
+
+## New local tool
+
+`scripts/dev-auth.mjs` — `link` / `password` / `users` / `verify-link`. Signs you in as anybody on
+staging without email.
+
+🔴 **It refuses to run against anything but staging.** The project ref is parsed from the URL the
+environment actually loaded, not passed as an argument. No `--force`. Verified: pointed at PROD it
+exits 1 before constructing a client.
+
+**Full detail:** `.planning/sessions/20260826-max-summary.md`.
