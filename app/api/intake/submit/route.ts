@@ -25,10 +25,23 @@
 
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { authorizeIntake, getOrCreateOpenSession, latestSession, loadAnswers } from '@/lib/intake/session'
-import { isComplete, missingRequired, orphanKeys, pruneOrphans } from '@/lib/intake/branching'
+import {
+  authorizeIntake,
+  getOrCreateOpenSession,
+  latestSession,
+  loadAnswers,
+  seatsPurchased,
+} from '@/lib/intake/session'
+import {
+  isComplete,
+  missingRequired,
+  orphanKeys,
+  pruneOrphans,
+  rosterOverSeats,
+} from '@/lib/intake/branching'
 import { promoteIntake } from '@/lib/intake/promote'
 import { getQuestion } from '@/lib/intake/questions'
+import type { RosterRow } from '@/lib/intake/types'
 
 export async function POST() {
   const auth = await authorizeIntake()
@@ -69,6 +82,29 @@ export async function POST() {
     if (sensitive.length > 0) {
       await admin.from('intake_sensitive').delete().eq('session_id', session.id).in('question_key', sensitive)
     }
+  }
+
+  // ── the seat cap ──────────────────────────────────────────────────────────
+  //
+  // Enforced here as well as in the roster screen, because the client is not the
+  // thing that decides. Max reversed flag-never-block on 2026-08-26: a firm
+  // cannot roster more NON-ATTORNEY staff than it has seats for. Attorneys are
+  // unlimited and never consume a seat.
+  //
+  // Known and accepted: a capped firm cannot reach full accreditation until it
+  // buys the extra seat. That is the intended consequence.
+  const roster = Array.isArray(answers['roster']) ? (answers['roster'] as RosterRow[]) : []
+  const seats = await seatsPurchased(admin, auth.actor.firmId)
+  const over = rosterOverSeats(roster, seats)
+
+  if (over > 0) {
+    return NextResponse.json(
+      {
+        error: `Your roster lists ${over} more ${over === 1 ? 'person' : 'people'} needing training than you have seats for. Add ${over} more ${over === 1 ? 'seat' : 'seats'} in Billing, or take them off the roster.`,
+        overSeats: over,
+      },
+      { status: 422 },
+    )
   }
 
   // ── promote ───────────────────────────────────────────────────────────────

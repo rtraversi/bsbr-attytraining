@@ -14,6 +14,7 @@ import {
   splitBySensitivity,
   rosterTrainingSeats,
   rosterOverSeats,
+  canAddTrainingSeat,
 } from '@/lib/intake/branching'
 import {
   QUESTIONS,
@@ -515,9 +516,25 @@ describe('the roster against the seats bought', () => {
     expect(rosterTrainingSeats(roster(4, 0))).toBe(0)
   })
 
-  it('reports the shortfall without ever refusing', () => {
+  it('reports the shortfall that now REFUSES the send', () => {
+    // Max reversed flag-never-block on 2026-08-26: nobody owned the "we will
+    // sort the extra out with you afterwards" the old banner promised.
     expect(rosterOverSeats(roster(1, 12), 9)).toBe(3)
     expect(rosterOverSeats(roster(1, 4), 9)).toBe(0)
+  })
+
+  it('caps non-attorneys and leaves attorneys unlimited', () => {
+    const full = roster(0, 9)
+    expect(canAddTrainingSeat(full, 9)).toBe(false)
+    // Twelve partners and one paralegal still costs one seat.
+    expect(canAddTrainingSeat(roster(12, 0), 1)).toBe(true)
+    expect(rosterOverSeats(roster(40, 1), 1)).toBe(0)
+  })
+
+  it('treats an unknown seat count as no cap, not a cap of zero', () => {
+    // The seats row not having landed must never refuse every row — that is the
+    // worst possible failure of this rule.
+    expect(canAddTrainingSeat(roster(0, 3), 0)).toBe(true)
   })
 
   it('reports nothing when the seat count is unknown', () => {

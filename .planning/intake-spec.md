@@ -53,6 +53,10 @@ expressly approved by Katy first, and that is an unlikely scenario, not a formal
 | 2026-08-26 | Max | The buyer sets an email and password on /onboarding. No magic link, no email sent on the buyer's path. |
 | 2026-08-26 | Max | The intake is a CONDITION checked wherever the firm lands, not a step in a redirect chain. |
 | 2026-08-26 | Max | No grandfather rule. Existing firms are junk; every firm without a submitted intake is gated, including the live one. |
+| 2026-08-26 12:11 | Katy | **Reverses the hard gate.** *"The problem is that the intake is time consuming. People will want to explore without having to fill it all in."* The dashboard opens for everyone; the intake becomes a persistent notice. |
+| 2026-08-26 | Max | **Reverses flag-never-block.** The roster is CAPPED at the seats purchased. Attorneys are unlimited and never consume a seat. |
+| 2026-08-26 | Max | Email deliverability is tracked for the admin and the roster, and never blocks anything. |
+| 2026-08-26 | Max | `scripts/dev-auth.mjs` — a local tool, staging only, because a dev-mode route ships and a script does not. |
 
 ### Corrections applied to Katy's refined question list
 
@@ -133,19 +137,110 @@ to `/intake` from the same request. The security shape, all server-side:
 there — Katy, 2026-08-25 11:04: *"I dont want the name part to move, I want the whole intake
 there."* The firm row keeps its `My Firm` placeholder until the intake promotes the real name.
 
-### The dashboard is gated on intake state — 2026-08-26 (Max)
+### The dashboard is NOT gated — reversed 2026-08-26 12:11 (Katy)
 
-An admin whose firm has **no submitted `intake_sessions` row** is redirected to `/intake`, whatever
-route they arrived by. This is a **condition checked at the destination**, not a step in a redirect
-chain: every hop in a chain is somewhere to fall out of, and falling out today lands a paying firm
-on a dashboard that has no idea the intake exists.
+Batch 4 built a hard gate: an admin whose firm had no submitted `intake_sessions` row was
+redirected to `/intake` from wherever they landed, with only billing and support exempt.
 
-- **Hard gate.** `/dashboard/billing` and `/dashboard/support` are the only exemptions, so a firm
-  with a payment problem can always reach us.
-- **Employees are never gated.** They are invited after the intake, and `/intake` already bounces
-  non-admins.
-- **No grandfather rule.** Existing firms are junk (Max, 2026-08-26). Every firm without a
-  submitted intake is gated, the live one included.
+**Katy reversed the decision behind it the same day:** *"The problem is that the intake is time
+consuming. People will want to explore without having to fill it all in."* A firm that has just
+paid gets to look around first. The redirect contradicted her directly, so it is gone.
+
+What replaces it:
+
+- **The dashboard opens for everyone.** Nothing redirects, and there are no exempt routes to
+  maintain because there is nothing to be exempt from.
+- **The query left middleware with the redirect.** It was costing a round-trip on every request to
+  decide whether to redirect; nothing redirects now, so the same question is asked once, in
+  `app/dashboard/page.tsx`, where the answer drives a notice instead (`lib/intake/gate.ts`).
+- **The notice is persistent and not dismissible.** This is the load-bearing part. Nothing forces
+  the intake any more, nothing blocks on it, and a firm that dismisses the prompt has no remaining
+  route to the written policy they actually bought. A dismissible nudge for a task with no other
+  path to it is a nudge that gets dismissed once and never seen again.
+- It says *Continue* rather than *Start* when `current_question` is set, so a firm that stopped
+  halfway is not told to begin again.
+
+**No grandfather rule still stands.** Every firm without a submitted intake sees the notice, the
+live one included.
+
+### The roster is capped at the seats purchased — 2026-08-26 (Max)
+
+Reverses flag-never-block. The earlier rule let a firm finish an intake over its seat count and
+promised "we will sort the extra out with you afterwards" — **and nobody owned "afterwards".** No
+process, no queue, no person. It was a sentence in a banner.
+
+- A firm **cannot roster more NON-ATTORNEY staff than it has seats for.** The row is refused, with
+  copy saying they need another seat for that person.
+- **Attorneys are unlimited** and never consume a seat, so a firm of twelve partners and one
+  paralegal buys one seat.
+- Enforced in the roster screen **and** in `POST /api/intake/submit`, because the client is not the
+  thing that decides.
+- The roster screen has two buttons — *Add staff* and *Add attorney* — rather than one that
+  silently refuses every other click. Flipping somebody from attorney to staff spends a seat and is
+  capped by the same rule.
+
+**Known and accepted:** a capped firm cannot reach full accreditation until it buys the extra seat.
+That is intended. The alternative was an unbounded roster that could never be trained and a
+certificate count that could never reach 100% — the same dead end with a friendlier banner.
+
+The count is said **at purchase**, on the pricing slider, not at the roster: by the time somebody is
+typing their staff's names it is too late to discover they are short.
+
+### Email deliverability — 2026-08-26 (Max)
+
+The buyer's **identity** is already proven better than an email could prove it: a card payment, a
+Stripe session token, and an email field locked server-side to the session's own address. What is
+**not** proven is **deliverability**. Stripe Checkout validates an address's *shape*, not its
+existence, so `gmial.com` sails through, and Stripe never tells us when its own receipt bounced.
+
+Roster addresses are riskier still, because **the admin types them for other people.** A transposed
+character in a paralegal's address is invisible until a certificate fails to arrive a month later.
+
+🔴 **It must never block.** Resend returns 403 on every send today (`ix-dnszoho`). A blocking
+version would brick every firm behind a banner nobody can clear.
+
+- **Migration 0029** adds `firm_members.email_verified_at`, `email_verification_token` and
+  `email_verification_sent_at`. Nullable, no constraint: NULL means *not proven*, never *bad*.
+- 🔴 **Not `auth.users.email_confirmed_at`.** That is already true for everybody and means something
+  else — the Stripe webhook, the invite routes and promote all pass `email_confirm: true` at
+  creation, deliberately, so nobody is blocked on a confirmation email. Reading it as a
+  deliverability signal would report 100% reachable for a roster that is 100% unproven.
+- **One notice, two signals.** 0016's `invite_email_failed` records a send that threw; 0029's
+  `email_verified_at` records whether we ever had proof one would land. The dashboard reads both and
+  clears per person as each is answered.
+
+**Two ways it clears, which is what keeps it clearable while mail is down:**
+
+1. The verification link is opened (`/verify-email?token=…`) — single-use, unauthenticated,
+   grants no session, and clears `invite_email_failed` alongside.
+2. Somebody accepts their invite. Reaching the password-set screen required receiving the email, so
+   the address demonstrably works. Slightly weaker (an invite can be forwarded) and accepted
+   deliberately — the alternative is telling a firm "we cannot reach Sarah" about somebody who has
+   already signed in and started training.
+
+And the operator can always mint the link by hand: `scripts/dev-auth.mjs verify-link <email>` writes
+the same columns the app writes, so a link minted there is indistinguishable from one it sent.
+
+### scripts/dev-auth.mjs — 2026-08-26 (Max)
+
+Sign in as anybody on **staging**, without email. Every path that ends in "check your inbox" is
+impassable while Resend 403s, so testing any of them means minting the link the email would have
+carried.
+
+🔴 **A script, not a dev-mode route, because a route ships.** A `devLink` in the invite routes was
+flagged for removal on 2026-06-18 and shipped anyway, handing out working magic links in an API
+response for two months. A script cannot leak, because it is not deployed.
+
+🔴 **It refuses to run against production.** The project ref is parsed from the URL the environment
+actually loaded — not taken as an argument, which would state an intention rather than read the
+truth — checked against `ndmzvtuywcufvkxtkjhg`, and anything else exits non-zero before a single
+call is made. There is no `--force` and no ref override, on purpose: it mints login links and sets
+passwords, so pointed at PROD it is a credential factory against real customers.
+
+    link <email> [--next /path]   mint a magic link, printed as /auth/confirm?token_hash=…
+    password <email> <password>   set a password and confirm the address
+    users [--firm <name>]         list users, newest first
+    verify-link <email>           mint the deliverability link from 0029
 
 ---
 
@@ -161,7 +256,7 @@ Katy can sort template from bespoke in one pass down the page.
 | # | key | Question | Type | Module |
 |---|---|---|---|---|
 | 1 | `firm_name` | What is the name of the firm to be accredited? | text, req | — |
-| 2 | `roster` | Everyone at the firm: name, email, and whether they are an attorney. | roster, req, min 1 | 0 |
+| 2 | `roster` | Everyone at the firm: name, email, and whether they are an attorney. | roster, req, min 1, **non-attorneys capped at seats purchased** | 0 |
 | 3 | `jurisdictions` | Every US jurisdiction where the firm's attorneys are licensed. | state multi-select + federal, req | 0 |
 | 4 | `contract_attorneys` | Does the firm work with contract or of-counsel attorneys? | yes/no, req | G |
 | 5 | `existing_policy` | Does the firm have any AI policy in place today? | yes/no, req | 0 |
@@ -338,6 +433,19 @@ explicitly defers pushing a changed quantity to Stripe. Rewriting it here would 
 capacity it never paid for or shrink capacity it did. A roster larger than the seats purchased is
 flagged and never blocked, so a firm can legitimately finish an intake over its seat count and be
 over-subscribed until somebody settles it.
+
+**Promote RECONCILES, it does not refuse.** Exploring is allowed now, so inviting while exploring is
+allowed too, and a firm can invite three people and only then do the intake and roster five.
+`firm_members` carries unique `(firm_id, user_id)`, so a plain insert fails the moment somebody is
+already there. Every roster row is matched on the **resolved auth user id** instead: an existing
+member is updated in place (name, `is_attorney`, `occupies_seat`) and only the genuinely new ones
+are inserted. Matching on the user id rather than the email string is what makes it reliable —
+`find_user_id_by_email` compares case-insensitively, so `S.Chen@firm.com` on the roster finds the
+`s.chen@firm.com` already invited. Status is never touched, so promote cannot silently activate
+somebody, and no invite is sent.
+
+There is deliberately **no guard on the invite routes**. Refusing to invite before the intake would
+contradict Katy's reversal directly.
 
 **Promote is not one Postgres transaction, and cannot be.** Auth users are created through GoTrue's
 admin API, which no `BEGIN` can enclose. What it is instead: every step idempotent, and the session

@@ -399,13 +399,37 @@ export function rosterTrainingSeats(rows: RosterRow[]): number {
  * How many training seats the roster needs beyond what the firm bought. 0 when
  * it fits, and 0 when the seat count is unknown.
  *
- * FLAGGED, NEVER BLOCKED (Max, 2026-08-26). A firm that has grown since it paid
- * must be able to finish the intake and settle the billing afterwards; stopping
- * them here strands the whole policy on a seat count.
+ * ── 🔴 THIS IS NOW A CAP, NOT A FLAG (Max, 2026-08-26) ──────────────────────
+ *
+ * It began as flag-never-block: a firm over its seat count could finish the
+ * intake anyway and somebody would sort it out afterwards. Reversed, because
+ * nobody owned "afterwards" — there was no process, no queue and no person
+ * behind that promise, so it was a sentence in a banner and nothing else.
+ *
+ * A firm cannot roster more NON-ATTORNEY staff than it has seats for. Attorneys
+ * are unlimited and never consume a seat, so a large firm of partners costs
+ * nothing extra.
+ *
+ * KNOWN AND ACCEPTED: a capped firm cannot reach full accreditation until it
+ * buys the extra seat. That is intended — the alternative was an unbounded
+ * roster that could never be trained and a certificate count that could never
+ * reach 100%, which is the same dead end with a friendlier banner.
  */
 export function rosterOverSeats(rows: RosterRow[], seatsPurchased: number): number {
   if (seatsPurchased <= 0) return 0
   return Math.max(0, rosterTrainingSeats(rows) - seatsPurchased)
+}
+
+/**
+ * Whether one more non-attorney can be added.
+ *
+ * A seat count of 0 means "not known yet" (the seats row has not landed), and is
+ * treated as no cap rather than a cap of zero — refusing every row because a
+ * read came back empty would be the worst possible failure of this rule.
+ */
+export function canAddTrainingSeat(rows: RosterRow[], seatsPurchased: number): boolean {
+  if (seatsPurchased <= 0) return true
+  return rosterTrainingSeats(rows) < seatsPurchased
 }
 
 

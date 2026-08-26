@@ -1,54 +1,76 @@
 // =============================================================================
-// Policy intake — the dashboard gate's path rules.
+// Policy intake — has this firm done it, and what should the dashboard say.
 //
-// Extracted from middleware.ts so the exemption logic can be driven by tests.
-// The middleware itself is not reachable from vitest (it needs a NextRequest and
-// a live session), and this is the half where a mistake is silent: a prefix
-// match that is one character too loose lets `/dashboard/billing-export` past
-// the gate, and nothing about that looks wrong when you read it.
+// ── 🔴 THIS NO LONGER GATES ANYTHING ────────────────────────────────────────
 //
-// The rule this encodes (Max, 2026-08-26): an admin whose firm has no submitted
-// intake goes to /intake, whatever route they arrived by. /dashboard/billing and
-// /dashboard/support are the ONLY exemptions, so a firm with a payment problem
-// can always reach us.
+// It did. Batch 4 put a hard redirect in middleware: an admin whose firm had no
+// submitted intake went to /intake from wherever they landed, with only billing
+// and support exempt.
+//
+// Katy reversed the decision behind that on 2026-08-26 12:11: "The problem is
+// that the intake is time consuming. People will want to explore without having
+// to fill it all in." A firm that has just paid gets to look around first. The
+// redirect contradicted her directly, so it is gone, and so is the per-request
+// query that fed it — nothing redirects, so nothing should cost a round-trip on
+// every request to decide not to.
+//
+// What replaces it is one query in app/dashboard/page.tsx driving a NOTICE.
+//
+// ── Why the notice must not be dismissible ──────────────────────────────────
+//
+// Because it is now the ONLY thing that gets the intake completed. Nothing
+// forces it, nothing blocks on it, and a firm that dismisses the prompt has no
+// remaining path to the product they actually bought — the written policy. A
+// dismissible nudge for a task with no other route to it is a nudge that gets
+// dismissed once and never seen again.
+//
+// The file survives the reversal because the QUESTION survives it. Only the
+// consequence changed.
 // =============================================================================
 
-/**
- * Routes an admin may reach with no submitted intake.
- *
- * Two, and there is a reason for each. Billing: a firm whose card failed must be
- * able to fix it — gating that would trap a paying customer between a dashboard
- * they cannot reach and a payment they cannot make. Support: the same firm has
- * to be able to tell us so.
- *
- * Do not add to this list to make a screen "accessible during onboarding". The
- * gate exists because a firm that skips the intake lands on a dashboard with
- * nothing in it, and every exemption is a door back to that.
- */
-export const INTAKE_GATE_EXEMPT_PATHS: readonly string[] = [
-  '/dashboard/billing',
-  '/dashboard/support',
-] as const
+import { createAdminClient } from '@/lib/supabase/admin'
 
-/** Where a gated admin is sent. /intake resumes at current_question by itself. */
-export const INTAKE_GATE_REDIRECT = '/intake'
+type AdminClient = ReturnType<typeof createAdminClient>
+
+/** Where the notice's button goes. /intake resumes at current_question itself. */
+export const INTAKE_PATH = '/intake'
 
 /**
- * Whether this path is behind the gate.
+ * Has this firm submitted an intake?
  *
- * Segment-aware, not a bare `startsWith`. `/dashboard/billing-export` is NOT
- * `/dashboard/billing`, and treating it as exempt would open a route nobody
- * meant to open. Only the exact path or a real child of it (`…/billing/history`)
- * counts.
+ * Service-role, because the caller is a Server Component that already holds an
+ * admin client for its other reads — not because RLS would refuse. 0028 gives
+ * firm admins a SELECT policy on intake_sessions and it works (pinned in
+ * tests/intake-promote.test.ts).
+ *
+ * Fails OPEN — a query fault reads as "submitted" and shows no notice. Nothing
+ * depends on the answer any more, and a database hiccup that pastes an alarming
+ * banner across a working dashboard is worse than a hiccup that shows nothing.
  */
-export function requiresSubmittedIntake(pathname: string): boolean {
-  // Normalise a trailing slash so `/dashboard/billing/` matches the exemption
-  // rather than reading as a child segment with an empty name.
-  const path = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname
+export async function hasSubmittedIntake(admin: AdminClient, firmId: string): Promise<boolean> {
+  const { data, error } = await admin
+    .from('intake_sessions')
+    .select('id')
+    .eq('firm_id', firmId)
+    .eq('status', 'submitted')
+    .limit(1)
+    .maybeSingle()
 
-  if (path !== '/dashboard' && !path.startsWith('/dashboard/')) return false
+  if (error) return true
+  return !!data
+}
 
-  return !INTAKE_GATE_EXEMPT_PATHS.some(
-    (exempt) => path === exempt || path.startsWith(`${exempt}/`),
-  )
+/**
+ * Whether an intake is part-finished, so the notice can say "pick up where you
+ * left off" rather than "get started" to somebody who already has.
+ */
+export async function intakeInProgress(admin: AdminClient, firmId: string): Promise<boolean> {
+  const { data } = await admin
+    .from('intake_sessions')
+    .select('id, current_question')
+    .eq('firm_id', firmId)
+    .eq('status', 'in_progress')
+    .maybeSingle()
+
+  return !!data?.current_question
 }

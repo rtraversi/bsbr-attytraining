@@ -251,6 +251,9 @@ export type Database = {
         Row: {
           activated_at: string | null
           created_at: string
+          email_verification_sent_at: string | null
+          email_verification_token: string | null
+          email_verified_at: string | null
           firm_id: string
           id: string
           invite_email_failed: boolean
@@ -268,6 +271,9 @@ export type Database = {
         Insert: {
           activated_at?: string | null
           created_at?: string
+          email_verification_sent_at?: string | null
+          email_verification_token?: string | null
+          email_verified_at?: string | null
           firm_id: string
           id?: string
           invite_email_failed?: boolean
@@ -285,6 +291,9 @@ export type Database = {
         Update: {
           activated_at?: string | null
           created_at?: string
+          email_verification_sent_at?: string | null
+          email_verification_token?: string | null
+          email_verified_at?: string | null
           firm_id?: string
           id?: string
           invite_email_failed?: boolean

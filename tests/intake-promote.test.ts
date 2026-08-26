@@ -53,6 +53,9 @@ let ownerId: string
 /** A second firm, to prove a roster cannot poach another firm's staff. */
 let otherFirmId: string
 let otherStaffId: string
+/** A third firm: staff invited BEFORE the intake, then rostered. */
+let overlapFirmId: string
+let overlapStaffId: string
 /** Every auth user this suite creates, for teardown. */
 const created = new Set<string>()
 
@@ -153,6 +156,17 @@ const ROSTER: RosterRow[] = [
 
 const ANSWERS: AnswerMap = { firm_name: 'Byron & Lovelace LLP', roster: ROSTER }
 
+// The overlap firm's roster: the person already invited, plus two who are not.
+const OVERLAP_ROSTER: RosterRow[] = [
+  { name: 'Owner Person', email: at('overlapowner'), isAttorney: true },
+  // Same address the invite created, typed back with DIFFERENT CASE. The match
+  // has to survive that — find_user_id_by_email compares case-insensitively and
+  // GoTrue stores lowercased.
+  { name: 'Sarah Chen', email: at('invited-first').toUpperCase(), isAttorney: false },
+  { name: 'New Hire One', email: at('new-1'), isAttorney: false },
+  { name: 'New Hire Two', email: at('new-2'), isAttorney: true },
+]
+
 beforeAll(async () => {
   const main = await seedFirm('main', at('owner'))
   firmId = main.firmId
@@ -160,6 +174,32 @@ beforeAll(async () => {
 
   const other = await seedFirm('other', at('otherowner'))
   otherFirmId = other.firmId
+
+  // The overlap case: a firm that invited somebody while exploring, and only
+  // then did the intake. Katy reversed the hard gate on 2026-08-26 12:11, so
+  // this is now the normal order of events rather than an edge case.
+  const overlap = await seedFirm('overlap', at('overlapowner'))
+  overlapFirmId = overlap.firmId
+  overlapStaffId = await createUser(at('invited-first'))
+  await admin.auth.admin.updateUserById(overlapStaffId, {
+    app_metadata: { firm_id: overlapFirmId, role: 'employee' },
+  })
+  must(
+    await admin
+      .from('firm_members')
+      .insert({
+        firm_id: overlapFirmId,
+        user_id: overlapStaffId,
+        role: 'employee',
+        // Exactly what invite/bulk leaves behind: a member with NO name, because
+        // that route accepts { name, email } and discards the name.
+        status: 'invited',
+        occupies_seat: true,
+      })
+      .select('id')
+      .single(),
+    'insert pre-invited staff'
+  )
 
   // A staff member who already belongs to the OTHER firm.
   otherStaffId = await createUser(at('poached'))
@@ -183,7 +223,11 @@ afterAll(async () => {
     const { data: uid } = await admin.rpc('find_user_id_by_email', { p_email: row.email })
     if (uid) created.add(uid as string)
   }
-  for (const id of [firmId, otherFirmId]) {
+  for (const row of OVERLAP_ROSTER) {
+    const { data: uid } = await admin.rpc('find_user_id_by_email', { p_email: row.email })
+    if (uid) created.add(uid as string)
+  }
+  for (const id of [firmId, otherFirmId, overlapFirmId]) {
     if (id) await admin.from('firms').delete().eq('id', id)
   }
   for (const id of created) await admin.auth.admin.deleteUser(id)
@@ -390,4 +434,76 @@ describe('the gate query, under RLS as the admin', () => {
     expect(error).toBeNull()
     expect(data).toEqual([])
   }, 60_000)
+})
+
+/**
+ * Item 2, batch 5: promote RECONCILES, it does not refuse.
+ *
+ * Exploring is allowed now, so inviting while exploring is allowed, and a firm
+ * can invite three people and then roster five. firm_members carries unique
+ * (firm_id, user_id), so a plain insert fails the moment somebody is already
+ * there — every row has to be matched on the resolved auth user id instead.
+ */
+describe('promote over an existing roster', () => {
+  it('updates the person already invited instead of duplicating them', async () => {
+    // Before: one member, no name, invite/bulk having discarded it.
+    expect(await fullNameOf(overlapStaffId)).toBeNull()
+
+    const result = await promoteIntake(admin, overlapFirmId, {
+      firm_name: 'Chen & Partners',
+      roster: OVERLAP_ROSTER,
+    })
+
+    expect(result.skipped).toEqual([])
+    // Three new people, one recognised — the admin and the pre-invited staffer.
+    expect(result.updated).toBe(2)
+    expect(result.created).toBe(2)
+
+    // 🔴 Nobody duplicated. Four roster rows, four members, and the person who
+    // was invited first is still exactly one row.
+    const { count } = await admin
+      .from('firm_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('firm_id', overlapFirmId)
+    expect(count).toBe(4)
+
+    const { data: theirRows } = await admin
+      .from('firm_members')
+      .select('id, status, is_attorney, occupies_seat')
+      .eq('firm_id', overlapFirmId)
+      .eq('user_id', overlapStaffId)
+    expect(theirRows).toHaveLength(1)
+
+    // The roster supplied the name that was missing.
+    expect(await fullNameOf(overlapStaffId)).toBe('Sarah Chen')
+    expect(theirRows![0].is_attorney).toBe(false)
+    expect(theirRows![0].occupies_seat).toBe(true)
+    // Their invite is still outstanding — promote does not silently activate
+    // somebody, and it does not re-send anything either.
+    expect(theirRows![0].status).toBe('invited')
+  }, 90_000)
+
+  it('lands used_seats on the non-attorney count with no double-count', async () => {
+    // Two non-attorneys across the four: Sarah (already held a seat) and New
+    // Hire One. The owner and New Hire Two are attorneys.
+    const seats = await usedSeats(overlapFirmId)
+    expect(seats.used_seats).toBe(2)
+    expect(seats.max_seats).toBe(PURCHASED_SEATS)
+  }, 60_000)
+
+  it('is still idempotent over the overlap', async () => {
+    const again = await promoteIntake(admin, overlapFirmId, {
+      firm_name: 'Chen & Partners',
+      roster: OVERLAP_ROSTER,
+    })
+    expect(again.created).toBe(0)
+    expect(again.updated).toBe(OVERLAP_ROSTER.length)
+
+    const { count } = await admin
+      .from('firm_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('firm_id', overlapFirmId)
+    expect(count).toBe(4)
+    expect((await usedSeats(overlapFirmId)).used_seats).toBe(2)
+  }, 90_000)
 })

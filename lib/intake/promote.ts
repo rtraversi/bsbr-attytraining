@@ -32,6 +32,21 @@
 //      omits. Removing staff is a dashboard action with its own confirmation,
 //      not a side effect of a form.
 //
+// ── It RECONCILES, it does not refuse ───────────────────────────────────────
+//
+// A firm can invite three people, look around, and only then do the intake and
+// roster five. Exploring is allowed (Katy reversed the hard gate on 2026-08-26
+// 12:11), so inviting while exploring is allowed too, and promote has to expect
+// an overlap rather than treat one as an error.
+//
+// firm_members carries unique (firm_id, user_id), so a plain insert fails the
+// moment somebody is already there. Every roster row is therefore matched on the
+// RESOLVED AUTH USER ID: an existing member is updated in place, and only the
+// genuinely new ones are inserted. Matching on the user id rather than the email
+// string is what makes that reliable — find_user_id_by_email compares
+// case-insensitively, so "S.Chen@firm.com" on the roster finds the
+// "s.chen@firm.com" already invited.
+//
 // ── What it deliberately does NOT do ────────────────────────────────────────
 //
 // NO INVITES ARE SENT. The roster feeds a dashboard action the admin fires when
@@ -208,17 +223,21 @@ async function promoteRoster(
         .eq('id', existing.id)
       updated += 1
     } else {
-      const { error: memberError } = await admin.from('firm_members').insert({
-        firm_id: firmId,
-        user_id: userId,
-        role: 'employee',
-        // 'invited' and not 'active': the seat is reserved from this moment
-        // (Max, 2026-07-29) but nobody has been emailed yet, and status is what
-        // the dashboard reads to decide whether an invite is still outstanding.
-        status: 'invited',
-        is_attorney: row.isAttorney,
-        occupies_seat: !row.isAttorney,
-      })
+      const { data: inserted, error: memberError } = await admin
+        .from('firm_members')
+        .insert({
+          firm_id: firmId,
+          user_id: userId,
+          role: 'employee',
+          // 'invited' and not 'active': the seat is reserved from this moment
+          // (Max, 2026-07-29) but nobody has been emailed yet, and status is what
+          // the dashboard reads to decide whether an invite is still outstanding.
+          status: 'invited',
+          is_attorney: row.isAttorney,
+          occupies_seat: !row.isAttorney,
+        })
+        .select('id')
+        .maybeSingle()
 
       if (memberError) {
         // The auth user survives deliberately. Deleting it would be destructive
@@ -230,7 +249,10 @@ async function promoteRoster(
         continue
       }
 
-      membersByUserId.set(userId, { id: '', user_id: userId, role: 'employee' })
+      // The REAL id, not a placeholder. A roster that lists the same person
+      // twice (two spellings of one address) reaches the update branch on the
+      // second pass, and an empty id there would silently update nothing.
+      if (inserted) membersByUserId.set(userId, { id: inserted.id, user_id: userId, role: 'employee' })
     }
   }
 

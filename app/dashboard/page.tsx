@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hasTrainingAccess } from '@/lib/seats'
+import { hasSubmittedIntake, intakeInProgress } from '@/lib/intake/gate'
 import { AdminDashboard } from './_components/admin-dashboard'
 import type { TrainingStatus } from './_components/team-table'
 
@@ -33,16 +34,25 @@ export default async function DashboardPage() {
 
   const admin = createAdminClient()
 
-  const [firmRes, seatsRes, membersRes] = await Promise.all([
+  // The intake question is asked HERE, once per dashboard render — not in
+  // middleware, where batch 4 had it costing a round-trip on every request.
+  // Katy reversed the redirect on 2026-08-26 12:11 ("People will want to explore
+  // without having to fill it all in"), so the answer drives a notice now. See
+  // lib/intake/gate.ts.
+  const [firmRes, seatsRes, membersRes, intakeSubmitted, intakeResumable] = await Promise.all([
     admin.from('firms').select('name, max_seats, status, tier, current_period_end').eq('id', firmId).single(),
     admin.from('seats').select('used_seats, max_seats').eq('firm_id', firmId).single(),
     admin
       .from('firm_members')
-      .select('id, user_id, role, status, occupies_seat, invited_at, activated_at, invite_email_failed')
+      .select(
+        'id, user_id, role, status, occupies_seat, invited_at, activated_at, invite_email_failed, email_verified_at',
+      )
       .eq('firm_id', firmId)
       .neq('status', 'deleted')
       .neq('status', 'reassigned')
       .order('invited_at'),
+    hasSubmittedIntake(admin, firmId),
+    intakeInProgress(admin, firmId),
   ])
 
   const firm = firmRes.data
@@ -188,6 +198,8 @@ export default async function DashboardPage() {
       daysOverdue={daysOverdue}
       isGracePeriod={isGracePeriod}
       isLapsed={isLapsed}
+      intakeSubmitted={intakeSubmitted}
+      intakeInProgress={intakeResumable}
     />
   )
 }

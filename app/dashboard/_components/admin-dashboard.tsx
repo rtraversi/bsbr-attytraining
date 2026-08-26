@@ -6,6 +6,8 @@ import { ComplianceScore } from './compliance-score'
 import { CertificationForecast } from './certification-forecast'
 import { ResendInviteAction } from './resend-invite-modal'
 import { OutOfSeatsNotice } from './out-of-seats-notice'
+import { IntakeNotice, EmailDeliverabilityNotice } from './setup-notices'
+import { needsEmailAttention } from '@/lib/email-verification'
 
 const CARD = 'rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
 const HEADING = 'font-headline text-2xl md:text-3xl font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
@@ -36,6 +38,10 @@ export interface AdminDashboardProps {
   daysOverdue: number | null
   isGracePeriod: boolean
   isLapsed: boolean
+  /** Has this firm submitted its policy intake? Drives a NOTICE, never a redirect. */
+  intakeSubmitted: boolean
+  /** A part-finished intake, so the notice can say "continue" rather than "start". */
+  intakeInProgress: boolean
 }
 
 /**
@@ -60,12 +66,27 @@ export function AdminDashboard({
   daysOverdue,
   isGracePeriod,
   isLapsed,
+  intakeSubmitted,
+  intakeInProgress,
 }: AdminDashboardProps) {
   const seatsPct = seatsTotal > 0 ? Math.min(100, Math.round((seatsUsed / seatsTotal) * 100)) : 0
   const planName = tier.charAt(0).toUpperCase() + tier.slice(1)
 
+  // Deleted and reassigned members are already filtered out upstream, so this is
+  // exactly the people the firm still expects to reach.
+  const unreachable = memberDetails.filter(needsEmailAttention)
+
   return (
     <TeamProvider memberDetails={memberDetails} currentUserId={currentUserId}>
+      {/*
+        Notices sit ABOVE the grid, in a flex column, so the fit-to-screen row
+        maths below keeps working: the grid takes what is left rather than
+        assuming the whole shell height. With no notices this collapses to
+        exactly the previous layout.
+      */}
+      <div className="flex flex-col gap-4 lg:h-full">
+        {!intakeSubmitted && <IntakeNotice inProgress={intakeInProgress} />}
+        <EmailDeliverabilityNotice members={unreachable} />
       {/*
         Row heights at lg+ are fr-based fractions of whatever height the shell hands
         this grid (viewport minus pill + padding — see dashboard-shell.tsx), so the
@@ -77,7 +98,7 @@ export function AdminDashboard({
         full-bleed shell freed up — Max's call); tune the two numbers here.
         Mobile keeps normal single-column page-scroll (all of this is lg:-only).
       */}
-      <div className="grid grid-cols-12 gap-4 lg:h-full lg:grid-rows-[minmax(0,19fr)_minmax(0,26fr)]">
+      <div className="grid grid-cols-12 gap-4 lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,19fr)_minmax(0,26fr)]">
         {/* ── Quick actions ─────────────────────────────────────────────────── */}
         {/* flex-col + flex-1 + grid-rows-2 lets the 2×2 tile grid stretch into the
             row height (tiles grow, no dead space); below lg it sits at natural height. */}
@@ -204,6 +225,7 @@ export function AdminDashboard({
         <section className="col-span-12 lg:col-span-7 lg:min-h-0">
           <CertificationForecast />
         </section>
+        </div>
       </div>
     </TeamProvider>
   )

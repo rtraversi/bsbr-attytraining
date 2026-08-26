@@ -362,15 +362,18 @@ export function IntakeClient({
             </div>
 
             {/*
-              Flagged on the way out as well as inline on the roster screen, and
-              it never blocks (Max, 2026-08-26) — a firm that has grown since it
-              paid should not be stranded on a seat count with a whole policy
-              behind it.
+              The cap, restated on the way out. Max reversed flag-never-block on
+              2026-08-26: the previous copy here promised "we will sort it out
+              with you" and nobody owned that process. Send is genuinely refused
+              now — the server checks the same rule, so this is a warning the
+              firm can act on rather than the only thing standing in the way.
             */}
             {overSeats > 0 && (
               <p className={`mt-5 ${NOTICE}`}>
-                Your roster needs {overSeats} more training {overSeats === 1 ? 'seat' : 'seats'} than
-                you have bought. Send the intake anyway &mdash; we will sort it out with you.
+                Your roster lists {overSeats} more {overSeats === 1 ? 'person' : 'people'} needing
+                training than you have seats for. Add {overSeats} more{' '}
+                {overSeats === 1 ? 'seat' : 'seats'} in Billing, or take{' '}
+                {overSeats === 1 ? 'them' : 'them'} off the roster, before sending.
               </p>
             )}
 

@@ -27,6 +27,9 @@ export interface MemberDetail {
   certExpiresAt: string | null
   /** Their invite email failed to send (0016). Cleared by a successful resend. */
   invite_email_failed: boolean
+  /** Deliverability PROVEN (0029). Null means unproven, never "bad" — see the
+   *  migration. Read with invite_email_failed by EmailDeliverabilityNotice. */
+  email_verified_at: string | null
 }
 
 // 'rate_limited' is deliberately distinct from 'error'. A nudge blocked by the
