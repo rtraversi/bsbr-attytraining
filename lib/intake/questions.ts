@@ -126,6 +126,9 @@ export const OUTSIDE_US_OPTION: QuestionOption = { value: 'OUTSIDE_US', label: '
 // Option lists
 // ---------------------------------------------------------------------------
 
+/** The shared "None" value on the multi-selects that offer one. */
+const NONE_VALUE_LITERAL = 'none'
+
 const AI_TOOL_OPTIONS: QuestionOption[] = [
   { value: 'chatgpt', label: 'ChatGPT' },
   { value: 'claude', label: 'Claude' },
@@ -138,7 +141,25 @@ const AI_TOOL_OPTIONS: QuestionOption[] = [
   { value: 'spellbook', label: 'Spellbook' },
   { value: 'draftwise', label: 'DraftWise' },
   { value: 'otter_ai', label: 'Otter.ai' },
+  // A firm that has just bought an AI policy BECAUSE it is about to start is a
+  // real customer, and until this existed they could not get past question 6:
+  // ai_tools is required and had no "none", while research_tools, case_mgmt and
+  // regulatory_regimes all did. Approved by Max 2026-08-26.
+  //
+  // Not a hedge in Katy's sense — it is not "I don't know", it is a firm stating
+  // that today the answer is nothing, which is a policy written forward rather
+  // than a policy written around existing practice.
+  { value: 'none_yet', label: 'None yet' },
 ]
+
+/**
+ * Options that mean "and nothing else". Ticking one clears every other choice
+ * in its question, and ticking any other choice clears it.
+ *
+ * Without this a firm can hold "None" and "Clio" at once, which is not an
+ * answer — it is two answers, and Katy has to write and ask which one is true.
+ */
+export const EXCLUSIVE_OPTION_VALUES: ReadonlySet<string> = new Set([NONE_VALUE_LITERAL, 'none_yet'])
 
 // Module B. Distinct from AI_TOOL_OPTIONS on purpose even where the names
 // overlap: Q6 asks what the firm HAS, Q10 asks what it RESEARCHES WITH, and a
@@ -222,8 +243,24 @@ const YES_NO_NOT_SURE: QuestionOption[] = [
 /** The `not permitted` value, exported so the branch below and its tests agree. */
 export const NOTETAKER_NOT_PERMITTED = 'not_permitted'
 
+/** "None yet" on ai_tools. Hides the tool grid; see that question's showIf. */
+export const NO_TOOLS_YET = 'none_yet'
+
+/**
+ * The questions the spec types as "text or 'not decided yet'".
+ *
+ * They get a visible affordance that writes NOT_DECIDED_YET, rather than the
+ * firm typing the words — Katy's export has to tell "the firm has not taken a
+ * position" apart from "a firm wrote a sentence that mentions not deciding",
+ * because those two draft differently.
+ */
+export const NOT_DECIDED_QUESTIONS: ReadonlySet<string> = new Set([
+  'discipline',
+  'client_ai_approach',
+])
+
 /** The shared "None" value on the multi-selects that offer one. */
-export const NONE_VALUE = 'none'
+export const NONE_VALUE = NONE_VALUE_LITERAL
 
 
 // ---------------------------------------------------------------------------
@@ -312,7 +349,16 @@ export const QUESTIONS: readonly Question[] = [
     help: 'Tiers are generic because vendors name them differently. Pick the closest.',
     type: 'tool-grid',
     required: true,
-    showIf: { key: 'ai_tools', answered: true },
+    // Two conditions, not one. "Answered" alone would show an empty grid to a
+    // firm whose only answer is "None yet" — a table with no rows, required and
+    // unanswerable, which is a dead end on the screen after the one that caused
+    // it. toolGridTools() drops none_yet as well, so the two agree.
+    showIf: {
+      all: [
+        { key: 'ai_tools', answered: true },
+        { key: 'ai_tools', not: NO_TOOLS_YET },
+      ],
+    },
   },
   {
     key: 'prohibited_tools',

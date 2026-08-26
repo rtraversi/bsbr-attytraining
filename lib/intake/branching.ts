@@ -30,7 +30,7 @@
 // forward and no explanation, which is a support call and a refund.
 // =============================================================================
 
-import { QUESTIONS, getQuestion } from './questions'
+import { QUESTIONS, getQuestion, NO_TOOLS_YET } from './questions'
 import {
   SECTION_ORDER,
   SECTION_LABELS,
@@ -293,7 +293,13 @@ export function toolGridTools(answers: AnswerMap): ToolGridTool[] {
   const options = getQuestion('ai_tools')?.options ?? []
   const labels = new Map(options.map((o) => [o.value, o.label]))
 
-  return (selected as string[]).map((value) => ({
+  return (selected as string[])
+    // "None yet" is not a tool and cannot have a tier or a training agreement.
+    // The grid's showIf hides the whole question in that case; this keeps the
+    // two from disagreeing if a firm somehow holds none_yet alongside a real
+    // tool (the multi-select treats it as exclusive, so they should not).
+    .filter((value) => value !== NO_TOOLS_YET)
+    .map((value) => ({
     value,
     label: isOtherValue(value) ? (otherText(value) ?? value) : (labels.get(value) ?? value),
   }))
@@ -366,6 +372,40 @@ export function pruneOrphans(answers: AnswerMap): AnswerMap {
   }
 
   return pruned
+}
+
+
+// ---------------------------------------------------------------------------
+// The roster against the seats bought
+// ---------------------------------------------------------------------------
+
+/**
+ * How many people on the roster take the training: the NON-attorney rows.
+ *
+ * Katy, 2026-08-25: attorneys never consume a seat and use the training for
+ * free; non-attorney staff consume seats. Katy, 2026-08-25 12:27: training is
+ * non-attorneys only, but the attestation is everyone.
+ *
+ * ⚠️ This computes the seat count the intake DISPLAYS. It does not change what
+ * a seat costs and it does not touch lib/seats.ts or the sync_used_seats trigger
+ * from 0015 — access and billing still derive from one predicate on purpose, and
+ * splitting them is its own batch.
+ */
+export function rosterTrainingSeats(rows: RosterRow[]): number {
+  return rows.filter((r) => !r.isAttorney).length
+}
+
+/**
+ * How many training seats the roster needs beyond what the firm bought. 0 when
+ * it fits, and 0 when the seat count is unknown.
+ *
+ * FLAGGED, NEVER BLOCKED (Max, 2026-08-26). A firm that has grown since it paid
+ * must be able to finish the intake and settle the billing afterwards; stopping
+ * them here strands the whole policy on a seat count.
+ */
+export function rosterOverSeats(rows: RosterRow[], seatsPurchased: number): number {
+  if (seatsPurchased <= 0) return 0
+  return Math.max(0, rosterTrainingSeats(rows) - seatsPurchased)
 }
 
 

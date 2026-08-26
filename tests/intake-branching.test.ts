@@ -12,6 +12,8 @@ import {
   toolGridTools,
   reconcileToolGrid,
   splitBySensitivity,
+  rosterTrainingSeats,
+  rosterOverSeats,
 } from '@/lib/intake/branching'
 import {
   QUESTIONS,
@@ -21,6 +23,8 @@ import {
   stateOptionsFor,
   NOTETAKER_NOT_PERMITTED,
   NONE_VALUE,
+  NO_TOOLS_YET,
+  EXCLUSIVE_OPTION_VALUES,
 } from '@/lib/intake/questions'
 import {
   otherValue,
@@ -120,6 +124,27 @@ describe('the question set itself', () => {
     expect(hiring.at(-1)!.value).toBe('OUTSIDE_US')
   })
 
+  it('offers a none-style answer on every UNCONDITIONAL required multi-select', () => {
+    // ai_tools was the exception until none_yet was added, and an unconditional
+    // required multi-select with no way to say "nothing" is a dead end, not a
+    // question.
+    //
+    // Scoped to unconditional ones deliberately. notetaker_scope is required,
+    // has no escape, and is correct: it only appears once the firm has said
+    // notetakers ARE permitted, so "nowhere" is not an available truth. A branch
+    // that guarantees a non-empty answer is its own escape.
+    const requiredMulti = QUESTIONS.filter((x) => x.type === 'multi' && x.required && !x.showIf)
+    for (const question of requiredMulti) {
+      const hasEscape =
+        question.allowOther ||
+        question.options!.some((o) => EXCLUSIVE_OPTION_VALUES.has(o.value))
+      expect({ key: question.key, hasEscape }).toEqual({ key: question.key, hasEscape: true })
+    }
+    expect(
+      getQuestion('ai_tools')!.options!.some((o) => o.value === NO_TOOLS_YET),
+    ).toBe(true)
+  })
+
   it('marks exactly the two sensitive questions, and neither of them branches', () => {
     const sensitive = QUESTIONS.filter((x) => x.sensitive)
     expect(sensitive.map((x) => x.key)).toEqual(['prior_ai_error', 'carrier_notified'])
@@ -159,6 +184,30 @@ describe('the tool grid', () => {
 
   it('appears once a tool is selected', () => {
     expect(isVisible(q('tool_grid'), { ai_tools: ['chatgpt'] })).toBe(true)
+  })
+
+  it('stays hidden when the firm has no tools YET', () => {
+    // A firm that has just bought a policy because it is about to start. The
+    // question is answered, so `answered: true` alone would show them an empty
+    // required table they cannot fill in.
+    const answers: AnswerMap = { ai_tools: [NO_TOOLS_YET] }
+    expect(isAnswered(q('ai_tools'), answers)).toBe(true)
+    expect(isVisible(q('tool_grid'), answers)).toBe(false)
+    expect(toolGridTools(answers)).toEqual([])
+  })
+
+  it('lets a none-yet firm finish the intake', () => {
+    const answers = answerEverything({ ai_tools: [NO_TOOLS_YET] })
+    expect(keys(answers)).not.toContain('tool_grid')
+    expect(isComplete(answers)).toBe(true)
+  })
+
+  it('never derives a row for "none yet", even alongside a real tool', () => {
+    // The multi-select treats none_yet as exclusive so this should not arise;
+    // the engine must not depend on the UI for it.
+    expect(toolGridTools({ ai_tools: ['chatgpt', NO_TOOLS_YET] })).toEqual([
+      { value: 'chatgpt', label: 'ChatGPT' },
+    ])
   })
 
   it('derives a row per tool, free-text entries included', () => {
@@ -447,5 +496,40 @@ describe('progressBySection', () => {
   it('is complete in every section exactly when the intake is complete', () => {
     const answers = answerEverything()
     expect(progressBySection(answers).every((p) => p.complete)).toBe(isComplete(answers))
+  })
+})
+
+describe('the roster against the seats bought', () => {
+  const roster = (attorneys: number, staff: number) => [
+    ...Array.from({ length: attorneys }, (_, i) => ({
+      name: `Attorney ${i}`, email: `a${i}@firm.com`, isAttorney: true,
+    })),
+    ...Array.from({ length: staff }, (_, i) => ({
+      name: `Staff ${i}`, email: `s${i}@firm.com`, isAttorney: false,
+    })),
+  ]
+
+  it('counts only the non-attorney rows as training seats', () => {
+    // Attorneys never consume a seat and take the training for free.
+    expect(rosterTrainingSeats(roster(3, 2))).toBe(2)
+    expect(rosterTrainingSeats(roster(4, 0))).toBe(0)
+  })
+
+  it('reports the shortfall without ever refusing', () => {
+    expect(rosterOverSeats(roster(1, 12), 9)).toBe(3)
+    expect(rosterOverSeats(roster(1, 4), 9)).toBe(0)
+  })
+
+  it('reports nothing when the seat count is unknown', () => {
+    // A firm whose seats row has not landed yet must not be told it is over.
+    expect(rosterOverSeats(roster(1, 12), 0)).toBe(0)
+  })
+
+  it('lets a solo with no staff finish', () => {
+    // Katy, 2026-08-25: a solo with zero staff pays for one seat and needs no
+    // non-attorney training to be accredited.
+    const answers = answerEverything({ roster: roster(1, 0) })
+    expect(rosterOverSeats(roster(1, 0), 1)).toBe(0)
+    expect(isComplete(answers)).toBe(true)
   })
 })

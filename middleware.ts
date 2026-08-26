@@ -68,8 +68,14 @@ export async function middleware(request: NextRequest) {
 
   const path = request.nextUrl.pathname
 
-  // Protected routes — redirect unauthenticated users to login
-  const isProtected = path.startsWith('/dashboard') || path.startsWith('/update-password')
+  // Protected routes — redirect unauthenticated users to login.
+  // /intake is here as well as checking its own claims: the page redirects an
+  // employee to /dashboard, but an anonymous visitor should never reach a
+  // server component that resolves a firm at all.
+  const isProtected =
+    path.startsWith('/dashboard') ||
+    path.startsWith('/update-password') ||
+    path.startsWith('/intake')
   if (isProtected && !user) {
     const loginUrl = new URL('/login', request.url)
     return NextResponse.redirect(loginUrl)
