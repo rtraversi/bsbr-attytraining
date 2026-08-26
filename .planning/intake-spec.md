@@ -48,6 +48,8 @@ expressly approved by Katy first, and that is an unlikely scenario, not a formal
 | 2026-08-26 | Max | A roster larger than the seats purchased is flagged, never blocked. |
 | 2026-08-26 | Max | Export is one `.docx` per firm, generated on demand. Katy does not get a login. |
 | 2026-08-26 | Max | Purge is a deliberate action with an audit row, plus a 30-day automatic backstop. |
+| 2026-08-26 | Max | The roster name is authoritative. Staff no longer type their own name at password-set. |
+| 2026-08-26 | Max | The upload bucket is `Intake-uploads` on staging — capital I, case-sensitive, cannot be renamed. |
 
 ### Corrections applied to Katy's refined question list
 
@@ -64,6 +66,34 @@ Her final list is the authority. Four things in it are being changed, and why:
 4. **Firm size band and the non-attorney staff count are replaced by the roster.** The roster
    carries both facts and more besides, so asking them separately is the duplication Katy objected
    to. Seat count is computed from the roster, not asked.
+
+### The roster wins on names — added 2026-08-26 (Max)
+
+The roster column is **"name as it should appear on the certification"**, and that name is
+authoritative. Staff no longer type their own name when they set their password; the field comes
+out of that screen entirely.
+
+This is a correction to a path that is broken today, not a preference:
+
+- `app/api/invite/bulk/route.ts` already accepts `{ name, email }` per row and **silently discards
+  the name.** It creates the auth user from the email alone and never writes
+  `user_metadata.full_name`.
+- So the name on a certificate comes from the staff member typing it into
+  `app/update-password/_components/update-form.tsx:144`, at the moment they set their password.
+- And `app/api/certs/generate/route.ts:102` reads `user_metadata.full_name` **falling back to the
+  email address**. A staff member who leaves the field blank gets a certificate made out to
+  `paralegal@firm.com`.
+
+The firm admin who typed the roster is the right author of that name, not the employee, and the
+admin is the one accountable for the certificate being correct.
+
+**What this obliges batch 4 to do:**
+
+1. Stamp the roster name into `user_metadata.full_name` at provisioning, in the bulk-invite path —
+   the row the intake promotes must carry its name all the way to the auth user.
+2. Remove the name field from the password-set screen.
+3. Leave the email fallback in cert generation alone as a last resort, but it should now be
+   unreachable for anyone provisioned from a roster.
 
 ---
 
@@ -217,6 +247,18 @@ privileged, and it does not put them beyond a subpoena. Raised 2026-08-26, Katy 
 | key | When | Notes |
 |---|---|---|
 | `existing_policy_file` | Q5 yes | Private bucket. A human reads it. It is never parsed. Same lifecycle as the answers: purged with them. |
+
+**The bucket is `Intake-uploads`** — capital I, and Storage bucket ids are case-sensitive. It was
+created that way on staging and **cannot be renamed**, so the casing is a fact to work around, not a
+typo to fix. It lives in exactly one exported constant (`lib/intake/uploads.ts`); the string literal
+must not be scattered through routes, or the first person who types `intake-uploads` gets a silent
+404 from Storage rather than an error that names the problem.
+
+Private, 10 MB per file, PDF and Word only.
+
+🔴 **The bucket does not exist on production yet.** Staging only, as of 2026-08-26. Creating it is a
+Storage action in the CF/Supabase dashboard, not something a migration can do, and it has to happen
+before the intake ships.
 
 ---
 
