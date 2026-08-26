@@ -1,24 +1,33 @@
 // =============================================================================
-// POST /api/intake/submit — lock the intake.
+// POST /api/intake/submit — validate, prune, promote, lock.
 //
-// 🔴 THIS ROUTE DOES NOT PROMOTE. 🔴
+// The order is the design, not an accident:
 //
-// firm_name → firms.name, the roster → firm_members, and the non-attorney count
-// → the seat count are all BATCH 4. They are deliberately not here: promote has
-// to be one transaction alongside the auth-user provisioning that carries the
-// roster name into user_metadata.full_name (see the roster-wins-on-names note in
-// .planning/intake-spec.md), and half of that does not exist yet. A promote
-// bolted onto this route would be a sequence of calls that can half-fail, which
-// is the exact thing migration 0028 was shaped to avoid.
+//   1. VALIDATE against the STORED answers. The client runs the same check to
+//      decide what to turn red; this one is what actually decides.
+//   2. PRUNE orphans. Last moment a retracted answer can be removed before it
+//      reaches Katy — see the notetaker example on pruneOrphans.
+//   3. PROMOTE. firm_name → firms.name, the roster → auth users + firm_members,
+//      the non-attorney count → the seat count.
+//   4. FLIP the status, and only then.
 //
-// What this route does: re-validate completeness on the server, drop orphaned
-// answers, and flip the session to 'submitted'.
+// 🔴 Step 4 is last because step 3 CANNOT be one transaction. Auth users are
+// created through GoTrue's admin API and no BEGIN encloses an HTTP call to
+// another service. So promote is idempotent instead, and while the status is
+// still 'in_progress' the firm can press Send again and the second run finishes
+// what the first did not. Flipping the status first would turn a half-finished
+// promote into a locked intake with no way to complete it — the failure mode
+// this ordering exists to make impossible.
+//
+// Invites are deliberately NOT sent here. The roster feeds a dashboard action
+// the admin fires when ready, reusing the bulk-invite path minus the send.
 // =============================================================================
 
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authorizeIntake, getOrCreateOpenSession, latestSession, loadAnswers } from '@/lib/intake/session'
-import { isComplete, missingRequired, orphanKeys } from '@/lib/intake/branching'
+import { isComplete, missingRequired, orphanKeys, pruneOrphans } from '@/lib/intake/branching'
+import { promoteIntake } from '@/lib/intake/promote'
 import { getQuestion } from '@/lib/intake/questions'
 
 export async function POST() {
@@ -62,6 +71,23 @@ export async function POST() {
     }
   }
 
+  // ── promote ───────────────────────────────────────────────────────────────
+  //
+  // Promoted from the PRUNED map, not the raw one. A retracted answer must not
+  // reach firms or firm_members any more than it reaches Katy.
+  let promoted
+  try {
+    promoted = await promoteIntake(admin, auth.actor.firmId, pruneOrphans(answers))
+  } catch (err) {
+    // The session is still 'in_progress', so nothing is lost and Send can be
+    // pressed again. Reporting the failure beats locking the intake behind it.
+    console.error('[intake/submit] promote failed:', err)
+    return NextResponse.json(
+      { error: 'We saved your answers but could not finish setting up your firm. Try again in a moment.' },
+      { status: 500 },
+    )
+  }
+
   const submittedAt = new Date().toISOString()
 
   // Conditional on status so a double-submit from two tabs writes once. The
@@ -78,5 +104,5 @@ export async function POST() {
     return NextResponse.json({ error: 'This intake has already been submitted' }, { status: 409 })
   }
 
-  return NextResponse.json({ ok: true, submittedAt, prunedKeys: orphans })
+  return NextResponse.json({ ok: true, submittedAt, prunedKeys: orphans, promoted })
 }

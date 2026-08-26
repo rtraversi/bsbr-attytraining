@@ -15,7 +15,6 @@ export default async function UpdatePasswordPage() {
   // Prefill when the admin supplied a name at invite time, so an existing name is
   // confirmed rather than retyped. Usually absent — that is the whole problem this
   // field exists to fix (certificates fall back to the raw email address).
-  const initialName = (user?.user_metadata?.full_name as string | undefined) ?? ''
 
   return (
     <main className="font-headline relative flex min-h-screen items-center justify-center px-4 py-16">
@@ -41,7 +40,7 @@ export default async function UpdatePasswordPage() {
           </p>
 
           <div className="mt-9">
-            <UpdatePasswordForm email={email} initialName={initialName} />
+            <UpdatePasswordForm email={email} />
           </div>
         </div>
       </div>
