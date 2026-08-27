@@ -7,6 +7,12 @@ import { EmployeeInviteEmail } from '@/emails/employee-invite'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
+interface InviteRow {
+  name: string
+  email: string
+  isAttorney?: unknown
+}
+
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -20,11 +26,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  let rows: { name: string; email: string }[]
+  let rows: InviteRow[]
   try {
     const body = (await req.json()) as { rows?: unknown }
     if (!Array.isArray(body.rows)) throw new Error()
-    rows = body.rows as { name: string; email: string }[]
+    rows = body.rows as InviteRow[]
   } catch {
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
   }
@@ -69,7 +75,8 @@ export async function POST(req: NextRequest) {
   let skipped = 0
   let invalid = 0
   // Rows that were created but whose invite email didn't send. They are counted
-  // in `invited` — the seat is real — so this is reported alongside, not instead.
+  // in `invited` — the member (and staff seat, where applicable) is real — so
+  // this is reported alongside, not instead.
   const emailFailed: string[] = []
 
   for (const row of rows) {
@@ -77,7 +84,8 @@ export async function POST(req: NextRequest) {
 
     if (!EMAIL_RE.test(email)) { invalid++; continue }
     if (existingEmails.has(email)) { skipped++; continue }
-    if (seatsAvailable <= 0) { skipped++; continue }
+    const isAttorney = row.isAttorney === true
+    if (!isAttorney && seatsAvailable <= 0) { skipped++; continue }
 
     // Create auth user — fails if email is already registered globally
     const { data: newUser, error: createError } = await admin.auth.admin.createUser({
@@ -97,6 +105,8 @@ export async function POST(req: NextRequest) {
       user_id: employeeId,
       role: 'employee',
       status: 'invited',
+      is_attorney: isAttorney,
+      occupies_seat: !isAttorney,
     })
     if (memberError) {
       await admin.auth.admin.deleteUser(employeeId)
@@ -105,7 +115,7 @@ export async function POST(req: NextRequest) {
       continue
     }
 
-    seatsAvailable--
+    if (!isAttorney) seatsAvailable--
     invited++
 
     const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
@@ -120,8 +130,8 @@ export async function POST(req: NextRequest) {
       ? `${appUrl}/auth/confirm?token_hash=${hashedToken}&type=magiclink&next=/update-password`
       : linkData?.properties?.action_link
 
-    // Per-row: the member and the seat are real, so this row still counts as
-    // invited — but the admin has to be told the email didn't land, and the
+    // Per-row: the member is real (and a staff seat, where applicable), so this
+    // row still counts as invited — but the admin has to be told the email didn't land, and the
     // failure has to outlive the toast. See /api/invite for the same handling.
     try {
       const html = await render(EmployeeInviteEmail({ firmName, actionLink: actionLink ?? '' }))
@@ -143,9 +153,9 @@ export async function POST(req: NextRequest) {
   }
 
   // No seat count update here — the sync_used_seats trigger already counted
-  // each firm_members insert above. `seatsAvailable` is the in-loop capacity
-  // guard (seeded from the pre-loop read, decremented per successful invite),
-  // so the cap is still enforced without a manual write.
+  // each staff firm_members insert above. `seatsAvailable` is the in-loop
+  // capacity guard (seeded from the pre-loop read, decremented per successful
+  // staff invite); attorneys bypass it because they are not billable seats.
 
   return NextResponse.json({ invited, skipped, invalid, emailFailed })
 }

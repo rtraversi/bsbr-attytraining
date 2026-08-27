@@ -12,6 +12,7 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
   const router = useRouter()
   const { addToast } = useToast()
   const [email, setEmail] = useState('')
+  const [isAttorney, setIsAttorney] = useState(false)
   const [phase, setPhase] = useState<'idle' | 'loading' | 'done' | 'email_failed' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [devLink, setDevLink] = useState<string | undefined>()
@@ -25,7 +26,7 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
     const res = await fetch('/api/invite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, isAttorney }),
     })
 
     const data = (await res.json()) as { error?: string; devLink?: string; emailSent?: boolean }
@@ -44,26 +45,13 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
     const emailSent = data.emailSent !== false
     setDevLink(data.devLink)
     setEmail('')
+    setIsAttorney(false)
     setPhase(emailSent ? 'done' : 'email_failed')
     router.refresh() // Re-fetch server component data so member list + seat count update
     addToast(
       emailSent
         ? `Invite sent to ${sentEmail}`
         : `${sentEmail} was added, but the invite email couldn’t be sent.`
-    )
-  }
-
-  // Seats-full: the disabled affordance stays visible so the action is still
-  // discoverable. The explanatory note is rendered once by the Invitations card.
-  if (seatsRemaining <= 0) {
-    return (
-      <button
-        type="button"
-        disabled
-        className="w-full cursor-not-allowed rounded-full bg-[#F2F4F7] py-3 text-sm font-bold text-[#B0B7BF] dark:bg-[#1A1F24] dark:text-[#4E555C]"
-      >
-        Invite by email
-      </button>
     )
   }
 
@@ -79,6 +67,16 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
           disabled={phase === 'loading'}
           className="w-full rounded-full border border-[#E5EEF5] bg-white px-4 py-3 text-sm text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
         />
+        <label className="flex cursor-pointer items-center gap-2 px-1 text-sm text-[#3D3D3D] dark:text-[#C4C9CE]">
+          <input
+            type="checkbox"
+            checked={isAttorney}
+            onChange={(e) => setIsAttorney(e.target.checked)}
+            disabled={phase === 'loading'}
+            className="size-4 accent-[var(--brand-emphasis)]"
+          />
+          This person is an attorney (no staff seat required)
+        </label>
         <button
           type="submit"
           disabled={phase === 'loading'}
@@ -87,6 +85,12 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
           {phase === 'loading' ? 'Sending…' : 'Invite by email'}
         </button>
       </form>
+
+      {seatsRemaining <= 0 ? (
+        <p className="text-sm text-[#B45309] dark:text-[#F0B357]">
+          Staff seats are full. You can still invite attorneys.
+        </p>
+      ) : null}
 
       {phase === 'done' && <p className="text-sm font-semibold text-[var(--brand-emphasis)]">Invite sent.</p>}
       {phase === 'email_failed' && (

@@ -7,6 +7,7 @@ import { useToast } from './toast-provider'
 interface ParsedRow {
   name: string
   email: string
+  isAttorney: boolean
 }
 
 interface BulkResult {
@@ -30,6 +31,7 @@ function parseCsv(text: string): ParsedRow[] {
 
   const nameIdx = firstCols.indexOf('name')
   const emailIdx = firstCols.indexOf('email')
+  const attorneyIdx = firstCols.findIndex(c => c === 'attorney' || c === 'is_attorney')
   const hasHeader = nameIdx !== -1 || emailIdx !== -1
   const dataLines = hasHeader ? lines.slice(1) : lines
 
@@ -39,7 +41,8 @@ function parseCsv(text: string): ParsedRow[] {
       // If no header detected, assume name=col0 email=col1
       const name = nameIdx !== -1 ? (cols[nameIdx] ?? '') : (cols[0] ?? '')
       const email = emailIdx !== -1 ? (cols[emailIdx] ?? '') : (cols[1] ?? '')
-      return { name, email }
+      const attorneyValue = attorneyIdx !== -1 ? (cols[attorneyIdx] ?? '').toLowerCase() : ''
+      return { name, email, isAttorney: ['1', 'true', 'yes', 'attorney'].includes(attorneyValue) }
     })
     .filter(r => r.name || r.email)
 }
@@ -129,20 +132,6 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  // Seats-full: the disabled affordance stays visible so the action is still
-  // discoverable. The explanatory note is rendered once by the Invitations card.
-  if (seatsRemaining <= 0) {
-    return (
-      <button
-        type="button"
-        disabled
-        className="w-full cursor-not-allowed rounded-full border border-[#E5EEF5] py-3 text-sm font-bold text-[#B0B7BF] dark:border-[#1F2429] dark:text-[#4E555C]"
-      >
-        Bulk invite (CSV)
-      </button>
-    )
-  }
-
   return (
     <div className="flex flex-col gap-2">
       <label className="cursor-pointer">
@@ -159,7 +148,7 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
       </label>
 
       <p className="text-center text-xs text-[#8A8A8A] dark:text-[#7A8189]">
-        CSV format: <code className="rounded bg-[#F5F7FA] px-1 py-0.5 dark:bg-[#131A20]">name,email</code> — one per row.
+        CSV format: <code className="rounded bg-[#F5F7FA] px-1 py-0.5 dark:bg-[#131A20]">name,email,attorney</code> — use <code>true</code> for attorneys.
       </p>
 
       {phase === 'preview' && (
@@ -168,11 +157,11 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
             onClick={handleUpload}
             className="w-full rounded-full bg-black py-3 text-sm font-bold text-white transition-colors hover:bg-gray-800 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
           >
-            Invite {rows.length} {rows.length === 1 ? 'employee' : 'employees'}
+            Invite {rows.length} {rows.length === 1 ? 'person' : 'people'}
           </button>
           <p className="text-center text-sm text-[#8A8A8A] dark:text-[#7A8189]">
             {rows.length} {rows.length === 1 ? 'row' : 'rows'} found — {seatsRemaining} seat
-            {seatsRemaining !== 1 ? 's' : ''} remaining
+            {seatsRemaining !== 1 ? 's' : ''} remaining for staff; attorneys do not use a seat
           </p>
         </>
       )}
