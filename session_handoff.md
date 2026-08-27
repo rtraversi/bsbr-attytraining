@@ -1,86 +1,93 @@
 # Session Handoff
 
-**Date:** 2026-08-25
-**Who:** Max, with terminal-Claude
+**Date:** 2026-08-27
+**Who:** Rob, with terminal-Claude
 
-> 🔴 **CORRECTION, 2026-08-27: item 2 below was wrong when it was written.**
-> **All of 2026-08-24 was already deployed.** Production was deployed six times on 08-24, the last
-> from `2efec949` at 19:34:58Z with the workflow's production smoke test passing
-> (`gh run view 32768982427`). The live site was serving the new framing, the published Terms and
-> Privacy, and a `/dpa` that correctly 404s, the whole time this warning said otherwise. The claim
-> was carried forward into the 08-26 handoff and cost a session's opening minutes.
-> **Deploy status is only ever answered by `gh run list --workflow=deploy.yml`, checking for a
-> `workflow_dispatch` run whose "Deploy to production" step succeeded.** See `.planning/STATE.md` §1.
->
-> ⚠️ **What was actually outstanding on 2026-08-25:**
-> 1. Today's UI work sits on **two unmerged branches** (below).
+> ✅ **The 2026-08-24 deploy warning is gone for good.** It was wrong when written, was corrected
+> on 08-27, and is not repeated here. **Deploy status is only ever answered by
+> `gh run list --workflow=deploy.yml`**, checking for a `workflow_dispatch` run whose "Deploy to
+> production" step succeeded. See `.planning/STATE.md` §1.
 
 ---
 
 ## What happened today
 
-Two batches of UI work. Nothing merged, nothing deployed. `tsc --noEmit` clean on both;
-`pnpm run lint` 0 errors (4 pre-existing `no-img-element` warnings, untouched files).
+Entity, EIN and Stripe. **No application code was touched.** Full detail, with every identifier:
+**`.planning/sessions/20260827-rob-summary.md`**.
 
-```
-main
- └── ui-polish-batch-a   6b849fb   Max's styling list
-      └── ui-polish-batch-b   692ba9a  Invitations card
-                              97bf6eb  "% Certified" card
-```
-
-Stacked, because Batch B edits files Batch A touched.
-
-**Batch A** — sign-in inputs to pills, the remember-me toggle from stadium to square, bigger
-footer links, icon chips stripped off the quick actions and the manage-team row buttons, more
-things pilled, the active nav tab from black to the app blue, and a real sun/moon theme switch.
-
-**Batch B** — the CSV controls Batch A missed, a measured attempt at the Invitations card's
-permanent scrollbar, and a correction to the "% Certified" card.
-
-Full detail, including every measurement: **`.planning/sessions/20260825-max-summary.md`**.
+**BSBR Holdings, LLC is approved, the EIN is issued, and Stripe is registered to it** as a
+**multi-member LLC — Rob and Katy**. Requirements completed; charges and payouts stayed enabled
+throughout. That resolves open question #3 in `.planning/legal/README.md`: the entity is
+"BSBR Holdings, LLC d/b/a Iurix", Iurix is not becoming its own LLC, and the seven places in the
+app and legal docs already say exactly that. **No code change.**
 
 ---
 
-## The finding worth reading before touching the Invitations card
+## 🔴 The thing to read first: Stripe has been live since 2026-08-19
 
-Its scrollbar was permanent, not exceptional. **It cannot be fixed by shrinking the controls.**
-Measured in headless Chrome, not estimated:
+Every planning doc said sandbox. **It has been taking real money for over a week.** Live account
+`acct_1ThDpU5md3Gcv1Z1`, live product and volume price with `lookup_key: per_seat_annual`, Stripe
+Tax active with an NC registration, live webhook on `iurixaccreditation.com`. A real card was
+charged **$37.54** on 08-19 and refunded.
 
-- Container is **149.73px at both 1280×800 and 1440×900** — identical, because the admin shell
-  floors at `max(100vh, 880px)`, so both viewports hand the grid the same 784px.
-- Content **before: 248px** (over by 98.27). **After the shrink: 192px** (over by 42.27).
-- Of five variants measured, **only one clears it**: dropping the `CSV format: name,email` hint
-  *and* going to `py-2.5`. That hint is 32px + an 8px gap, and it is the whole difference.
+Three of four `ix-stripeaudit` deltas were already closed. The remaining two were applied today
+(`tax_code` → `txcd_20060058`, `tax_behavior` → `exclusive`, which is **one-way**).
+**`ix-stripeaudit` is closed.**
 
-Removing it is a copy change and `py-2.5` puts buttons at exactly 40px — the floor, with zero
-margin. **So it was left short on purpose. That is Max's call to make.**
+**Prod is clean.** The one firm in it — "Katy Chavez Law", Rob's own live smoke test — was purged
+today after its subscription was cancelled. Zero firms, members, seats and auth users remain. The
+"17 firms" the docs worried about are in **staging**.
 
 ---
 
-## The "% Certified" card was telling firms something untrue
+## Three traps that cost time today — do not repeat them
 
-A firm that bought 10 seats, invited 2 and certified both read **"100% Certified"**. The
-arithmetic was fine — `certified / invited` — the label implied the whole firm. It now says
-**"of invited staff"**, gained 25% bands whose colour and words come from one lookup so they
-cannot disagree, and `Math.round` was replaced with a floor so 199/200 no longer reads 100%.
-
-**Whether to base it on seats purchased instead is Max's decision and was deliberately not made.**
-The summary lists five things that break — the em-dash state, 100% becoming unreachable for any
-firm with a spare seat (which recreates Katy's all-or-none accreditation problem by another
-route), disagreement with the forecast card, the `seats` vs `firms` max_seats ambiguity, and the
-fact that the number would *drop* when a firm buys more seats.
+1. **`GET /v1/account` cannot tell you the entity state.** On a standard non-Connect account it
+   returns `business_type: individual`, `company.name: "Robert M Traversi"` and
+   `requirements: null` no matter what is true. Legacy data. The dashboard's **Account status** tab
+   is the only authority. This was misdiagnosed twice, once as far as claiming a duplicate Stripe
+   account existed.
+2. **No tool can reveal which Stripe key prod holds.** Cloudflare never returns secret *values* —
+   `wrangler secret list` gives names only, the CF MCP has no secrets tool. It was settled
+   behaviourally instead (webhook → prod → database, twice). The chain is in `CLAUDE.md` §4.
+3. **`processed_stripe_events` is 8, not 7.** Cancelling the subscription wrote a row two seconds
+   before the purge. It is not drift, and the row is retained deliberately.
 
 ---
 
 ## Next steps
 
-1. **Deploy the 2026-08-24 work.** Still outstanding, still step one.
-2. **Decide the Invitations scrollbar** — drop the CSV hint and take 40px buttons, or accept the
-   scrollbar. Both are one-liners.
-3. **Review and merge the two branches** (or ask for changes).
-4. **Decide the certification denominator** — invited vs seats purchased.
-5. `certification-forecast.tsx:75` carries the **identical `Math.round` → 100% defect** just fixed
-   on the score card. Same bug, same screen, deliberately not touched.
-6. Still with Katy from 2026-08-24, unchanged: the training content that teaches the old framing,
-   the three open drafting questions, and the footer disclaimer's two deleted clauses.
+**Max's, and the real blocker — from `STATE.md` §5, unchanged by today:**
+
+1. 🔴 **Get `0028` and `0029` onto PROD** and create the `Intake-uploads` bucket there. The intake
+   code reaches production through CI; the database it lands on does not.
+2. **Merge `policy-intake`, deploy, then open `/intake` in a browser.** It has never been seen
+   rendering.
+3. **The two UI branches are still unmerged** — `ui-polish-batch-a` and `ui-polish-batch-b`
+   (stacked). With them, still undecided from 08-25: the Invitations scrollbar (drop the CSV hint
+   and take 40px buttons, or accept it), the certification denominator (invited vs seats
+   purchased), and the identical `Math.round` → 100% defect at `certification-forecast.tsx:75`.
+
+**Rob's, all dashboard, none blocking:**
+
+4. **Payout bank account** → the LLC's business account.
+5. **Statement descriptor** → back to `IURIX ACCREDITATION`. The entity change overwrote it with
+   `BSBR HOLDINGS LLC`, which customers will not recognise on a card statement.
+
+**Either:**
+
+6. 🔴 **`app/api/webhooks/stripe/route.ts:630`** — it emails a non-US buyer that their payment is
+   being refunded, and `refunds.create` appears **zero times** in the codebase. That was harmless
+   on sandbox money. It is not now. Soften the wording or actually issue the refund.
+7. **Re-auth wrangler** to `4b2a402334decc9259d7317aaf9782f0`. Blocks local inspection and the
+   documented `wrangler rollback`, not shipping.
+
+---
+
+## Open questions
+
+- **Multi-state sales tax.** NC is registered and collecting correctly. The CPA consult is now
+  about selling into other states — no longer a launch blocker, but unanswered.
+- Still with Katy, unchanged: revision of the training content that teaches the old framing, the
+  legal-accuracy review of the 50-question bank, the two guesses in `lib/intake/questions.ts`, and
+  Privacy §2/§5 having no category covering intake answers.

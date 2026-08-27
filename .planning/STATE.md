@@ -130,7 +130,8 @@ it. It is a manual action in the Supabase Storage dashboard, and the intake cann
 
 ## 3. Branches
 
-`main` is at `8eff5ab` (2026-08-25). Seven branches exist; three carry unmerged work.
+`main` is at `d2100a9` (2026-08-27) — Max's 08-26 planning reorg merged with Rob's Stripe
+document corrections. Seven branches exist; three carry unmerged work.
 
 | Branch | vs `main` | State |
 |---|---|---|
@@ -220,7 +221,10 @@ content, the PROD migration gap, Stripe live mode, and launch ops.
 - `public/brand/README.md` "Still to handle": the 2048px PNG is white-matted (no alpha), and there
   is no simplified small-size variant.
 - **Attorney review** of cert template, landing copy and TOS ($500–$1,500). Hard gate on launch.
-- **CPA consult** on SaaS sales tax and home-state registration (~$300–$500).
+- **CPA consult** on **multi-state** SaaS sales tax (~$300–$500). ⚠️ *Home-state registration is
+  **done** — NC `state_sales_tax` is registered on the live Stripe account
+  (`taxreg_1U6B2M5md3Gcv1Z1r6EWlpt2`) and tax is computing: the 2026-08-19 live charge collected
+  $2.54 on $35.00. The consult is now about selling into other states, not about NC.*
 - *Cleanup, not blocked on Rob:* `public/atc-athena-logo.svg` and `public/athena-logo-email.png`
   are referenced by nothing.
 
