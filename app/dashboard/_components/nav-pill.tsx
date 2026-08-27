@@ -101,7 +101,9 @@ function ProfileIcon() {
 function ProfileSlot({ tone }: { tone: 'idle' | 'active' | 'identity' }) {
   const toneClass = {
     idle: 'bg-white/15',
-    active: 'bg-black/[0.08] dark:bg-white/15',
+    // Was bg-black/[0.08]; the active pill is now blue, on which a black tint
+    // reads as a visible disc. White at 15% keeps it near-invisible as designed.
+    active: 'bg-white/15 dark:bg-black/[0.08]',
     identity: 'bg-black/[0.06] dark:bg-white/10',
   }[tone]
 
@@ -114,8 +116,41 @@ function ProfileSlot({ tone }: { tone: 'idle' | 'active' | 'identity' }) {
   )
 }
 
-/** Dark-mode toggle — capsule knob + click-triggered squish (see the
- * `nav-switch-clicking` keyframe in globals.css). */
+function SunIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <circle cx="12" cy="12" r="4" />
+      <path
+        strokeLinecap="round"
+        d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+      />
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"
+      />
+    </svg>
+  )
+}
+
+/** Dark-mode toggle — a track with a sliding knob and an explicit sun and moon
+ * (Rob asked for the icons), plus the click-triggered squish (see the
+ * `nav-switch-clicking` keyframe in globals.css).
+ *
+ * The icons sit ABOVE the knob and never change colour: the sun is always dark
+ * and the moon always light, which is correct in both themes because the track
+ * and the knob invert together. Light mode = white knob over the sun on a black
+ * track; dark mode = black knob over the moon on a light track. Either way the
+ * dark glyph is on the light surface and the light glyph on the dark one. The
+ * knob marks the selected side, so the unselected glyph is dimmed rather than
+ * recoloured. */
 function ThemeToggle() {
   const themeCtx = useTheme()
   const [clicking, setClicking] = useState(false)
@@ -134,13 +169,35 @@ function ThemeToggle() {
       aria-checked={isDark}
       aria-label="Toggle dark mode"
       onClick={handleClick}
-      className={`relative h-10 w-[88px] shrink-0 rounded-full bg-[#0A0A0A] dark:bg-[#F5F7FA] ${clicking ? 'nav-switch-clicking' : ''}`}
+      className={`relative h-10 w-[88px] shrink-0 rounded-full bg-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-emphasis)] focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:bg-[#F5F7FA] dark:focus-visible:ring-[var(--brand-primary)] dark:focus-visible:ring-offset-[#0D0F12] ${
+        clicking ? 'nav-switch-clicking' : ''
+      }`}
     >
+      {/* Knob. Geometry is shared with the two icon slots below — same top/height
+          and same left-1 / left-11 stops — so each glyph lands dead-centre of the
+          knob when the knob is on its side. */}
       <span
+        aria-hidden
         className={`absolute top-1 h-8 w-10 rounded-full bg-white transition-[left] duration-[380ms] ease-[cubic-bezier(.34,1.56,.64,1)] dark:bg-[#0A0A0A] ${
           isDark ? 'left-11' : 'left-1'
         }`}
       />
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute top-1 left-1 z-10 flex h-8 w-10 items-center justify-center text-[#0A0A0A] transition-opacity duration-[380ms] ${
+          isDark ? 'opacity-50' : 'opacity-100'
+        }`}
+      >
+        <SunIcon />
+      </span>
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute top-1 left-11 z-10 flex h-8 w-10 items-center justify-center text-[#F5F7FA] transition-opacity duration-[380ms] ${
+          isDark ? 'opacity-100' : 'opacity-50'
+        }`}
+      >
+        <MoonIcon />
+      </span>
     </button>
   )
 }
@@ -199,7 +256,13 @@ export function NavPill({ firmName, role, setup = null }: NavPillProps) {
     'inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-colors sm:gap-2 sm:px-5 sm:py-2.5 sm:text-sm'
   const pillIdle =
     'bg-[#F5F7FA] text-[#8A8A8A] hover:text-[var(--brand-emphasis)] dark:bg-[#131A20] dark:text-[#7A8189] dark:hover:text-[var(--brand-primary)]'
-  const pillActive = 'bg-black text-white dark:bg-[#F5F7FA] dark:text-[#0A0A0A]'
+  // Active tab was bg-black / dark:bg-[#F5F7FA] — Rob: too little contrast against
+  // the rest of the page. Now the app blue in both modes. Light uses
+  // --brand-emphasis (#0094FF) with white text as asked; dark uses the lighter
+  // --brand-primary (#32C7FF) with near-black text, because #0094FF behind white
+  // text on a dark shell is the weakest pairing of the four.
+  const pillActive =
+    'bg-[var(--brand-emphasis)] text-white dark:bg-[var(--brand-primary)] dark:text-[#0A0A0A]'
 
   // Chips are status, not navigation, so they are quieter and narrower than a
   // nav pill — but exactly the same HEIGHT at both breakpoints, or the pill's

@@ -60,7 +60,7 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
       <button
         type="button"
         disabled
-        className="w-full cursor-not-allowed rounded-xl bg-[#F2F4F7] py-4 text-base font-bold text-[#B0B7BF] dark:bg-[#1A1F24] dark:text-[#4E555C]"
+        className="w-full cursor-not-allowed rounded-full bg-[#F2F4F7] py-3 text-sm font-bold text-[#B0B7BF] dark:bg-[#1A1F24] dark:text-[#4E555C]"
       >
         Invite by email
       </button>
@@ -68,8 +68,8 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2">
         <input
           type="email"
           required
@@ -77,12 +77,12 @@ export function InviteForm({ seatsRemaining }: InviteFormProps) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={phase === 'loading'}
-          className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-4 text-base text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
+          className="w-full rounded-full border border-[#E5EEF5] bg-white px-4 py-3 text-sm text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/30 disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
         />
         <button
           type="submit"
           disabled={phase === 'loading'}
-          className="w-full rounded-xl bg-black py-4 text-base font-bold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
+          className="w-full rounded-full bg-black py-3 text-sm font-bold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
         >
           {phase === 'loading' ? 'Sending…' : 'Invite by email'}
         </button>

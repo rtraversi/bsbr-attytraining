@@ -171,7 +171,23 @@ export default async function DashboardPage() {
   const certifiableMembers = memberDetails.filter(hasTrainingAccess)
   const certifiedCount = certifiableMembers.filter(m => m.trainingStatus === 'passed').length
   const totalCount = certifiableMembers.length
-  const complianceScore = totalCount > 0 ? Math.round((certifiedCount / totalCount) * 100) : 0
+  // Was Math.round, which let 199/200 render as "100%" — and 100 is the one
+  // number on this card that is a claim rather than a measurement (it drives the
+  // gold state and the "Fully certified" band). Floor instead, so 100 is
+  // reachable only by certifiedCount === totalCount, stated explicitly here
+  // rather than left to depend on floor's behaviour.
+  //
+  // The floor has the mirror problem at the bottom — 1/101 floors to 0 and would
+  // read "Not started" with somebody already certified — so 0 is guarded the
+  // same way: it means nobody, and anything above nobody is at least 1%.
+  const complianceScore =
+    totalCount === 0
+      ? 0
+      : certifiedCount === totalCount
+        ? 100
+        : certifiedCount === 0
+          ? 0
+          : Math.max(1, Math.floor((certifiedCount / totalCount) * 100))
 
   const seatsUsed = seats?.used_seats ?? 0
   const seatsTotal = seats?.max_seats ?? firm?.max_seats ?? 0
