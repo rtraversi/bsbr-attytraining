@@ -10,17 +10,27 @@ behind it, so no future session needs the conversation it came out of.
 
 ## What this is, and what it is not
 
-**It is an instrument for a human drafter.** Katy writes every policy by hand. There is no
-generator, no template engine, and no model reads these answers. The intake exists to give her a
-complete, unambiguous picture of one firm in one pass, so she can decide which modules ship as
-prepared template text and which need bespoke drafting.
+**It is an instrument for a human drafter.** ⚠️ **Amended 2026-08-27 (Max): a deterministic
+assembler is now in scope.** Intake answers select prepared module text and fill fixed slots. It is
+mechanical: no model, no inference, no generated prose. **Katy still reviews and signs off every
+policy before it is delivered**, and she still decides which modules ship as prepared text and which
+need bespoke drafting. What changed is that she starts from an assembled draft instead of a blank
+page.
+
+The original line read: *"Katy writes every policy by hand. There is no generator, no template
+engine, and no model reads these answers."* The first two clauses are superseded. **The third is
+not.** See below.
+
+The intake exists to give her a complete, unambiguous picture of one firm in one pass.
 
 That framing decides every design argument in here. A question earns its place if the answer tells
 Katy something she can act on, or saves her a round-trip with the firm. Nothing else.
 
 **🔴 Intake answers are never sent to a model.** Not for summarising, not for classification, not
-for drafting assistance. Confirmed by Max 2026-08-26. Any future feature that wants to must be
-expressly approved by Katy first, and that is an unlikely scenario, not a formality.
+for drafting assistance. Confirmed by Max 2026-08-26, **and unchanged by the 2026-08-27 amendment
+above**: the assembler is deterministic, so it needs no model and this rule costs it nothing. Any
+future feature that wants to must be expressly approved by Katy first, and that is an unlikely
+scenario, not a formality.
 
 ---
 
@@ -57,6 +67,7 @@ expressly approved by Katy first, and that is an unlikely scenario, not a formal
 | 2026-08-26 | Max | **Reverses flag-never-block.** The roster is CAPPED at the seats purchased. Attorneys are unlimited and never consume a seat. |
 | 2026-08-26 | Max | Email deliverability is tracked for the admin and the roster, and never blocks anything. |
 | 2026-08-26 | Max | `scripts/dev-auth.mjs` — a local tool, staging only, because a dev-mode route ships and a script does not. |
+| 2026-08-27 | Max | **A deterministic policy assembler is in scope**, amending "no generator, no template engine" above. Answers select prepared module text and fill fixed slots. No model, no generated prose. Katy reviews and signs off every policy. **She has not been told yet.** |
 
 ### Corrections applied to Katy's refined question list
 
@@ -482,6 +493,20 @@ Listed so nobody assumes they were forgotten:
 - The attorney/seat split in `lib/seats.ts` and the `sync_used_seats` trigger from migration 0015.
   `is_attorney` lands here; making it change what a seat costs is its own batch, because access and
   billing currently derive from one predicate on purpose.
+
+  🔴 **Found 2026-08-27: deferring the split is not neutral, it is currently a defect.** Promote
+  sets `occupies_seat: !isAttorney`, and `hasTrainingAccess` in `lib/seats.ts` is
+  `occupies_seat === true && status in ('invited','active')`. **So an attorney promoted through the
+  intake cannot reach the training at all.** If they are the firm admin, `canSelfEnroll` offers them
+  the enrol button, which sets `occupies_seat: true` and **consumes a seat**, which is the exact
+  outcome the cap exists to prevent. If they are not an admin, it is a dead end with no button.
+  This contradicts Katy 2026-08-25 11:57: attorneys never consume a seat **and use the training for
+  free**. The branch delivers the first half and breaks the second.
+
+  The 192 tests do not catch it: `tests/intake-promote.test.ts` asserts exactly this inverse
+  relationship, and nothing tests `hasTrainingAccess` or `canSelfEnroll` at all. The fix is to split
+  the one predicate into "may train" and "costs a seat", move the 0015 trigger with it, and cover
+  the two invite routes and `enroll-self`, none of which accept an attorney flag today.
 - Automatic invite sending from the roster.
 - Firm-level accreditation state.
 - E-signed attestation of the policy.
