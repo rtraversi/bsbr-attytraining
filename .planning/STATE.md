@@ -238,22 +238,24 @@ dated before 2026-08-24 that pitches Rule 5.3 is superseded by this.**
   The migration carries a red-flagged comment. Do not add a policy.
 - 🔴 **`auth.users.email_confirmed_at` is not a deliverability signal.** Every creation path passes
   `email_confirm: true`, so it is true for everybody. A test fails if anyone tries to use it.
-- **A deterministic policy assembler is in scope (Max, 2026-08-27).** Answers select prepared
-  module text and fill fixed slots. No model, no inference, no generated prose. **Katy reviews and
-  signs off every policy.** This amends `intake-spec.md`, which read "there is no generator, no
-  template engine". ⚠️ **Katy has not been told**, and the original framing was hers.
-  🔴 **The rule that intake answers are never sent to a model is UNCHANGED** and is not negotiable
-  without her express approval.
-- 🔴 **Open defect on `policy-intake`: attorneys cannot reach the training.** `lib/seats.ts` makes
-  `occupies_seat` both the billing predicate and the access predicate, deliberately, so the two
-  cannot drift. Promote sets `occupies_seat: !isAttorney`, so an attorney promoted through the
-  intake fails `hasTrainingAccess`. An attorney **admin** is offered self-enrolment, which sets
-  `occupies_seat: true` and consumes a seat; a non-admin attorney gets a dead end. Katy's rule
-  (2026-08-25 11:57) is that attorneys never consume a seat **and train for free**. The 192 tests
-  do not catch it: `tests/intake-promote.test.ts` asserts the inverse relationship and nothing tests
-  `hasTrainingAccess`. Fixing it means splitting the predicate into "may train" and "costs a seat",
-  moving the `sync_used_seats` trigger from 0015 with it, and covering both invite routes plus
-  `enroll-self`, none of which accept an attorney flag.
+- **A deterministic policy assembler is in scope. Katy asked for it (2026-08-26), reversing her own
+  "no generator" line in `intake-spec.md`.** Algorithmic, not LLM-interpreted: answers select
+  prepared module text and fill fixed slots. The economics decide it, bespoke drafting at roughly
+  $200/hour against a product priced near $100/year. Her research doc already assumed generation on
+  2026-08-20. 🔴 **The rule that intake answers are never sent to a model is UNCHANGED.**
+- **Katy's seat and certificate rules, 2026-08-27 06:53 to 06:56:** 5 non-attorney staff + 2
+  attorneys = 5 seats. Contractors and part-timers are deliberately unaddressed, at the firm's
+  discretion. *"attorneys can go through the training whenever they want as much as they want but
+  they don't get certificates but the staff get certificates."* *"the training program itself
+  shouldn't be gated it's just the certificate really."*
+- 🔴 **Open defect on `policy-intake`: attorneys cannot reach the training.** `hasTrainingAccess` is
+  `occupies_seat === true && status in ('invited','active')`, and promote sets
+  `occupies_seat: !isAttorney`. An attorney admin is offered self-enrolment, which consumes a seat;
+  a non-admin attorney gets a dead end. Under Katy's rules the fix is to **stop gating training**
+  (`app/dashboard/training/page.tsx:73`), drop the self-enrolment flow that only existed because
+  access was seat-gated, and **add the gate nothing has today: no code reads `is_attorney` before
+  queueing a certificate**, so an attorney who passes the quiz is issued one. Full breakdown in
+  `intake-spec.md` under "Not in this build".
 - 🔴 **Promote is not one transaction and cannot be** (GoTrue admin API calls cannot sit inside a
   `BEGIN`). Every step is idempotent and the status flip happens **last**, so a half-finished
   promote leaves the intake open and pressing Send again completes it.
