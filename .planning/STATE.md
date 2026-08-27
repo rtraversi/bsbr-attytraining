@@ -166,6 +166,9 @@ Context for whoever picks this up: the app currently runs on `#0094FF` / `#32C7F
   `price_1TjNHc6ZCSojEKRrKs79ToJ0` / `prod_UiovBHrxJSDVpf` on sandbox `acct_1ThDpr6ZCSojEKRr`,
   which has exactly one active product and one active price. Verifying it surfaced three further
   deltas now recorded in CLAUDE.md §4 and flagged under Stripe live mode below.
+  ⚠️ **Superseded 2026-08-27** — those are the *sandbox* objects. Production charges through live
+  account `acct_1ThDpU5md3Gcv1Z1`: `prod_V6NwTwWVBDkz7R` / `price_1U6BAj5md3Gcv1Z13Rx9qQll`.
+  All three deltas are closed. See CLAUDE.md §4.
 - **`.planning/ROADMAP.md` Progress table still reads "Not started" for all six phases** and its
   Phase 4 fallback still references Puppeteer-in-n8n (n8n is out of scope). Cosmetic; low priority.
 - **`.planning/DEPLOY-CHECKLIST.md`** is a 2026-06-17 artifact describing the first deploy. Its

@@ -161,7 +161,13 @@ half-migrated system nobody notices.
 
 This sequence cuts the live application from staging to the clean PROD project while rotating the
 Database Webhook shared secret. It does **not** enable Stripe live mode; `ix-stripeaudit` remains a
-separate launch gate. Record only identifiers, timestamps, versions and redacted command output in
+separate launch gate.
+
+> ⚠️ **Superseded 2026-08-27.** Both halves of that sentence are now out of date: **Stripe live
+> mode was enabled on 2026-08-19** and `ix-stripeaudit` is **closed**. Live keys are in the deployed
+> Worker, a real card has been charged and refunded, and Stripe Tax is active. The rest of this
+> plan's sequencing still stands — only the "Stripe is not live" premise does not. See `CLAUDE.md`
+> §4 and `OPEN-ISSUES.md` #6/#7. Record only identifiers, timestamps, versions and redacted command output in
 the evidence log — never commit a service-role key or webhook secret.
 
 ### 0. Change control and recovery point
@@ -467,3 +473,26 @@ certificate PDF `IX-20260814-4129.pdf`. **This was the first `--confirm` run aga
 Previously verified 2026-08-07 by dry-running the script against a staging firm (`Ithica & Co`, 24
 `training_events`, 4 members, 4 auth users, 1 enrollment, 1 seat) and against a deliberately
 mismatched `--project-ref`, which refused.
+
+**Executed again 2026-08-27 (Rob + terminal-Claude) — the live purchase, not a seed.** Firm
+`d3eab4a9-f36d-4c73-ba2d-305426dee0f8` ("Katy Chavez Law"), created 2026-08-19 by a **real $37.54
+card charge** on live Stripe, purged with `--confirm`. Dry run and live run matched exactly and
+matched an independent read of the database: 0 storage objects, 0 `training_events`, then the firm
+cascade of **1 seat, 1 firm_member, 1 firm**, then **1 auth.user**. Everything else was already
+zero. Baseline was taken before step 1, per the rule above.
+
+Close condition met — every table back to zero: `firms`, `firm_members`, `seats`, `enrollments`,
+`quiz_sessions`, `quiz_attempts`, `certificates`, `cert_generation_queue`, `training_events`,
+`auth.users`, Storage. `courses` (1) and `quiz_questions` (**58**) untouched.
+
+> 📌 **`processed_stripe_events` went 7 → 8, and that is correct.** Cancelling the Stripe
+> subscription immediately before the purge fired `customer.subscription.deleted`; the **live** prod
+> webhook processed it two seconds later (`evt_1U99KS5md3Gcv1Z15goDQ6tO`), which is why the purge
+> script read the firm as `status=cancelled` rather than `active`. Anyone re-checking this later
+> should expect 8, not the 7 in the baseline. The row is retained deliberately — removing it would
+> let a replayed webhook re-provision the firm.
+
+**Order of operations that mattered:** cancel the Stripe subscription *first*, then purge. The
+refund issued on 2026-08-19 had **not** cancelled the subscription — refunds and subscriptions are
+separate objects — so it was still `active` and would have billed again on 2027-08-19. Purging the
+firm without cancelling first would have left a live subscription with no firm behind it.

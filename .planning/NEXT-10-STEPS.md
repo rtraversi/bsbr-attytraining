@@ -174,6 +174,9 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
 > matched the code. Read live from the Stripe API against sandbox `acct_1ThDpr6ZCSojEKRr`, which has
 > exactly one active product and one active price. Note three fields differ from what was written
 > down: no lookup_key, no tax_code, and `tax_behavior=unspecified` rather than `exclusive`.
+>
+> ⚠️ **Superseded 2026-08-27.** The two bullets below describe **sandbox** objects and are kept
+> only as a record. Production charges through the **live** account — see the live-mode block below.
 
 - [x] 1 Product created:
   - `prod_UiovBHrxJSDVpf` — "AI Staff Compliance Training — Annual Certification" — `tax_code`: **not set** · `metadata`: **empty** *(previously recorded as `prod_UgzKT3NrGNAvDA` with `pricing_model=per_seat_volume`, `tax_code=txcd_20060058`)*
@@ -184,14 +187,23 @@ Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps
 - Products: `prod_UgyZjCbV9uJdzX` ("Up to 5 Seats") / `prod_UgyZ7rqNgXZYao` ("6–15 Seats") / `prod_UgyZ30zgvigsd6` ("16+ Seats")
 - Prices: `price_1ThachCzT2268ei9HlR1YivD` (`basic_annual` $199) / `price_1ThaciCzT2268ei9tooaKk8j` (`standard_annual` $349) / `price_1ThaciCzT2268ei9MRI94R1i` (`pro_annual` $499)
 
-**Remaining — live mode [ ]:**
+**Live mode — ✅ ALL DONE, verified against the Stripe API 2026-08-27.**
+Live account `acct_1ThDpU5md3Gcv1Z1`:
 
-- [ ] Rob: provide BSBR Holdings LLC head_office address (Stripe dashboard → Settings → Tax, or via API) to activate Stripe Tax — currently PENDING; this is blocking the live-mode connection
-- [ ] Rob: complete home-state sales-tax registration (+ CPA consult on multi-state SaaS sales tax) before switching to live mode
-- [ ] Recreate the single product + volume-tiered price in LIVE mode before launch — only after Stripe Tax is enabled. ⚠️ The sandbox price has **no lookup_key**, so "scriptable via `per_seat_annual`" was never true. **Set a lookup_key on the live objects** so the live price has a stable handle and the hardcoded ID at `app/api/checkout/route.ts:17` can stop being the only reference.
-- [ ] **Set `tax_behavior` explicitly** (`inclusive`/`exclusive`) and **a `tax_code` on the product** when creating the live objects. The sandbox has neither, while `app/api/checkout/route.ts:68` already enables `automatic_tax`.
-- [ ] **Rename the Stripe product.** It still reads "AI Staff Compliance Training — Annual Certification", the retired course name, and it renders on the hosted Checkout page and every invoice. Not a source string, so no grep in the rename sweep could catch it.
-- [ ] Swap the hardcoded `PRICE_ID` at `app/api/checkout/route.ts:17` (currently the sandbox `price_1TjNHc6ZCSojEKRrKs79ToJ0`) for the live-mode price
+- [x] Stripe Tax activated — head office Garner NC
+- [x] NC sales-tax registration `taxreg_1U6B2M5md3Gcv1Z1r6EWlpt2` (`state_sales_tax`). *CPA consult on multi-state SaaS sales tax is still worth doing, but it is no longer a launch blocker.*
+- [x] Live Product `prod_V6NwTwWVBDkz7R` + live volume-tiered Price `price_1U6BAj5md3Gcv1Z13Rx9qQll`, tiers verified $35 / $32 / $28
+- [x] `lookup_key: per_seat_annual` set on the live Price
+- [x] `tax_behavior: exclusive` (2026-08-27, **one-way**) and `tax_code: txcd_20060058` on the product
+- [x] Product renamed to "Iurix Accreditation — Annual Certification"
+- [x] ~~Swap the hardcoded `PRICE_ID`~~ — **obsolete.** There is no hardcoded price ID any more; `lib/stripe-price.ts` resolves by lookup key. The line this pointed at no longer exists.
+- [x] Live webhook endpoint `we_1U6FJr5md3Gcv1Z1d2MEOvcY` on `iurixaccreditation.com`, enabled
+
+**Live money has already moved:** a real $37.54 charge on 2026-08-19, refunded, subscription
+cancelled 2026-08-27, and the prod firm it created purged the same day.
+
+**Still open:** move the payout bank account to the LLC's; set the statement descriptor back to
+`IURIX ACCREDITATION`; product `metadata` is still empty (cosmetic).
 
 ---
 

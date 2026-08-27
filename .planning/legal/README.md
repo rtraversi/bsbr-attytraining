@@ -73,7 +73,7 @@ Four consequences worth knowing, because they are the substance of the adaptatio
 |---|---|---|
 | 1 | **Contact addresses.** Every document needs them: privacy, security, legal, billing, accessibility, AI concerns. Currently `[TBD]` throughout | All four |
 | 2 | **Postal address.** Do not reuse IurisIQ's PO Box | All four |
-| 3 | **Entity structure.** Is this "BSBR Holdings, LLC d/b/a Iurix," or is Iurix becoming its own LLC? This changes the attribution line in all four documents | All four |
+| ~~3~~ | ~~**Entity structure.**~~ ✅ **RESOLVED 2026-08-27 (Rob): "BSBR Holdings, LLC d/b/a Iurix."** BSBR Holdings LLC is approved, EIN issued, and registered with Stripe as a **multi-member LLC (Rob and Katy)**. Iurix is **not** becoming its own entity. The attribution line already reads "BSBR Holdings, LLC d/b/a Iurix" in all four documents plus the app footer — **no change needed** | All four |
 | ~~4~~ | ~~**Was AI used to author the course content?**~~ ✅ **RESOLVED 2026-07-28 (Rob): no AI was used.** Curriculum designed and outline approved by a licensed attorney; content authored by an employee from that approved outline. Written into the policy as a positive provenance statement | AI policy §1 |
 | 5 | **Governing law / venue.** North Carolina is presumed but unconfirmed | Terms §15 |
 | 6 | **Cancellation notice period** for annual renewal | Terms §5 |
