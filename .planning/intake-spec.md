@@ -80,6 +80,7 @@ scenario, not a formality.
 | 2026-08-27 06:54 | Katy | Contractors, part-time and occasional people are **deliberately left unaddressed**, at the firm's discretion, for now. |
 | 2026-08-27 06:56 | Katy | *"attorneys can go through the training whenever they want as much as they want but they don't get certificates but the staff get certificates."* |
 | 2026-08-27 06:56 | Katy | *"the training program itself shouldn't be gated it's just the certificate really."* And: *"we don't want it to be hard for people to go back and review the material either."* |
+| 2026-08-27 | Max | **A firm can read back its own intake from Settings**, as a new heading there: the questions and the answers it gave. It stays available until the purge, and the purge wipes it. Answers survive as long as they already do, no longer. |
 
 ### Corrections applied to Katy's refined question list
 
@@ -517,6 +518,23 @@ contradict Katy's reversal directly.
 admin API, which no `BEGIN` can enclose. What it is instead: every step idempotent, and the session
 flipped to `submitted` **last**. A promote that fails halfway leaves the intake open, the firm
 presses Send again, and the second run skips what already exists and finishes the rest.
+
+**Readable by the firm before the purge — added 2026-08-27 (Max)**
+
+A submitted intake is visible to the firm under a new heading in **Settings**: the questions as
+asked and the answers as given. It is their own account of their own firm and there is no reason to
+withhold it.
+
+Three constraints whoever builds it has to hold:
+
+- 🔴 **`intake_sensitive` is excluded.** `prior_ai_error` and `carrier_notified` are Katy's eyes
+  only and this screen is firm-facing. The rule above is unchanged: never rendered in a firm-facing
+  screen, never in the dashboard, never in any export except Katy's. The firm answered them; that
+  does not put them on this page.
+- **Admin only.** It carries firm-level disclosures. Staff have no business in it.
+- **It disappears with the purge**, which is the whole lifecycle below. There is no separate
+  retention: the screen reads what is there, and after the purge there is nothing there. It should
+  say so plainly rather than rendering an empty page.
 
 **Retained after purge, as a receipt**
 
