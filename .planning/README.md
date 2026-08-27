@@ -48,6 +48,11 @@ They have invented them before.
 - `DATA-INVENTORY.md`: every field, read out of the schema. Privacy, Cookies and the DPA are
   written from this so they cannot contradict each other.
 - `intake-spec.md`: the policy intake specification.
+- `AI-Policy-Research-2026-08-20.docx`: **Katy's research document, and the source of the policy
+  template.** It carries the intake questions for all 23 modules (A to W), the drafted policy
+  sections under "ACTUAL POLICY Elements required", her reference material, and a glossary. The
+  `.txt` alongside it is a `textutil` transcription, committed so the content is greppable and
+  diffable; the `.docx` is the source of truth. It lived only in `~/Downloads` until 2026-08-27.
 - `question-bank.xlsx`: source of truth for the certification questions. `QUESTION-POOL.md` is the
   working notes; the migration is generated from the spreadsheet, not hand-edited.
 - `MARKETING.md`, `legal/`, `design-handoff/`, `redesign-mockups/`, `intake-mockup/`, `research/`.
