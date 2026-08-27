@@ -1,77 +1,69 @@
 # Session Handoff
 
-**Date:** 2026-08-27
+**Date:** 2026-08-27 (second session)
 **Who:** Max, with terminal-Claude
 
-> ✅ **The deploy claim that was wrong in this file for three days is now correct.**
-> All of 2026-08-24 — the framing correction, Terms, Privacy — **has been live since 2026-08-24
-> 19:34:58Z**, deployed from `2efec949` with the workflow's own production smoke test passing.
-> `/dpa` 404s in production **by design** (`app/dpa/page.tsx` calls `notFound()` there).
->
 > 🔴 **Deploy status is only ever answered by the workflow list**, never by commits or timestamps:
 > ```bash
 > gh run list --workflow=deploy.yml --limit 15 \
 >   --json event,conclusion,createdAt,headSha,displayTitle
 > ```
 > A `push` run is a **preview**. Only an `event: workflow_dispatch` run whose "Deploy to production"
-> step succeeded actually shipped. See `.planning/STATE.md` §1.
+> step succeeded actually shipped. **Nothing has shipped since 2026-08-24 19:34:58Z.** See
+> `.planning/STATE.md` §1.
 
 ---
 
 ## What happened today
 
-**Three things: the setup notices became chips in the nav pill, the two UI batches finally merged,
-and the attorney seat/certificate defect was fixed.**
+**The seat cap's failure mode was inverted, the post-payment path got a walkthrough, and the
+Invitations card was emptied into two dialogs.**
 
 ```
 main
- └── policy-intake   263cf80  setup notices become chips in the nav pill
-                     b43324d  merge: ui-polish-batch-b into policy-intake
-                     05e2d74  separate navigation and setup chip colours
-                     93a92eb  open course access and gate certificates
-                     6285e15  classify attorneys without consuming seats
+ └── policy-intake   6be0bee  tell an unknown seat count apart from a seat count of zero
+                     3bab062  walk the buyer from payment to a submitted intake
+                     074d414  move the Invitations explanations into dialogs
+                     ef38348  size the Invitations controls to the row track
+                     820432f  docs(intake-spec): read your intake back from Settings  ← other session
 ```
 
-**All five pushed.** `policy-intake` is in sync with `origin`. `tsc` 0, `eslint` 0 errors (4
-pre-existing `no-img-element` warnings), `next build` clean, **195 tests across 15 files** (was 192
-across 14).
+⚠️ **`820432f` came from a parallel Claude session**, not this one — a spec addition only, no code.
 
-**`ui-polish-batch-a` and `-b` are now merged** and can be deleted.
+All pushed. `tsc` 0, `eslint` 0 errors (4 pre-existing `no-img-element` warnings), `next build`
+clean, **197 tests across 15 files** (was 195).
+
+🔴 **Run the suite as `npx dotenv -e .env.local -- vitest run`** (what `pnpm test` wraps). Bare
+`npx vitest run` fails five files on missing env and looks like a regression.
 
 ---
 
 ## Read these three first
 
-**1. The nav bar has a colour rule now: blue is where you can go, amber is what you owe.** Nav pills
-are blue-family; both setup chips are amber-family, so status stops competing with navigation.
+**1. `seatsPurchased()` used to answer `0` for "the read failed" AND for "they bought none", and
+both callers read `0` as "no cap".** The one condition under which the cap could not check a roster
+was the one condition under which it waved everything through — a firm could roster unlimited staff,
+submit, and promote past its seat count.
 
-🔴 **Two light-mode pairings knowingly fail WCAG AA.** Max's call, made with the numbers in front of
-him, recorded in a red-flagged comment above `pillActive` so nobody quietly "fixes" it:
+It now returns `number | null`, and the two callers **deliberately disagree** about `null`: the
+roster screen stays permissive (nobody gets a dead form because a query was slow), and
+`POST /api/intake/submit` **refuses with 503** because it is what writes the auth users and the
+`firm_members` rows. The refusal has its own message — not the over-seats copy, which would tell a
+firm inside its seats to go and spend money it did not need to.
 
-| Pairing | Ratio | needs 4.5:1 |
-|---|---|---|
-| White on `#0094FF` — active / Dashboard pill | 3.14:1 | ✗ |
-| `#0094FF` on `#EAF6FF` — Training / Support / Settings | 2.86:1 | ✗ |
+**A known `0` is now a real cap.** That case used to be invisible.
 
-**Do not resolve this by moving the brand token.** `#0094FF` is `--brand-emphasis` and the palette
-does not move without Max saying so. The compliant near-miss keeps the look exactly and changes only
-this pill's ground: white on `#0077CC` = 4.66:1, `#0068B3` on `#EAF6FF` = 5.27:1.
+**2. The attorney checkbox's real defect was not that it was ugly — unchecked was an answer, and it
+was the expensive one.** Not ticking it spent a seat, on a firm capped at the seats it bought. The
+replacement dialog **preselects nothing** and keeps Send disabled until the firm says. It also has
+room to say the half the checkbox could not: an attorney uses no seat **and is issued no
+certificate**.
 
-Fixed on the way: the amber chip text (`#96700F` was 4.04:1 → `#7A5C0C` at 5.55:1) and dark-mode
-idle labels (4.45:1 → 5.64:1).
-
-**2. `hasTrainingAccess` no longer exists.** Katy, 2026-08-27 06:56: *"the training program itself
-shouldn't be gated it's just the certificate really."* Training is open to everyone; `is_attorney` is
-now read before the `cert_generation_queue` insert in **both** `api/certs/generate` and
-`api/certs/drain`, so an attorney who passes the quiz gets no certificate. `canSelfEnroll`,
-`no-seat-notice.tsx`, `enroll-self-button.tsx` and `api/firm/enroll-self` are **deleted** — they
-existed only because access was seat-gated. `occupies_seat` is billing only; the surviving predicate
-is `isCertifiableMember` in `lib/seats.ts`.
-
-**3. The chips render on EVERY `/dashboard` route, not just the admin home** — the pill lives in
-`app/dashboard/layout.tsx`. Deliberate: the intake chip is the only thing that ever gets the intake
-completed, so following the admin around is the point. Costs three indexed queries per route for
-admins; the GoTrue lookup runs only for already-flagged members, which is normally zero.
+**3. The Invitations card is now a fixed ~140px budget.** It scrolled permanently at rest because
+three `py-3` controls plus `gap-2` came to ~148px. Now ~116px. **Anything added back comes out of
+the same budget** — that is why both explanations live in dialogs and not on the card. The
+line-height is pinned (`text-[13px]/[18px]`) because an arbitrary Tailwind font size sets only
+font-size and the `normal` that fills in differs between an `<input>` and a `<button>`.
 
 ---
 
@@ -79,11 +71,10 @@ admins; the GoTrue lookup runs only for already-flagged members, which is normal
 
 | Thing | State |
 |---|---|
-| `policy-intake` | 5 commits today, pushed, in sync |
-| `ui-polish-batch-a` / `-b` | **merged** — safe to delete |
-| Tests / `tsc` / `eslint` / `next build` | all clean |
+| `policy-intake` | 4 commits this session, **pushed**, in sync |
+| Tests / `tsc` / `eslint` / `next build` | all clean — 197 tests, 15 files |
 | Deployed? | ❌ **No `workflow_dispatch` since 2026-08-24** |
-| Nav pill + `/intake` in a browser | ❌ **never seen** |
+| Any of today's UI in a browser | ❌ **never rendered** |
 | 0028 + 0029 on PROD | ❌ staging only |
 | `Intake-uploads` bucket on PROD | ❌ does not exist |
 | Rise 360 content | still not authored |
@@ -92,33 +83,37 @@ admins; the GoTrue lookup runs only for already-flagged members, which is normal
 
 ## Next steps
 
-1. 🔴 **`0028` and `0029` onto PROD, and create `Intake-uploads` there.** Still the real blocker: the
-   code reaches production through CI, the database it lands on does not. Capital I, case-sensitive,
-   unrenameable, and no migration can create it. **Relink the CLI to staging in the same session.**
+1. 🔴 **`0028` and `0029` onto PROD, and create `Intake-uploads` there.** Still the real blocker:
+   the code reaches production through CI, the database it lands on does not. Capital I,
+   case-sensitive, unrenameable, and no migration can create it. **Relink the CLI to staging in the
+   same session.**
 2. **Merge `policy-intake` to `main`, then run a production `workflow_dispatch`.** Pushing to `main`
    builds a preview only.
-3. **Open the nav pill and `/intake` in a browser.** Neither has ever rendered anywhere.
-4. **Decide the two AA failures with Rob** now that the look exists to judge.
-5. **`.planning/STATE.md` §3 and §5 are stale as of today** — they list `policy-intake` at +6, the UI
-   batches as unmerged, and the attorney defect as open. It lives on `main`; fix it there when this
-   merges rather than forking it here.
+3. **Open all of today in a browser.** Four surfaces have never rendered: the intake introduction,
+   the invite dialog, the CSV dialog, and the resized Invitations card. The card fit has only been
+   measured on paper, and it is the whole point of `ef38348`.
+4. **Decide the two known nav-pill AA failures** with Rob.
+5. **`.planning/STATE.md` §3 and §5 are stale.**
 
 ---
 
 ## Open questions
 
-1. **Nothing sends invites from the roster.** Promote creates `firm_members` rows as `invited` and
-   deliberately sends nothing. The dashboard action is unbuilt.
-2. **The purge does not exist.** 0028 has the columns and the backstop index; the route, the audit
-   row and the 30-day cron do not. Katy's `.docx` export is unbuilt.
-3. **The admin's own address cannot self-clear** from the deliverability chip. While Resend 403s
-   (`ix-dnszoho`), an operator hands them a link with `scripts/dev-auth.mjs verify-link`.
-4. **Removing the chips' ring removed the only non-chromatic cue** separating a chip from a nav
-   pill — the two grounds sit at 1.02:1, so it is hue alone now. Fine in normal vision, weak under a
-   red-green deficiency. If revisited, the lever is a **shape** difference, not a darker amber.
-   `CHIP_QUIET` in `setup-notices.tsx` is a border-free quieter variant, one line to switch.
-5. **Katy still owes:** `lib/intake/questions.ts` (guessed K/K/L module letters, invented section
-   grouping), the 50-question bank review, and Privacy §2/§5, which have no category covering intake
-   answers.
+1. 🔴 **`/api/invite/bulk` still discards the `name`.** The new CSV dialog tells firms how to write
+   the name column; the route creates the auth user from the email alone and never writes
+   `user_metadata.full_name`, and cert generation falls back to the email address. A certificate can
+   still be made out to `paralegal@firm.com`. The copy stops short of promising the name reaches the
+   certificate, but the gap is real — it is the batch-4 obligation in `intake-spec.md` under "The
+   roster wins on names".
+2. **Was deleting `out-of-seats-notice.tsx` right?** Its text moved onto the staff option in the
+   invite dialog, which is better placement, but it was a component Max had made specific calls on
+   ("deliberately NOT styled as a warning at rest"). One revert away.
+3. **Nothing sends invites from the intake roster.** Promote creates `firm_members` rows as
+   `invited` and deliberately sends nothing.
+4. **The purge does not exist**, and the Settings read-back spec'd in `820432f` is defined as being
+   available *until* the purge — so it now has a second thing depending on it.
+5. **`firms.onboarding_dismissed` (0008) is read by nothing** since the checklist was deleted. Left
+   in place on purpose; a column drop is a migration against two databases for no benefit.
+6. **Katy still owes:** `lib/intake/questions.ts`, the 50-question bank, Privacy §2/§5.
 
-**Full detail:** `.planning/sessions/20260827-max-summary.md`.
+**Full detail:** `.planning/sessions/20260827b-max-summary.md`.
