@@ -5,7 +5,6 @@ import { TeamProvider, ManageTeamPanel, type MemberDetail } from './team-table'
 import { ComplianceScore } from './compliance-score'
 import { CertificationForecast } from './certification-forecast'
 import { ResendInviteAction } from './resend-invite-modal'
-import { OutOfSeatsNotice } from './out-of-seats-notice'
 
 const CARD = 'rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
 const HEADING = 'font-headline text-2xl md:text-3xl font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
@@ -139,10 +138,23 @@ export function AdminDashboard({
                 the excess inside the card. */}
             <section className={`flex flex-col ${CARD}`}>
               <h2 className={`${HEADING} mb-3`}>Invitations</h2>
+              {/*
+                🔴 THREE CONTROLS, NOTHING ELSE (Max, 2026-08-27). The card had
+                the field, an attorney checkbox, two buttons, a CSV format hint
+                and an out-of-seats disclosure "clunked in there". Both
+                explanations now live in dialogs opened by the buttons they
+                belong to — invite-form.tsx and csv-upload-form.tsx — which is
+                where there is room to say what they mean.
+
+                OutOfSeatsNotice went with them: its text is in the invite
+                dialog, on the staff option, at the moment somebody is choosing
+                it. That is strictly better placement than a disclosure on a
+                card, and it is why the component itself is deleted rather than
+                merely unrendered.
+              */}
               <div className="flex flex-col gap-2 lg:min-h-0 lg:flex-1 lg:justify-center-safe lg:overflow-y-auto">
                 <InviteForm seatsRemaining={seatsRemaining} />
                 <CsvUploadForm seatsRemaining={seatsRemaining} />
-                {seatsRemaining <= 0 && <OutOfSeatsNotice />}
               </div>
             </section>
           </div>
