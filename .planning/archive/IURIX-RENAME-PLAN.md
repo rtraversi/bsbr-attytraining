@@ -1,3 +1,8 @@
+> **ARCHIVED 2026-08-27.** Executed. See RENAME-IURIX.md alongside this file.
+> Historical record only. Do not cite it for current status: that lives in `.planning/STATE.md`.
+
+---
+
 # Plan — Rename the training platform to IURIX
 
 ## Context

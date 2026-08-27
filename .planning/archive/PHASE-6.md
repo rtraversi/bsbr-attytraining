@@ -1,3 +1,8 @@
+> **ARCHIVED 2026-08-27.** Planned against a July 20 go-live that did not happen. .planning/ROADMAP.md is the live plan.
+> Historical record only. Do not cite it for current status: that lives in `.planning/STATE.md`.
+
+---
+
 # Phase 6 — Launch Polish & QA
 
 **Target:** July 20 go-live  

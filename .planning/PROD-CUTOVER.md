@@ -1,3 +1,23 @@
+> 🔴 **Status correction, 2026-08-27. The header below is out of date in the one way that matters.**
+>
+> It says "Nothing points at it yet: production still runs on IURIX STAGING." **That is no longer
+> true.** Production runs on **IURIX PROD (`ttqthtzdjacrhjtrcmmy`)**, verified 2026-08-27 by reading
+> `NEXT_PUBLIC_SUPABASE_URL` out of the live `/login` bundle: exactly one Supabase host appears and
+> it is PROD. The cutover happened, Phase A, 2026-08-13.
+>
+> ⚠️ **This file stops at `0025` and it is not the last word.** `0026` and `0027` were pushed to
+> PROD on **2026-08-19**; the record of that is in `.planning/sessions/20260819-max-summary.md`,
+> which states "PROD and staging both at migration 0027". Reading this file alone gives the wrong
+> answer, and did on 2026-08-27.
+>
+> **PROD is at `0027`. Local and STAGING are at `0029`.** Not on PROD: `0028` (the intake schema)
+> and `0029` (email deliverability). The `Intake-uploads` Storage bucket also exists on STAGING
+> only. See `STATE.md` §2.
+>
+> **When a migration is pushed to PROD, record it here in the same session.** Nothing else tracks it.
+
+---
+
 # PROD database cutover
 
 **Written:** 2026-08-05 (Rob + Claude, terminal) · **Tier 1 plan revised:** 2026-08-06

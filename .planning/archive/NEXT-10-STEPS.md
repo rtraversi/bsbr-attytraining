@@ -1,3 +1,8 @@
+> **ARCHIVED 2026-08-27.** A dev-onboarding checklist written 2026-06-12. Every step in it is long done; it still described Step 6 as in progress, Step 7 as unverified and Step 10 as not started, and it was being read at the start of every session.
+> Historical record only. Do not cite it for current status: that lives in `.planning/STATE.md`.
+
+---
+
 # Next 10 Steps — AI Compliance Training Platform
 
 Onboarding checklist for Max (and Rob where noted). Replaces the "First 10 Steps" spreadsheet.

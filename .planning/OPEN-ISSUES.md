@@ -1,3 +1,10 @@
+> ⚠️ **Snapshot from 2026-08-05, not a live list (checked 2026-08-27).** Written the day the
+> redesign went to production. It predates the PROD database cutover, the framing correction, the
+> published Terms and Privacy, the 50-question bank, and the entire policy intake. Some items here
+> are closed. Current blockers are in `STATE.md` §5.
+
+---
+
 # Open Issues — as of 2026-08-05, after the redesign went live
 
 **Written:** 2026-08-05 (Rob + Claude), immediately after production was promoted to

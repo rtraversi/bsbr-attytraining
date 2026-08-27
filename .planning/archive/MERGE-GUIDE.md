@@ -1,3 +1,8 @@
+> **ARCHIVED 2026-08-27.** Executed. The redesign was merged and went live 2026-08-05.
+> Historical record only. Do not cite it for current status: that lives in `.planning/STATE.md`.
+
+---
+
 # Merge guide — `main` → `redesign-iurix`
 
 **Written:** 2026-08-05 (Rob + Claude) · **For:** Max

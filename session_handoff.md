@@ -3,11 +3,17 @@
 **Date:** 2026-08-25
 **Who:** Max, with terminal-Claude
 
-> ⚠️ **Two things are undeployed, not one.**
+> 🔴 **CORRECTION, 2026-08-27: item 2 below was wrong when it was written.**
+> **All of 2026-08-24 was already deployed.** Production was deployed six times on 08-24, the last
+> from `2efec949` at 19:34:58Z with the workflow's production smoke test passing
+> (`gh run view 32768982427`). The live site was serving the new framing, the published Terms and
+> Privacy, and a `/dpa` that correctly 404s, the whole time this warning said otherwise. The claim
+> was carried forward into the 08-26 handoff and cost a session's opening minutes.
+> **Deploy status is only ever answered by `gh run list --workflow=deploy.yml`, checking for a
+> `workflow_dispatch` run whose "Deploy to production" step succeeded.** See `.planning/STATE.md` §1.
+>
+> ⚠️ **What was actually outstanding on 2026-08-25:**
 > 1. Today's UI work sits on **two unmerged branches** (below).
-> 2. **All of 2026-08-24 is still undeployed** — Terms, Privacy, the framing correction. The live
->    site still serves the old framing and `[ATTORNEY TO COMPLETE]` on both legal pages.
->    **Deploying that is still step one, and it is now a day older.**
 
 ---
 
