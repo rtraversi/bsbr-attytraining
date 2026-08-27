@@ -516,30 +516,52 @@ describe('the roster against the seats bought', () => {
     expect(rosterTrainingSeats(roster(4, 0))).toBe(0)
   })
 
-  it('reports the shortfall that now REFUSES the send', () => {
+  it('caps non-attorneys and leaves attorneys unlimited', () => {
     // Max reversed flag-never-block on 2026-08-26: nobody owned the "we will
     // sort the extra out with you afterwards" the old banner promised.
-    expect(rosterOverSeats(roster(1, 12), 9)).toBe(3)
-    expect(rosterOverSeats(roster(1, 4), 9)).toBe(0)
-  })
-
-  it('caps non-attorneys and leaves attorneys unlimited', () => {
-    const full = roster(0, 9)
-    expect(canAddTrainingSeat(full, 9)).toBe(false)
     // Twelve partners and one paralegal still costs one seat.
     expect(canAddTrainingSeat(roster(12, 0), 1)).toBe(true)
     expect(rosterOverSeats(roster(40, 1), 1)).toBe(0)
   })
 
-  it('treats an unknown seat count as no cap, not a cap of zero', () => {
-    // The seats row not having landed must never refuse every row — that is the
-    // worst possible failure of this rule.
-    expect(canAddTrainingSeat(roster(0, 3), 0)).toBe(true)
+  // ── the three states of a seat count ─────────────────────────────────────
+  //
+  // 🔴 KNOWN-AND-ZERO and UNKNOWN were the same value until 2026-08-27, and the
+  // callers read that value as "no cap". So a seats row that had not landed —
+  // or a read that failed — turned the cap off and let a firm roster unlimited
+  // staff, submit, and promote past its seat count: precisely what the cap is
+  // for. seatsPurchased() now answers null for unknown and a number otherwise,
+  // and these three tests are what keep the two apart.
+
+  it('KNOWN and under: allows the row and reports no shortfall', () => {
+    expect(canAddTrainingSeat(roster(1, 4), 9)).toBe(true)
+    expect(rosterOverSeats(roster(1, 4), 9)).toBe(0)
   })
 
-  it('reports nothing when the seat count is unknown', () => {
-    // A firm whose seats row has not landed yet must not be told it is over.
-    expect(rosterOverSeats(roster(1, 12), 0)).toBe(0)
+  it('KNOWN and over: refuses the row and reports the shortfall', () => {
+    expect(canAddTrainingSeat(roster(0, 9), 9)).toBe(false)
+    expect(rosterOverSeats(roster(1, 12), 9)).toBe(3)
+  })
+
+  it('KNOWN and zero is a real cap of zero, not an absent one', () => {
+    // A firm the seats table says bought nothing cannot roster staff who need
+    // training. This is the case that used to be indistinguishable from unknown.
+    expect(canAddTrainingSeat(roster(1, 0), 0)).toBe(false)
+    expect(rosterOverSeats(roster(1, 3), 0)).toBe(3)
+    // Attorneys still cost nothing, even against a cap of zero.
+    expect(canAddTrainingSeat(roster(12, 0), 0)).toBe(false)
+    expect(rosterOverSeats(roster(12, 0), 0)).toBe(0)
+  })
+
+  it('UNKNOWN stays permissive in the client — it must not produce a dead form', () => {
+    // Nobody should be refused a row because a read was slow. The server is what
+    // refuses on null; see the seats === null branch in POST /api/intake/submit.
+    expect(canAddTrainingSeat(roster(0, 3), null)).toBe(true)
+    expect(canAddTrainingSeat(roster(0, 300), null)).toBe(true)
+  })
+
+  it('UNKNOWN reports no shortfall — a firm is never told it is over a count we do not have', () => {
+    expect(rosterOverSeats(roster(1, 12), null)).toBe(0)
   })
 
   it('lets a solo with no staff finish', () => {

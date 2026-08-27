@@ -50,7 +50,7 @@ export interface IntakeClientProps {
   /** intake_sessions.current_question — the authoritative resume point. */
   resumeAt: string | null
   initialAnswers: AnswerMap
-  seatsPurchased: number
+  seatsPurchased: number | null
   adminName: string | null
   adminEmail: string
   firmName: string | null
@@ -406,7 +406,7 @@ function QuestionCard({
   missed: boolean
   answers: AnswerMap
   onChange: (value: AnswerValue | null) => void
-  seatsPurchased: number
+  seatsPurchased: number | null
   adminName: string | null
   adminEmail: string
 }) {

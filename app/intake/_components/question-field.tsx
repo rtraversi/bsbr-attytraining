@@ -36,7 +36,7 @@ export interface FieldProps {
   question: Question
   answers: AnswerMap
   onChange: (value: AnswerValue | null) => void
-  seatsPurchased: number
+  seatsPurchased: number | null
   adminName: string | null
   adminEmail: string
 }

@@ -93,8 +93,32 @@ export async function POST() {
   //
   // Known and accepted: a capped firm cannot reach full accreditation until it
   // buys the extra seat. That is the intended consequence.
+  //
+  // 🔴 A SEAT COUNT WE CANNOT READ IS NOT A SEAT COUNT OF ZERO, AND NOT NO CAP.
+  //
+  // seatsPurchased() used to answer 0 for a missing row, a slow read and a
+  // failed one alike, and 0 meant "unknown, so no cap" — so the one thing that
+  // could not check the roster was also the one thing that waved it through, and
+  // a firm could promote past its seat count. The roster SCREEN stays permissive
+  // on null, because nobody should get a dead form over a slow query. This route
+  // must not: it is what writes the auth users and the firm_members rows.
+  //
+  // The message says what is actually wrong. Reusing the over-seats copy here
+  // would tell a firm within its seats to go and buy more — a lie, and one they
+  // could act on by spending money they did not need to.
   const roster = Array.isArray(answers['roster']) ? (answers['roster'] as RosterRow[]) : []
   const seats = await seatsPurchased(admin, auth.actor.firmId)
+
+  if (seats === null) {
+    return NextResponse.json(
+      {
+        error:
+          'We could not read how many seats your firm has, so we have not sent this yet. Nothing you typed is lost — try again in a moment, and contact support if it keeps happening.',
+      },
+      { status: 503 },
+    )
+  }
+
   const over = rosterOverSeats(roster, seats)
 
   if (over > 0) {

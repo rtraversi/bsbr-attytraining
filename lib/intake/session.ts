@@ -238,8 +238,33 @@ export async function touchSession(
   await admin.from('intake_sessions').update(patch).eq('id', sessionId)
 }
 
-/** Seats the firm bought — the number the roster is checked against, never blocked by. */
-export async function seatsPurchased(admin: AdminClient, firmId: string): Promise<number> {
-  const { data } = await admin.from('seats').select('max_seats').eq('firm_id', firmId).maybeSingle()
-  return data?.max_seats ?? 0
+/**
+ * Seats the firm bought — the number the roster is checked against.
+ *
+ * 🔴 NULL AND 0 ARE DIFFERENT ANSWERS, and collapsing them was a hole in the cap.
+ *
+ * This returned `data?.max_seats ?? 0` and the callers read 0 as "unknown, so no
+ * cap". So a missing row, a slow read or an outright failure switched the cap
+ * OFF entirely, and a firm could roster unlimited staff, submit, and promote
+ * past its seat count — the exact outcome the cap exists to prevent.
+ *
+ *   null   the seats row is not there, or could not be read. NOT KNOWN.
+ *   0      the row is there and says zero. KNOWN, and a cap of zero.
+ *   n      the row is there and says n.
+ *
+ * What each caller does with `null` is deliberately NOT the same:
+ * the roster screen stays permissive (see canAddTrainingSeat), and
+ * POST /api/intake/submit refuses, because it is the one that promotes.
+ */
+export async function seatsPurchased(admin: AdminClient, firmId: string): Promise<number | null> {
+  const { data, error } = await admin
+    .from('seats')
+    .select('max_seats')
+    .eq('firm_id', firmId)
+    .maybeSingle()
+
+  // An error and a missing row are the same answer here — neither one tells us
+  // what the firm bought — and both must read as "not known", never as zero.
+  if (error || !data) return null
+  return data.max_seats ?? null
 }

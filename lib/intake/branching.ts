@@ -397,7 +397,7 @@ export function rosterTrainingSeats(rows: RosterRow[]): number {
 
 /**
  * How many training seats the roster needs beyond what the firm bought. 0 when
- * it fits, and 0 when the seat count is unknown.
+ * it fits, and 0 when the seat count is UNKNOWN (`null`).
  *
  * ── 🔴 THIS IS NOW A CAP, NOT A FLAG (Max, 2026-08-26) ──────────────────────
  *
@@ -414,21 +414,32 @@ export function rosterTrainingSeats(rows: RosterRow[]): number {
  * buys the extra seat. That is intended — the alternative was an unbounded
  * roster that could never be trained and a certificate count that could never
  * reach 100%, which is the same dead end with a friendlier banner.
+ *
+ * 🔴 `null` is UNKNOWN, `0` is a KNOWN cap of zero. Until 2026-08-27 both arrived
+ * here as 0 and both switched the cap off, so a seats row that had not landed —
+ * or a read that simply failed — let a firm roster unlimited staff and submit.
+ * A permissive answer to "not known" is right in the client and wrong on the
+ * server, so the two now differ on purpose: this returns 0 for `null` and
+ * POST /api/intake/submit refuses outright rather than calling this at all.
  */
-export function rosterOverSeats(rows: RosterRow[], seatsPurchased: number): number {
-  if (seatsPurchased <= 0) return 0
+export function rosterOverSeats(rows: RosterRow[], seatsPurchased: number | null): number {
+  if (seatsPurchased === null) return 0
   return Math.max(0, rosterTrainingSeats(rows) - seatsPurchased)
 }
 
 /**
  * Whether one more non-attorney can be added.
  *
- * A seat count of 0 means "not known yet" (the seats row has not landed), and is
- * treated as no cap rather than a cap of zero — refusing every row because a
- * read came back empty would be the worst possible failure of this rule.
+ * `null` — the seats row has not landed, or the read failed — is treated as no
+ * cap rather than a cap of zero. Refusing every row because a read came back
+ * empty would be the worst possible failure of this rule ON THIS SCREEN: nobody
+ * should get a dead form because a query was slow.
+ *
+ * A seat count of `0` is a real answer and DOES cap: a firm the seats table says
+ * bought nothing cannot roster staff who need training.
  */
-export function canAddTrainingSeat(rows: RosterRow[], seatsPurchased: number): boolean {
-  if (seatsPurchased <= 0) return true
+export function canAddTrainingSeat(rows: RosterRow[], seatsPurchased: number | null): boolean {
+  if (seatsPurchased === null) return true
   return rosterTrainingSeats(rows) < seatsPurchased
 }
 

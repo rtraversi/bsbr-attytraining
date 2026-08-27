@@ -25,7 +25,7 @@ export function RosterTable({
 }: {
   value: RosterRow[]
   onChange: (rows: RosterRow[]) => void
-  seatsPurchased: number
+  seatsPurchased: number | null
   adminName: string | null
   adminEmail: string
 }) {
@@ -49,7 +49,10 @@ export function RosterTable({
     onChange(current.length === 1 ? current : current.filter((_, n) => n !== i))
 
   const staffCount = rosterTrainingSeats(current)
-  const seatsLeft = seatsPurchased > 0 ? Math.max(0, seatsPurchased - staffCount) : null
+  // null is "we could not read the seat count", not "zero seats". The screen
+  // says nothing about seats it does not know, and refuses nothing — see
+  // canAddTrainingSeat. Only the submit route refuses on an unknown count.
+  const seatsLeft = seatsPurchased === null ? null : Math.max(0, seatsPurchased - staffCount)
   const canAddStaff = canAddTrainingSeat(current, seatsPurchased)
 
   // Two buttons, not one, because the distinction is the whole rule: attorneys
@@ -57,8 +60,11 @@ export function RosterTable({
   // "Add someone" that silently refused every other click would look broken.
   const addStaff = () => {
     if (!canAddStaff) {
+      // Only reachable with a known count — canAddTrainingSeat returns true on
+      // null — but the narrowing has to be written down for the compiler.
+      const seats = seatsPurchased ?? 0
       setRefusal(
-        `You have ${seatsPurchased} ${seatsPurchased === 1 ? 'seat' : 'seats'} and ${staffCount} non-attorney staff on the roster. Adding another person who needs training means buying another seat first.`,
+        `You have ${seats} ${seats === 1 ? 'seat' : 'seats'} and ${staffCount} non-attorney staff on the roster. Adding another person who needs training means buying another seat first.`,
       )
       return
     }
@@ -75,8 +81,9 @@ export function RosterTable({
   // the same rule as adding one. The other direction always frees one.
   const setAttorney = (i: number, isAttorney: boolean) => {
     if (!isAttorney && !canAddStaff) {
+      const seats = seatsPurchased ?? 0
       setRefusal(
-        `${current[i].name || 'That person'} would need a training seat, and all ${seatsPurchased} are taken. Buy another seat to add them as staff.`,
+        `${current[i].name || 'That person'} would need a training seat, and all ${seats} are taken. Buy another seat to add them as staff.`,
       )
       return
     }
