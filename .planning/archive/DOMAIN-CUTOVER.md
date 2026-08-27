@@ -1,3 +1,8 @@
+> **ARCHIVED 2026-08-27.** Executed. iurixaccreditation.com is live and serving, verified 2026-08-27.
+> Historical record only. Do not cite it for current status: that lives in `.planning/STATE.md`.
+
+---
+
 # Domain Cutover Runbook — `iurixaccreditation.com` → `bsbr-attytraining` Worker
 
 **Written:** 2026-07-28 | **For:** Max | **Supersedes:** `.planning/DEPLOY-CHECKLIST.md` (2026-06-17,

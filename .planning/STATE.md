@@ -1,241 +1,312 @@
-# STATE — Iurix Accreditation (formerly "Athena")
+# STATE: Iurix Accreditation
 
-**Last updated:** 2026-08-03 (Max, desktop). Catch-up pass: this file was written at `5370fc3`,
-07:13 on 07-31, **before** the three implementation batches that shipped later that same day, so it
-had gone stale within hours of its own accuracy pass. Corrected here: migration high-water mark
-`0016` → `0017`, the billing page and reminder work recorded, and the 07-31 Session Continuity entry
-fixed (it claimed "no app code changed" for a day with 24 commits). Every claim below re-verified by
-grep, file read, `wrangler deployments list`, `supabase migration list --linked`, and live HTTP.
-(Prior refresh 2026-07-26, itself a correction of a version that claimed "Phase 0, 0% complete"
-while Phases 0–5 were built and deployed.)
+**Last verified: 2026-08-27 (Max, desktop).** Every claim below was re-checked today against the
+live site, the repo working tree, or the Supabase API. Where something could not be checked from
+this machine it says so **and names the command that would check it**. Nothing is carried forward
+on trust.
 
-> **Naming:** the product is **Iurix Accreditation** ("Iurix"). **The rename is executed.**
-> `grep -ri "built smart by rob"` returns **zero hits in source** — it survives only in
-> `.planning/` history docs and `CLAUDE.md`. `grep -ri athena` in source returns **no user-visible
-> string**: six CSS class/keyframe names in `app/globals.css` (`athena-dotgrid`, `athena-columns`,
-> `athena-pill`, `athena-pill-solid`, `athena-custom-cursor`, `@keyframes athena-caret`) plus their
-> call sites, and five explanatory comments (`app/globals.css:147,165`, `app/layout.tsx:38`,
-> `emails/_components/email-shell.tsx:21,205`). The class names are cosmetic-only and deliberately
-> left. See `.planning/RENAME-IURIX.md` / `.planning/IURIX-RENAME-PLAN.md` for the executed scope.
-> Katy has also referred to this project as "Aegix"; that name is dead.
+> **Why this file was rewritten.** The previous version was stamped 2026-08-03 and was read at the
+> start of every session for three weeks while eight of its claims went out of date (listed in
+> §8). A status file that is read every morning and updated every three weeks is worse than no
+> status file, because it is believed. If you change something this file asserts, change this file
+> in the same commit.
 
 ---
 
-## Project Reference
+## 0. Precedence: which document wins
 
-- **Product:** Iurix Accreditation — AI staff compliance training + certification under ABA Model Rule 5.3
-- **Company:** Iurix — one of three companies under **BSBR Holdings, LLC** (alongside IurisIQ and
-  Built Smart by Rob). Iurix is a **DBA** of BSBR Holdings, LLC.
-- **Mode:** mvp | **Granularity:** standard
-- **Core value:** An attorney can pay, invite their staff, see them complete the training, and
-  produce certificates demonstrating Rule 5.3 supervision compliance — without operator intervention.
-- **Live:** `https://iurixaccreditation.com` — set as `NEXT_PUBLIC_APP_URL` in `wrangler.jsonc:9`,
-  as `APP_URL` in `workers/cert-worker/wrangler.toml:14`, and in the email footers
-  (`emails/_components/email-shell.tsx`). `aistaffcompliance.com` is retired; no `workers.dev` URL
-  appears anywhere in source. The app still *deploys* to the Worker named `bsbr-attytraining`.
-- **Cert Worker:** `bsbr-cert-worker` — a Worker **name / deploy target**, not a URL the app calls.
-  It has no public route in source; it runs on its two crons and is invoked by the Supabase DB
-  webhook. Deploy it from `workers/cert-worker/`; deploy the **app** only from the repo root.
-- **Supabase dev:** `ndmzvtuywcufvkxtkjhg` (under Max's account) | **Stripe sandbox:** `acct_1ThDpr6ZCSojEKRr`
+| Rank | Document | Authoritative for |
+|---|---|---|
+| 1 | **this file** | where the project stands right now |
+| 2 | `session_handoff.md` | what happened in the most recent session, and what is queued next |
+| 3 | `.planning/sessions/<date>-*.md` | full detail for one day |
+| 4 | `.planning/REQUIREMENTS.md` | **the only** authority for requirement IDs and their meaning |
+| 5 | `CLAUDE.md` | stack, constraints, framing |
+| 6 | `.planning/archive/**` | history. Never current. Never cite it for status. |
+
+If two documents disagree, the higher rank wins and the lower one gets fixed. Session notes are
+**not** an authority for requirement IDs (they have invented IDs before).
 
 ---
 
-## Current Position
+## 1. Production, as verified today
 
-- **Status:** **All six phases are code-complete and deployed to the sandbox environment.**
-  The remaining work is not feature development — it is the **rename, the domain move, Stripe live
-  mode, real content, and pre-launch ops hardening.**
-- **Progress:** `[████████████████████] Phases 0–5 built & deployed (sandbox)`
-- **Not launched.** Stripe has never run in live mode; no real customer has ever paid.
+- **Live at `https://iurixaccreditation.com`.** `/`, `/terms`, `/privacy` all return 200.
+  `/dpa` returns **404 by design**: `app/dpa/page.tsx` calls `notFound()` when
+  `NODE_ENV === 'production'`, because every section of it is still an `[ATTORNEY TO COMPLETE]`
+  placeholder. The DPA is the one legal document that has never been drafted.
 
-### Phase status — honest assessment
+- **Production runs against IURIX PROD (`ttqthtzdjacrhjtrcmmy`).** Verified by reading the
+  `NEXT_PUBLIC_SUPABASE_URL` value out of the live `/login` JavaScript bundle: exactly one
+  Supabase host appears, and it is `ttqthtzdjacrhjtrcmmy.supabase.co`. The PROD cutover (Phase A,
+  2026-08-13) is real and in force. **Development and testing still happen on IURIX STAGING
+  (`ndmzvtuywcufvkxtkjhg`), which is what the Supabase CLI is linked to.**
 
-| Phase | Name | Code | Notes on what is NOT done |
-|---|---|---|---|
-| 0 | Foundations | ✅ Deployed | Legal pages live (`/terms`, `/privacy`, `/dpa`); `tests/rls-isolation.test.ts` exists; migrations `0001`–`0017` applied (verified 2026-08-03, `supabase migration list --linked`: local, remote and time columns all reach `0017`). ✅ Resend sending-domain verification **closed** — Rob verified DKIM, SPF and DMARC on `iurixaccreditation.com` (2026-07-29); mail sends as `IURIX <noreply@iurixaccreditation.com>` from both `lib/resend.ts:6` and `workers/cert-worker/src/index.ts:152`. **Open:** Supabase still on free tier — **Pro required before launch**. |
-| 1 | Hello-cert end-to-end stub | ✅ Deployed | Checkout, 373-line webhook w/ `processed_stripe_events` idempotency + 5 handlers, cert PDF via `pdf-lib`, `cert_generation_queue` + 5-min drain, `/api/certificates/[id]/url` signed URLs. Superseded by Phase 2 (the "Mark Pass" stub is gone). |
-| 2 | Rise 360 content + custom React quiz | ⚠️ Deployed, content-incomplete | Rise/SCORM export embedded and working; server-side scoring, identity attestation, unlimited retakes all built. **Open:** the question pool is a placeholder — 8 questions with **pool size == attempt size, so there is no randomization**. Roadmap criterion 3 (pool ≥ 3× per-attempt) is unmet. Content-blocked, not code-blocked. |
-| 3 | Firm admin dashboard | ✅ Deployed | Verified present: `/api/firm/attestation`, `/api/firm/audit-log`, `/api/invite/bulk`, `csv-upload-form.tsx`, reminders, seat reassignment, member delete/redact. |
-| 4 | Automation hardening | ⚠️ Deployed, ops-incomplete | Cert Worker crons live (`*/5` queue drain + `0 9` daily reminders); `X-Webhook-Secret` enforced; `/api/health` + secret-gated `/api/metrics` exist. ✅ Cert PDF logo **is no longer a placeholder** — the certificate was rebuilt (`6c44493`) around the real Iurix mark, base64-encoded at `lib/cert-logo.ts` from `public/brand/iurix-logo-2048-white.png`. (`lib/cert-pdf.ts:18` is now just the comment on the pure-white paper color.) **Open:** external uptime monitor never picked (UptimeRobot vs BetterStack); Supabase PITR needs Pro tier. |
-| 5 | Renewal flow + launch polish | ⚠️ Deployed, launch-incomplete | Renewal re-enrollment, grace-vs-lapsed logic (30-day grace), reminder cadence, and expiry handling are all built in `invoice.payment_succeeded`. **Added 07-31:** customer billing page at `/dashboard/billing` with `GET /api/billing/summary` (subscription state + last 12 invoices) and `POST /api/billing/auto-renew` (both directions, confirm step on cancel). Auto-renewal is disclosed **before payment** on the pricing page (`app/pricing/_components/pricing-slider.tsx`) and the renewal email states the card will be charged. Cancellation uses `cancel_at_period_end`; the only `subscriptions.cancel` string in the tree is the comment warning against it (`app/api/billing/auto-renew/route.ts:29`). **Open:** attorney review of cert + landing copy + TOS never completed; iPad Safari / Chromebook QA not run; the cancellation email has never been visually rendered. |
+- **All code on `main` is deployed.** Production was last deployed from `2efec949`, the tip of
+  `main`'s code, on **2026-08-24 at 19:34:58Z**, and the workflow's own production smoke test
+  passed. The only two commits on `main` after that are `docs(session)` commits that touch no code.
+  Independently corroborated on the live site: `/terms` reads "Last updated: 24 August 2026",
+  `/privacy` lists Articulate Global as a sub-processor, and `og:title` is the governance reframe.
+
+  🔴 **This corrects `session_handoff.md`, which said as late as 2026-08-26 that all of 2026-08-24
+  was still undeployed and "two days old". It had been live since the day it was written.**
+  Production was deployed **six** times on 08-24.
+
+### How to check deploy status on this project (the only reliable way)
+
+**Deploys do not run from anyone's laptop.** They run in GitHub Actions
+(`.github/workflows/deploy.yml`) on Linux, because OpenNext cannot produce a working bundle on
+native Windows. **A push to `main` builds a PREVIEW only and never touches production.** Production
+requires a deliberate `workflow_dispatch` with `target=production`.
+
+So "is it deployed?" is answered by the workflow run list, not by commits and not by timestamps:
+
+```bash
+gh run list --workflow=deploy.yml --limit 15 \
+  --json event,conclusion,createdAt,headSha,displayTitle
+```
+
+A `push` run is a preview. Only an `event: workflow_dispatch` run whose **"Deploy to production"**
+step succeeded actually shipped:
+
+```bash
+gh run view <databaseId> --json jobs
+```
+
+⚠️ **Two inference methods that look reasonable and are not:** timestamp correlation between a
+commit and a deploy (wrong on 2026-07-28), and grepping the live JS chunks linked from a page's
+HTML for a string (wrong here on 2026-08-27: the beacon's chunk is not among them, and its absence
+was read as "not deployed" when it was). Fetching a page and reading rendered **content** is sound;
+reasoning from which chunk files a page links is not.
+
+- **Wrangler on Max's Mac is signed in to the wrong Cloudflare account.** It holds an OAuth token
+  for `solarsaiko@gmail.com` (account `92ad73afddb005d06cfd61ec412c9563`), while the Worker lives
+  under account `4b2a402334decc9259d7317aaf9782f0`, so `npx wrangler deployments list` fails with
+  `Authentication error [code: 10000]`. **This does not block shipping**, because shipping goes
+  through CI. It blocks local inspection and local `pnpm run deploy`, and it means
+  `wrangler rollback --name bsbr-attytraining` (the documented rollback in the workflow summary)
+  would also fail from this machine. Worth fixing before it is needed in a hurry.
 
 ---
 
-## 🔴 What actually stands between here and launch
+## 2. Databases
 
-### Blocked on Rob
-1. **Logo artwork — narrowed 2026-07-31.** Most of this closed: the **certificate** prints the real
-   Iurix mark (`lib/cert-logo.ts`), the **favicon** is the Iurix icon (`app/icon.png`, `d4acfc4`),
-   and **emails** ship a text-only IURIX wordmark rather than the retired mark
-   (`emails/_components/email-shell.tsx:21`). What is genuinely still outstanding:
-   - **The retired monogram still ships in the web UI.** `app/_components/atc-logo.tsx` inlines path
-     geometry byte-identical to `public/atc-athena-logo.svg` — deliberately, per its own comment
-     (Max, 2026-07-29), to avoid churn before the mark is final. `AtcLogo` renders in
-     `site-header.tsx`, `login`, `onboarding`, `forgot-password`, `update-password`.
-   - **No "Iurix Accreditation" wordmark asset exists.** Three places use a text stand-in set in
-     Stack Sans Headline: `atc-logo.tsx`, `email-shell.tsx`, and the cert header. All three want a
-     second pass when Rob's asset lands.
-   - **`public/brand/README.md` "Still to handle"** — the 2048px PNG is white-matted (no alpha), and
-     there is no simplified small-size variant.
-   - *Cleanup, not blocked on Rob:* `public/atc-athena-logo.svg` and `public/athena-logo-email.png`
-     are now referenced by nothing and can be deleted.
-2. **Question pool size** — the ~24–32 target has been unresolved since 2026-06-12.
-3. **Attorney review** of cert template + landing copy + TOS ($500–$1,500). Hard gate on launch.
-4. **CPA consult** on SaaS sales tax + home-state registration (~$300–$500).
+| | **IURIX STAGING** `ndmzvtuywcufvkxtkjhg` | **IURIX PROD** `ttqthtzdjacrhjtrcmmy` |
+|---|---|---|
+| Role | development and testing | **what the live site actually uses** |
+| Postgres | 17.6.1 | 17.6.1 |
+| Status | ACTIVE_HEALTHY | ACTIVE_HEALTHY |
+| Supabase CLI | **linked** | not linked |
+| Migrations | **0029**, verified today (`supabase migration list --linked`: local, remote and time columns all reach 0029) | **0025**, last verified 2026-08-14. **0026–0029 have no record of ever being applied.** |
 
-*Closed 2026-07-31:* ~~Pick + register the Iurix domain~~ — `iurixaccreditation.com` is live and
-wired through the app, the cert Worker, and the email footers. ~~Decide whether the course keeps
-the name "AI Staff Compliance Training"~~ — retired; the phrase returns **zero** hits in source and
-the `courses.title` row was updated. ⚠️ **Partially reopened 2026-08-03:** the *Stripe product* is
-still named "AI Staff Compliance Training — Annual Certification". Not a source string, so no grep
-could have caught it, but customers see it at Checkout and on invoices. See Stripe live mode above.
+🔴 **There is a four-migration gap on the database production actually runs on.** Not on PROD:
+
+| Migration | What PROD is missing |
+|---|---|
+| `0026_question_pool_v1.sql` | the reviewed 50-question bank (10 per lesson). Without it the live quiz still serves the 8 placeholder questions, where pool size equals attempt size, so every candidate sees an identical exam and a retake is a second look at the same paper. |
+| `0027_terms_acceptance.sql` | terms acceptance capture |
+| `0028_policy_intake.sql` | the entire intake schema |
+| `0029_email_deliverability.sql` | `firm_members.email_verified_at` and friends |
+
+**This is inferred from `PROD-CUTOVER.md`, which records 0024 and 0025 applied to PROD on
+2026-08-13 and verified 2026-08-14, and records nothing after.** It was **not** verified directly
+today, because verifying it means relinking the CLI away from staging, and staging is the sandbox
+everything else assumes. To check it properly, from a separate clone or after relinking back:
+
+```bash
+npx supabase link --project-ref ttqthtzdjacrhjtrcmmy && npx supabase migration list --linked
+```
+
+**Storage:** the `Intake-uploads` bucket exists on **staging only**. It does not exist on PROD.
+The name is capital-I and case-sensitive, buckets cannot be renamed, and a migration cannot create
+it. It is a manual action in the Supabase Storage dashboard, and the intake cannot ship without it.
+
+---
+
+## 3. Branches
+
+`main` is at `8eff5ab` (2026-08-25). Seven branches exist; three carry unmerged work.
+
+| Branch | vs `main` | State |
+|---|---|---|
+| **`policy-intake`** | **+6** | **The whole policy intake.** Built 2026-08-26 in five batches. `tsc`, `eslint`, `next build` clean, 192 tests across 14 files. **Never opened in a browser.** |
+| **`ui-polish-batch-b`** | +4 / -1 | UI polish, plus the intake mockup and certificate art moved into the repo |
+| **`ui-polish-batch-a`** | +1 / -1 | pills, bare icons, blue active tab, real theme switch |
+| `ix-framing-correction` | 0 / -8 | merged, safe to delete |
+| `legal/publish-terms-privacy-2026-08-24` | 0 / -6 | merged, safe to delete |
+| `ix-questionpool-termsaccept` | 0 / -12 | merged, safe to delete |
+| `merge-attempt` | +3 / -79 | scratch branch from the redesign merge. Dead. |
+
+Remote also carries `hero-dark-redesign`, `redesign-iurix` and `stripe-lookup-key`; the last of
+these is fully merged into `main`.
+
+---
+
+## 4. Phase status
+
+All six phases are code-complete and deployed. What remains is **not feature development**: it is
+content, the PROD migration gap, Stripe live mode, and launch ops.
+
+| Phase | Code | What is genuinely not done |
+|---|---|---|
+| 0 Foundations | ✅ | Supabase plan not confirmed as Pro (free tier pauses after 7 days idle and has no PITR). Resend domain verification closed 2026-07-29, **but Resend has 403'd every send since roughly 2026-08-19 (`ix-dnszoho`) and email is effectively down.** |
+| 1 Hello-cert end-to-end | ✅ | superseded by Phase 2 |
+| 2 Rise content + React quiz | ⚠️ content-incomplete | The **50-question bank is written and on staging but is still awaiting Katy's legal-accuracy review**, and is not on PROD (§2). Rise course content itself is still not authored. |
+| 3 Firm admin dashboard | ✅ | |
+| 4 Automation hardening | ⚠️ ops-incomplete | external uptime monitor still not picked; PITR needs Pro |
+| 5 Renewal + launch polish | ⚠️ launch-incomplete | attorney review of cert copy; iPad Safari / Chromebook QA never run; cancellation email never visually rendered |
+
+---
+
+## 5. What actually stands between here and launch
+
+### Engineering, verified in the tree today
+
+1. 🔴 **Get 0026–0029 onto PROD** and create the `Intake-uploads` bucket there (§2). This is the
+   real blocker on shipping the intake: the code reaches production through CI, the database it
+   lands on does not.
+2. **Merge `policy-intake`, run the production deploy, then open `/intake` in a browser.** It has
+   never been seen rendering. Note that merging alone only produces a preview build.
+3. **Re-auth wrangler** to the right Cloudflare account (§1). Does not block shipping, but blocks
+   local inspection and the documented `wrangler rollback`.
+4. **Stripe live mode.** `app/api/checkout/route.ts:196` sets `automatic_tax: { enabled: true }`,
+   so **live checkout hard-fails until Stripe Tax is enabled on the account**. On the live Price
+   and Product, all three of these must be right: an explicit `tax_behavior`, a `tax_code`, and
+   the `lookup_key`. The Stripe **product name still reads "AI Staff Compliance Training"**, the
+   retired course name, which customers see at Checkout and on every invoice. Dashboard fix, not
+   code.
+   ✅ *Closed since the last STATE:* the hardcoded `PRICE_ID` is gone. The seat Price now resolves
+   by lookup key (`lib/stripe-price.ts`), so going live no longer needs a source edit mid-cutover.
+5. **Auth performance, ~5s per dashboard route.** Still open and still unstarted: **`getClaims()`
+   appears 0 times** in `app/`, `lib/` and `middleware.ts`, against **37 `.getUser()` call sites**,
+   while `CLAUDE.md` mandates `getClaims()`. Awaiting Max's go-ahead since 2026-07-17.
+6. **Pick an external uptime monitor** (UptimeRobot vs BetterStack). Never decided.
+7. **Confirm the Supabase plan.**
 
 ### Blocked on Katy
-- Legal-accuracy pass on both question sets (`supabase/migrations/0003_quiz_questions.sql` — the
-  certifying quiz; `lib/training/questions.ts` — 15 ungraded knowledge checks).
 
-### Engineering (Max)
-- **Stripe live mode** — head-office address → Stripe Tax → live product/price → swap the hardcoded
-  `PRICE_ID` at `app/api/checkout/route.ts:17` → register the webhook **on the new domain**.
-  ⚠️ `app/api/checkout/route.ts:68` already sets `automatic_tax: { enabled: true }`, so **live
-  checkout hard-fails until Stripe Tax is enabled.**
-  🔴 **Found 2026-08-03 by reading the sandbox objects over the API** (all three must be right on the
-  *live* objects, not just the sandbox):
-  1. The price has **`tax_behavior=unspecified`**. Automatic tax expects an explicit
-     `inclusive`/`exclusive`. Docs had claimed `exclusive`; the object does not have it.
-  2. The product carries **no `tax_code`** and **no metadata**, so automatic tax falls back to the
-     account default category. Docs had claimed `txcd_20060058`.
-  3. The price has **no `lookup_key`**. Docs had claimed `per_seat_annual`. Setting one on the live
-     price would retire the hardcoded-ID swap from this checklist permanently.
-  ⚠️ Separately, the **Stripe product name still reads "AI Staff Compliance Training"**, the retired
-  course name. It is not in source, so the rename sweep's `grep` could never have caught it, but it
-  renders on the hosted Checkout page and on every invoice and receipt. Dashboard fix, not code.
-- **Auth performance** — ~5s per dashboard route. **Zero `getClaims()` usage repo-wide** despite
-  CLAUDE.md mandating it; three serialized `getUser()` round-trips per navigation
-  (`middleware.ts:36` → `app/dashboard/layout.tsx:11` → page) plus a `getUserById` fan-out at
-  `app/dashboard/page.tsx:56`. ~7 files. **Awaiting Max's go-ahead since 2026-07-17.**
-- **Supabase Pro upgrade** ($25/mo) — free tier pauses after 7 days idle and has no PITR.
-- **Pick an external uptime monitor.**
+- Legal-accuracy review of the 50-question certification bank (`0026`, source
+  `.planning/question-bank.xlsx`) and the 15 ungraded knowledge checks (`lib/training/questions.ts`).
+- Read `lib/intake/questions.ts`. **Two things in it are guesses**: the module letters for
+  `doc_review_scale` and `tar` (K/K/L), and the section grouping, which was invented because the
+  spec gives module letters and not sections.
+- Privacy §2 and §5 have **no category covering intake answers**. Flagged since the intake's first
+  batch, still unwritten.
+- Revision of the authored training content after the framing correction.
+
+### Blocked on Rob
+
+- **The retired monogram still ships in the web UI.** `app/_components/atc-logo.tsx` inlines the
+  old path geometry deliberately, and `AtcLogo` renders in **5 files**. No "Iurix Accreditation"
+  wordmark asset exists; three places use a text stand-in in Stack Sans Headline.
+- `public/brand/README.md` "Still to handle": the 2048px PNG is white-matted (no alpha), and there
+  is no simplified small-size variant.
+- **Attorney review** of cert template, landing copy and TOS ($500–$1,500). Hard gate on launch.
+- **CPA consult** on SaaS sales tax and home-state registration (~$300–$500).
+- *Cleanup, not blocked on Rob:* `public/atc-athena-logo.svg` and `public/athena-logo-email.png`
+  are referenced by nothing.
 
 ---
 
-## Locked Decisions
+## 6. Decisions in force
 
-### 2026-08-03 (Max) — brand palette
+### Framing correction, 2026-08-24 (Katy, via Max): the one that overrides the oldest docs
+**ABA Model Rule 5.3 is not the north star.** The product is the firm's **own written AI use
+policy**; the training keeps staff aligned to it; the quiz, attestations and certificates are the
+evidence. Rule 5.3 is background context and at most fine-print citation. It stays deliberately in
+`.planning/legal/terms-of-service.md` §3 and §11, where naming the rule in order to disclaim it is
+protective. Full record: `.planning/FRAMING-CORRECTION-2026-08-24.md`. **Anything in `.planning/`
+dated before 2026-08-24 that pitches Rule 5.3 is superseded by this.**
 
-- **Primary / turquoise: PANTONE 14-4912 TCX "Rinsing Rivulet" = `#5CC6C3`.** The mark is set in this.
-- **Neutral light: PANTONE 13-4108 TCX "Nimbus Cloud" = `#D5D5D8`.**
-- **Neutral dark: `#9C9EA0`.** Adjusted from PANTONE 16-4402 TCX "Drizzle" (`#A09E9C`) at Max's direction, 2026-08-03: *"change the drizzle, nudge it to a hair cooler."* The change is an exact mirror — green held at 158, red and blue swapped — so weight is unchanged (luminance moves ~0.5/255) but the temperature flips from warm to cool and now agrees with Nimbus Cloud's bias. Halfway option if it reads too cool: `#9E9EA0`.
+### Intake, 2026-08-26 (both reversals landed mid-build and both stand)
+- **No hard gate.** Katy, 12:11: *"The problem is that the intake is time consuming. People will
+  want to explore without having to fill it all in."* The dashboard opens for everyone; the intake
+  is a **persistent, undismissible** notice on `app/dashboard/page.tsx`. It has to stay
+  undismissible, because nothing else ever gets the intake completed.
+- **The roster is capped at seats purchased**, reversing flag-never-block. Attorneys are unlimited
+  and never consume a seat. Known and accepted: a capped firm cannot reach full accreditation
+  until it buys the extra seat. The old copy promised to "sort the extra seats out with you
+  afterwards" and nobody owned "afterwards".
+- **The buyer's path no longer touches email.** They set a password on `/onboarding` and are signed
+  straight into `/intake`. This is the only reason any of it is testable while Resend is down.
+- 🔴 `intake_sensitive` has **RLS on and no policy at all**, deliberately. Service-role routes only.
+  The migration carries a red-flagged comment. Do not add a policy.
+- 🔴 **`auth.users.email_confirmed_at` is not a deliverability signal.** Every creation path passes
+  `email_confirm: true`, so it is true for everybody. A test fails if anyone tries to use it.
+- 🔴 **Promote is not one transaction and cannot be** (GoTrue admin API calls cannot sit inside a
+  `BEGIN`). Every step is idempotent and the status flip happens **last**, so a half-finished
+  promote leaves the intake open and pressing Send again completes it.
 
-**⏸ DEFERRED, NOT DECIDED — the dashboard/app palette.** Logged 2026-08-03 13:15 CST (Max), verbatim:
+### Brand palette, 2026-08-03 (Max)
+- Primary turquoise **PANTONE 14-4912 TCX "Rinsing Rivulet" `#5CC6C3`**; neutral light
+  **`#D5D5D8`**; neutral dark **`#9C9EA0`**.
+- ⏸ **The app palette swap is still deferred, not decided.** Logged verbatim 2026-08-03 13:15 CST:
+  *"for now we can leave the dashboard/app color palette on hold, but perhaps we will just change
+  the blue to that turqouise, but hold off on that just log it."*
+  ✅ **The blocker named in the last STATE is gone:** the app palette is now **tokenised**
+  (`--brand-primary: #32C7FF`, `--brand-emphasis: #0094FF` in `app/globals.css`). `#0094FF` appears
+  in **1 file**, not 35. Swapping to turquoise is now a token edit, not a 35-file hand edit. Still
+  do not start it without Max saying so.
 
-> *"for now we can leave the dashboard/app color palette on hold, but perhaps we will just change the blue to that turqouise, but hold off on that just log it."*
+### Naming and corporate structure, 2026-07-26 (Rob)
+Product **"Iurix Accreditation"**. **BSBR Holdings, LLC** is the parent; Iurix is a **DBA** of it,
+so legal pages read "BSBR Holdings, LLC d/b/a Iurix" and Stripe activates on BSBR Holdings'
+existing EIN (no new entity, no new EIN). "Built Smart by Rob" is a sibling brand and is removed
+from the product entirely.
+**Rename verified complete today:** `grep -ril "built smart by rob"` over `app lib emails workers
+public supabase` returns **0 files**. `athena` survives in **4 files** as cosmetic CSS class names
+and explanatory comments only (`app/globals.css`, `app/layout.tsx`, `app/_components/atc-logo.tsx`,
+`emails/_components/email-shell.tsx`), deliberately left.
 
-Context for whoever picks this up: the app currently runs on `#0094FF` / `#32C7FF` across **35 files**, as raw inline hex, not tokens. The marketing and legal pages are a **third** system (`teal-300/400` on `zinc-950`). Swapping the blue for `#5CC6C3` is cheap only if the palette is tokenised first; today it is a 35-file hand edit. Do not start it without Max saying so.
+### ⚠️ Open contradiction: where Rise content is hosted
+`CLAUDE.md` still records Rise hosting as **LOCKED 2026-06-18** to Articulate's own hosting or R2,
+embedded by iframe, and `supabase/migrations/0010_rise_embed_url.sql` sets
+`courses.rise_embed_url` to a `share.articulate.com` URL, which is what is live. **Rob has since
+approved hosting the Rise content inside the platform instead.** That reversal is not written into
+`CLAUDE.md` and has not been executed. It also has a legal tail: `app/privacy/page.tsx` carries a
+comment explaining that the "served from our own infrastructure" paragraph was **deleted** from
+Privacy §4 precisely because it was not true, and Articulate Global was listed as a sub-processor
+instead. **When the Rise export moves behind a session-gated route, drop the sub-processor row and
+restore that paragraph in the same commit as the routing change.**
 
-### 2026-07-26 (Rob) — naming + corporate structure
-- **Product name: "Iurix Accreditation"** ("Iurix" for the company). Replaces "Athena".
-- **BSBR Holdings, LLC is the parent.** Iurix, IurisIQ, and Built Smart by Rob are three separate
-  companies under it. **Therefore "Built Smart by Rob" is a sibling brand, not this product's
-  publisher, and must be removed from the product entirely** — not kept as a footer line.
-- **Iurix is a DBA of BSBR Holdings, LLC.** Legal pages → "BSBR Holdings, LLC d/b/a Iurix".
-  **This resolves the LLC/EIN half of the Stripe live-mode blocker** carried since 2026-06-12:
-  Stripe activates on BSBR Holdings' existing EIN. No new entity, no new EIN.
-- **Domain moves to an Iurix domain** (specific domain not yet chosen).
-
-### Stack (carried)
-- Next.js 15.5 LTS (App Router, Node runtime via `nodejs_compat`) on **Cloudflare Workers** via
-  `@opennextjs/cloudflare`. No `runtime = 'edge'` anywhere.
-- Supabase (Auth/Postgres/Storage); RLS via `firm_id`/`role` in `app_metadata`.
-- Stripe webhook in a Next.js Route Handler; raw body via `req.text()`; idempotency table
-  `processed_stripe_events(event_id PK)`.
-- `pdf-lib` in a CF Worker for cert PDFs. `jose` (never `jsonwebtoken`).
-- **Course content (2026-06-18, Rob — LOCKED):** Articulate Rise 360 web export as the learning
-  layer, embedded via iframe, reporting no scores. The custom React quiz is the only certifiable
-  layer. Cloudflare Stream is NOT used.
-- **Pricing (2026-06-12, Rob):** per-seat volume — $35 (1–9) / $32 (10–24) / $28 (25+) per user/yr,
-  all seats at the band rate, FLAT on renewal. ONE product + ONE volume-tiered price; Checkout
-  `quantity` = seats; seat enforcement = subscription `quantity`.
-
----
-
-## ⚠️ Known-stale references in other docs
-
-- ✅ **CLAUDE.md Stripe IDs — FIXED 2026-08-03.** It named `price_1ThbLNCzT2268ei9nkadS8kD` /
-  `prod_UgzKT3NrGNAvDA`, both from a retired Stripe account. Corrected to the API-verified
-  `price_1TjNHc6ZCSojEKRrKs79ToJ0` / `prod_UiovBHrxJSDVpf` on sandbox `acct_1ThDpr6ZCSojEKRr`,
-  which has exactly one active product and one active price. Verifying it surfaced three further
-  deltas now recorded in CLAUDE.md §4 and flagged under Stripe live mode below.
-- **`.planning/ROADMAP.md` Progress table still reads "Not started" for all six phases** and its
-  Phase 4 fallback still references Puppeteer-in-n8n (n8n is out of scope). Cosmetic; low priority.
-- **`.planning/DEPLOY-CHECKLIST.md`** is a 2026-06-17 artifact describing the first deploy. Its
-  Stripe/Resend/domain steps must be redone against the new domain.
-- **`cloudflare_stream_video_id`** is vestigial — only ever written
-  (`app/api/onboarding/complete/route.ts:82`), never read by any app code. A `NOT NULL` leftover
-  from the pre-Rise Cloudflare Stream era. Drop it someday; not a gap.
-
----
-
-## Resolved / closed
-
-- ✅ Stripe Price IDs confirmed (sandbox). Live-mode recreation pending Stripe Tax.
-- ✅ Articulate 360 outcome — Rise 360 locked 2026-06-18.
-- ✅ LLC/EIN for Stripe activation — resolved 2026-07-26 via the DBA decision.
-- ✅ Team-status "not started" bug — closed 2026-07-24, was a stale pre-deploy build, no bug.
-- ✅ CF Error 1102 — dropped from tracking 2026-07-24; never recurred.
-- ✅ **The Iurix rename is executed** (2026-07-28 → 07-30). Wordmark, publisher line, course name,
-  domain, email sender, favicon, and the certificate all carry Iurix. Only the monogram artwork and
-  the missing wordmark asset remain — see "Blocked on Rob" #1.
-- ✅ Domain — `iurixaccreditation.com` registered, live, and wired through app + Worker + emails.
-- ✅ Resend sending-domain verification — DKIM/SPF/DMARC confirmed by Rob 2026-07-29.
-- ✅ Cert PDF logo placeholder — closed by the cert rebuild (`6c44493`).
-- ✅ Cert Worker is **not** dead code — ~500 lines running the queue drain + daily crons. Do not
-  propose removing it.
+### Stack (carried, unchanged)
+Next.js 15.5 LTS (App Router, Node runtime via `nodejs_compat`) on Cloudflare Workers via
+`@opennextjs/cloudflare`. No `runtime = 'edge'` anywhere. Supabase for Auth/Postgres/Storage, RLS
+via `firm_id`/`role` in `app_metadata`. Stripe webhook in a Route Handler, raw body via
+`req.text()`, `processed_stripe_events` for idempotency.
 
 ---
 
-## Session Continuity
+## 7. Traps that have caught previous sessions
 
-- **2026-08-03 (Max, desktop):** Catch-up + correction pass, no app code changed. Fixed the 07-31
-  record across four files: the commit count (22/23 → **24**), the contradictory "17 pushed, 5 not"
-  opening in `session_handoff.md`, this file's stale migration and phase notes, and the wrong Stripe
-  product/price IDs in `CLAUDE.md` (see below). Verified Friday's deploys independently.
-- **2026-07-31 (Max):** **Four blocks, 24 commits, `5370fc3` → `277056f`.** *(This entry originally
-  read "Doc-accuracy pass on this file, no app code changed" — true of the 07:13 commit only, and
-  wrong about the day. Corrected 2026-08-03.)*
-  - *Block 1, `5370fc3`:* doc-accuracy pass on this file. Re-verified eight claims by grep and file
-    read: the rename is executed (not pending); the live URL is `iurixaccreditation.com` (not the
-    `workers.dev` sandbox); the domain decision, the course-name decision, the Resend domain
-    verification, and the cert-PDF logo placeholder are all closed; the logo blocker is narrowed to
-    the monogram in `atc-logo.tsx` plus the still-missing wordmark asset; migrations `0013` → `0016`.
-  - *Block 2, Batch 1 (`8e1e6cc` → `0601f68`):* `/cookies` route as an empty shell; sign-in footer
-    fixed (Terms links, Cookies removed pending copy, support mailto off the retired domain); dead
-    "View who's left" link removed; two orphaned Athena assets deleted; quiz width and "Your path"
-    sizing fixed.
-  - *Block 3, Batch 2 (`484e318` → `cc5d969`, plus the `0017` rebuild at `61965d7`):* migration
-    `0017` adds `nudge_sent`; the manual Nudge button now writes an audit row with `triggered_by`,
-    rate-limited to one per 48h; cron dedupes against it; renewal dedupe widened 24h → 8 days;
-    lapsed firms get a shorter admin-only cadence; auto-renewal disclosed before payment.
-  - *Block 4, Batch 3 (`368dff4` → `612dc56`):* the `/dashboard/billing` page (see Phase 5 above).
-  - Deployed: app **2026-07-31T21:01:39Z** (version `0c4e7ff8`), cert-worker **19:48:34Z**. Both
-    re-confirmed 2026-08-03 via `wrangler deployments list`. The final commit `277056f` postdates
-    the app deploy by ~2.5 minutes but touches **only** two docs, so no code is unshipped.
-- **2026-07-26 (Rob):** Scoping session, no code. Locked the Iurix name + corporate structure;
-  produced `.planning/RENAME-IURIX.md`; corrected the "payment backend is unfinished" premise (it
-  is built and deployed — the gap is live mode); refreshed this file. Commit `26729d3`.
-- **2026-07-24 (Max, desktop):** Verification pass, no code. Deploy landed; closed the team-status
-  bug, CF 1102, and the cert-worker suspicion.
-- **2026-07-17 (Max):** Dashboard UI/polish + perf pass — nav pill, shell backgrounds, Support page,
-  cert consolidation, training focus-mode fixes.
-- **Full history:** `.planning/sessions/` (2026-06-15 → present), oldest-first.
-- **Branch:** `main` only (`branching_strategy = none`).
+- **`enrollments` has no `created_at`.** The column is **`enrolled_at`**. Ordering by `created_at`
+  silently fails and creates ghost enrollments.
+- **Never `wrangler deploy` from inside `workers/cert-worker/`.** It picks up the root
+  `wrangler.jsonc` and redeploys the main app. Always
+  `cd workers/cert-worker && wrangler deploy --config wrangler.toml`.
+- **The cert-worker does not generate certificates.** Its `fetch` handler is a TODO stub returning
+  200. Real generation is: quiz pass → `cert_generation_queue` INSERT → `after()` → 
+  `/api/certs/generate` in the main app. The cert-worker only drains the retry cron and sends daily
+  expiry reminders.
+- **Stored certificate PDFs are never re-rendered.** A design change only appears on newly issued
+  certificates.
+- **OpenNext cannot build on native Windows.** `pnpm run deploy` there produces a Worker that 500s
+  on every route.
+- **`REQUIREMENTS.md` is the only source for requirement IDs.** Session notes have invented them.
 
-### Files of record
-| File | What it holds |
-|---|---|
-| `session_handoff.md` | **Primary cross-person sync point.** Read first, every session. |
-| `.planning/sessions/` | Full per-session history. |
-| `.planning/RENAME-IURIX.md` | Iurix rename scope — **executed**; kept as the record of what was swept. |
-| `.planning/STATE.md` | This file — current position + locked decisions. |
-| `.planning/REQUIREMENTS.md` | 63 v1 REQ-IDs. |
-| `.planning/ROADMAP.md` | 6-phase build order (Progress table is stale). |
+---
+
+## 8. Corrections to the 2026-08-03 version of this file
+
+Recorded so the same drift is visible next time:
+
+1. Said 2026-08-24's legal and framing work was undeployed. **It is live.**
+2. Said the seat Price was a hardcoded `PRICE_ID` needing a source edit. **Resolved by lookup key.**
+3. Said the app palette was 35 files of raw inline hex. **It is tokenised; `#0094FF` is in 1 file.**
+4. Said the question pool was 8 questions with no randomisation. **`0026` replaced it with 50, on
+   staging.**
+5. Carried no record that production had cut over to the PROD database. **It has, since 08-13.**
+6. Carried no PROD-versus-staging migration gap. **There is a four-migration gap.**
+7. Predated the framing correction, the intake, and both 08-26 reversals.
+8. Listed `NEXT-10-STEPS.md` as a live companion. **It was a June 12 onboarding checklist and is
+   now in `.planning/archive/`.**

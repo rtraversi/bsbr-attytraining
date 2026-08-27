@@ -1,4 +1,12 @@
-# Roadmap — AI Compliance Training Platform (Built Smart by Rob)
+> ⚠️ **Read with `STATE.md` open (checked 2026-08-27).** Two things in this file are superseded:
+> the Phase 5 goal still says the platform launches "under the Built Smart by Rob brand" (it
+> launches as **Iurix Accreditation**, a DBA of BSBR Holdings, LLC), and the Rule 5.3 framing
+> throughout is superseded by `FRAMING-CORRECTION-2026-08-24.md`. The phase structure itself is
+> still the plan.
+
+---
+
+# Roadmap: Iurix Accreditation
 
 **Created:** 2026-05-19
 **Mode:** mvp

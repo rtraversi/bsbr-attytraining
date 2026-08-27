@@ -1,3 +1,8 @@
+> **ARCHIVED 2026-08-27.** The parallel content-production checklist from 2026-06-12. It predates the 2026-08-24 framing correction, so its course outline pitches Rule 5.3 as the thesis.
+> Historical record only. Do not cite it for current status: that lives in `.planning/STATE.md`.
+
+---
+
 # Content 10 Steps — Course Production Track
 
 Content-production checklist for the AI compliance training course. Runs **in parallel** with the dev track (`NEXT-10-STEPS.md`). Owner is Rob unless noted; Max's Claude / Rob's Claude can expand any task into detailed sub-steps on request.

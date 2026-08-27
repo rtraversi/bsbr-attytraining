@@ -1,3 +1,8 @@
+> **ARCHIVED 2026-08-27.** Phase 1 was built and deployed.
+> Historical record only. Do not cite it for current status: that lives in `.planning/STATE.md`.
+
+---
+
 PHASE 1 IMPLEMENTATION PLAN
 AI Compliance Training Platform — Built Smart by Rob
 Created: 2026-06-16

@@ -1,3 +1,8 @@
+> ℹ️ **Investigation from 2026-07-30, not a status document (checked 2026-08-27).** No behaviour was
+> changed by it. The open questions in it still need decisions and are not tracked anywhere else.
+
+---
+
 # Reminder system audit — 2026-07-30
 
 P1 Task 5. **Investigation only — no behaviour was changed.** Findings are ordered by severity;

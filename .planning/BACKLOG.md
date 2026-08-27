@@ -1,3 +1,8 @@
+> ⚠️ **Last updated 2026-08-03 (checked 2026-08-27).** Predates the PROD cutover, the framing
+> correction and the policy intake. Cross-check anything here against `STATE.md` before working it.
+
+---
+
 # Backlog — Issues & Improvements
 
 Items discovered during development that must be addressed before real customers,

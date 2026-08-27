@@ -1,3 +1,8 @@
+> **ARCHIVED 2026-08-27.** Superseded twice over: first by DOMAIN-CUTOVER.md, then by .planning/DEPLOY-RUNBOOK.md, which is the live deploy document.
+> Historical record only. Do not cite it for current status: that lives in `.planning/STATE.md`.
+
+---
+
 # Deploy Checklist — Cloudflare Workers
 **Prepared:** 2026-06-17 | **For:** Rob + Max morning session 2026-06-18
 

@@ -1,3 +1,10 @@
+> ⚠️ **Checked 2026-08-27.** Still the live description of the product. Two notes: the Rule 5.3
+> language is superseded by `FRAMING-CORRECTION-2026-08-24.md` (the product is the firm's own
+> written AI use policy), and the "IURIX branding: Pending" row at the bottom is out of date. The
+> rename is executed: `grep -ril "built smart by rob"` over the source returns zero files.
+
+---
+
 # IURIX
 
 ## What This Is
