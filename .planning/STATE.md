@@ -97,25 +97,30 @@ reasoning from which chunk files a page links is not.
 | Postgres | 17.6.1 | 17.6.1 |
 | Status | ACTIVE_HEALTHY | ACTIVE_HEALTHY |
 | Supabase CLI | **linked** | not linked |
-| Migrations | **0029**, verified today (`supabase migration list --linked`: local, remote and time columns all reach 0029) | **0025**, last verified 2026-08-14. **0026–0029 have no record of ever being applied.** |
+| Migrations | **0029**, verified today (`supabase migration list --linked`: local, remote and time columns all reach 0029) | **0027**, recorded 2026-08-19. `0028` and `0029` have never been applied. |
 
-🔴 **There is a four-migration gap on the database production actually runs on.** Not on PROD:
+🔴 **PROD is two migrations behind, and both of them are the intake.**
 
-| Migration | What PROD is missing |
+| Migration | On PROD? |
 |---|---|
-| `0026_question_pool_v1.sql` | the reviewed 50-question bank (10 per lesson). Without it the live quiz still serves the 8 placeholder questions, where pool size equals attempt size, so every candidate sees an identical exam and a retake is a second look at the same paper. |
-| `0027_terms_acceptance.sql` | terms acceptance capture |
-| `0028_policy_intake.sql` | the entire intake schema |
-| `0029_email_deliverability.sql` | `firm_members.email_verified_at` and friends |
+| `0026_question_pool_v1.sql` (the 50-question bank) | ✅ applied 2026-08-19 |
+| `0027_terms_acceptance.sql` | ✅ applied 2026-08-19 |
+| `0028_policy_intake.sql` (the entire intake schema) | ❌ **never applied** |
+| `0029_email_deliverability.sql` | ❌ **never applied** |
 
-**This is inferred from `PROD-CUTOVER.md`, which records 0024 and 0025 applied to PROD on
-2026-08-13 and verified 2026-08-14, and records nothing after.** It was **not** verified directly
-today, because verifying it means relinking the CLI away from staging, and staging is the sandbox
-everything else assumes. To check it properly, from a separate clone or after relinking back:
+**Source: `.planning/sessions/20260819-max-summary.md`**, which records the deliberate PROD push and
+states "PROD and staging both at migration 0027". ⚠️ `PROD-CUTOVER.md` stops at `0025` and looks
+authoritative; it is simply not the last word. **Not re-verified against PROD today**, because
+checking means relinking the CLI away from staging, and staging is the sandbox everything else
+assumes. To confirm before pushing:
 
 ```bash
 npx supabase link --project-ref ttqthtzdjacrhjtrcmmy && npx supabase migration list --linked
+# then relink to staging: npx supabase link --project-ref ndmzvtuywcufvkxtkjhg
 ```
+
+🔴 **Leaving the CLI linked to PROD is how an accidental `db push` reaches production.** It had been
+pointed at PROD since 08-13 and was only caught on 08-19. Relink to staging in the same session.
 
 **Storage:** the `Intake-uploads` bucket exists on **staging only**. It does not exist on PROD.
 The name is capital-I and case-sensitive, buckets cannot be renamed, and a migration cannot create
@@ -149,9 +154,9 @@ content, the PROD migration gap, Stripe live mode, and launch ops.
 
 | Phase | Code | What is genuinely not done |
 |---|---|---|
-| 0 Foundations | ✅ | Supabase plan not confirmed as Pro (free tier pauses after 7 days idle and has no PITR). Resend domain verification closed 2026-07-29, **but Resend has 403'd every send since roughly 2026-08-19 (`ix-dnszoho`) and email is effectively down.** |
+| 0 Foundations | ✅ | 🔴 **Email is down (`ix-dnszoho`).** All four Resend DNS records are present and correct on the apex and the Zoho MX is intact, and a real API send **still** returns `403 domain is not verified`. It is no longer a DNS task: someone with **Resend dashboard access** has to finish verification, which is a click. Until then a firm can pay and their staff receive no invite email. Probe with `delivered@resend.dev`; the API key is send-only and 401s on `GET /domains`, so a send is the only test. ⚠️ **Supabase plan: reported upgraded to Pro on 2026-08-05, but there is no record of it anywhere in the repo and the CLI does not expose the plan.** Both projects report `ACTIVE_HEALTHY`. Confirm it in the dashboard: free tier pauses after 7 days idle and has no PITR. |
 | 1 Hello-cert end-to-end | ✅ | superseded by Phase 2 |
-| 2 Rise content + React quiz | ⚠️ content-incomplete | The **50-question bank is written and on staging but is still awaiting Katy's legal-accuracy review**, and is not on PROD (§2). Rise course content itself is still not authored. |
+| 2 Rise content + React quiz | ⚠️ content-incomplete | The **50-question bank is live on PROD** (10 per lesson, `0026`), but **Katy has never reviewed it**: Max approved shipping on 2026-08-19 with revision to follow. Rise course content itself is still not authored. |
 | 3 Firm admin dashboard | ✅ | |
 | 4 Automation hardening | ⚠️ ops-incomplete | external uptime monitor still not picked; PITR needs Pro |
 | 5 Renewal + launch polish | ⚠️ launch-incomplete | attorney review of cert copy; iPad Safari / Chromebook QA never run; cancellation email never visually rendered |
@@ -162,8 +167,8 @@ content, the PROD migration gap, Stripe live mode, and launch ops.
 
 ### Engineering, verified in the tree today
 
-1. 🔴 **Get 0026–0029 onto PROD** and create the `Intake-uploads` bucket there (§2). This is the
-   real blocker on shipping the intake: the code reaches production through CI, the database it
+1. 🔴 **Get `0028` and `0029` onto PROD** and create the `Intake-uploads` bucket there (§2). This is
+   the real blocker on shipping the intake: the code reaches production through CI, the database it
    lands on does not.
 2. **Merge `policy-intake`, run the production deploy, then open `/intake` in a browser.** It has
    never been seen rendering. Note that merging alone only produces a preview build.
@@ -181,7 +186,7 @@ content, the PROD migration gap, Stripe live mode, and launch ops.
    appears 0 times** in `app/`, `lib/` and `middleware.ts`, against **37 `.getUser()` call sites**,
    while `CLAUDE.md` mandates `getClaims()`. Awaiting Max's go-ahead since 2026-07-17.
 6. **Pick an external uptime monitor** (UptimeRobot vs BetterStack). Never decided.
-7. **Confirm the Supabase plan.**
+7. **Confirm the Supabase plan in the dashboard** (§4). Believed Pro since 2026-08-05, recorded nowhere.
 
 ### Blocked on Katy
 
@@ -293,6 +298,23 @@ via `firm_id`/`role` in `app_metadata`. Stripe webhook in a Route Handler, raw b
 - **OpenNext cannot build on native Windows.** `pnpm run deploy` there produces a Worker that 500s
   on every route.
 - **`REQUIREMENTS.md` is the only source for requirement IDs.** Session notes have invented them.
+- **Applying every migration to a fresh Supabase project does NOT produce a working database.**
+  Four objects were hand-created in the dashboard and exist in no migration: the `certificates`
+  bucket, the `courses` row, and **two Database Webhooks that are the entire certificate pipeline**.
+  A migrations-only project looks healthy and then silently never issues a certificate. It was found
+  by diffing **triggers**; tables, columns, policies, functions and indexes all matched.
+- **The Supabase credential swap is FOUR places, not three:** `.env.local`, the App Worker secrets,
+  **the `workers/cert-worker` secrets**, and the GitHub Actions secrets. Miss the cert-worker and its
+  crons keep writing to staging with nothing erroring.
+- **`0023_remove_avatars.sql` cannot run.** `storage.protect_delete()` blocks SQL deletes from
+  storage tables, and it is DDL in a transaction, so it takes any batched migration down with it.
+- **Never enable Cloudflare Email Routing on the apex.** It carries Zoho MX (changed 2026-08-04).
+- **`question-bank.xlsx` edited in Apple Numbers does not write back.** Numbers saves a `.numbers`
+  bundle to the Desktop, so the repo copy looks untouched while the edits sit elsewhere. Read the
+  `.numbers` directly (`numbers-parser`) and merge. `0026` is **generated** from the workbook; never
+  hand-edit the SQL.
+- **Check the rollback target ID before trusting it.** The one the handoff named for weeks appeared
+  in zero of ten deployments.
 
 ---
 
@@ -303,10 +325,10 @@ Recorded so the same drift is visible next time:
 1. Said 2026-08-24's legal and framing work was undeployed. **It is live.**
 2. Said the seat Price was a hardcoded `PRICE_ID` needing a source edit. **Resolved by lookup key.**
 3. Said the app palette was 35 files of raw inline hex. **It is tokenised; `#0094FF` is in 1 file.**
-4. Said the question pool was 8 questions with no randomisation. **`0026` replaced it with 50, on
-   staging.**
+4. Said the question pool was 8 questions with no randomisation. **`0026` replaced it with 50, and
+   it has been live on PROD since 2026-08-19.**
 5. Carried no record that production had cut over to the PROD database. **It has, since 08-13.**
-6. Carried no PROD-versus-staging migration gap. **There is a four-migration gap.**
+6. Carried no PROD-versus-staging migration gap. **PROD is at `0027`; `0028` and `0029` are not on it.**
 7. Predated the framing correction, the intake, and both 08-26 reversals.
 8. Listed `NEXT-10-STEPS.md` as a live companion. **It was a June 12 onboarding checklist and is
    now in `.planning/archive/`.**
