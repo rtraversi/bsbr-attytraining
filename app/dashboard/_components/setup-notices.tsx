@@ -47,6 +47,43 @@ export interface UnreachableMember {
 
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 
+// ── The chips' half of the nav bar's colour rule ─────────────────────────────
+//
+//   BLUE is where you can go (nav-pill.tsx).  AMBER is what you owe.
+//
+// Both chips are amber so status reads as a different KIND of thing from
+// navigation, rather than as a fourth tab. That matters more than it sounds:
+// the intake chip is the only thing in the product that ever gets the intake
+// completed (Katy killed the hard gate on 2026-08-26), so it losing itself in
+// the nav row has a cost beyond the cosmetic.
+//
+// No border or ring — Max, 2026-08-27. Fill and text colour carry the whole
+// distinction.
+//
+// ⚠️ Worth knowing rather than worth fixing: the amber fill and the nav pills'
+// pale blue sit at almost identical luminance (1.02:1 between the two grounds),
+// so a chip and a nav pill are told apart by HUE alone — amber label on warm
+// cream versus blue label on cool blue. That reads clearly in normal vision and
+// weakly under a red-green deficiency. A ring was the non-chromatic cue and has
+// been removed by choice; if that ever needs revisiting, the lever is a shape
+// difference (a dot, a different radius), not a darker amber.
+//
+// Text is #7A5C0C, not the #96700F the banner used: at 13px in a banner that
+// was borderline, and at 12px in a chip it is a straight AA failure (4.04:1 at
+// rest, 3.73:1 on hover). #7A5C0C is 5.55:1 / 5.13:1. Dark mode lifted
+// #D9AE45 → #E8C56A, 9.04:1 on the composited chip background.
+export const CHIP_AMBER =
+  'bg-[rgba(214,158,20,0.14)] text-[#7A5C0C] hover:bg-[rgba(214,158,20,0.24)] dark:bg-[#4A3D1A]/50 dark:text-[#E8C56A] dark:hover:bg-[#4A3D1A]/80'
+
+// Quieter alternative, kept ready and border-free: amber label, no fill until
+// hover. Use it if the filled amber reads as scolding rather than as a nudge —
+// the firm has done nothing wrong, they simply have not finished yet.
+// 🔴 TO SWAP: change CHIP_TONE below to CHIP_QUIET. That is the whole change.
+export const CHIP_QUIET =
+  'bg-transparent text-[#7A5C0C] hover:bg-[rgba(214,158,20,0.14)] dark:bg-transparent dark:text-[#E8C56A] dark:hover:bg-[#4A3D1A]/50'
+
+const CHIP_TONE = CHIP_AMBER
+
 /**
  * "Your firm's AI policy is not written yet."
  *
@@ -62,8 +99,11 @@ const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
  * that gets dismissed once and never seen again — so there is no × here, and
  * adding one would quietly remove the last prompt in the product.
  *
- * It is styled as an invitation rather than an alarm: the firm has done nothing
- * wrong, they have simply not finished yet.
+ * It should read as an invitation, not an alarm — the firm has done nothing
+ * wrong, they simply have not finished yet. Amber is carrying "attention", not
+ * "fault", which is the same job it already does on the deliverability chip.
+ * ⚠️ If the fill reads as scolding, CHIP_QUIET above is the quieter version
+ * and switching is a one-line change to CHIP_TONE.
  *
  * The chip IS the action — one link whose label is the verb — rather than a
  * label with a button beside it, which at pill scale would be two tap targets
@@ -83,7 +123,7 @@ export function IntakeChip({
   return (
     <Link
       href="/intake"
-      className={`${chipClassName} shrink-0 bg-[#EAF6FF] text-[var(--brand-emphasis)] hover:bg-[#DCEEFF] dark:bg-[var(--brand-emphasis)]/15 dark:text-[var(--brand-primary)] dark:hover:bg-[var(--brand-emphasis)]/25`}
+      className={`${chipClassName} shrink-0 ${CHIP_TONE}`}
     >
       <ClipboardIcon />
       {/* Below sm the pill is already carrying three nav links and the theme
@@ -203,7 +243,7 @@ export function EmailDeliverabilityChip({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className={`${chipClassName} bg-[rgba(214,158,20,0.14)] text-[#96700F] hover:bg-[rgba(214,158,20,0.24)] dark:bg-[#4A3D1A]/50 dark:text-[#D9AE45] dark:hover:bg-[#4A3D1A]/80`}
+        className={`${chipClassName} ${CHIP_TONE}`}
       >
         <MailWarningIcon />
         <span className="hidden sm:inline">{label}</span>

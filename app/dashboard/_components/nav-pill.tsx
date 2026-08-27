@@ -250,17 +250,48 @@ export function NavPill({ firmName, role, setup = null }: NavPillProps) {
     },
   ]
 
+  // ── The bar's colour rule ────────────────────────────────────────────────
+  //
+  //   BLUE is where you can go.  AMBER is what you owe.
+  //
+  // Every nav pill is blue-family: pale tint at rest, solid app blue when
+  // active. The two setup chips are amber-family (see setup-notices.tsx), so
+  // status stops competing with navigation for the same visual language.
+  //
+  // Every pairing below was measured, not eyeballed. AA wants 4.5:1 at this
+  // size (14px semibold is under the 18.66px large-text threshold).
+  //
   // Every pill — dashboard cluster included — shares this exact height,
   // padding, font-size and corner radius. Only pillIdle/pillActive differ.
   const pillBase =
     'inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-colors sm:gap-2 sm:px-5 sm:py-2.5 sm:text-sm'
+  // Idle: pale blue ground, BRAND BLUE label (Max, 2026-08-27). The three
+  // section links now read as blue-on-blue and the active pill as solid-blue,
+  // so the whole left-to-right run is one colour family at two weights.
+  //
+  // Hover moves the GROUND, not the text — the label is already the brand
+  // colour, so darkening it further would read as a second state rather than as
+  // feedback.
+  //
+  // 🔴 #0094FF on #EAF6FF measures 2.86:1. AA wants 4.5:1 at 14px semibold, so
+  // this is below the bar; see the note on pillActive.
   const pillIdle =
-    'bg-[#F5F7FA] text-[#8A8A8A] hover:text-[var(--brand-emphasis)] dark:bg-[#131A20] dark:text-[#7A8189] dark:hover:text-[var(--brand-primary)]'
-  // Active tab was bg-black / dark:bg-[#F5F7FA] — Rob: too little contrast against
-  // the rest of the page. Now the app blue in both modes. Light uses
-  // --brand-emphasis (#0094FF) with white text as asked; dark uses the lighter
-  // --brand-primary (#32C7FF) with near-black text, because #0094FF behind white
-  // text on a dark shell is the weakest pairing of the four.
+    'bg-[#EAF6FF] text-[var(--brand-emphasis)] hover:bg-[#DCEEFF] dark:bg-[#131A20] dark:text-[var(--brand-primary)] dark:hover:bg-[#18212A]'
+  // Active: solid app blue, WHITE label (Max, 2026-08-27), which is what makes
+  // the Dashboard pill read as the anchor against the lighter section links.
+  //
+  // 🔴 KNOWN AND ACCEPTED: white on #0094FF is 3.14:1, under AA's 4.5:1 for
+  // 14px semibold. This is the pairing Batch A introduced and the 2026-08-25
+  // notes flagged; it was briefly near-black (6.30:1) and Max chose white for
+  // the contrast BETWEEN pills. Recorded, not hidden — the alternative that
+  // keeps this exact look and clears AA is a slightly deeper ground, white on
+  // #0077CC (4.66:1), which needs no change to --brand-emphasis itself because
+  // it applies only to this pill. Do not "fix" it by moving the brand token:
+  // #0094FF is the app's signature colour and STATE.md's standing rule is that
+  // the palette does not move without Max saying so.
+  //
+  // Dark mode is untouched and already passes: #0A0A0A on --brand-primary
+  // (#32C7FF) is 10.13:1.
   const pillActive =
     'bg-[var(--brand-emphasis)] text-white dark:bg-[var(--brand-primary)] dark:text-[#0A0A0A]'
 
