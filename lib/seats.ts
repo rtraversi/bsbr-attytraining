@@ -1,16 +1,9 @@
-// Seat entitlement — the single rule that decides whether a firm member may
-// reach the training.
+// Certificate eligibility.
 //
-// This is deliberately the SAME predicate the sync_used_seats trigger uses to
-// count seats (migration 0015): a row occupies a seat when
-//   occupies_seat AND status IN ('invited','active')
-// Access and billing therefore derive from one rule rather than two that can
-// drift. If this predicate changes, 0015's trigger has to change with it.
-//
-// Note what is deliberately NOT here: role. An admin who opted into training is
-// legitimately entitled; an admin who declined is not. Employees are entitled by
-// default (occupies_seat defaults to true). The question is about the seat, not
-// the role.
+// Training is open to every firm member. A seat is now billing only, while a
+// certificate remains limited to active/invited, paid staff who are not
+// attorneys. Keep this rule in one place so the dashboard denominator and the
+// assessment API cannot drift apart.
 
 import type { createAdminClient } from '@/lib/supabase/admin'
 
@@ -24,53 +17,39 @@ export const SEAT_OCCUPYING_STATUSES = ['invited', 'active'] as const
  * member row should append this fragment to their own select rather than making
  * a second round-trip.
  */
-export const SEAT_ACCESS_COLUMNS = 'role, status, occupies_seat' as const
+export const CERTIFIABLE_MEMBER_COLUMNS = 'status, occupies_seat, is_attorney' as const
 
-export type SeatAccessRow = {
-  role: string
+export type CertifiableMemberRow = {
   status: string
   occupies_seat: boolean
+  is_attorney: boolean
 }
 
-/** True when this member holds a seat and may reach the training. */
-export function hasTrainingAccess(member: SeatAccessRow | null | undefined): boolean {
+/** True when this member may receive a certificate. */
+export function isCertifiableMember(member: CertifiableMemberRow | null | undefined): boolean {
   if (!member) return false
   return (
     member.occupies_seat === true &&
+    member.is_attorney === false &&
     (SEAT_OCCUPYING_STATUSES as readonly string[]).includes(member.status)
   )
 }
 
 /**
- * True when the member is an admin who declined training at onboarding — the one
- * case where a failed access check should offer self-enrollment rather than a
- * dead end. Deliberately narrow: a suspended or deleted admin gets the plain
- * "no access" state, not an enroll button.
+ * Fetch just the certificate-eligibility columns for API routes that do not
+ * already have the member row.
  */
-export function canSelfEnroll(member: SeatAccessRow | null | undefined): boolean {
-  if (!member) return false
-  return (
-    member.role === 'admin' &&
-    member.occupies_seat === false &&
-    (SEAT_OCCUPYING_STATUSES as readonly string[]).includes(member.status)
-  )
-}
-
-/**
- * Fetch just the entitlement columns. For call sites that don't already read the
- * member row (e.g. api/quiz/attempt).
- */
-export async function fetchSeatAccess(
+export async function fetchCertifiableMember(
   admin: AdminClient,
   userId: string,
   firmId: string
-): Promise<SeatAccessRow | null> {
+): Promise<CertifiableMemberRow | null> {
   const { data } = await admin
     .from('firm_members')
-    .select(SEAT_ACCESS_COLUMNS)
+    .select(CERTIFIABLE_MEMBER_COLUMNS)
     .eq('user_id', userId)
     .eq('firm_id', firmId)
     .maybeSingle()
 
-  return (data as SeatAccessRow | null) ?? null
+  return (data as CertifiableMemberRow | null) ?? null
 }

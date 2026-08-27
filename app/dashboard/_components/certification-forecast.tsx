@@ -1,7 +1,7 @@
 'use client'
 
 import { useTeam } from './team-table'
-import { hasTrainingAccess } from '@/lib/seats'
+import { isCertifiableMember } from '@/lib/seats'
 
 const CARD = 'rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
 const HEADING = 'font-headline text-2xl md:text-3xl font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
@@ -19,23 +19,18 @@ const AVATAR_COLORS = ['#6FB8F2', '#B45309', '#8A8A8A']
  * date (and never divides by zero).
  *
  * Every figure here — the "X of Y" readout, the progress bar and the "who's
- * left" avatar stack — is computed over seat-holders only, NOT over the full
- * roster the table renders. See the filter below.
+ * left" avatar stack — is computed over certifiable members only, NOT over the
+ * full roster the table renders. See the filter below.
  */
 export function CertificationForecast() {
   const { visible } = useTeam()
 
   const now = Date.now()
 
-  // Forecast only over members who can actually BE certified. `visible` is the
-  // team roster and rightly still lists an admin who declined training, but they
-  // hold no seat, are gated out of the course, and can never pass — so counting
-  // them inflated "Certified so far — X of Y" and left `remainingSeats` with a
-  // floor it could never clear, which is a projection that never completes.
-  //
-  // hasTrainingAccess is the same predicate the seat trigger (0015) and the
-  // training gate use — reused rather than re-derived here.
-  const certifiable = visible.filter(hasTrainingAccess)
+  // Forecast only over members who can actually receive a certificate. The
+  // roster still lists attorneys and non-billable members, but counting either
+  // would make the completion projection impossible to finish.
+  const certifiable = visible.filter(isCertifiableMember)
 
   const total = certifiable.length
   const remainingMembers = certifiable.filter(m => m.trainingStatus !== 'passed')

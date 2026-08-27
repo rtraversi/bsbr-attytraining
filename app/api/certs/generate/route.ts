@@ -88,6 +88,22 @@ export async function POST(req: NextRequest) {
       throw new Error(`Enrollment not found: ${queue.enrollment_id}`)
     }
 
+    // Defense in depth for queue rows created before the certificate rule, or
+    // by a future writer that misses the assessment-layer guard.
+    const { data: member } = await admin
+      .from('firm_members')
+      .select('is_attorney')
+      .eq('firm_id', queue.firm_id)
+      .eq('user_id', enrollment.user_id)
+      .maybeSingle()
+    if (member?.is_attorney === true) {
+      await admin
+        .from('cert_generation_queue')
+        .update({ status: 'succeeded', last_error: 'Certificate ineligible: attorney' })
+        .eq('id', queue.id)
+      return NextResponse.json({ ok: true, skipped: 'attorney_ineligible' })
+    }
+
     const [firmResult, courseResult, authResult, attemptResult] = await Promise.all([
       admin.from('firms').select('name, owner_id, notify_cert_earned').eq('id', queue.firm_id).single(),
       admin.from('courses').select('title').eq('id', enrollment.course_id).single(),

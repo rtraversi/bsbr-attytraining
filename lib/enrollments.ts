@@ -7,8 +7,7 @@
 // renewal inserts a FRESH enrollment row per term. Multiple rows per learner are
 // therefore NORMAL, not corruption.
 //
-// Two call sites — app/api/firm/enroll-self and app/api/onboarding/complete —
-// asked "does an enrollment exist?" with a bare
+// Earlier enrollment writers asked "does an enrollment exist?" with a bare
 // `.eq(user_id).eq(course_id).maybeSingle()`, no firm_id, no ordering, and the
 // error discarded. `.maybeSingle()` ERRORS on multiple matches instead of
 // returning one of them, so on ANY renewed account the read came back
@@ -79,9 +78,8 @@ export type EnsureEnrollmentOutcome =
  *
  * On a read failure this returns `error` and writes nothing. That is the whole
  * point: inserting on a failed read is precisely how the duplicates were made.
- * Callers decide whether a failure is fatal — for the two seat-granting routes
- * it is not, because the seat is already claimed and
- * lib/training/assessment.ts creates the row lazily at first quiz attempt.
+ * The assessment route treats a failure as fatal, because it creates the row
+ * lazily at the first certification attempt.
  */
 export async function ensureEnrollment(
   admin: AdminClient,

@@ -156,8 +156,8 @@ export async function POST(req: NextRequest) {
   // This used to sit behind the "I am also taking this training" checkbox, which
   // has moved to the intake roster (the admin's own attorney answer decides
   // whether they occupy a seat). It is unconditional now because nothing else in
-  // the codebase CREATES the course — app/api/firm/enroll-self and
-  // lib/training/assessment both only read it — so making it conditional again
+  // the codebase CREATES the course — lib/training/assessment only reads it —
+  // so making it conditional again
   // would leave a fresh environment with no course at all.
   const { data: course } = await supabase.from('courses').select('id').limit(1).maybeSingle()
   if (!course) {

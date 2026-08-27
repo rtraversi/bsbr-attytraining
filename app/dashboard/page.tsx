@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { hasTrainingAccess } from '@/lib/seats'
+import { isCertifiableMember } from '@/lib/seats'
 import { AdminDashboard } from './_components/admin-dashboard'
 import type { TrainingStatus } from './_components/team-table'
 
@@ -44,7 +44,7 @@ export default async function DashboardPage() {
     admin
       .from('firm_members')
       .select(
-        'id, user_id, role, status, occupies_seat, invited_at, activated_at, invite_email_failed, email_verified_at',
+        'id, user_id, role, status, occupies_seat, is_attorney, invited_at, activated_at, invite_email_failed, email_verified_at',
       )
       .eq('firm_id', firmId)
       .neq('status', 'deleted')
@@ -159,16 +159,10 @@ export default async function DashboardPage() {
 
   memberDetails.sort((a, b) => STATUS_SORT[a.trainingStatus] - STATUS_SORT[b.trainingStatus])
 
-  // Only seat-holders can ever be certified, so only they belong in the
-  // denominator. An admin who declined training at onboarding holds no seat and
-  // is gated out of the course entirely — counting them made 100% unreachable
-  // for that firm, which under the all-or-none accreditation rule (Katy, legal
-  // read 2026-07-30) would mean it could never be accredited at all.
-  //
-  // hasTrainingAccess is the same predicate the seat trigger (0015) and the
-  // training gate use. Reused, not re-derived: a third copy of this rule
-  // drifting out of sync is exactly how the original seat double-count happened.
-  const certifiableMembers = memberDetails.filter(hasTrainingAccess)
+  // Training is open to every firm member. The compliance denominator is the
+  // smaller group that can receive certificates: active/invited paid staff, not
+  // attorneys. Reuse the API's predicate instead of re-deriving it here.
+  const certifiableMembers = memberDetails.filter(isCertifiableMember)
   const certifiedCount = certifiableMembers.filter(m => m.trainingStatus === 'passed').length
   const totalCount = certifiableMembers.length
   // Was Math.round, which let 199/200 render as "100%" — and 100 is the one

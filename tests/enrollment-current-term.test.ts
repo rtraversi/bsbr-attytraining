@@ -1,8 +1,8 @@
 /**
  * ix-maybesingle — the duplicate-enrollment factory.
  *
- * app/api/firm/enroll-self and app/api/onboarding/complete both asked "does an
- * enrollment exist?" with a bare `.eq(user_id).eq(course_id).maybeSingle()`, no
+ * Earlier enrollment writers asked "does an enrollment exist?" with a bare
+ * `.eq(user_id).eq(course_id).maybeSingle()`, no
  * firm_id, no ordering, and the error discarded.
  *
  * Migration 0007 dropped the unique constraint so a renewal inserts a FRESH row

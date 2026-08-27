@@ -12,10 +12,10 @@ export interface MemberDetail {
   user_id: string
   role: string
   status: string
-  /** Holds a paid seat (0015). With role+status this is the full seat predicate
-   *  in lib/seats — CertificationForecast filters on it so members who cannot be
-   *  certified stay out of its denominator while still appearing in the table. */
+  /** Holds a paid seat (0015). This is billing only; certification also excludes
+   * attorneys, via isCertifiableMember in lib/seats. */
   occupies_seat: boolean
+  is_attorney: boolean
   email: string
   name: string
   trainingStatus: TrainingStatus

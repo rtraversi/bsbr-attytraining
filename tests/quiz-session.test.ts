@@ -64,6 +64,7 @@ let courseId: string
 let otherCourseId: string
 let learnerId: string
 let passerId: string
+let attorneyId: string
 let outsiderId: string
 /** questionId → correct_index, for the course under test. */
 const correctIndexById = new Map<string, number>()
@@ -144,6 +145,7 @@ beforeAll(async () => {
 
   learnerId = await createLearner('learner')
   passerId = await createLearner('passer')
+  attorneyId = await createLearner('attorney')
   outsiderId = await createLearner('outsider')
 
   const firm = must(
@@ -165,12 +167,20 @@ beforeAll(async () => {
   for (const [userId, role] of [
     [learnerId, 'admin'],
     [passerId, 'employee'],
+    [attorneyId, 'employee'],
     [outsiderId, 'employee'],
   ] as const) {
     must(
       await admin
         .from('firm_members')
-        .insert({ firm_id: firmId, user_id: userId, role, status: 'active' })
+        .insert({
+          firm_id: firmId,
+          user_id: userId,
+          role,
+          status: 'active',
+          is_attorney: userId === attorneyId,
+          occupies_seat: userId !== attorneyId,
+        })
         .select('id')
         .single(),
       `insert member ${role}`
@@ -183,7 +193,7 @@ afterAll(async () => {
   // have written a PDF under this firm's prefix. Storage objects are not
   // covered by the firms cascade.
   try {
-    for (const userId of [passerId, learnerId, outsiderId]) {
+  for (const userId of [passerId, learnerId, attorneyId, outsiderId]) {
       const prefix = `firms/${firmId}/employees/${userId}`
       const { data: objects } = await admin.storage.from('certificates').list(prefix, { limit: 100 })
       const files = (objects ?? []).filter(o => o.id).map(o => `${prefix}/${o.name}`)
@@ -201,7 +211,7 @@ afterAll(async () => {
   if (courseId) await admin.from('courses').delete().eq('id', courseId)
   if (otherCourseId) await admin.from('courses').delete().eq('id', otherCourseId)
 
-  for (const id of [outsiderId, passerId, learnerId]) {
+  for (const id of [outsiderId, attorneyId, passerId, learnerId]) {
     if (id) await admin.auth.admin.deleteUser(id)
   }
 })
@@ -621,6 +631,29 @@ describe('recordQuizAttempt — the ix-quizforge regression', () => {
     expect(attemptRow?.question_ids).toEqual(questionIds)
     expect(attemptRow?.score).toBe(100)
     expect(attemptRow?.passed).toBe(true)
+  }, 30_000)
+
+  it('lets an attorney complete the material but never queues a certificate', async () => {
+    const { sessionId, questionIds } = await start(attorneyId)
+
+    const result = await recordQuizAttempt(admin, {
+      userId: attorneyId,
+      firmId,
+      courseId,
+      sessionId,
+      answers: correctFor(questionIds),
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.passed).toBe(true)
+    expect(result.certQueueId).toBeNull()
+
+    const { count } = await admin
+      .from('cert_generation_queue')
+      .select('id', { count: 'exact', head: true })
+      .eq('quiz_attempt_id', result.attemptId!)
+    expect(count).toBe(0)
   }, 30_000)
 
   it('reports a missing session rather than throwing', async () => {

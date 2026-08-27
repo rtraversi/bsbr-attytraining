@@ -9,7 +9,7 @@
  *
  * What it pins:
  *   - the roster name reaches user_metadata.full_name (the certificate bug)
- *   - is_attorney lands, and occupies_seat is its inverse
+ *   - is_attorney lands, and occupies_seat is its billing inverse
  *   - used_seats ends up equal to the non-attorney count, via the trigger
  *   - max_seats is NOT rewritten from the roster
  *   - promote is idempotent — the property the "flip status last" design rests on
@@ -259,7 +259,7 @@ describe('promoteIntake', () => {
     }
   }, 60_000)
 
-  it('records attorney status and makes occupies_seat its inverse', async () => {
+  it('records attorney status and makes occupies_seat its billing inverse', async () => {
     for (const row of ROSTER) {
       const member = await memberFor(firmId, row.email)
       expect({ email: row.email, isAttorney: member!.is_attorney, occupies: member!.occupies_seat }).toEqual({
