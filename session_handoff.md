@@ -1,77 +1,77 @@
 # Session Handoff
 
-**Date:** 2026-08-26
+**Date:** 2026-08-27
 **Who:** Max, with terminal-Claude
 
-> 🔴 **CORRECTION, 2026-08-27: item 1 below was wrong.**
-> **All of 2026-08-24 was already deployed when this was written.** Production was deployed six
-> times on 08-24, the last from `2efec949` at 19:34:58Z with the workflow's own production smoke
-> test passing (`gh run view 32768982427`). The live site was serving the new framing and the
-> published Terms and Privacy the whole time, and `/dpa` correctly 404s in production because
-> `app/dpa/page.tsx` calls `notFound()` there. The claim had been carried forward for two days.
-> **Deploy status is only ever answered by `gh run list --workflow=deploy.yml`, checking for a
-> `workflow_dispatch` run whose "Deploy to production" step succeeded.** See `.planning/STATE.md` §1.
+> ✅ **The deploy claim that was wrong in this file for three days is now correct.**
+> All of 2026-08-24 — the framing correction, Terms, Privacy — **has been live since 2026-08-24
+> 19:34:58Z**, deployed from `2efec949` with the workflow's own production smoke test passing.
+> `/dpa` 404s in production **by design** (`app/dpa/page.tsx` calls `notFound()` there).
 >
-> 🔴 **What actually blocks the intake, and was not in this list:** production runs on **IURIX PROD
-> (`ttqthtzdjacrhjtrcmmy`)**, which is at migration **0025**. `0026`-`0029` and the
-> `Intake-uploads` bucket exist on STAGING only. The code ships through CI; the database it lands
-> on does not.
->
-> ⚠️ **Genuinely unmerged:**
-> 1. 2026-08-25's two UI branches (`ui-polish-batch-a` / `-b`).
-> 2. Today's whole policy intake, on `policy-intake`.
+> 🔴 **Deploy status is only ever answered by the workflow list**, never by commits or timestamps:
+> ```bash
+> gh run list --workflow=deploy.yml --limit 15 \
+>   --json event,conclusion,createdAt,headSha,displayTitle
+> ```
+> A `push` run is a **preview**. Only an `event: workflow_dispatch` run whose "Deploy to production"
+> step succeeded actually shipped. See `.planning/STATE.md` §1.
 
 ---
 
 ## What happened today
 
-**The policy intake was built end to end**, in five batches on one branch: schema, question set,
-branching engine, UI, routes, promote, and the flow around it.
+**Three things: the setup notices became chips in the nav pill, the two UI batches finally merged,
+and the attorney seat/certificate defect was fixed.**
 
 ```
 main
- └── policy-intake   fc8bce4  0028 — schema + firm_members.is_attorney
-                     cd4b087  question set + branching engine
-                     93e15be  intake screen + save/resume/upload/submit routes
-                     3da83d5  password onboarding, promote, dashboard gate
-                     51a3189  gate softened, roster capped, deliverability
+ └── policy-intake   263cf80  setup notices become chips in the nav pill
+                     b43324d  merge: ui-polish-batch-b into policy-intake
+                     05e2d74  separate navigation and setup chip colours
+                     93a92eb  open course access and gate certificates
+                     6285e15  classify attorneys without consuming seats
 ```
 
-`tsc --noEmit` clean. `eslint .` 0 errors (4 pre-existing `no-img-element` warnings, untouched
-files). `next build` clean. **192 tests passing across 14 files.**
+**All five pushed.** `policy-intake` is in sync with `origin`. `tsc` 0, `eslint` 0 errors (4
+pre-existing `no-img-element` warnings), `next build` clean, **195 tests across 15 files** (was 192
+across 14).
 
-**Nothing in this branch has been seen in a browser.** It was built to Katy's approved mockup and
-verified by tests, `tsc` and `next build` only.
-
----
-
-## Two reversals landed mid-session — read these first
-
-**Katy killed the hard gate at 12:11.** *"The problem is that the intake is time consuming. People
-will want to explore without having to fill it all in."* Batch 4 built the gate; batch 5 removed it.
-The dashboard opens for everyone and the intake is a **persistent, undismissible notice** — it has
-to be undismissible, because nothing forces the intake now and it is the only thing that ever gets
-it completed.
-
-**Max reversed flag-never-block on the roster.** The old copy promised "we will sort the extra seats
-out with you afterwards" and **nobody owned "afterwards"**. The roster is capped at the seats
-purchased; attorneys are unlimited and never consume a seat. Known and accepted: a capped firm
-cannot reach full accreditation until it buys the extra seat.
-
-**And the buyer's path no longer touches email at all.** They set a password on `/onboarding` and are
-signed straight into `/intake`. That is the only reason any of this is testable — Resend has 403'd
-every send for a week (`ix-dnszoho`).
+**`ui-polish-batch-a` and `-b` are now merged** and can be deleted.
 
 ---
 
-## Migrations — STAGING ONLY
+## Read these three first
 
-Both on `ndmzvtuywcufvkxtkjhg`. **PROD (`ttqthtzdjacrhjtrcmmy`) untouched.** Types regenerated.
+**1. The nav bar has a colour rule now: blue is where you can go, amber is what you owe.** Nav pills
+are blue-family; both setup chips are amber-family, so status stops competing with navigation.
 
-- **0028** — the intake schema. `intake_sensitive` has **RLS on and NO POLICY AT ALL**, deliberately;
-  the migration carries a red-flagged comment telling future sessions not to add one.
-- **0029** — email deliverability. 🔴 Do **not** reuse `auth.users.email_confirmed_at` for this: every
-  creation path passes `email_confirm: true`, so it is true for everybody and means something else.
+🔴 **Two light-mode pairings knowingly fail WCAG AA.** Max's call, made with the numbers in front of
+him, recorded in a red-flagged comment above `pillActive` so nobody quietly "fixes" it:
+
+| Pairing | Ratio | needs 4.5:1 |
+|---|---|---|
+| White on `#0094FF` — active / Dashboard pill | 3.14:1 | ✗ |
+| `#0094FF` on `#EAF6FF` — Training / Support / Settings | 2.86:1 | ✗ |
+
+**Do not resolve this by moving the brand token.** `#0094FF` is `--brand-emphasis` and the palette
+does not move without Max saying so. The compliant near-miss keeps the look exactly and changes only
+this pill's ground: white on `#0077CC` = 4.66:1, `#0068B3` on `#EAF6FF` = 5.27:1.
+
+Fixed on the way: the amber chip text (`#96700F` was 4.04:1 → `#7A5C0C` at 5.55:1) and dark-mode
+idle labels (4.45:1 → 5.64:1).
+
+**2. `hasTrainingAccess` no longer exists.** Katy, 2026-08-27 06:56: *"the training program itself
+shouldn't be gated it's just the certificate really."* Training is open to everyone; `is_attorney` is
+now read before the `cert_generation_queue` insert in **both** `api/certs/generate` and
+`api/certs/drain`, so an attorney who passes the quiz gets no certificate. `canSelfEnroll`,
+`no-seat-notice.tsx`, `enroll-self-button.tsx` and `api/firm/enroll-self` are **deleted** — they
+existed only because access was seat-gated. `occupies_seat` is billing only; the surviving predicate
+is `isCertifiableMember` in `lib/seats.ts`.
+
+**3. The chips render on EVERY `/dashboard` route, not just the admin home** — the pill lives in
+`app/dashboard/layout.tsx`. Deliberate: the intake chip is the only thing that ever gets the intake
+completed, so following the admin around is the point. Costs three indexed queries per route for
+admins; the GoTrue lookup runs only for already-flagged members, which is normally zero.
 
 ---
 
@@ -79,50 +79,46 @@ Both on `ndmzvtuywcufvkxtkjhg`. **PROD (`ttqthtzdjacrhjtrcmmy`) untouched.** Typ
 
 | Thing | State |
 |---|---|
-| 0028 + 0029 | staging only, not on PROD |
-| `policy-intake` | 5 commits, not merged, not deployed |
+| `policy-intake` | 5 commits today, pushed, in sync |
+| `ui-polish-batch-a` / `-b` | **merged** — safe to delete |
 | Tests / `tsc` / `eslint` / `next build` | all clean |
-| 2026-08-24 Terms + Privacy | **still undeployed, 2 days old** |
-| `Intake-uploads` bucket | staging only — **does not exist on PROD** |
+| Deployed? | ❌ **No `workflow_dispatch` since 2026-08-24** |
+| Nav pill + `/intake` in a browser | ❌ **never seen** |
+| 0028 + 0029 on PROD | ❌ staging only |
+| `Intake-uploads` bucket on PROD | ❌ does not exist |
 | Rise 360 content | still not authored |
 
 ---
 
 ## Next steps
 
-1. **Deploy 2026-08-24's work.** Still step one.
-2. **`pnpm run deploy`, then look at `/intake`** as a firm admin. First browser look.
-3. **Create the `Intake-uploads` bucket on PROD** — capital I, case-sensitive, cannot be renamed. A
-   Storage dashboard action; a migration cannot do it, and the intake cannot ship without it.
-4. **Katy reads `lib/intake/questions.ts`** — two things are guesses: the module letters for
-   `doc_review_scale` / `tar` (K/K/L), and the section grouping, which was invented because the spec
-   gives module letters and not sections.
-5. Then: roster invites, the purge, and Katy's `.docx` export — all unbuilt.
+1. 🔴 **`0028` and `0029` onto PROD, and create `Intake-uploads` there.** Still the real blocker: the
+   code reaches production through CI, the database it lands on does not. Capital I, case-sensitive,
+   unrenameable, and no migration can create it. **Relink the CLI to staging in the same session.**
+2. **Merge `policy-intake` to `main`, then run a production `workflow_dispatch`.** Pushing to `main`
+   builds a preview only.
+3. **Open the nav pill and `/intake` in a browser.** Neither has ever rendered anywhere.
+4. **Decide the two AA failures with Rob** now that the look exists to judge.
+5. **`.planning/STATE.md` §3 and §5 are stale as of today** — they list `policy-intake` at +6, the UI
+   batches as unmerged, and the attorney defect as open. It lives on `main`; fix it there when this
+   merges rather than forking it here.
 
 ---
 
 ## Open questions
 
-1. **Nothing sends invites from the roster yet.** Promote creates `firm_members` rows as `invited`
-   and deliberately sends nothing. The dashboard action is unbuilt.
+1. **Nothing sends invites from the roster.** Promote creates `firm_members` rows as `invited` and
+   deliberately sends nothing. The dashboard action is unbuilt.
 2. **The purge does not exist.** 0028 has the columns and the backstop index; the route, the audit
-   row and the 30-day cron do not.
-3. **The admin's own address cannot self-clear** from the deliverability notice — they never pass
-   through `/update-password`, so while Resend is down an operator has to hand them a link with
-   `scripts/dev-auth.mjs verify-link`. Nuisance, not a brick.
-4. **Privacy §2 and §5 still have no category covering intake answers.** Flagged since batch 1; the
-   copy is Katy's to approve.
-5. **`/api/*` was never covered by the (now removed) gate.** Moot today, relevant to any future one.
+   row and the 30-day cron do not. Katy's `.docx` export is unbuilt.
+3. **The admin's own address cannot self-clear** from the deliverability chip. While Resend 403s
+   (`ix-dnszoho`), an operator hands them a link with `scripts/dev-auth.mjs verify-link`.
+4. **Removing the chips' ring removed the only non-chromatic cue** separating a chip from a nav
+   pill — the two grounds sit at 1.02:1, so it is hue alone now. Fine in normal vision, weak under a
+   red-green deficiency. If revisited, the lever is a **shape** difference, not a darker amber.
+   `CHIP_QUIET` in `setup-notices.tsx` is a border-free quieter variant, one line to switch.
+5. **Katy still owes:** `lib/intake/questions.ts` (guessed K/K/L module letters, invented section
+   grouping), the 50-question bank review, and Privacy §2/§5, which have no category covering intake
+   answers.
 
----
-
-## New local tool
-
-`scripts/dev-auth.mjs` — `link` / `password` / `users` / `verify-link`. Signs you in as anybody on
-staging without email.
-
-🔴 **It refuses to run against anything but staging.** The project ref is parsed from the URL the
-environment actually loaded, not passed as an argument. No `--force`. Verified: pointed at PROD it
-exits 1 before constructing a client.
-
-**Full detail:** `.planning/sessions/20260826-max-summary.md`.
+**Full detail:** `.planning/sessions/20260827-max-summary.md`.
