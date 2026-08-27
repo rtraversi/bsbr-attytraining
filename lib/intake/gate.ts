@@ -14,7 +14,10 @@
 // query that fed it — nothing redirects, so nothing should cost a round-trip on
 // every request to decide not to.
 //
-// What replaces it is one query in app/dashboard/page.tsx driving a NOTICE.
+// What replaces it is two queries in app/dashboard/layout.tsx driving a CHIP in
+// the nav pill. They lived in app/dashboard/page.tsx feeding a full-width banner
+// until 2026-08-27, when the banner became a chip and moved into the pill — which
+// the layout renders, so the reads moved with it.
 //
 // ── Why the notice must not be dismissible ──────────────────────────────────
 //
@@ -32,7 +35,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
-/** Where the notice's button goes. /intake resumes at current_question itself. */
+/** Where the chip links. /intake resumes at current_question itself. */
 export const INTAKE_PATH = '/intake'
 
 /**
@@ -43,7 +46,7 @@ export const INTAKE_PATH = '/intake'
  * firm admins a SELECT policy on intake_sessions and it works (pinned in
  * tests/intake-promote.test.ts).
  *
- * Fails OPEN — a query fault reads as "submitted" and shows no notice. Nothing
+ * Fails OPEN — a query fault reads as "submitted" and shows no chip. Nothing
  * depends on the answer any more, and a database hiccup that pastes an alarming
  * banner across a working dashboard is worse than a hiccup that shows nothing.
  */
@@ -61,8 +64,8 @@ export async function hasSubmittedIntake(admin: AdminClient, firmId: string): Pr
 }
 
 /**
- * Whether an intake is part-finished, so the notice can say "pick up where you
- * left off" rather than "get started" to somebody who already has.
+ * Whether an intake is part-finished, so the chip can say "half finished" rather
+ * than "not started" to somebody who already began.
  */
 export async function intakeInProgress(admin: AdminClient, firmId: string): Promise<boolean> {
   const { data } = await admin

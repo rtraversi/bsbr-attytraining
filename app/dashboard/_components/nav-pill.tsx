@@ -5,10 +5,32 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { useTheme } from './theme'
 import { isTrainingRoute } from './employee-tab-bar'
+import { IntakeChip, EmailDeliverabilityChip, type UnreachableMember } from './setup-notices'
 
 interface NavPillProps {
   firmName: string | null
   role: string | null
+  /**
+   * Firm setup state, admin-only, resolved in app/dashboard/layout.tsx.
+   *
+   * These used to be full-width banners above the dashboard grid and are now
+   * chips in this pill — which means they render on EVERY /dashboard route
+   * rather than only the admin home. Deliberate: the intake prompt is the only
+   * thing in the product that ever gets the intake completed (see
+   * setup-notices.tsx), so following the admin around is the point.
+   *
+   * Null for employees and for any firm with nothing outstanding.
+   */
+  setup?: SetupState | null
+}
+
+export interface SetupState {
+  /** Has this firm submitted its policy intake? Drives a CHIP, never a redirect. */
+  intakeSubmitted: boolean
+  /** A part-finished intake, so the chip can say "continue" rather than "start". */
+  intakeInProgress: boolean
+  /** Members whose address is unproven or whose invite bounced. Already filtered. */
+  unreachable: UnreachableMember[]
 }
 
 // The three routes that make up the training experience are now owned by the
@@ -139,7 +161,7 @@ function ThemeToggle() {
  * Separate from EmployeeTabBar: this switches app sections, that one navigates
  * within the training area.
  */
-export function NavPill({ firmName, role }: NavPillProps) {
+export function NavPill({ firmName, role, setup = null }: NavPillProps) {
   const pathname = usePathname()
   const isAdmin = role === 'admin'
   const isDashboardActive = pathname === '/dashboard'
@@ -179,6 +201,17 @@ export function NavPill({ firmName, role }: NavPillProps) {
     'bg-[#F5F7FA] text-[#8A8A8A] hover:text-[var(--brand-emphasis)] dark:bg-[#131A20] dark:text-[#7A8189] dark:hover:text-[var(--brand-primary)]'
   const pillActive = 'bg-black text-white dark:bg-[#F5F7FA] dark:text-[#0A0A0A]'
 
+  // Chips are status, not navigation, so they are quieter and narrower than a
+  // nav pill — but exactly the same HEIGHT at both breakpoints, or the pill's
+  // row goes ragged. That parity is why the numbers look arbitrary and are not:
+  //   below sm  py-2   + text-xs (16px)  = 32px, same as pillBase
+  //   sm and up py-3   + text-xs (16px)  = 40px, same as pillBase's py-2.5 + text-sm
+  // At pillBase's own px-5/text-sm the two chips plus three nav links plus the
+  // firm name overflow a 1280 viewport, which pushes the links into the
+  // horizontal scroller — status should not cost navigation its place.
+  const chipBase =
+    'inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-colors sm:gap-2 sm:px-3.5 sm:py-3'
+
   return (
     <nav className="flex max-w-full">
       <div className="relative flex w-full items-center justify-between gap-2 rounded-full bg-white p-1.5 shadow-[0_1px_2px_rgba(10,10,10,0.04)] transition-shadow hover:shadow-[0_6px_20px_rgba(10,10,10,0.10)] dark:bg-[#0D0F12] dark:shadow-none dark:hover:shadow-[0_6px_20px_rgba(0,0,0,0.5)]">
@@ -203,6 +236,23 @@ export function NavPill({ firmName, role }: NavPillProps) {
         )}
 
         <div className="flex min-w-0 items-center gap-2">
+          {/*
+            Setup chips sit OUTSIDE the overflow-x-auto scroller below, for the
+            same reason ThemeToggle does: the email chip opens an absolutely
+            positioned popover, and an ancestor with overflow-x-auto would clip
+            it to the scroller's box. shrink-0 on each chip means a narrow
+            viewport squeezes the links row — which is built to scroll — rather
+            than the chips, which are not.
+          */}
+          {isAdmin && setup && (
+            <>
+              {!setup.intakeSubmitted && (
+                <IntakeChip inProgress={setup.intakeInProgress} chipClassName={chipBase} />
+              )}
+              <EmailDeliverabilityChip members={setup.unreachable} chipClassName={chipBase} />
+            </>
+          )}
+
           {/* Always visible. min-w-0 + overflow-x-auto lets the row shrink and
               scroll within the pill on a narrow screen instead of pushing the
               whole page sideways. ThemeToggle lives outside this scroller —

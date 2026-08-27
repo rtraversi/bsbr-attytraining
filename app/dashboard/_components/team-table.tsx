@@ -28,7 +28,8 @@ export interface MemberDetail {
   /** Their invite email failed to send (0016). Cleared by a successful resend. */
   invite_email_failed: boolean
   /** Deliverability PROVEN (0029). Null means unproven, never "bad" — see the
-   *  migration. Read with invite_email_failed by EmailDeliverabilityNotice. */
+   *  migration. Read with invite_email_failed by needsEmailAttention, which
+   *  feeds the deliverability chip in the nav pill (see setup-notices.tsx). */
   email_verified_at: string | null
 }
 

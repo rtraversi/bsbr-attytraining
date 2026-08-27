@@ -260,8 +260,9 @@ export function IntakeClient({
             <div className="rounded-xl border border-[#E5EEF5] bg-[#F6F9FB] px-5 py-4 dark:border-[#1F2429] dark:bg-[#131A20]">
               <p className="text-sm font-semibold">Pending attorney review</p>
               <p className={`mt-1 max-w-[38rem] text-[13px] leading-relaxed ${MUTED}`}>
-                Your answers go to the attorney who drafts your firm&rsquo;s policy. You will be
-                emailed when it is ready. Nothing is published in the meantime.
+                Your policy is assembled from these answers and reviewed by an attorney before it
+                reaches you. You will be emailed when it is ready. Nothing is published in the
+                meantime.
                 {submittedAt ? ` Submitted ${new Date(submittedAt).toLocaleDateString()}.` : ''}
               </p>
               <Link href="/dashboard" className={`mt-4 inline-block ${BTN_PRIMARY}`}>
@@ -270,7 +271,8 @@ export function IntakeClient({
             </div>
           ) : (
             <p className={`max-w-[34rem] text-[14.5px] ${MUTED}`}>
-              Tell us how your firm uses AI. An attorney writes your policy from these answers.
+              Tell us how your firm uses AI. Your policy is assembled from these answers and
+              reviewed by an attorney.
             </p>
           )}
         </header>
