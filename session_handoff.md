@@ -3,12 +3,23 @@
 **Date:** 2026-08-26
 **Who:** Max, with terminal-Claude
 
-> ⚠️ **Three things are undeployed.**
-> 1. **All of 2026-08-24** — Terms, Privacy, the framing correction. The live site still serves the
->    old framing and `[ATTORNEY TO COMPLETE]` on both legal pages. **This was step one yesterday and
->    the day before. It is now two days old.**
-> 2. 2026-08-25's two UI branches (`ui-polish-batch-a` / `-b`), still unmerged.
-> 3. Today's whole policy intake, on `policy-intake`, unmerged.
+> 🔴 **CORRECTION, 2026-08-27: item 1 below was wrong.**
+> **All of 2026-08-24 was already deployed when this was written.** Production was deployed six
+> times on 08-24, the last from `2efec949` at 19:34:58Z with the workflow's own production smoke
+> test passing (`gh run view 32768982427`). The live site was serving the new framing and the
+> published Terms and Privacy the whole time, and `/dpa` correctly 404s in production because
+> `app/dpa/page.tsx` calls `notFound()` there. The claim had been carried forward for two days.
+> **Deploy status is only ever answered by `gh run list --workflow=deploy.yml`, checking for a
+> `workflow_dispatch` run whose "Deploy to production" step succeeded.** See `.planning/STATE.md` §1.
+>
+> 🔴 **What actually blocks the intake, and was not in this list:** production runs on **IURIX PROD
+> (`ttqthtzdjacrhjtrcmmy`)**, which is at migration **0025**. `0026`-`0029` and the
+> `Intake-uploads` bucket exist on STAGING only. The code ships through CI; the database it lands
+> on does not.
+>
+> ⚠️ **Genuinely unmerged:**
+> 1. 2026-08-25's two UI branches (`ui-polish-batch-a` / `-b`).
+> 2. Today's whole policy intake, on `policy-intake`.
 
 ---
 
