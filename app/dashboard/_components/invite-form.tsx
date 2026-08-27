@@ -89,19 +89,36 @@ export function InviteForm({ seatsRemaining }: { seatsRemaining: number }) {
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <form onSubmit={ask} className="flex flex-col gap-2">
+    // ── 🔴 SIZED TO FIT THE ROW TRACK, NOT TO TASTE (Max, 2026-08-27) ────────
+    //
+    // The three controls are py-2 and text-[13px]/[18px], not py-3 / text-sm.
+    // At py-3 the stack measured ~148px against a track of ~140, so the card
+    // scrolled PERMANENTLY — at rest, with nothing in it, on a dashboard whose
+    // entire layout exists to fit the viewport without scrolling (see
+    // dashboard-shell.tsx's measured 880px floor).
+    //
+    // A scrollbar that is always there says "there is more below" when there is
+    // not, so it costs the affordance as well as the pixels. Anything added back
+    // to this card comes out of the same budget: it is a fixed track, not a
+    // growing one, and that is why both explanations live in dialogs.
+    //
+    // ⚠️ The line-height is pinned (`/[18px]`) on purpose. An arbitrary Tailwind
+    // font size sets ONLY font-size, and the `normal` that fills in differs
+    // between an <input> and a <button> — the three controls would end up
+    // subtly different heights for no visible reason.
+    <div className="flex flex-col gap-1.5">
+      <form onSubmit={ask} className="flex flex-col gap-1.5">
         <input
           type="email"
           required
           placeholder="employee@yourfirm.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-full border border-[#E5EEF5] bg-white px-4 py-3 text-sm text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/30 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
+          className="w-full rounded-full border border-[#E5EEF5] bg-white px-4 py-2 text-[13px]/[18px] text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/30 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
         />
         <button
           type="submit"
-          className="w-full rounded-full bg-black py-3 text-sm font-bold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
+          className="w-full rounded-full bg-black py-2 text-[13px]/[18px] font-bold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
         >
           Invite by email
         </button>
@@ -110,7 +127,7 @@ export function InviteForm({ seatsRemaining }: { seatsRemaining: number }) {
       {/* Kept on the card rather than in the dialog: the dialog is gone by the
           time this is true, and a failure with no visible trace is how the dead
           Resend key hid for days. */}
-      {errorMsg && !asking && <p className="text-sm text-[#DC2626]">{errorMsg}</p>}
+      {errorMsg && !asking && <p className="text-xs text-[#DC2626]">{errorMsg}</p>}
 
       {devLink && (
         <div className="rounded-xl border border-[#FDE8B8] bg-[#FFF7E6] p-2.5">

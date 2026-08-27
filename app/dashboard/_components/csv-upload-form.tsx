@@ -85,10 +85,13 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
 
   return (
     <>
+      {/* py-2 / 13px to match the two controls above it — see the sizing note in
+          invite-form.tsx. The picker INSIDE the dialog stays full size: it has
+          the room, and it is the primary action there. */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full rounded-full border border-[#E5EEF5] py-3 text-center text-sm font-bold text-[#3D3D3D] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[var(--brand-primary)] dark:hover:text-[var(--brand-primary)]"
+        className="w-full rounded-full border border-[#E5EEF5] py-2 text-center text-[13px]/[18px] font-bold text-[#3D3D3D] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[var(--brand-primary)] dark:hover:text-[var(--brand-primary)]"
       >
         Bulk invite (CSV)
       </button>

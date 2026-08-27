@@ -137,7 +137,7 @@ export function AdminDashboard({
                 centering falls back to start-aligned, and overflow-y-auto keeps
                 the excess inside the card. */}
             <section className={`flex flex-col ${CARD}`}>
-              <h2 className={`${HEADING} mb-3`}>Invitations</h2>
+              <h2 className={`${HEADING} mb-2`}>Invitations</h2>
               {/*
                 🔴 THREE CONTROLS, NOTHING ELSE (Max, 2026-08-27). The card had
                 the field, an attorney checkbox, two buttons, a CSV format hint
@@ -152,7 +152,7 @@ export function AdminDashboard({
                 card, and it is why the component itself is deleted rather than
                 merely unrendered.
               */}
-              <div className="flex flex-col gap-2 lg:min-h-0 lg:flex-1 lg:justify-center-safe lg:overflow-y-auto">
+              <div className="flex flex-col gap-1.5 lg:min-h-0 lg:flex-1 lg:justify-center-safe lg:overflow-y-auto">
                 <InviteForm seatsRemaining={seatsRemaining} />
                 <CsvUploadForm seatsRemaining={seatsRemaining} />
               </div>
