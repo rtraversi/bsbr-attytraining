@@ -135,6 +135,49 @@ Stripe checkout  →  set email + password  →  POLICY INTAKE  →  dashboard
 
 An unfinished intake resumes at `intake_sessions.current_question`.
 
+### The walkthrough — 2026-08-27 (Max)
+
+`/onboarding` took a password and dropped the buyer on question one of a long form with nothing
+saying what it was for, how long it ran, whether it saved, or what they got at the end. The intake
+**is** the product, so arriving at it unannounced made the deliverable look like paperwork standing
+between the firm and the thing they bought.
+
+What was built:
+
+- **`app/intake/_components/intake-intro.tsx`** — a "what happens next" screen that takes the place
+  of question one. Three steps: *you answer these questions* → *an attorney assembles and reviews
+  your policy* → *your staff are held to it*. Every step is something that happens today; nothing
+  promises the roster invite action, which does not exist yet.
+- **A one-line bridge on `/onboarding`**, so "continue" names its destination.
+- **A resume line for the returning firm**, in place of the introduction: *Welcome back — picking up
+  in Tools, 9 of 34 required questions answered.* It clears on the first move.
+
+🔴 **Guidance, never a gate.** Katy killed the hard gate on 2026-08-26 12:11. The introduction
+carries an explicit, equal-weight way out — *Look around the dashboard first* — and nothing
+redirects, nothing blocks. The nav-pill intake chip is unchanged and remains the persistent nudge;
+this is the layer above it. The chip says come back, this says what you are coming back to.
+
+**Shown by STATE, not by a dismissal flag.** The introduction renders only on an untouched session —
+no `current_question` and no saved answers. Somebody back three days later has both and never sees
+it again. No cookie, no "seen it" column, nothing that can drift out of step with the session it
+describes.
+
+**`app/dashboard/_components/onboarding-checklist.tsx` was REPLACED, not revived**, and deleted
+along with `POST /api/firm/onboarding/dismiss`, its only caller. Three reasons, all structural:
+
+1. **Its steps are the wrong ones** — *purchased → invite your team → they complete training*. That
+   is the pre-intake product model, from before the policy became the deliverable. The intake is not
+   on the list at all, and "invite your team" is a dashboard action nobody has built.
+2. **It is dismissible**, on a server-persisted `firms.onboarding_dismissed`. The intake prompt is
+   deliberately undismissible because it is the only route to the written policy; a dismissible
+   checklist beside it is two prompts for the same task disagreeing about whether it matters.
+3. **It celebrates "You're compliant!"** and auto-dismisses — Rule 5.3-era framing, corrected
+   2026-08-24.
+
+⚠️ `firms.onboarding_dismissed` (migration `0008`) is now unread by anything. Left in place — a
+column drop is a migration against two databases for no benefit, and PROD is behind on `0028`/`0029`
+already.
+
 ### The buyer never gets an email — 2026-08-26 (Max)
 
 `/api/onboarding/complete` used to generate a magic link and mail it. Two reasons that is gone:

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { IurixLockup } from '@/app/_components/iurix-lockup'
 import { QuestionField } from './question-field'
+import { IntakeIntro } from './intake-intro'
 import {
   BTN_GHOST,
   BTN_PRIMARY,
@@ -22,6 +23,7 @@ import {
   visibleQuestions,
   progressBySection,
 } from '@/lib/intake/branching'
+import { SECTION_LABELS } from '@/lib/intake/types'
 import type { AnswerMap, AnswerValue, Question, RosterRow } from '@/lib/intake/types'
 
 /**
@@ -78,6 +80,26 @@ export function IntakeClient({
   const [banner, setBanner] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
+  // ── the walkthrough, and how it knows who it is talking to ────────────────
+  //
+  // 🔴 BOTH OF THESE READ THE SESSION. There is no dismissal flag, no cookie and
+  // no "seen it" column, because the session already knows: a firm that has
+  // answered something, or that has a resume point, has been here before.
+  //
+  // A flag would be a second record of the same fact, and the two would drift —
+  // an admin who cleared it would get the first-run introduction over a
+  // half-finished intake, which is exactly the "someone back three days later"
+  // case this is supposed to serve.
+  //
+  // getOrCreateOpenSession inserts current_question as NULL, so an untouched
+  // session is unambiguous.
+  const untouched = !locked && resumeAt === null && Object.keys(initialAnswers).length === 0
+  const [introOpen, setIntroOpen] = useState(untouched)
+
+  // Shown once per visit to somebody who is returning, and cleared the moment
+  // they move — it is an orientation line, not a banner to live with.
+  const [showResume, setShowResume] = useState(resumeAt !== null && !locked)
+
   const visible = useMemo(() => visibleQuestions(answers), [answers])
   const progress = useMemo(() => progressBySection(answers), [answers])
 
@@ -126,6 +148,7 @@ export function IntakeClient({
 
   const answer = useCallback(
     (question: Question, value: AnswerValue | null) => {
+      setShowResume(false)
       setAnswers((prev) => {
         const next = { ...prev }
         if (value === null) delete next[question.key]
@@ -163,6 +186,7 @@ export function IntakeClient({
   // ── navigation ────────────────────────────────────────────────────────────
   const go = useCallback(
     (to: number) => {
+      setShowResume(false)
       const clamped = Math.max(0, Math.min(visible.length - 1, to))
       setIndex(clamped)
       const key = visible[clamped]?.key
@@ -183,6 +207,11 @@ export function IntakeClient({
     const at = visible.findIndex((q) => q.section === section)
     if (at >= 0) go(at)
   }
+
+  // Counted off `progress` rather than recomputed, so the resume line and the
+  // section nav can never disagree about how far along the firm is.
+  const totalRequired = progress.reduce((n, s) => n + s.total, 0)
+  const answeredRequired = progress.reduce((n, s) => n + s.answered, 0)
 
   // ── submit ────────────────────────────────────────────────────────────────
   const roster = (answers['roster'] as RosterRow[] | undefined) ?? []
@@ -269,7 +298,9 @@ export function IntakeClient({
                 Go to your dashboard
               </Link>
             </div>
-          ) : (
+          ) : introOpen ? null : (
+            /* Suppressed while the introduction is open — it says the same thing
+               at length two inches lower, and twice reads as a stutter. */
             <p className={`max-w-[34rem] text-[14.5px] ${MUTED}`}>
               Tell us how your firm uses AI. Your policy is assembled from these answers and
               reviewed by an attorney.
@@ -282,8 +313,32 @@ export function IntakeClient({
           any answer — including this one. The two sensitive answers are never
           rendered anywhere outside the session that typed them.
         */}
-        {sent || !current ? null : (
+        {sent || !current ? null : introOpen ? (
+          <IntakeIntro
+            firmName={firmName}
+            /* Measured at the answers actually held, which on an untouched
+               session is none — so this is the unbranched set. "About" in the
+               copy is carrying the branching, which can only shorten it. */
+            questionCount={visible.length}
+            sectionCount={progress.length}
+            onStart={() => setIntroOpen(false)}
+          />
+        ) : (
           <>
+            {/*
+              The returning firm's orientation line. Deliberately NOT the
+              first-run introduction: somebody back three days later needs to
+              know where they are, not what the product is. It clears on the
+              first move — see go().
+            */}
+            {showResume && (
+              <p className={`mb-6 text-[13.5px] ${MUTED}`}>
+                <span className="font-semibold text-[var(--brand-emphasis)]">Welcome back.</span>{' '}
+                Picking up where you left off in {SECTION_LABELS[current.section]} — {answeredRequired}{' '}
+                of {totalRequired} required questions answered. Everything saves as you go.
+              </p>
+            )}
+
             <nav
               aria-label="Policy sections"
               className="mb-6 grid gap-1.5"

@@ -252,8 +252,17 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
     return (
       <div className="flex flex-col">
         <h1 className="text-center text-3xl font-semibold text-zinc-900">Set up your account</h1>
+        {/*
+          Names the destination. This screen used to end at "continue" and drop
+          the buyer onto question one of a long form with nothing saying what it
+          was for — /intake now opens with the walkthrough (intake-intro.tsx),
+          and this is the one-line bridge to it so "continue" is not a mystery
+          door. Kept to a line: the full shape is on the screen that follows,
+          where the person returning a week later can also read it.
+        */}
         <p className="mt-2.5 text-center text-base font-extralight text-[#7F7F7F]">
-          Choose a password and you are straight in. We will not email you a link.
+          Choose a password and you are straight in — no email, no link. Next we ask about how your
+          firm uses AI, and your written policy is built from your answers.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 flex w-full flex-col gap-6">
