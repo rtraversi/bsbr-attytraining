@@ -178,16 +178,30 @@ export interface RosterRow {
 /**
  * One row of the per-tool grid. The grid is an explicit exception to
  * one-question-at-a-time (Katy, 2026-08-26): one screen, one row per tool.
+ *
+ * ── The tier column was removed 2026-08-28 (Max) ────────────────────────────
+ *
+ * It offered Personal / Team / Enterprise, generic on the argument that real
+ * tier names differ per vendor. The generic names were the problem: several
+ * tools in the list have no consumer tier at all — Westlaw Edge and CoCounsel
+ * are sold to firms — so "Personal" was an option that could not be true, and a
+ * firm forced to pick something picked wrong.
+ *
+ * Nothing is lost, because tier was only ever a PROXY. What it stood in for is
+ * whether the vendor may train on the firm's data, and `noTraining` asks that
+ * outright — from the agreement, which is the only place the answer actually
+ * lives. A consumer tier with a signed no-training addendum is compliant and
+ * an enterprise tier without one is not, and only one of these two columns
+ * could ever tell them apart.
+ *
+ * Answers are jsonb, so sessions written before this carry a stale `tier` key.
+ * Nothing reads it and reconcileToolGrid rebuilds each row from `tool` and
+ * `noTraining`, so it disappears the next time the grid is touched. No
+ * migration.
  */
 export interface ToolGridRow {
   /** An ai_tools answer value, including an `other:`-prefixed free-text entry. */
   tool: string
-  /**
-   * Generic on purpose. Real tier names differ per vendor and would be wrong
-   * for most of them, so the question asks what the tier IS rather than what
-   * the vendor calls it.
-   */
-  tier: 'personal' | 'team' | 'enterprise' | null
   /**
    * "Is there a signed agreement that the vendor will not train on your data?"
    *

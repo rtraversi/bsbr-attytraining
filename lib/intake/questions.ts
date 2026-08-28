@@ -430,8 +430,10 @@ export const QUESTIONS: readonly Question[] = [
     key: 'tool_grid',
     section: 'tools',
     module: 'A',
-    prompt: 'For each tool: which tier, and is there a signed agreement that the vendor will not train on your data?',
-    help: 'Tiers are generic because vendors name them differently. Pick the closest.',
+    prompt: 'For each tool, is there a signed agreement that the vendor will not train on your data?',
+    // Says why the tier question is gone, at the point somebody would expect to
+    // be asked it. The agreement is the fact; the tier was a guess at the fact.
+    help: 'The agreement decides this, not the price tier — a consumer plan with a signed addendum counts, and an enterprise plan without one does not.',
     type: 'tool-grid',
     required: true,
     // Two conditions, not one. "Answered" alone would show an empty grid to a

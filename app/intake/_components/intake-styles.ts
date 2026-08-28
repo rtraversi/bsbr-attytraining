@@ -46,7 +46,7 @@ export const FIELD =
 export const INLINE_FIELD =
   'min-w-36 flex-1 border-0 border-b border-[#E5EEF5] bg-transparent px-2 py-1 text-sm outline-none placeholder:text-[#8A8A8A] focus:border-[var(--brand-emphasis)] dark:border-[#1F2429] dark:placeholder:text-[#7A8189]'
 
-/** Segmented pill — yes/no, the tool grid's tier and agreement columns. */
+/** Segmented pill — yes/no, and the tool grid's agreement column. */
 export const PILL_OFF =
   'grid place-items-center rounded-lg border border-[#E5EEF5] bg-white px-4 py-2.5 text-sm font-semibold text-[#8A8A8A] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] dark:border-[#1F2429] dark:bg-[#0D0F12] dark:text-[#7A8189]'
 

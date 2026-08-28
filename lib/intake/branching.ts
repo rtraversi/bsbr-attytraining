@@ -90,16 +90,16 @@ export function isAnswered(question: Question, answers: AnswerMap): boolean {
       )
 
     case 'tool-grid': {
-      // Answered only when EVERY selected tool has both columns filled. The
-      // grid is one screen, so a partially filled grid is the normal
-      // intermediate state and must not read as done.
+      // Answered only when EVERY selected tool has its column filled. The grid
+      // is one screen, so a partially filled grid is the normal intermediate
+      // state and must not read as done.
       const tools = toolGridTools(answers)
       if (tools.length === 0) return false
       if (!Array.isArray(value)) return false
       const rows = value as ToolGridRow[]
       return tools.every((t) => {
         const row = rows.find((r) => r?.tool === t.value)
-        return !!row && row.tier !== null && row.noTraining !== null
+        return !!row && row.noTraining !== null
       })
     }
 
@@ -294,7 +294,7 @@ export function toolGridTools(answers: AnswerMap): ToolGridTool[] {
   const labels = new Map(options.map((o) => [o.value, o.label]))
 
   return (selected as string[])
-    // "None yet" is not a tool and cannot have a tier or a training agreement.
+    // "None yet" is not a tool and cannot have a training agreement.
     // The grid's showIf hides the whole question in that case; this keeps the
     // two from disagreeing if a firm somehow holds none_yet alongside a real
     // tool (the multi-select treats it as exclusive, so they should not).
@@ -317,9 +317,11 @@ export function reconcileToolGrid(answers: AnswerMap): ToolGridRow[] {
   const tools = toolGridTools(answers)
   const existing = Array.isArray(answers['tool_grid']) ? (answers['tool_grid'] as ToolGridRow[]) : []
 
+  // Rebuilt field by field rather than spread, which is what drops the stale
+  // `tier` key off a session written before 2026-08-28 — see ToolGridRow.
   return tools.map((t) => {
     const row = existing.find((r) => r?.tool === t.value)
-    return row ? { tool: t.value, tier: row.tier, noTraining: row.noTraining } : { tool: t.value, tier: null, noTraining: null }
+    return row ? { tool: t.value, noTraining: row.noTraining } : { tool: t.value, noTraining: null }
   })
 }
 

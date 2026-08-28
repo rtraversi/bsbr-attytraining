@@ -390,16 +390,27 @@ account, and their own attorney answer is what decides whether they occupy a sea
 | # | key | Question | Type |
 |---|---|---|---|
 | 6 | `ai_tools` | Which AI tools does the firm use, or want to use? Tick everything, even if you would not call it AI. | multi-select + other, req |
-| 7 | `tool_grid` | For each tool: which tier, and is there a signed agreement that the vendor will not train on your data? | grid, one row per tool selected in Q6 |
+| 7 | `tool_grid` | For each tool: is there a signed agreement that the vendor will not train on your data? | grid, one row per tool selected in Q6 |
 | 8 | `prohibited_tools` | Any tools the firm wants to prohibit by name? | text, optional |
 | 9 | `personal_devices` | Does the firm ever allow personal devices or personal AI accounts to touch client information? | yes/no, req |
 
 Q6 options: ChatGPT, Claude, Gemini, Microsoft Copilot, CoCounsel, Westlaw Edge, Lexis+ AI, Harvey,
 Spellbook, DraftWise, Otter.ai, other.
 
-Q7 shown only when Q6 is non-empty. Tier is generic on purpose — personal, team, enterprise with a
-data agreement — because real tier names differ per vendor and would be wrong for most of them.
-The training-agreement column is yes / no / don't know.
+Q7 shown only when Q6 is non-empty. The training-agreement column is yes / no / don't know.
+
+🔴 **The Tier column was removed 2026-08-28 (Max).** It offered Personal / Team / Enterprise, kept
+generic because vendors name their tiers differently. Generic was the flaw: several tools on the Q6
+list have no consumer tier at all — Westlaw Edge and CoCounsel are sold to firms — so "Personal" was
+an option that could not be true, and a required grid gave the firm no way to say so.
+
+Nothing is lost, because tier was only ever a **proxy**. What it stood in for is whether the vendor
+may train on the firm's data, and the agreement column asks that outright, from the agreement, which
+is the only place the answer lives. A consumer tier with a signed no-training addendum is compliant
+and an enterprise tier without one is not — and only the agreement column can tell those apart.
+
+No migration: answers are jsonb, and `reconcileToolGrid` rebuilds each row from `tool` and
+`noTraining`, so a session written before this sheds the stale key the next time the grid is touched.
 
 ### Legal research — Module B
 

@@ -87,7 +87,6 @@ function answerEverything(seed: AnswerMap = {}): AnswerMap {
         case 'tool-grid':
           answers[question.key] = reconcileToolGrid(answers).map((r) => ({
             ...r,
-            tier: 'team' as const,
             noTraining: 'yes' as const,
           }))
           break
@@ -223,39 +222,63 @@ describe('the tool grid', () => {
     ])
   })
 
-  it('is not answered until every selected tool has both columns', () => {
+  it('is not answered until every selected tool has its agreement answered', () => {
     const answers: AnswerMap = {
       ai_tools: ['chatgpt', 'claude'],
-      tool_grid: [{ tool: 'chatgpt', tier: 'team', noTraining: 'yes' }],
+      tool_grid: [{ tool: 'chatgpt', noTraining: 'yes' }],
     }
     expect(isAnswered(q('tool_grid'), answers)).toBe(false)
 
     answers['tool_grid'] = [
-      { tool: 'chatgpt', tier: 'team', noTraining: 'yes' },
-      { tool: 'claude', tier: 'personal', noTraining: 'unknown' },
+      { tool: 'chatgpt', noTraining: 'yes' },
+      { tool: 'claude', noTraining: 'unknown' },
     ]
     expect(isAnswered(q('tool_grid'), answers)).toBe(true)
   })
 
-  it('does not count a row whose tier is still blank', () => {
+  it('does not count a row whose agreement is still blank', () => {
     const answers: AnswerMap = {
       ai_tools: ['chatgpt'],
-      tool_grid: [{ tool: 'chatgpt', tier: null, noTraining: 'yes' }],
+      tool_grid: [{ tool: 'chatgpt', noTraining: null }],
     }
     expect(isAnswered(q('tool_grid'), answers)).toBe(false)
+  })
+
+  it("counts \"don't know\" as answered — it is a real state, not a blank", () => {
+    // A firm that does not know gets an instruction in the policy to go and
+    // find out, which is a different clause from either yes or no. It must not
+    // read as an unfinished row.
+    const answers: AnswerMap = {
+      ai_tools: ['chatgpt'],
+      tool_grid: [{ tool: 'chatgpt', noTraining: 'unknown' }],
+    }
+    expect(isAnswered(q('tool_grid'), answers)).toBe(true)
+  })
+
+  it('drops a stale `tier` key off a session written before 2026-08-28', () => {
+    // Answers are jsonb, so a session started before the tier column was
+    // removed still carries the key. reconcileToolGrid rebuilds each row field
+    // by field rather than spreading, which is what sheds it — no migration.
+    const answers: AnswerMap = {
+      ai_tools: ['chatgpt'],
+      tool_grid: [{ tool: 'chatgpt', tier: 'personal', noTraining: 'yes' } as never],
+    }
+    expect(reconcileToolGrid(answers)).toEqual([{ tool: 'chatgpt', noTraining: 'yes' }])
+    // And the row still counts as answered on the way through.
+    expect(isAnswered(q('tool_grid'), answers)).toBe(true)
   })
 
   it('drops the row for a tool the firm unticked', () => {
     const answers: AnswerMap = {
       ai_tools: ['chatgpt'],
       tool_grid: [
-        { tool: 'chatgpt', tier: 'team', noTraining: 'yes' },
-        { tool: 'otter_ai', tier: 'personal', noTraining: 'no' },
+        { tool: 'chatgpt', noTraining: 'yes' },
+        { tool: 'otter_ai', noTraining: 'no' },
       ],
     }
     expect(reconcileToolGrid(answers).map((r) => r.tool)).toEqual(['chatgpt'])
     expect(pruneOrphans(answers)['tool_grid']).toEqual([
-      { tool: 'chatgpt', tier: 'team', noTraining: 'yes' },
+      { tool: 'chatgpt', noTraining: 'yes' },
     ])
   })
 })
@@ -356,7 +379,7 @@ describe('pruneOrphans', () => {
       doc_review_scale: 'ediscovery',
       tar: 'yes',
       ai_tools: ['chatgpt'],
-      tool_grid: [{ tool: 'chatgpt', tier: 'team', noTraining: 'yes' }],
+      tool_grid: [{ tool: 'chatgpt', noTraining: 'yes' }],
     }
     const pruned = pruneOrphans({ ...answers, doc_review: 'no', ai_tools: [] })
 

@@ -8,22 +8,27 @@ import type { AnswerMap, ToolGridRow } from '@/lib/intake/types'
  * The per-tool grid: one screen, one row per tool ticked in ai_tools.
  *
  * An explicit exception to one-question-at-a-time, approved by Katy 2026-08-26.
- * Asking two questions per tool one at a time would be up to twenty-four screens
- * for a firm with a dozen tools, and every one of them would look identical.
+ * Asking a question per tool one at a time would be a dozen screens for a firm
+ * with a dozen tools, and every one of them would look identical.
  *
  * Rows are DERIVED, never stored independently — including free-text `other:`
- * entries, which get the same two columns as a listed tool because Katy needs
- * the same two facts about them.
+ * entries, which get the same column as a listed tool because Katy needs the
+ * same fact about them.
+ *
+ * ── One column, since 2026-08-28 (Max) ──────────────────────────────────────
+ *
+ * There was a Tier column first — Personal / Team / Enterprise — kept generic
+ * because vendors name their tiers differently. Generic was the flaw: Westlaw
+ * Edge and CoCounsel have no consumer tier at all, so "Personal" was an answer
+ * that could not be true of them, and a required grid gave the firm no way to
+ * say so.
+ *
+ * The column below already asked what tier was standing in for. Tier was a
+ * proxy for whether the vendor may train on client data; this asks the vendor's
+ * agreement directly, which is the only place that answer lives. A consumer
+ * tier with a signed no-training addendum is compliant and an enterprise tier
+ * without one is not — and only this column can tell those apart.
  */
-const TIERS: { value: ToolGridRow['tier']; label: string }[] = [
-  { value: 'personal', label: 'Personal' },
-  { value: 'team', label: 'Team' },
-  { value: 'enterprise', label: 'Enterprise' },
-]
-
-// Tiers are generic on purpose. Real tier names differ per vendor and would be
-// wrong for most of them, so the question asks what the tier IS rather than what
-// the vendor happens to call it.
 const AGREEMENT: { value: ToolGridRow['noTraining']; label: string }[] = [
   { value: 'yes', label: 'Yes' },
   { value: 'no', label: 'No' },
@@ -51,11 +56,11 @@ export function ToolGridTable({
 
   return (
     <div className="mt-5 overflow-x-auto">
-      <table className="w-full min-w-[38rem] border-collapse text-sm">
+      {/* Narrower now the grid is two columns rather than three. */}
+      <table className="w-full min-w-[26rem] border-collapse text-sm">
         <thead>
           <tr>
-            <th className={TABLE_HEAD} style={{ width: '28%' }}>Tool</th>
-            <th className={TABLE_HEAD}>Tier</th>
+            <th className={TABLE_HEAD} style={{ width: '40%' }}>Tool</th>
             <th className={TABLE_HEAD}>
               No-training agreement
               <span className={`ml-2 font-normal normal-case tracking-normal ${MUTED}`}>
@@ -70,20 +75,6 @@ export function ToolGridTable({
             return (
               <tr key={tool.value} className="align-middle">
                 <td className="py-3 pr-4 font-semibold">{tool.label}</td>
-                <td className="py-3 pr-4">
-                  <div className="flex flex-wrap gap-1.5">
-                    {TIERS.map((t) => (
-                      <button
-                        key={t.value}
-                        type="button"
-                        onClick={() => set(tool.value, { tier: t.value })}
-                        className={row?.tier === t.value ? PILL_ON : PILL_OFF}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                </td>
                 <td className="py-3">
                   <div className="flex flex-wrap gap-1.5">
                     {AGREEMENT.map((a) => (
