@@ -62,9 +62,29 @@ export const BTN_PRIMARY =
 export const BTN_GHOST =
   `rounded-full border border-transparent bg-transparent px-6 py-2.5 text-sm font-semibold transition-colors hover:bg-[#F6F9FB] dark:hover:bg-[#131A20] ${MUTED}`
 
-/** Round arrow, prev/next. */
+/** Round arrow, prev/next. Moves one QUESTION. */
 export const NAV_BTN =
   'grid h-10 w-10 place-items-center rounded-full border border-[#E5EEF5] bg-white text-lg transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] disabled:cursor-default disabled:border-[#E5EEF5] disabled:text-[#C7CDD3] disabled:hover:border-[#E5EEF5] disabled:hover:text-[#C7CDD3] dark:border-[#1F2429] dark:bg-[#0D0F12] dark:disabled:border-[#1F2429]'
+
+/**
+ * Square chip beside the section strip. Moves one SECTION — a different kind of
+ * movement from NAV_BTN above, which moves one question.
+ *
+ * 🔴 THE DIVERGENCE FROM NAV_BTN IS THE POINT, not a second opinion about
+ * buttons. Two controls that look alike teach that they do the same thing, and
+ * these two are a step and a jump. They differ on every axis available:
+ *
+ *              NAV_BTN (question)        this (section)
+ *   shape      circle                    rounded square
+ *   size       40px                      28px
+ *   ground     white, 1px border         filled wash, borderless
+ *   glyph      a single arrow            a double chevron
+ *   position   under the card, right     above the card, beside the strip
+ *
+ * If either is ever restyled, move it further from the other, never closer.
+ */
+export const SECTION_STEP =
+  'grid h-7 w-7 shrink-0 place-items-center rounded-md bg-[#EAF6FF] text-[var(--brand-emphasis)] transition-colors hover:bg-[var(--brand-emphasis)] hover:text-white disabled:cursor-default disabled:bg-[#F1F4F7] disabled:text-[#C7CDD3] disabled:hover:bg-[#F1F4F7] disabled:hover:text-[#C7CDD3] dark:bg-[#131A20] dark:disabled:bg-[#0D0F12] dark:disabled:text-[#2A3138]'
 
 /**
  * The roster over-seats notice and the missing-answers notice. Amber, not red:

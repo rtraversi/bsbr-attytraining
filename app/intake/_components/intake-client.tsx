@@ -15,6 +15,7 @@ import {
   NOTICE,
   PAGE,
   PROMPT,
+  SECTION_STEP,
 } from './intake-styles'
 import {
   isComplete,
@@ -61,6 +62,43 @@ export interface IntakeClientProps {
 /** Text-ish types save on a pause; a click saves at once. */
 const DEBOUNCED_TYPES = new Set(['text', 'longtext', 'roster', 'tool-grid'])
 const SAVE_DELAY_MS = 700
+
+// ── The section strip, and why it measures instead of using a breakpoint ────
+//
+// The strip is a grid of equal columns with a label under each. It has always
+// fitted on one line by construction and paid for it in characters, so as
+// sections were added the labels got shorter rather than the strip getting
+// smaller: ~6 characters each at eight sections and 390px, ~4 at twelve.
+//
+// 🔴 A BREAKPOINT CANNOT EXPRESS THIS RULE. The width at which labels stop
+// fitting is a function of HOW MANY sections there are — twelve break at one
+// width, twenty at a much larger one — so any `md:` threshold written today is
+// wrong the next time Katy adds a module, which is the redesign this is
+// supposed to be the last of. What decides the layout is whether the labels
+// fit, so that is what gets measured.
+//
+// Below the threshold the strip does not truncate harder. It changes shape: the
+// current section keeps its name and takes the width it needs, every other
+// section shrinks to its bar, and a step control appears to move between them.
+//
+// SECTION_LABEL_PX is the width one labelled column needs. It is MEASURED, not
+// estimated: the twelve labels rendered at 11px semibold in Stack Sans run
+// Firm 23 · Data 24 · Staff 26 · Tools 28 · Courts 36 · Clients 36 ·
+// History 37 · Drafting 42 · Records 44 · Systems 45 · Meetings 49 ·
+// Marketing 52. The columns are equal, so the widest is what every column has
+// to hold.
+//
+// An earlier pass here guessed 6.1px per character and got 64. That was wrong
+// by 23% — Stack Sans at this size runs nearer 5.2 — and it is the same
+// arithmetic that produced the "~4 characters at twelve sections" figure in the
+// 2026-08-27 notes. Measure the face; do not multiply characters.
+//
+// Re-derive by rendering the widest SECTION_LABELS entry at `text-[11px]
+// font-semibold` inside the strip and reading its width, whenever the type
+// scale, the face, or the longest label changes.
+const SECTION_LABEL_PX = 52
+/** gap-1.5 between columns in the labelled strip. */
+const SECTION_GAP_PX = 6
 
 export function IntakeClient({
   locked,
@@ -121,6 +159,45 @@ export function IntakeClient({
   }, [visible.length])
 
   const current: Question | undefined = visible[index]
+
+  // ── does the labelled strip still fit? ────────────────────────────────────
+  //
+  // `null` until measured, which is also what the server renders. The bars are
+  // identical in every state and the label row keeps its height throughout, so
+  // the unmeasured first paint settles by fading text in rather than by moving
+  // anything.
+  const stripRef = useRef<HTMLDivElement | null>(null)
+  const [labelsFit, setLabelsFit] = useState<boolean | null>(null)
+
+  const labelsNeed =
+    progress.length * SECTION_LABEL_PX + Math.max(0, progress.length - 1) * SECTION_GAP_PX
+
+  // Measures the STRIP, not the window. The strip is bounded by the card's
+  // measure — max-w-3xl, and max-w-5xl on the roster and the tool grid — so it
+  // stops growing at 720px however wide the monitor is, and 768px and 1280px
+  // are the same layout by construction.
+  //
+  // The step control lives outside the strip, so compact mode has ~40px less to
+  // measure than full mode does. That gives the switch about 40px of
+  // hysteresis — it drops to compact near 738px and only comes back near 778px
+  // — which is why dragging a window across the boundary settles instead of
+  // flickering. Keep the control outside the measured element if this is ever
+  // reworked; measuring a box that contains the thing whose presence depends on
+  // the measurement is how that becomes a loop.
+  useEffect(() => {
+    const el = stripRef.current
+    if (!el) return
+    const measure = () => setLabelsFit(el.clientWidth >= labelsNeed)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+    // introOpen and sent gate whether the strip is mounted at all, so they are
+    // what tells this to re-attach — not decoration on the dependency list.
+  }, [labelsNeed, introOpen, sent])
+
+  const sectionIndex = current ? progress.findIndex((s) => s.section === current.section) : -1
+  const nextSection = sectionIndex >= 0 ? progress[sectionIndex + 1] : undefined
 
   // ── saving ────────────────────────────────────────────────────────────────
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
@@ -339,21 +416,41 @@ export function IntakeClient({
               </p>
             )}
 
-            <nav
-              aria-label="Policy sections"
-              className="mb-6 grid gap-1.5"
-              style={{ gridTemplateColumns: `repeat(${progress.length}, minmax(0,1fr))` }}
-            >
-              {progress.map((section) => {
-                const on = section.section === current.section
-                return (
-                  <button
-                    key={section.section}
-                    type="button"
-                    onClick={() => jumpToSection(section.section)}
-                    className="group block text-center"
-                    aria-current={on ? 'step' : undefined}
-                  >
+            {/*
+              The section strip. One rule, applied at whatever width it lands on:
+              the labels stay while they fit, and when they stop fitting the
+              strip gets more COMPACT rather than more truncated. See the
+              SECTION_LABEL_PX note at the top of this file for why the switch is
+              measured rather than written as a breakpoint.
+
+              Full — every section labelled, every section a jump target. This is
+              the strip as it has always been, and at full width it is unchanged.
+
+              Compact — the current section keeps its name and takes the width it
+              needs; the rest are bars. Direct jumping to an arbitrary section is
+              given up here (Max, 2026-08-28, accepted): with this many modules,
+              twelve tap targets four characters wide were not a way of getting
+              anywhere anyway. The step control replaces them.
+
+              🔴 Presentation only. Both branches read `progress` and call the
+              same jumpToSection. No question, section or count is computed here.
+            */}
+            <nav aria-label="Policy sections" className="mb-6 flex items-center gap-3">
+              <div
+                ref={stripRef}
+                className={`min-w-0 flex-1 grid ${labelsFit === false ? 'gap-1' : 'gap-1.5'}`}
+                style={{
+                  gridTemplateColumns:
+                    labelsFit === false
+                      ? progress
+                          .map((_, i) => (i === sectionIndex ? 'auto' : 'minmax(2px,1fr)'))
+                          .join(' ')
+                      : `repeat(${progress.length}, minmax(0,1fr))`,
+                }}
+              >
+                {progress.map((section) => {
+                  const on = section.section === current.section
+                  const bar = (
                     <span
                       className={`block h-[3px] rounded-sm transition-colors ${
                         on
@@ -363,16 +460,84 @@ export function IntakeClient({
                             : 'bg-[#C7CDD3] dark:bg-[#2A3138]'
                       }`}
                     />
-                    <span
-                      className={`mt-2 block truncate text-[11px] font-semibold ${
-                        on ? 'text-[var(--brand-emphasis)]' : MUTED
-                      }`}
+                  )
+
+                  // Compact: a bar, and a name only on the one you are in. The
+                  // others are not buttons — nothing to press means nothing that
+                  // looks pressable and does nothing useful at 17px wide.
+                  if (labelsFit === false) {
+                    return (
+                      <div
+                        key={section.section}
+                        className="block min-w-0 text-center"
+                        aria-current={on ? 'step' : undefined}
+                      >
+                        {bar}
+                        <span
+                          className={`mt-2 block whitespace-nowrap px-1 text-[11px] font-semibold text-[var(--brand-emphasis)] ${
+                            on ? '' : 'invisible'
+                          }`}
+                        >
+                          {/* Held in the layout by every column, painted by one.
+                              That is what keeps the label row's height steady as
+                              the current section moves along the strip. */}
+                          {on ? section.label : ' '}
+                        </span>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <button
+                      key={section.section}
+                      type="button"
+                      onClick={() => jumpToSection(section.section)}
+                      className="group block min-w-0 text-center"
+                      aria-current={on ? 'step' : undefined}
                     >
-                      {section.label}
-                    </span>
-                  </button>
-                )
-              })}
+                      {bar}
+                      <span
+                        className={`mt-2 block truncate text-[11px] font-semibold transition-opacity ${
+                          on ? 'text-[var(--brand-emphasis)]' : MUTED
+                        } ${labelsFit === null ? 'opacity-0' : 'opacity-100'}`}
+                      >
+                        {/* Unmeasured, on the server and for one frame after:
+                            the label holds its space but is not painted, so the
+                            strip settles without moving the card. */}
+                        {section.label}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {labelsFit === false && (
+                <button
+                  type="button"
+                  className={SECTION_STEP}
+                  disabled={!nextSection}
+                  onClick={() => nextSection && jumpToSection(nextSection.section)}
+                  aria-label={
+                    nextSection ? `Next section: ${nextSection.label}` : 'Last section'
+                  }
+                >
+                  {/* A double chevron, and never the single arrow the question
+                      controls use. See SECTION_STEP in intake-styles.ts. */}
+                  <svg
+                    viewBox="0 0 16 16"
+                    className="h-3.5 w-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M3.5 3.5 8 8l-4.5 4.5" />
+                    <path d="M9 3.5 13.5 8 9 12.5" />
+                  </svg>
+                </button>
+              )}
             </nav>
 
             <QuestionCard
