@@ -25,11 +25,15 @@ import {
   NOTETAKER_NOT_PERMITTED,
   NONE_VALUE,
   NO_TOOLS_YET,
+  NO_DRAFTING,
+  NO_COURT_AI_ORDERS,
+  HOURLY_BILLING_MODELS,
   EXCLUSIVE_OPTION_VALUES,
 } from '@/lib/intake/questions'
 import {
   otherValue,
   NOT_DECIDED_YET,
+  SECTION_ORDER,
   type AnswerMap,
   type Question,
 } from '@/lib/intake/types'
@@ -451,7 +455,13 @@ describe('nextUnanswered', () => {
 
   it('is null once every visible question has an answer', () => {
     const answers = answerEverything()
+    // Both of the set's optional questions, which answerEverything skips by
+    // design. filing_courts joined prohibited_tools on 2026-08-28 — a
+    // transactional firm files with nobody, so requiring it would be a dead end.
     answers['prohibited_tools'] = 'none'
+    answers['filing_courts'] = 'NC Business Court'
+    expect(visibleQuestions(answers).filter((x) => !x.required).map((x) => x.key))
+      .toEqual(['prohibited_tools', 'filing_courts'])
     expect(nextUnanswered(answers)).toBeNull()
   })
 })
@@ -460,7 +470,8 @@ describe('progressBySection', () => {
   it('reports per section and never a single running total', () => {
     const progress = progressBySection({})
     expect(progress.map((p) => p.section)).toEqual([
-      'firm', 'tools', 'systems', 'data', 'meetings', 'clients', 'staff', 'history',
+      'firm', 'tools', 'systems', 'drafting', 'courts', 'data', 'records',
+      'meetings', 'clients', 'marketing', 'staff', 'history',
     ])
     expect(progress.every((p) => p.answered === 0 && !p.complete)).toBe(true)
     // One word each, so the tab strip fits on one line.
@@ -570,5 +581,376 @@ describe('the roster against the seats bought', () => {
     const answers = answerEverything({ roster: roster(1, 0) })
     expect(rosterOverSeats(roster(1, 0), 1)).toBe(0)
     expect(isComplete(answers)).toBe(true)
+  })
+})
+
+// ===========================================================================
+// The eight modules added 2026-08-28 — D, E, F, I, J, Q, U, V
+//
+// Katy's implementation note is the design being tested here: "a short required
+// core flow ... plus a single Y/N gate question per module ... that then unlocks
+// the relevant module's detail questions", so that a solo sees a short intake
+// and a litigation firm sees everything. Every gate below is one of her own
+// questions, expressed with the existing showIf language.
+// ===========================================================================
+
+describe('the section allocation', () => {
+  it('is twelve sections, and QUESTIONS is ordered to match SECTION_ORDER', () => {
+    // The tab strip renders SECTION_ORDER; progressBySection walks it. If the
+    // question order disagreed, a firm would watch the strip jump backwards.
+    const orderInQuestions: string[] = []
+    for (const question of QUESTIONS) {
+      if (orderInQuestions.at(-1) !== question.section) orderInQuestions.push(question.section)
+    }
+    expect(orderInQuestions).toEqual([...SECTION_ORDER])
+  })
+
+  it('gives every section at least one question that never hides', () => {
+    // progressBySection drops a section with nothing visible. A section whose
+    // every question is conditional would lose its tab on an empty intake and
+    // grow one later — the strip changing width under the firm as they answer.
+    for (const section of SECTION_ORDER) {
+      const unconditional = QUESTIONS.filter((x) => x.section === section && !x.showIf)
+      expect({ section, unconditional: unconditional.length > 0 })
+        .toEqual({ section, unconditional: true })
+    }
+  })
+
+  it('did not move any pre-existing question into a new section', () => {
+    // The four new sections hold only new questions. `section` is display-only
+    // and never stored, so moving one costs nothing at the database — it just
+    // moves the ground under a firm mid-intake for no gain.
+    const newSections = new Set(['drafting', 'courts', 'records', 'marketing'])
+    const preExisting = new Set([
+      'firm_name', 'roster', 'jurisdictions', 'contract_attorneys', 'existing_policy',
+      'existing_policy_file', 'ai_tools', 'tool_grid', 'prohibited_tools', 'personal_devices',
+      'research_tools', 'case_mgmt', 'case_mgmt_ai', 'comms_platforms', 'regulatory_regimes',
+      'doc_review', 'doc_review_scale', 'tar', 'notetaker_stance', 'notetaker_scope',
+      'notetaker_tools', 'bill_ai_costs', 'client_ai', 'client_ai_approach', 'hiring_ai',
+      'hiring_states', 'discipline', 'prior_ai_error', 'carrier_notified',
+    ])
+    const moved = QUESTIONS.filter((x) => preExisting.has(x.key) && newSections.has(x.section))
+    expect(moved.map((x) => x.key)).toEqual([])
+  })
+})
+
+describe('conditions are DATA, not predicate functions', () => {
+  it('round-trips the whole question set through JSON unchanged', () => {
+    // The property the branching language exists for: the tree can be diffed in
+    // review, pruneOrphans can ask what an answer governs without executing
+    // anything, and Katy's export can print the branch a firm took. A predicate
+    // function anywhere in a showIf would vanish here.
+    const roundTripped = JSON.parse(JSON.stringify(QUESTIONS))
+    expect(roundTripped).toEqual(JSON.parse(JSON.stringify(QUESTIONS)))
+    for (const question of QUESTIONS) {
+      if (!question.showIf) continue
+      const clone = JSON.parse(JSON.stringify(question.showIf))
+      expect(clone).toEqual(question.showIf)
+    }
+  })
+})
+
+describe('module D — drafting', () => {
+  it('hides all four detail questions while the gate is unanswered', () => {
+    // `{key, not}` must NOT pass vacuously. Without the is-answered half, a firm
+    // would be asked whether their drafting involves client data before saying
+    // whether they draft with AI at all.
+    for (const key of [
+      'drafting_client_data', 'drafting_foreign_language',
+      'foreign_language_content', 'foreign_languages',
+    ]) {
+      expect(isVisible(q(key), {})).toBe(false)
+      expect(isVisible(q(key), { drafting_uses: [] })).toBe(false)
+    }
+  })
+
+  it('hides the module on "None"', () => {
+    const answers: AnswerMap = { drafting_uses: [NO_DRAFTING] }
+    expect(isAnswered(q('drafting_uses'), answers)).toBe(true)
+    expect(isVisible(q('drafting_client_data'), answers)).toBe(false)
+    expect(isVisible(q('drafting_foreign_language'), answers)).toBe(false)
+  })
+
+  it('opens on any real drafting use, and each of Katy’s three counts', () => {
+    for (const use of ['form', 'substantive', 'boilerplate']) {
+      const answers: AnswerMap = { drafting_uses: [use] }
+      expect(isVisible(q('drafting_client_data'), answers)).toBe(true)
+      expect(isVisible(q('drafting_foreign_language'), answers)).toBe(true)
+    }
+  })
+
+  it('keeps her three triggers separable in the answer', () => {
+    // The merge from three yes/nos into one multi-select must not blur them —
+    // form, content and boilerplate draft differently.
+    const options = q('drafting_uses').options!.map((o) => o.value)
+    expect(options).toEqual(['form', 'substantive', 'boilerplate', NO_DRAFTING])
+    const answers: AnswerMap = { drafting_uses: ['form', 'boilerplate'] }
+    expect(answers['drafting_uses']).toEqual(['form', 'boilerplate'])
+    expect(isVisible(q('drafting_client_data'), answers)).toBe(true)
+  })
+
+  it('offers no "sometimes" on the client-data question', () => {
+    // Katy, 2026-08-25: "Eliminate all sometimes options. If a firm does an
+    // action then they need a policy for it." Her 2026-08-20 list had one here.
+    const values = q('drafting_client_data').options!.map((o) => o.value)
+    expect(values).toEqual(['client_data', 'templates_only'])
+  })
+
+  it('opens the two foreign-language questions only on a yes', () => {
+    const drafting: AnswerMap = { drafting_uses: ['form'] }
+    expect(isVisible(q('foreign_languages'), { ...drafting, drafting_foreign_language: 'no' })).toBe(false)
+    expect(isVisible(q('foreign_languages'), { ...drafting, drafting_foreign_language: 'yes' })).toBe(true)
+    expect(isVisible(q('foreign_language_content'), { ...drafting, drafting_foreign_language: 'yes' })).toBe(true)
+  })
+
+  it('collapses the whole chain when the firm retracts drafting', () => {
+    const answers: AnswerMap = {
+      drafting_uses: ['substantive'],
+      drafting_client_data: 'client_data',
+      drafting_foreign_language: 'yes',
+      foreign_language_content: 'client_data',
+      foreign_languages: 'Greek, Spanish',
+    }
+    expect(orphanKeys(answers)).toEqual([])
+
+    const pruned = pruneOrphans({ ...answers, drafting_uses: [NO_DRAFTING] })
+    expect(pruned['drafting_client_data']).toBeUndefined()
+    expect(pruned['drafting_foreign_language']).toBeUndefined()
+    expect(pruned['foreign_language_content']).toBeUndefined()
+    expect(pruned['foreign_languages']).toBeUndefined()
+    expect(pruned['drafting_uses']).toEqual([NO_DRAFTING])
+  })
+})
+
+describe('module E — court / tribunal AI certification', () => {
+  it('hides both detail questions while the gate is unanswered', () => {
+    expect(isVisible(q('standing_order_check'), {})).toBe(false)
+    expect(isVisible(q('court_cert_template'), {})).toBe(false)
+  })
+
+  it('skips the module on a no', () => {
+    const answers: AnswerMap = { court_ai_orders: NO_COURT_AI_ORDERS }
+    expect(isVisible(q('standing_order_check'), answers)).toBe(false)
+    expect(isVisible(q('court_cert_template'), answers)).toBe(false)
+  })
+
+  it('opens the module on a yes', () => {
+    const answers: AnswerMap = { court_ai_orders: 'yes' }
+    expect(isVisible(q('standing_order_check'), answers)).toBe(true)
+    expect(isVisible(q('court_cert_template'), answers)).toBe(true)
+  })
+
+  it('opens the module on NOT SURE — the answer that needs it most', () => {
+    // Katy: "if Unsure, policy should include an instruction to check standing
+    // orders before each filing rather than assume." A firm that does not know
+    // needs the process question more than a firm that does, so the branch is
+    // `not no` rather than `is yes`.
+    const answers: AnswerMap = { court_ai_orders: 'not_sure' }
+    expect(isVisible(q('standing_order_check'), answers)).toBe(true)
+    expect(isVisible(q('court_cert_template'), answers)).toBe(true)
+  })
+
+  it('never blocks a firm that files with nobody', () => {
+    // filing_courts is the one optional question in this batch: a transactional
+    // firm cannot answer it, and a required free-text field it cannot answer is
+    // a dead end rather than a question.
+    expect(q('filing_courts').required).toBe(false)
+    expect(isVisible(q('filing_courts'), {})).toBe(true)
+  })
+})
+
+describe('module F — competency', () => {
+  it('asks both questions of everyone, with no gate', () => {
+    // Katy marks F "usually universal language, but confirm scope". A yes on
+    // the expansion question routes to a human conversation, not to another
+    // question, so there is nothing for it to unlock.
+    expect(isVisible(q('ai_practice_expansion'), {})).toBe(true)
+    expect(isVisible(q('cle_process'), {})).toBe(true)
+    expect(q('ai_practice_expansion').showIf).toBeUndefined()
+    expect(q('cle_process').showIf).toBeUndefined()
+  })
+})
+
+describe('module I — vendor incident response', () => {
+  it('asks both questions of everyone, with no gate', () => {
+    expect(isVisible(q('vendor_incident_protocol'), {})).toBe(true)
+    expect(isVisible(q('vendor_security_contact'), {})).toBe(true)
+  })
+
+  it('still asks who receives notices when there is NO protocol', () => {
+    // Gating the contact behind a yes would drop it for exactly the firm that
+    // has no protocol — and a named recipient is the first line of the protocol
+    // that firm is about to be told to write.
+    const answers: AnswerMap = { vendor_incident_protocol: 'no' }
+    expect(isVisible(q('vendor_security_contact'), answers)).toBe(true)
+  })
+})
+
+describe('module J — brainstorming', () => {
+  it('hides the tier question while the gate is unanswered', () => {
+    expect(isVisible(q('brainstorming_tier'), {})).toBe(false)
+  })
+
+  it('skips the module on a no', () => {
+    expect(isVisible(q('brainstorming_tier'), { brainstorming: 'no' })).toBe(false)
+  })
+
+  it('asks the tier on a yes, and keeps the gap answer available', () => {
+    const answers: AnswerMap = { brainstorming: 'yes' }
+    expect(isVisible(q('brainstorming_tier'), answers)).toBe(true)
+    // "Sometimes on consumer-tier tools" is not a hedge — it IS the compliance
+    // gap Katy asks to be flagged, so it must stay on the list.
+    expect(q('brainstorming_tier').options!.map((o) => o.value))
+      .toEqual(['no_training_only', 'consumer_tier'])
+  })
+
+  it('drops the tier when the firm retracts brainstorming', () => {
+    const pruned = pruneOrphans({ brainstorming: 'no', brainstorming_tier: 'consumer_tier' })
+    expect(pruned['brainstorming_tier']).toBeUndefined()
+  })
+})
+
+describe('module Q — billing', () => {
+  it('hides the time-adjustment question while billing models are unanswered', () => {
+    expect(isVisible(q('ai_time_adjustment'), {})).toBe(false)
+    expect(isVisible(q('ai_time_adjustment'), { billing_models: [] })).toBe(false)
+  })
+
+  it('asks it of an hourly firm', () => {
+    expect(isVisible(q('ai_time_adjustment'), { billing_models: ['hourly'] })).toBe(true)
+  })
+
+  it('asks it of a HYBRID firm — the branch follows the hours, not the label', () => {
+    // Hybrid contains hourly work, so a hybrid firm has the same problem an
+    // hourly firm has and Katy's "if hourly" reaches it.
+    expect(HOURLY_BILLING_MODELS).toContain('hybrid')
+    expect(isVisible(q('ai_time_adjustment'), { billing_models: ['hybrid'] })).toBe(true)
+    expect(isVisible(q('ai_time_adjustment'), { billing_models: ['flat_fee', 'hybrid'] })).toBe(true)
+  })
+
+  it('skips it for a firm with no billed time to adjust', () => {
+    for (const models of [['flat_fee'], ['contingency'], ['flat_fee', 'contingency']]) {
+      expect(isVisible(q('ai_time_adjustment'), { billing_models: models })).toBe(false)
+    }
+  })
+
+  it('skips it for a free-text billing model nobody listed', () => {
+    // `other:Subscription` is a real answer and is not hourly. It must not open
+    // a question about adjusting billed time.
+    const answers: AnswerMap = { billing_models: [otherValue('Subscription')!] }
+    expect(isAnswered(q('billing_models'), answers)).toBe(true)
+    expect(isVisible(q('ai_time_adjustment'), answers)).toBe(false)
+  })
+
+  it('drops the adjustment answer when the firm stops billing hourly', () => {
+    const pruned = pruneOrphans({ billing_models: ['flat_fee'], ai_time_adjustment: 'yes' })
+    expect(pruned['ai_time_adjustment']).toBeUndefined()
+  })
+})
+
+describe('module U — retention of prompts', () => {
+  it('hides the schedule while the gate is unanswered', () => {
+    expect(isVisible(q('retention_schedule'), {})).toBe(false)
+  })
+
+  it('skips the module on a no', () => {
+    expect(isVisible(q('retention_schedule'), { retain_prompts: 'no' })).toBe(false)
+  })
+
+  it('asks the schedule on a yes', () => {
+    expect(isVisible(q('retention_schedule'), { retain_prompts: 'yes' })).toBe(true)
+  })
+
+  it('drops the schedule when the firm stops retaining', () => {
+    const pruned = pruneOrphans({ retain_prompts: 'no', retention_schedule: 'seven years' })
+    expect(pruned['retention_schedule']).toBeUndefined()
+  })
+})
+
+describe('module V — attorney advertising', () => {
+  it('hides the review question while the gate is unanswered', () => {
+    expect(isVisible(q('marketing_review'), {})).toBe(false)
+  })
+
+  it('skips the module on a no — one question for a firm that does no AI marketing', () => {
+    const answers: AnswerMap = { ai_marketing: 'no' }
+    expect(isVisible(q('marketing_review'), answers)).toBe(false)
+    const marketing = progressBySection(answers).find((p) => p.section === 'marketing')!
+    expect(marketing).toMatchObject({ total: 1, answered: 1, complete: true })
+  })
+
+  it('asks about advertising-rule review on a yes', () => {
+    expect(isVisible(q('marketing_review'), { ai_marketing: 'yes' })).toBe(true)
+  })
+
+  it('drops the review answer when the firm retracts AI marketing', () => {
+    const pruned = pruneOrphans({ ai_marketing: 'no', marketing_review: 'yes' })
+    expect(pruned['marketing_review']).toBeUndefined()
+  })
+})
+
+describe('the gates, taken together', () => {
+  /** Every new module answered so as to SKIP it. */
+  const skipEverything: AnswerMap = {
+    drafting_uses: [NO_DRAFTING],
+    court_ai_orders: NO_COURT_AI_ORDERS,
+    brainstorming: 'no',
+    billing_models: ['flat_fee'],
+    retain_prompts: 'no',
+    ai_marketing: 'no',
+  }
+
+  it('a skipping firm never sees a single detail question from the eight modules', () => {
+    const visible = new Set(keys(answerEverything(skipEverything)))
+    for (const hidden of [
+      'drafting_client_data', 'drafting_foreign_language', 'foreign_language_content',
+      'foreign_languages', 'standing_order_check', 'court_cert_template',
+      'brainstorming_tier', 'ai_time_adjustment', 'retention_schedule', 'marketing_review',
+    ]) {
+      expect({ hidden, shown: visible.has(hidden) }).toEqual({ hidden, shown: false })
+    }
+  })
+
+  it('none of those hidden required questions blocks submission', () => {
+    // Rule three: isComplete counts VISIBLE required questions only. All ten
+    // above are required, and a firm that can never see them must still be able
+    // to send their intake.
+    const answers = answerEverything(skipEverything)
+    const requiredKeys = QUESTIONS.filter((x) => x.required).map((x) => x.key)
+    expect(requiredKeys).toContain('retention_schedule')
+    expect(requiredKeys).toContain('court_cert_template')
+    expect(isComplete(answers)).toBe(true)
+    expect(missingRequired(answers)).toEqual([])
+  })
+
+  it('reopens submission the moment a gate is flipped back on', () => {
+    const answers = answerEverything(skipEverything)
+    expect(isComplete(answers)).toBe(true)
+
+    const reopened: AnswerMap = { ...answers, retain_prompts: 'yes', ai_marketing: 'yes' }
+    expect(isComplete(reopened)).toBe(false)
+    expect(missingRequired(reopened).map((x) => x.key))
+      .toEqual(['retention_schedule', 'marketing_review'])
+  })
+
+  it('costs a skipping firm ten questions and a full firm twenty-one', () => {
+    // The number Katy's implementation note is about. Recorded rather than
+    // asserted loosely, so a later change to the set has to look at it.
+    const newKeys = new Set([
+      'drafting_uses', 'drafting_client_data', 'drafting_foreign_language',
+      'foreign_language_content', 'foreign_languages', 'filing_courts', 'court_ai_orders',
+      'standing_order_check', 'court_cert_template', 'vendor_incident_protocol',
+      'vendor_security_contact', 'brainstorming', 'brainstorming_tier', 'billing_models',
+      'ai_time_adjustment', 'ai_practice_expansion', 'cle_process', 'retain_prompts',
+      'retention_schedule', 'ai_marketing', 'marketing_review',
+    ])
+    expect(newKeys.size).toBe(21)
+
+    const skipping = visibleQuestions(answerEverything(skipEverything))
+      .filter((x) => newKeys.has(x.key) && x.required)
+    expect(skipping).toHaveLength(10)
+
+    const everything = QUESTIONS.filter((x) => newKeys.has(x.key))
+    expect(everything).toHaveLength(21)
   })
 })

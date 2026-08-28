@@ -32,13 +32,59 @@
 // label wraps on a phone and the strip stops reading as progress. If a future
 // section cannot be named in one word, the section is probably two sections.
 
+// ── The four added 2026-08-28, with modules D E F I J Q U V ─────────────────
+//
+// Eight modules did not fit eight sections. The rule applied, and the reason a
+// section exists at all: A SECTION IS A LANE THE FIRM RECOGNISES, and no
+// section runs so long that per-section progress stops meaning anything.
+//
+//   drafting  ← D. Using AI on matter work product. Nothing existing covers it:
+//               `tools` is the inventory of what the firm HAS, and D is what it
+//               DOES with it.
+//   courts    ← E, plus D's "which courts do you file with", which Katy's own
+//               list marks as feeding E. Tribunal-facing, and deliberately NOT
+//               `clients` — Katy is explicit that court certification "runs to
+//               the tribunal, not the client".
+//   records   ← U. What the firm KEEPS, as opposed to what it sends.
+//   marketing ← V. Katy: "a genuinely separate compliance lane" — advertising
+//               rules, not confidentiality or hallucination risk.
+//
+// Three modules took an existing section rather than a new tab, because each
+// shares its host's lane rather than merely fitting in it:
+//
+//   I → data     H vets a vendor before the fact; I is the same vendor after it.
+//   J → data     Case-specific brainstorming is a confidentiality question — the
+//                whole branch turns on tier and no-training, which is H's axis.
+//   Q → clients  Sits beside P. Both are money, and P already asks whether AI
+//                cost reaches the client's bill.
+//   F → staff    Competency, hiring and discipline are one lane: people and
+//                conduct. Kept out of `firm` on purpose — `firm` is the first
+//                section, and two more questions there is two more before the
+//                firm feels any progress at all.
+//
+// ⚠️ NO EXISTING QUESTION CHANGED SECTION. `section` is display-only and is
+// never stored, so moving one costs nothing at the database — but it moves the
+// ground under a firm mid-intake for no gain this task needed.
+//
+// 🔴 The tab strip degrades on a phone at twelve. It is a CSS grid of
+// `repeat(N, minmax(0,1fr))` with `truncate` on an 11px label, so it always
+// fits on one line by construction and pays for it in characters: ~6 per label
+// at eight sections and 390px, ~4 at twelve. It was already truncating
+// "Meetings" before this change. Not fixed here — it is a UI decision (drop the
+// labels below a breakpoint and keep the bars, since the card already names the
+// current section) and it wants Max's eye, not a guess from this file.
+
 export type SectionKey =
   | 'firm'
   | 'tools'
   | 'systems'
+  | 'drafting'
+  | 'courts'
   | 'data'
+  | 'records'
   | 'meetings'
   | 'clients'
+  | 'marketing'
   | 'staff'
   | 'history'
 
@@ -47,9 +93,13 @@ export const SECTION_ORDER: readonly SectionKey[] = [
   'firm',
   'tools',
   'systems',
+  'drafting',
+  'courts',
   'data',
+  'records',
   'meetings',
   'clients',
+  'marketing',
   'staff',
   'history',
 ] as const
@@ -58,9 +108,13 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   firm: 'Firm',
   tools: 'Tools',
   systems: 'Systems',
+  drafting: 'Drafting',
+  courts: 'Courts',
   data: 'Data',
+  records: 'Records',
   meetings: 'Meetings',
   clients: 'Clients',
+  marketing: 'Marketing',
   staff: 'Staff',
   history: 'History',
 }

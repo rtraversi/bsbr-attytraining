@@ -240,11 +240,96 @@ const YES_NO_NOT_SURE: QuestionOption[] = [
   { value: 'not_sure', label: 'Not sure' },
 ]
 
+// Module D. Katy's list has these as THREE separate yes/no questions (form,
+// substantive, boilerplate). Merged into one multi-select, and the merge is a
+// correction to record rather than a liberty:
+//
+//   - Nothing is lost. Each of her three is a stable option value, so the export
+//     still reads "substantive: yes" and the three policy triggers stay distinct
+//     — the drafted policy handles form, content and boilerplate separately, and
+//     Katy's own policy-elements list keeps them apart.
+//   - Her implementation note asks for "a single Y/N gate question per module"
+//     so a solo sees 10–15 questions. Three unconditional yes/nos is the shape
+//     that note exists to prevent, and this is the module's gate.
+//   - `none` is the escape, and it is in EXCLUSIVE_OPTION_VALUES, so ticking it
+//     clears the rest.
+const DRAFTING_USE_OPTIONS: QuestionOption[] = [
+  { value: 'form', label: 'Routine or form documents — emails, cover letters, notices' },
+  { value: 'substantive', label: 'Substantive content — complaints, motions, briefs, contracts' },
+  { value: 'boilerplate', label: 'Boilerplate — deeds, trusts, standard agreements' },
+  { value: NONE_VALUE_LITERAL, label: 'None' },
+]
+
+// Module D, and the one place Katy's 2026-08-20 list and her 2026-08-25 ruling
+// genuinely collide. Her list offers "Always client data / Sometimes / Never —
+// templates only". "Sometimes" is exactly the hedge she killed five days later:
+// "Eliminate all sometimes options. If a firm does an action then they need a
+// policy for it." The later ruling wins, and the two states left are the two
+// that draft differently — a firm that sometimes puts client data in is a firm
+// whose policy must assume client data.
+//
+// A `single` and not a `yesno`, even at two options, because the labels ARE the
+// question. "Yes / No" against "does drafting involve client data" loses which
+// way round the safe answer is.
+const CLIENT_DATA_OPTIONS: QuestionOption[] = [
+  { value: 'client_data', label: 'Actual client-identifying information goes in' },
+  { value: 'templates_only', label: 'Generic or template variables only' },
+]
+
+// Module J. "Sometimes" survives here and is NOT a hedge: it is not a way of
+// avoiding the question, it IS the consequential answer. Katy's own note —
+// "flags a compliance gap if the latter" — is what the second option produces.
+const BRAINSTORM_TIER_OPTIONS: QuestionOption[] = [
+  { value: 'no_training_only', label: 'Only paid or API-tier tools under a no-training agreement' },
+  { value: 'consumer_tier', label: 'Sometimes on consumer-tier tools' },
+]
+
+// Module Q. No `none` — every firm bills somehow — so the escape on this
+// unconditional required multi-select is `allowOther`, for the models nobody
+// listed (subscription, hybrid-contingency, pro bono only).
+const BILLING_MODEL_OPTIONS: QuestionOption[] = [
+  { value: 'hourly', label: 'Hourly' },
+  { value: 'flat_fee', label: 'Flat fee' },
+  { value: 'hybrid', label: 'Hybrid' },
+  { value: 'contingency', label: 'Contingency' },
+]
+
+// Module D, foreign language. Same branch as the client-data question above,
+// and deliberately the same two values so Katy reads one axis in the export.
+const FOREIGN_CONTENT_OPTIONS: QuestionOption[] = [
+  { value: 'client_data', label: 'Client-specific content' },
+  { value: 'templates_only', label: 'Template-based content' },
+]
+
 /** The `not permitted` value, exported so the branch below and its tests agree. */
 export const NOTETAKER_NOT_PERMITTED = 'not_permitted'
 
 /** "None yet" on ai_tools. Hides the tool grid; see that question's showIf. */
 export const NO_TOOLS_YET = 'none_yet'
+
+/** Module D's gate value. Hides every drafting detail question. */
+export const NO_DRAFTING = NONE_VALUE_LITERAL
+
+/**
+ * Module E's gate value — the answer that skips the module.
+ *
+ * The branch is `not 'no'`, so BOTH "yes" and "not sure" open the detail. That
+ * is Katy's instruction and not a convenience: "if Unsure, policy should include
+ * an instruction to check standing orders before each filing rather than
+ * assume." A firm that does not know needs the process question more than a firm
+ * that does.
+ */
+export const NO_COURT_AI_ORDERS = 'no'
+
+/**
+ * Module Q's gate. The time-adjustment question follows the HOURS, not the
+ * label — `hybrid` contains hourly work, so a hybrid firm has the same problem
+ * an hourly firm has and Katy's "if hourly" reaches it.
+ *
+ * Flat fee and contingency are excluded because the question cannot be answered
+ * there: there is no billed time to adjust.
+ */
+export const HOURLY_BILLING_MODELS: readonly string[] = ['hourly', 'hybrid']
 
 /**
  * The questions the spec types as "text or 'not decided yet'".
@@ -412,7 +497,110 @@ export const QUESTIONS: readonly Question[] = [
     showIf: { key: 'case_mgmt', not: NONE_VALUE },
   },
 
-  // ── Data (Modules H, K, L) ────────────────────────────────────────────────
+  // ── Drafting (Module D) ───────────────────────────────────────────────────
+  //
+  // Katy's gate model, applied: one question everyone answers, four that only a
+  // firm which drafts with AI ever sees. A firm that ticks "None" pays one
+  // question for the whole module.
+  {
+    key: 'drafting_uses',
+    section: 'drafting',
+    module: 'D',
+    prompt: 'What does the firm use AI to draft?',
+    help: 'Tick everything that applies. Each one is handled separately in the policy.',
+    type: 'multi',
+    options: DRAFTING_USE_OPTIONS,
+    required: true,
+  },
+  {
+    key: 'drafting_client_data',
+    section: 'drafting',
+    module: 'D',
+    prompt: 'Does that drafting work involve actual client information?',
+    type: 'single',
+    options: CLIENT_DATA_OPTIONS,
+    required: true,
+    showIf: { key: 'drafting_uses', not: NO_DRAFTING },
+  },
+  {
+    key: 'drafting_foreign_language',
+    section: 'drafting',
+    module: 'D',
+    prompt: 'Does the firm need AI for foreign-language drafting or translation?',
+    help: 'For example, a client email written for a Greek-speaking recipient, or a document for filing.',
+    type: 'yesno',
+    required: true,
+    showIf: { key: 'drafting_uses', not: NO_DRAFTING },
+  },
+  {
+    key: 'foreign_language_content',
+    section: 'drafting',
+    module: 'D',
+    prompt: 'Is that translated content client-specific, or template-based?',
+    type: 'single',
+    options: FOREIGN_CONTENT_OPTIONS,
+    required: true,
+    showIf: { key: 'drafting_foreign_language', is: 'yes' },
+  },
+  {
+    key: 'foreign_languages',
+    section: 'drafting',
+    module: 'D',
+    prompt: 'Which languages?',
+    help: 'Output in each of these has to be reviewed by someone fluent in it, so the policy names them.',
+    type: 'text',
+    required: true,
+    showIf: { key: 'drafting_foreign_language', is: 'yes' },
+  },
+
+  // ── Courts (Modules D, E) ─────────────────────────────────────────────────
+  //
+  // filing_courts carries module D, which is where Katy lists it, but it sits
+  // here because it is a courts question and her own note says it "feeds Module
+  // E". Module letter and section are independent fields, and grouping by what
+  // the firm is being asked about is the same call already made for P and T.
+  //
+  // It is OPTIONAL, unlike everything else added in this batch: a transactional
+  // firm files with nobody, and a required free-text field it cannot answer is
+  // a dead end rather than a question.
+  {
+    key: 'filing_courts',
+    section: 'courts',
+    module: 'D',
+    prompt: 'What courts or agencies does the firm file with regularly?',
+    help: 'This drives the reminder that local rules — content, margins, font, filing requirements — are the attorney’s to verify, never the software’s.',
+    type: 'text',
+    required: false,
+  },
+  {
+    key: 'court_ai_orders',
+    section: 'courts',
+    module: 'E',
+    prompt: 'Do any courts or judges the firm appears before require filings to certify whether AI was used?',
+    type: 'single',
+    options: YES_NO_NOT_SURE,
+    required: true,
+  },
+  {
+    key: 'standing_order_check',
+    section: 'courts',
+    module: 'E',
+    prompt: 'Does the firm have a standard process for confirming current standing orders before filing in a new judge’s court?',
+    type: 'yesno',
+    required: true,
+    showIf: { key: 'court_ai_orders', not: NO_COURT_AI_ORDERS },
+  },
+  {
+    key: 'court_cert_template',
+    section: 'courts',
+    module: 'E',
+    prompt: 'Should the policy include a default certification statement for filings, to be adapted per court?',
+    type: 'yesno',
+    required: true,
+    showIf: { key: 'court_ai_orders', not: NO_COURT_AI_ORDERS },
+  },
+
+  // ── Data (Modules H, I, J, K, L) ──────────────────────────────────────────
   {
     key: 'comms_platforms',
     section: 'data',
@@ -431,6 +619,53 @@ export const QUESTIONS: readonly Question[] = [
     type: 'multi',
     options: REGIME_OPTIONS,
     required: true,
+  },
+  {
+    // Module I. UNGATED, and that is the decision rather than an omission.
+    // Katy's implementation note names E, L, N, R and V as the modules a small
+    // firm skips; I is not among them, because any firm with a single vendor
+    // has this exposure. A "no" is not a skip here — her note says a missing
+    // protocol is "a gap the generated policy should flag rather than silently
+    // fill with generic language", so the no answer is the one that changes the
+    // draft most.
+    key: 'vendor_incident_protocol',
+    section: 'data',
+    module: 'I',
+    prompt: 'If an AI vendor disclosed a breach involving client information, does the firm have a notification protocol?',
+    help: 'Who gets told, and in what order — client, malpractice carrier, state bar.',
+    type: 'yesno',
+    required: true,
+  },
+  {
+    // Also ungated, deliberately. Gating it behind a "yes" above would drop the
+    // question for exactly the firm that has no protocol — and a named person
+    // to receive vendor security notices is the first line of the protocol that
+    // firm is about to be told to write.
+    key: 'vendor_security_contact',
+    section: 'data',
+    module: 'I',
+    prompt: 'Who at the firm receives vendor security notices?',
+    help: 'A role is enough — “managing partner”, “office administrator”.',
+    type: 'text',
+    required: true,
+  },
+  {
+    key: 'brainstorming',
+    section: 'data',
+    module: 'J',
+    prompt: 'Does the firm use AI to brainstorm strategy, arguments or theories tied to a specific, identifiable matter?',
+    type: 'yesno',
+    required: true,
+  },
+  {
+    key: 'brainstorming_tier',
+    section: 'data',
+    module: 'J',
+    prompt: 'On which tier of tool?',
+    type: 'single',
+    options: BRAINSTORM_TIER_OPTIONS,
+    required: true,
+    showIf: { key: 'brainstorming', is: 'yes' },
   },
   {
     key: 'doc_review',
@@ -458,6 +693,30 @@ export const QUESTIONS: readonly Question[] = [
     type: 'yesno',
     required: true,
     showIf: { key: 'doc_review', is: 'yes' },
+  },
+
+  // ── Records (Module U) ────────────────────────────────────────────────────
+  //
+  // Katy: "a record-keeping/work-product question, distinct from
+  // confidentiality." Its own section for that reason — `data` asks what leaves
+  // the firm and who touches it; this asks what the firm keeps.
+  {
+    key: 'retain_prompts',
+    section: 'records',
+    module: 'U',
+    prompt: 'Are prompts and AI-generated drafts kept as part of the client file?',
+    type: 'yesno',
+    required: true,
+  },
+  {
+    key: 'retention_schedule',
+    section: 'records',
+    module: 'U',
+    prompt: 'For how long, and on what schedule?',
+    help: 'Same as the rest of the file, or on its own schedule — either is a real answer.',
+    type: 'longtext',
+    required: true,
+    showIf: { key: 'retain_prompts', is: 'yes' },
   },
 
   // ── Meetings (Module M) ───────────────────────────────────────────────────
@@ -490,7 +749,7 @@ export const QUESTIONS: readonly Question[] = [
     showIf: { key: 'notetaker_stance', not: NOTETAKER_NOT_PERMITTED },
   },
 
-  // ── Clients (Modules P, T) ────────────────────────────────────────────────
+  // ── Clients (Modules P, Q, T) ─────────────────────────────────────────────
   {
     key: 'bill_ai_costs',
     section: 'clients',
@@ -498,6 +757,29 @@ export const QUESTIONS: readonly Question[] = [
     prompt: 'Does the firm want to bill clients directly for the cost of AI tools?',
     type: 'yesno',
     required: true,
+  },
+  {
+    key: 'billing_models',
+    section: 'clients',
+    module: 'Q',
+    prompt: 'How does the firm bill?',
+    type: 'multi',
+    options: BILLING_MODEL_OPTIONS,
+    allowOther: true,
+    required: true,
+  },
+  {
+    // Katy's "if hourly". A no is a real answer and the one that matters: her
+    // note asks that it be flagged as "a policy gap requiring a firm decision,
+    // not just boilerplate", because an attorney may not bill hourly time that
+    // was not actually spent.
+    key: 'ai_time_adjustment',
+    section: 'clients',
+    module: 'Q',
+    prompt: 'Is there a process for adjusting billed time when AI finishes a task faster?',
+    type: 'yesno',
+    required: true,
+    showIf: { key: 'billing_models', includesAny: [...HOURLY_BILLING_MODELS] },
   },
   {
     key: 'client_ai',
@@ -518,7 +800,57 @@ export const QUESTIONS: readonly Question[] = [
     showIf: { key: 'client_ai', is: 'yes' },
   },
 
-  // ── Staff (Modules N, S) ──────────────────────────────────────────────────
+  // ── Marketing (Module V) ──────────────────────────────────────────────────
+  //
+  // Katy: "a genuinely separate compliance lane: specialization claims,
+  // guarantees, and 'results' language in AI-generated marketing content
+  // implicate advertising rules, not confidentiality or hallucination risk."
+  // Its own section for that reason, and one of the five she expects a small
+  // firm to skip — which costs them exactly one question.
+  {
+    key: 'ai_marketing',
+    section: 'marketing',
+    module: 'V',
+    prompt: 'Does the firm use AI to draft website copy, blog posts, social media or advertisements?',
+    type: 'yesno',
+    required: true,
+  },
+  {
+    key: 'marketing_review',
+    section: 'marketing',
+    module: 'V',
+    prompt: 'Does someone review that content against attorney advertising rules before it goes out?',
+    help: 'No guarantees, no unsubstantiated specialization claims, required disclaimers.',
+    type: 'yesno',
+    required: true,
+    showIf: { key: 'ai_marketing', is: 'yes' },
+  },
+
+  // ── Staff (Modules F, N, S) ───────────────────────────────────────────────
+  {
+    // Module F. Katy: "if Y, flag for a human conversation, since it touches the
+    // 'would not be competent without AI' rule." A yes is not a branch here — it
+    // is a note on the drafter's desk, because the answer routes to a
+    // conversation rather than to another question.
+    key: 'ai_practice_expansion',
+    section: 'staff',
+    module: 'F',
+    prompt: 'Is the firm considering taking on work it would not take on without AI tools?',
+    help: 'A yes is not a problem. It is a conversation the attorney drafting your policy will want to have.',
+    type: 'yesno',
+    required: true,
+  },
+  {
+    // Module F, and ungated like its sibling. Katy marks the module "usually
+    // universal language, but confirm scope" — universal is the answer, so
+    // neither question hides.
+    key: 'cle_process',
+    section: 'staff',
+    module: 'F',
+    prompt: 'Does the firm already track CLE or competency in some way?',
+    type: 'yesno',
+    required: true,
+  },
   {
     // A yes routes to separate compliance counsel rather than a drafted clause.
     // The drafted policy is explicit that no standard policy can be provided
