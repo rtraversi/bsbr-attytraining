@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { IurixLockup } from '@/app/_components/iurix-lockup'
+import { useRouter } from 'next/navigation'
 import { QuestionField } from './question-field'
 import { IntakeIntro } from './intake-intro'
+import { IntakeShell } from './intake-shell'
 import {
   BTN_GHOST,
   BTN_PRIMARY,
@@ -13,7 +14,6 @@ import {
   MUTED,
   NAV_BTN,
   NOTICE,
-  PAGE,
   PROMPT,
   SECTION_STEP,
 } from './intake-styles'
@@ -48,8 +48,6 @@ import type { AnswerMap, AnswerValue, Question, RosterRow } from '@/lib/intake/t
  *   a muted asterisk and never turn red at all.
  */
 export interface IntakeClientProps {
-  locked: boolean
-  submittedAt: string | null
   /** intake_sessions.current_question — the authoritative resume point. */
   resumeAt: string | null
   initialAnswers: AnswerMap
@@ -101,8 +99,6 @@ const SECTION_LABEL_PX = 52
 const SECTION_GAP_PX = 6
 
 export function IntakeClient({
-  locked,
-  submittedAt,
   resumeAt,
   initialAnswers,
   seatsPurchased,
@@ -110,8 +106,17 @@ export function IntakeClient({
   adminEmail,
   firmName,
 }: IntakeClientProps) {
+  const router = useRouter()
   const [answers, setAnswers] = useState<AnswerMap>(initialAnswers)
-  const [sent, setSent] = useState(locked)
+  // 🔴 A TRANSIENT STATE, not a screen. This component is only ever rendered
+  // for an OPEN intake now — app/intake/page.tsx decides, and hands a submitted
+  // one to IntakeReview instead. So this covers the seconds between a
+  // successful Send and router.refresh() landing, and nothing else.
+  //
+  // It used to be initialised from a `locked` prop and render a full "Pending
+  // attorney review" panel, which made this file a second, quietly different
+  // account of a submitted intake. There is one now.
+  const [sent, setSent] = useState(false)
   const [index, setIndex] = useState(0)
   // Nothing is marked until Send is pressed. This is the flag that turns that on.
   const [missing, setMissing] = useState<Set<string>>(new Set())
@@ -131,12 +136,12 @@ export function IntakeClient({
   //
   // getOrCreateOpenSession inserts current_question as NULL, so an untouched
   // session is unambiguous.
-  const untouched = !locked && resumeAt === null && Object.keys(initialAnswers).length === 0
+  const untouched = resumeAt === null && Object.keys(initialAnswers).length === 0
   const [introOpen, setIntroOpen] = useState(untouched)
 
   // Shown once per visit to somebody who is returning, and cleared the moment
   // they move — it is an orientation line, not a banner to live with.
-  const [showResume, setShowResume] = useState(resumeAt !== null && !locked)
+  const [showResume, setShowResume] = useState(resumeAt !== null)
 
   const visible = useMemo(() => visibleQuestions(answers), [answers])
   const progress = useMemo(() => progressBySection(answers), [answers])
@@ -327,6 +332,10 @@ export function IntakeClient({
       setMissing(new Set())
       setSent(true)
       window.scrollTo({ top: 0, behavior: 'smooth' })
+      // The server decides which screen a submitted intake gets. Refreshing
+      // hands it back rather than rendering a second version of "submitted"
+      // here — page.tsx re-reads the session and renders IntakeReview.
+      router.refresh()
     } catch {
       setBanner('That did not go through. Try again in a moment.')
     } finally {
@@ -344,52 +353,36 @@ export function IntakeClient({
   const measure = wide ? 'max-w-5xl' : 'max-w-3xl'
 
   return (
-    <main className={PAGE}>
-      {/*
-        Permanently white in both themes: the mark is artwork with its own
-        ground, and inverting the page underneath it made it read as a different
-        logo. (Same note as the mockup, and the lockup is light-grounds-only.)
-      */}
-      <div className="border-b border-[#E5EEF5] bg-white px-5 py-10">
-        <div className="flex items-center justify-center">
-          <IurixLockup style={{ fontSize: '2.6rem' }} />
-        </div>
-      </div>
-
-      <div className={`mx-auto ${measure} px-6 pb-24 pt-10 transition-[max-width] duration-200`}>
-        <header className="mb-8 border-b border-[#E5EEF5] pb-6 dark:border-[#1F2429]">
-          <h1 className="mb-2 text-[1.9rem] font-semibold leading-tight tracking-tight">
-            {firmName ? `${firmName}’s AI policy` : 'Your firm’s AI policy'}
-          </h1>
-
-          {sent ? (
-            <div className="rounded-xl border border-[#E5EEF5] bg-[#F6F9FB] px-5 py-4 dark:border-[#1F2429] dark:bg-[#131A20]">
-              <p className="text-sm font-semibold">Pending attorney review</p>
-              <p className={`mt-1 max-w-[38rem] text-[13px] leading-relaxed ${MUTED}`}>
-                Your policy is assembled from these answers and reviewed by an attorney before it
-                reaches you. You will be emailed when it is ready. Nothing is published in the
-                meantime.
-                {submittedAt ? ` Submitted ${new Date(submittedAt).toLocaleDateString()}.` : ''}
-              </p>
-              <Link href="/dashboard" className={`mt-4 inline-block ${BTN_PRIMARY}`}>
-                Go to your dashboard
-              </Link>
-            </div>
-          ) : introOpen ? null : (
-            /* Suppressed while the introduction is open — it says the same thing
-               at length two inches lower, and twice reads as a stutter. */
-            <p className={`max-w-[34rem] text-[14.5px] ${MUTED}`}>
-              Tell us how your firm uses AI. Your policy is assembled from these answers and
-              reviewed by an attorney.
-            </p>
-          )}
-        </header>
-
+    <IntakeShell
+      firmName={firmName}
+      measure={measure}
+      subtitle={
+        introOpen ? null : (
+          /* Suppressed while the introduction is open — it says the same thing
+             at length two inches lower, and twice reads as a stutter. */
+          <p>
+            Tell us how your firm uses AI. Your policy is assembled from these answers and
+            reviewed by an attorney.
+          </p>
+        )
+      }
+    >
+      <>
         {/*
-          Once submitted, the intake is locked and NO firm-facing screen renders
-          any answer — including this one. The two sensitive answers are never
-          rendered anywhere outside the session that typed them.
+          The seconds between a successful Send and the refresh landing. The
+          server owns every screen after that: page.tsx re-reads the session,
+          sees `submitted`, and renders IntakeReview — which is where the firm
+          reads their answers back and can reopen to change them.
         */}
+        {sent ? (
+          <div className="rounded-xl border border-[#E5EEF5] bg-[#F6F9FB] px-5 py-4 dark:border-[#1F2429] dark:bg-[#131A20]">
+            <p className="text-sm font-semibold">Sent — thank you.</p>
+            <p className={`mt-1 max-w-[38rem] text-[13px] leading-relaxed ${MUTED}`}>
+              Bringing up your answers…
+            </p>
+          </div>
+        ) : null}
+
         {sent || !current ? null : introOpen ? (
           <IntakeIntro
             firmName={firmName}
@@ -604,8 +597,8 @@ export function IntakeClient({
             <p className={`mt-6 h-4 text-[12px] ${MUTED}`}>{saving ? 'Saving…' : ' '}</p>
           </>
         )}
-      </div>
-    </main>
+      </>
+    </IntakeShell>
   )
 }
 

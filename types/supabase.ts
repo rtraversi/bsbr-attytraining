@@ -447,6 +447,9 @@ export type Database = {
           id: string
           policy_delivered_at: string | null
           purged_at: string | null
+          reopened_at: string | null
+          reopened_by: string | null
+          reopened_count: number
           started_by: string
           status: string
           submitted_at: string | null
@@ -459,6 +462,9 @@ export type Database = {
           id?: string
           policy_delivered_at?: string | null
           purged_at?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          reopened_count?: number
           started_by: string
           status?: string
           submitted_at?: string | null
@@ -471,6 +477,9 @@ export type Database = {
           id?: string
           policy_delivered_at?: string | null
           purged_at?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          reopened_count?: number
           started_by?: string
           status?: string
           submitted_at?: string | null

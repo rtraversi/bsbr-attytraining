@@ -692,11 +692,55 @@ admin API, which no `BEGIN` can enclose. What it is instead: every step idempote
 flipped to `submitted` **last**. A promote that fails halfway leaves the intake open, the firm
 presses Send again, and the second run skips what already exists and finishes the rest.
 
+**Reopenable until delivery — added 2026-08-28 (Max)**
+
+A submitted intake was a dead end. `app/intake/page.tsx` locked on `status !== 'in_progress'` and a
+locked session deliberately loaded no answers, so a firm that pressed Send saw an empty screen from
+then on — they could not check what they had said, let alone correct a wrong roster address or a
+jurisdiction picked in a hurry. The only remedy was to email and ask an operator to edit the
+database.
+
+There are now **four states**, decided by one function (`intakeStateOf`, `lib/intake/review.ts`) so
+that `/intake` and Settings can never disagree about whether a firm may still edit:
+
+| State | What the firm sees |
+|---|---|
+| `editable` | the intake, as before |
+| `submitted` | their answers, read-only, plus **Reopen to make changes** |
+| `delivered` | their answers, read-only. No reopen — the answers are the record the policy was written from |
+| `purged` | a plain sentence saying the answers were deleted and what is kept |
+
+🔴 **Reopening is recorded, and that is what migration `0030` is for.** The flip itself needed no
+schema — `status` already has `in_progress` in its CHECK. The columns exist because **Katy may
+already be drafting**, and answers changing under her silently is worse than not allowing the edit
+at all: she would deliver a policy written from a roster or a jurisdiction the firm had since
+changed, and neither of them would ever know why it was wrong. `reopened_at`, `reopened_count` and
+`reopened_by` let her export say the intake moved after she received it, and the screen itself says
+*"Reopened N times since it was first sent."*
+
+🔴 **The 0028 partial unique index is now load-bearing for a second reason.**
+`idx_intake_sessions_one_open_per_firm` is UNIQUE on `(firm_id) WHERE status = 'in_progress'`, and
+reopening moves a row INTO that state — so it is what stops a reopen producing two open sessions
+racing each other into promote. `POST /api/intake/reopen` relies on it rather than checking first:
+one conditional UPDATE with every precondition in the WHERE clause, and `23505` treated as "this
+firm already has an open intake". A read-then-write check would have a gap; the index does not.
+
+The route **refuses**, it does not merely stop offering the button — a delivered intake returns 409
+with "your policy has already been delivered", a purged one with "this intake has been deleted".
+
+⚠️ **PROD is behind.** As of 2026-08-28 production has neither `0028` nor `0029`; `0030` stacks on
+top. Push all three together, create the `Intake-uploads` bucket in the same window, and relink the
+CLI to staging afterwards.
+
 **Readable by the firm before the purge — added 2026-08-27 (Max)**
 
 A submitted intake is visible to the firm under a new heading in **Settings**: the questions as
 asked and the answers as given. It is their own account of their own firm and there is no reason to
 withhold it.
+
+**It is the same screen as the post-submit view above, and is built once** —
+`app/intake/_components/intake-review.tsx` over `buildReview()`. Two copies would drift into two
+different accounts of the same firm's answers.
 
 Three constraints whoever builds it has to hold:
 

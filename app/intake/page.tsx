@@ -7,8 +7,11 @@ import {
   loadAnswers,
   seatsPurchased,
 } from '@/lib/intake/session'
+import { buildReview, intakeStateOf } from '@/lib/intake/review'
 import { ThemeProvider, ThemeScript } from '@/app/dashboard/_components/theme'
 import { IntakeClient } from './_components/intake-client'
+import { IntakeReview } from './_components/intake-review'
+import { IntakeShell } from './_components/intake-shell'
 import type { AnswerMap } from '@/lib/intake/types'
 
 export const metadata = {
@@ -40,31 +43,60 @@ export default async function IntakePage() {
   const admin = createAdminClient()
   const latest = await latestSession(admin, auth.actor.firmId)
 
-  const locked = !!latest && latest.status !== 'in_progress'
-  const session = locked ? latest : await getOrCreateOpenSession(admin, auth.actor)
+  const { data: firm } = await admin
+    .from('firms')
+    .select('name')
+    .eq('id', auth.actor.firmId)
+    .maybeSingle()
+  const firmName = firm?.name ?? null
 
-  // A locked intake renders no answers at all. Nothing firm-facing shows what
-  // was said once it is submitted, and the two sensitive answers are never
-  // rendered outside the session that typed them.
-  const answers: AnswerMap = locked ? {} : await loadAnswers(admin, session.id)
+  // ── Submitted, delivered or purged: read-only ────────────────────────────
+  //
+  // Until 2026-08-28 all three of these were one `locked` flag that loaded no
+  // answers at all, so a firm that pressed Send saw an empty screen from then
+  // on and could not check or correct anything they had said. Now the three
+  // are distinct, and only the last of them has nothing to show.
+  const state = intakeStateOf(latest)
 
-  const [seats, firm] = await Promise.all([
+  if (latest && state !== 'editable') {
+    // Nothing is read on a purged session. There is nothing there — that is
+    // what purged means — and the screen says so rather than rendering an
+    // empty page.
+    const answers: AnswerMap = state === 'purged' ? {} : await loadAnswers(admin, latest.id)
+
+    return (
+      <ThemeProvider>
+        <ThemeScript />
+        <IntakeShell firmName={firmName}>
+          <IntakeReview
+            state={state}
+            sections={state === 'purged' ? [] : buildReview(answers)}
+            submittedAt={latest.submitted_at}
+            deliveredAt={latest.policy_delivered_at}
+            reopenedCount={latest.reopened_count ?? 0}
+          />
+        </IntakeShell>
+      </ThemeProvider>
+    )
+  }
+
+  // ── Open: the editable intake ────────────────────────────────────────────
+  const session = await getOrCreateOpenSession(admin, auth.actor)
+  const [answers, seats] = await Promise.all([
+    loadAnswers(admin, session.id),
     seatsPurchased(admin, auth.actor.firmId),
-    admin.from('firms').select('name').eq('id', auth.actor.firmId).maybeSingle(),
   ])
 
   return (
     <ThemeProvider>
       <ThemeScript />
       <IntakeClient
-        locked={locked}
-        submittedAt={session.submitted_at}
         resumeAt={session.current_question}
         initialAnswers={answers}
         seatsPurchased={seats}
         adminName={auth.actor.name}
         adminEmail={auth.actor.email}
-        firmName={firm.data?.name ?? null}
+        firmName={firmName}
       />
     </ThemeProvider>
   )

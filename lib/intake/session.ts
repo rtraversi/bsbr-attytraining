@@ -70,11 +70,32 @@ export async function authorizeIntake(): Promise<IntakeAuth> {
   }
 }
 
+/**
+ * One list, used by every session read.
+ *
+ * Separate selects drift, and the failure is silent: a caller reading
+ * policy_delivered_at off a row that never selected it gets `undefined`, which
+ * is falsy, which reads as "not delivered" — the exact wrong answer, on the
+ * field that decides whether a delivered policy's answers can still be edited.
+ */
+const SESSION_COLUMNS =
+  'id, status, current_question, submitted_at, policy_delivered_at, purged_at, reopened_count'
+
 export interface IntakeSessionRow {
   id: string
   status: 'in_progress' | 'submitted' | 'purged'
   current_question: string | null
   submitted_at: string | null
+  /**
+   * Set by hand when Katy says the policy has gone out. It is what closes
+   * reopening: until it is set the firm may still correct their answers, and
+   * after it the answers are the record the document was written from.
+   */
+  policy_delivered_at: string | null
+  /** Set by the purge. Non-null means the answers are gone, not merely locked. */
+  purged_at: string | null
+  /** 0030. Non-zero means the answers moved after Katy received them. */
+  reopened_count: number | null
 }
 
 /**
@@ -95,7 +116,7 @@ export async function getOrCreateOpenSession(
 ): Promise<IntakeSessionRow> {
   const existing = await admin
     .from('intake_sessions')
-    .select('id, status, current_question, submitted_at')
+    .select(SESSION_COLUMNS)
     .eq('firm_id', actor.firmId)
     .eq('status', 'in_progress')
     .maybeSingle()
@@ -105,7 +126,7 @@ export async function getOrCreateOpenSession(
   const created = await admin
     .from('intake_sessions')
     .insert({ firm_id: actor.firmId, started_by: actor.userId })
-    .select('id, status, current_question, submitted_at')
+    .select(SESSION_COLUMNS)
     .maybeSingle()
 
   if (created.data) return created.data as IntakeSessionRow
@@ -114,7 +135,7 @@ export async function getOrCreateOpenSession(
   // index means the row that beat us is exactly the row we wanted.
   const retry = await admin
     .from('intake_sessions')
-    .select('id, status, current_question, submitted_at')
+    .select(SESSION_COLUMNS)
     .eq('firm_id', actor.firmId)
     .eq('status', 'in_progress')
     .maybeSingle()
@@ -134,7 +155,7 @@ export async function latestSession(
 ): Promise<IntakeSessionRow | null> {
   const { data } = await admin
     .from('intake_sessions')
-    .select('id, status, current_question, submitted_at')
+    .select(SESSION_COLUMNS)
     .eq('firm_id', firmId)
     .order('created_at', { ascending: false })
     .limit(1)
