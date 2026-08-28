@@ -1,6 +1,6 @@
 # Session Handoff
 
-**Date:** 2026-08-27 (second session)
+**Date:** 2026-08-28
 **Who:** Max, with terminal-Claude
 
 > 🔴 **Deploy status is only ever answered by the workflow list**, never by commits or timestamps:
@@ -9,61 +9,67 @@
 >   --json event,conclusion,createdAt,headSha,displayTitle
 > ```
 > A `push` run is a **preview**. Only an `event: workflow_dispatch` run whose "Deploy to production"
-> step succeeded actually shipped. **Nothing has shipped since 2026-08-24 19:34:58Z.** See
-> `.planning/STATE.md` §1.
+> step succeeded actually shipped. **Nothing has shipped since 2026-08-24T19:34:58Z.**
 
 ---
 
 ## What happened today
 
-**The seat cap's failure mode was inverted, the post-payment path got a walkthrough, and the
-Invitations card was emptied into two dialogs.**
+**The intake grew from 29 questions to 50, the tab strip learned to degrade, and a submitted intake
+stopped being a dead end.** Six commits on `policy-intake`.
 
 ```
 main
- └── policy-intake   6be0bee  tell an unknown seat count apart from a seat count of zero
-                     3bab062  walk the buyer from payment to a submitted intake
-                     074d414  move the Invitations explanations into dialogs
-                     ef38348  size the Invitations controls to the row track
-                     820432f  docs(intake-spec): read your intake back from Settings  ← other session
+ └── policy-intake   cd2eb46  build the eight modules that were never implemented   ← pushed
+                     1c3f7a6  degrade the section strip by width, not truncation    ← pushed
+                     d3b7f05  seed a complete firm on staging, no Stripe or email   ← pushed
+                     d188162  drop the tier column from the tool grid               ← NOT pushed
+                     c0a4c0e  the roster attorney answer becomes a toggle           ← NOT pushed
+                     44cc711  a submitted intake stays editable until delivery      ← NOT pushed
 ```
 
-⚠️ **`820432f` came from a parallel Claude session**, not this one — a spec addition only, no code.
+`tsc` 0 · `eslint` 0 errors / 4 pre-existing warnings · `next build` clean · **262 tests across 16
+files** (was 197/15 this morning).
 
-All pushed. `tsc` 0, `eslint` 0 errors (4 pre-existing `no-img-element` warnings), `next build`
-clean, **197 tests across 15 files** (was 195).
+🔴 **Run the suite as `npx dotenv -e .env.local -- vitest run`.** Bare `npx vitest run` fails five
+files on missing env and looks like a regression.
 
-🔴 **Run the suite as `npx dotenv -e .env.local -- vitest run`** (what `pnpm test` wraps). Bare
-`npx vitest run` fails five files on missing env and looks like a regression.
+**Full detail:** `.planning/sessions/20260828-max-summary.md`.
 
 ---
 
-## Read these three first
+## Read these four first
 
-**1. `seatsPurchased()` used to answer `0` for "the read failed" AND for "they bought none", and
-both callers read `0` as "no cap".** The one condition under which the cap could not check a roster
-was the one condition under which it waved everything through — a firm could roster unlimited staff,
-submit, and promote past its seat count.
+**1. A number in yesterday's notes was wrong, and trusting it would have deleted the desktop tab
+strip.** "~4 characters at twelve sections" came from multiplying 6.1px per character. Stack Sans at
+11px runs nearer 5.2, and the measured widths are Firm 23 … Marketing 52. The labels genuinely *fit*
+at 1280 and 768; the break was only at 390. **Measure the face; do not multiply characters.**
 
-It now returns `number | null`, and the two callers **deliberately disagree** about `null`: the
-roster screen stays permissive (nobody gets a dead form because a query was slow), and
-`POST /api/intake/submit` **refuses with 503** because it is what writes the auth users and the
-`firm_members` rows. The refusal has its own message — not the over-seats copy, which would tell a
-firm inside its seats to go and spend money it did not need to.
+**2. Katy's "10–15 questions after gating" target is unreachable, and already was.** A firm that
+skips every optional module answers **29** required questions — 19 of them from the set as it stood
+before today. Every module contributes at least one always-visible gate and Section 0 alone is five.
+Getting to 15 means cutting the *existing* core, which is her call.
 
-**A known `0` is now a real cap.** That case used to be invisible.
+**3. Migration `0030` exists for the RECORD, not the reopening.** Flipping a submitted intake back
+to open needed no schema. The columns are there because **Katy may already be drafting**, and
+answers changing under her silently is worse than not allowing the edit at all. `reopened_count` is
+what her export reads.
 
-**2. The attorney checkbox's real defect was not that it was ugly — unchecked was an answer, and it
-was the expensive one.** Not ticking it spent a seat, on a firm capped at the seats it bought. The
-replacement dialog **preselects nothing** and keeps Send disabled until the firm says. It also has
-room to say the half the checkbox could not: an attorney uses no seat **and is issued no
-certificate**.
+**4. The 0028 partial unique index is now load-bearing for a second reason.** It is UNIQUE on
+`(firm_id) WHERE status = 'in_progress'`, and reopening moves a row **into** that state — so it is
+what stops a reopen making two open sessions racing into promote. The reopen route relies on it
+rather than pre-checking, and treats `23505` as "this firm already has an open intake".
 
-**3. The Invitations card is now a fixed ~140px budget.** It scrolled permanently at rest because
-three `py-3` controls plus `gap-2` came to ~148px. Now ~116px. **Anything added back comes out of
-the same budget** — that is why both explanations live in dialogs and not on the card. The
-line-height is pinned (`text-[13px]/[18px]`) because an arbitrary Tailwind font size sets only
-font-size and the `normal` that fills in differs between an `<input>` and a `<button>`.
+---
+
+## 🔴 Three commits were pushed by something that was not this session
+
+The instruction all day was **do not push**, and this session did not. But
+`git reflog show origin/policy-intake` records an `update by push` moving the remote to `d3b7f05`.
+So the first three of today's commits are on `origin/policy-intake` and the last three are not.
+
+Nothing was force-pushed, nothing was lost, the history is linear. Same parallel-session pattern as
+2026-08-12 and 2026-08-27. Worth knowing before anyone reasons about what the remote contains.
 
 ---
 
@@ -71,49 +77,44 @@ font-size and the `normal` that fills in differs between an `<input>` and a `<bu
 
 | Thing | State |
 |---|---|
-| `policy-intake` | 4 commits this session, **pushed**, in sync |
-| Tests / `tsc` / `eslint` / `next build` | all clean — 197 tests, 15 files |
-| Deployed? | ❌ **No `workflow_dispatch` since 2026-08-24** |
-| Any of today's UI in a browser | ❌ **never rendered** |
-| 0028 + 0029 on PROD | ❌ staging only |
+| `policy-intake` | 6 commits today — **three pushed, three not** |
+| Migration `0030` | Applied to **staging only**; types regenerated (3 columns added, 0 removed) |
+| `0028` + `0029` + `0030` on PROD | ❌ **none of them** |
 | `Intake-uploads` bucket on PROD | ❌ does not exist |
+| Supabase CLI | linked to **staging** — left that way |
+| Deployed? | ❌ no `workflow_dispatch` since 2026-08-24 |
+| Today's UI in a real browser | ❌ driven headless only |
 | Rise 360 content | still not authored |
 
 ---
 
 ## Next steps
 
-1. 🔴 **`0028` and `0029` onto PROD, and create `Intake-uploads` there.** Still the real blocker:
-   the code reaches production through CI, the database it lands on does not. Capital I,
-   case-sensitive, unrenameable, and no migration can create it. **Relink the CLI to staging in the
-   same session.**
-2. **Merge `policy-intake` to `main`, then run a production `workflow_dispatch`.** Pushing to `main`
-   builds a preview only.
-3. **Open all of today in a browser.** Four surfaces have never rendered: the intake introduction,
-   the invite dialog, the CSV dialog, and the resized Invitations card. The card fit has only been
-   measured on paper, and it is the whole point of `ef38348`.
-4. **Decide the two known nav-pill AA failures** with Rob.
-5. **`.planning/STATE.md` §3 and §5 are stale.**
+1. 🔴 **`0028`, `0029` and `0030` onto PROD, in order, and create `Intake-uploads` there.**
+   Unchanged and still the real blocker: the code reaches production through CI, the database it
+   lands on does not. Capital I, case-sensitive, unrenameable, and no migration can create it.
+   **Relink the CLI to staging in the same session.**
+2. **Push the remaining three commits**, merge `policy-intake` to `main`, then run a production
+   `workflow_dispatch`. A push to `main` builds a preview only.
+3. **Use the intake as a real firm.** `scripts/dev-seed-firm.mjs` makes one on staging in seconds
+   and prints a sign-in link — that is what it is for.
+4. **Decide the two known nav-pill AA failures** with Rob (carried).
+5. **`.planning/STATE.md` §3 and §5 are stale** (carried).
 
 ---
 
 ## Open questions
 
-1. 🔴 **`/api/invite/bulk` still discards the `name`.** The new CSV dialog tells firms how to write
-   the name column; the route creates the auth user from the email alone and never writes
-   `user_metadata.full_name`, and cert generation falls back to the email address. A certificate can
-   still be made out to `paralegal@firm.com`. The copy stops short of promising the name reaches the
-   certificate, but the gap is real — it is the batch-4 obligation in `intake-spec.md` under "The
-   roster wins on names".
-2. **Was deleting `out-of-seats-notice.tsx` right?** Its text moved onto the staff option in the
-   invite dialog, which is better placement, but it was a component Max had made specific calls on
-   ("deliberately NOT styled as a warning at rest"). One revert away.
-3. **Nothing sends invites from the intake roster.** Promote creates `firm_members` rows as
-   `invited` and deliberately sends nothing.
-4. **The purge does not exist**, and the Settings read-back spec'd in `820432f` is defined as being
-   available *until* the purge — so it now has a second thing depending on it.
-5. **`firms.onboarding_dismissed` (0008) is read by nothing** since the checklist was deleted. Left
-   in place on purpose; a column drop is a migration against two databases for no benefit.
-6. **Katy still owes:** `lib/intake/questions.ts`, the 50-question bank, Privacy §2/§5.
-
-**Full detail:** `.planning/sessions/20260827b-max-summary.md`.
+1. 🔴 **The 10–15 target** — cutting to it means cutting the existing core. Katy's call.
+2. **The tab strip past twelve sections.** Compacting solved twelve; another four modules take the
+   compact bars to ~10px. The levers are the gap and the minimum bar width in `intake-client.tsx`.
+3. **Module W's one real question** — who may approve a new tool, and by what process — is unbuilt
+   and belongs in Module A.
+4. **`/api/invite/bulk` still discards the `name`** (carried). A certificate can still be made out
+   to `paralegal@firm.com`.
+5. **Nothing sends invites from the intake roster** (carried).
+6. **The purge does not exist** (carried) — and the Settings read-back and the new `purged` state
+   are both defined against it.
+7. **Katy still owes:** `lib/intake/questions.ts` (the guessed module letters, the invented section
+   grouping, and now the eight new modules' wording), the 50-question bank review, and Privacy
+   §2/§5, which have no category covering intake answers.
