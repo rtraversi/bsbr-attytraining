@@ -1,9 +1,68 @@
 'use client'
 
 import { useState } from 'react'
-import { CHECKBOX, FIELD, MUTED, NOTICE, PILL_OFF, TABLE_HEAD } from './intake-styles'
+import { FIELD, MUTED, NOTICE, PILL_OFF, TABLE_HEAD } from './intake-styles'
 import { rosterTrainingSeats, canAddTrainingSeat } from '@/lib/intake/branching'
 import type { RosterRow } from '@/lib/intake/types'
+
+/**
+ * Attorney / staff, as a switch.
+ *
+ * It was a tick box until 2026-08-28. The problem was not the control, it was
+ * what unticked MEANT: nothing on screen said that leaving it alone put the
+ * person on a paid seat, so the cheap answer and the expensive one looked
+ * identical and the expensive one was the default. That is the same defect the
+ * invite dialog's attorney checkbox had, and it was fixed there the same week
+ * by making the firm choose (074d414).
+ *
+ * A switch fixes the readability half: it has a visible travel and a filled
+ * state, so "on" is something you can see across a table of eight rows. The
+ * label beside it names the OFF state as well — "Staff" — because that is the
+ * one with a cost, and a switch that only names what it is when it is on leaves
+ * the consequence unwritten.
+ *
+ * `role="switch"` with the person's name in the accessible label. The visible
+ * text is what tells a sighted user which way round it is; aria-checked carries
+ * the same fact for everyone else.
+ */
+function AttorneyToggle({
+  isAttorney,
+  onChange,
+  label,
+}: {
+  isAttorney: boolean
+  onChange: (next: boolean) => void
+  label: string
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isAttorney}
+        aria-label={`${label} is an attorney`}
+        onClick={() => onChange(!isAttorney)}
+        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-emphasis)] focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#0D0F12] ${
+          isAttorney
+            ? 'bg-[var(--brand-emphasis)]'
+            : 'bg-[#E5EEF5] dark:bg-[#1F2429]'
+        }`}
+      >
+        <span
+          aria-hidden
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-[left] duration-200 dark:bg-[#0D0F12] ${
+            isAttorney ? 'left-[22px]' : 'left-0.5'
+          }`}
+        />
+      </button>
+      {/* Not a <label>: the switch is a button, and the text names whichever
+          state it is in rather than naming the control. */}
+      <span aria-hidden className={`text-[13px] ${isAttorney ? 'font-semibold' : MUTED}`}>
+        {isAttorney ? 'Attorney' : 'Staff'}
+      </span>
+    </div>
+  )
+}
 
 /**
  * The roster: one screen with a table, not one question per person.
@@ -35,10 +94,22 @@ export function RosterTable({
   // it never lingers past the thing it was about.
   const [refusal, setRefusal] = useState<string | null>(null)
 
+  // 🔴 ROW ONE DEFAULTS TO ATTORNEY (Max, 2026-08-27). It defaulted to staff,
+  // which put the buyer on a paid seat before they had said anything — and the
+  // buyer is the attorney in most firms this is sold to, so the default was
+  // both the less likely answer and the more expensive one.
+  //
+  // Every row added afterwards defaults to staff, which is what "+ Add staff"
+  // does; "+ Add attorney" is the deliberate exception beside it. Two buttons
+  // rather than one default, for the reason recorded at addStaff below.
+  //
+  // It also lines the roster up with what the firm already is: the Stripe
+  // webhook writes the admin's own firm_members row with occupies_seat false
+  // for exactly this reason (provisionFirm, route.ts).
   const [rows] = useState<RosterRow[]>(() =>
     value.length > 0
       ? value
-      : [{ name: adminName ?? '', email: adminEmail, isAttorney: false }],
+      : [{ name: adminName ?? '', email: adminEmail, isAttorney: true }],
   )
   const current = value.length > 0 ? value : rows
 
@@ -134,17 +205,11 @@ export function RosterTable({
                   />
                 </td>
                 <td className="py-2 pr-3">
-                  <label className="flex cursor-pointer items-center gap-2">
-                    <input
-                      type="checkbox"
-                      className={CHECKBOX}
-                      checked={row.isAttorney}
-                      onChange={(e) => setAttorney(i, e.target.checked)}
-                    />
-                    <span className={row.isAttorney ? '' : MUTED}>
-                      {row.isAttorney ? 'Attorney' : 'Staff'}
-                    </span>
-                  </label>
+                  <AttorneyToggle
+                    isAttorney={row.isAttorney}
+                    onChange={(next) => setAttorney(i, next)}
+                    label={row.name || row.email || `Row ${i + 1}`}
+                  />
                 </td>
                 <td className="py-2">
                   <button
