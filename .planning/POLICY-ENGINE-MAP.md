@@ -372,11 +372,29 @@ not additive; the policy does not assemble without them.
 
 ---
 
-## 11. The interleave order (G-B2) — DRAFT, awaiting Max's ratification
+## 11. The interleave order (G-B2) — ✅ RATIFIED by Max, 2026-08-31
 
-Drafted 2026-08-31 from the two halves as they stand, post-D5 and post-D6. **This is the output
-structure of the assembler.** Every one of Part 1's 38 clauses and every Part 2 block is placed;
-nothing is dropped.
+Drafted 2026-08-31 from the two halves as they stand, post-D5 and post-D6, and **approved by Max
+the same day**. **This is the output structure of the assembler.** Every one of Part 1's 38 clauses
+and every Part 2 block is placed; nothing is dropped.
+
+**What ratification covered:** which section each rule lives in, and the order. **Section names are
+cosmetic and may change at any time without reopening this.**
+
+**Four fixes applied before approval**, from Max's audit challenge:
+1. §1 was "Preamble and Purpose" — *Purpose* was smuggled in from deferred benchmark gap B1. **Dropped.**
+2. §2 was "Scope and Governing Authority" — both halves of that name were deferred material (B2 and
+   D5). **Renamed "Application".**
+3. Old §10 "Court Disclosure and Certification" was a section for **one clause**. **Merged into §9**,
+   already the filings section and already adjacent in Part 1.
+4. §6 "Platforms and Systems" is a grouping with no source heading behind it. **Kept, explicitly approved.**
+
+**Provenance: 21 of the 22 sections are a heading Katy wrote.** Part 2 carries 21 named headings;
+Part 1 adds four topics that appear in no Part 2 heading (RECORDKEEPING, VENDOR BREACH, DEFINITIONS,
+court disclosure). That is 25 natural sections in the source, compressed to 22 by three merges —
+Confidentiality + Third party software into §5, Drafting + Foreign language output into §9,
+Disclosure + Client Use of AI + Give examples into §14. **The spine compresses the source; it does
+not add to it.**
 
 ### 11.1 The ordering principle
 
@@ -401,50 +419,51 @@ Three consequences worth naming, because they are choices rather than deductions
 
 | § | Section | Sources | Condition |
 |---|---|---|---|
-| 1 | **Preamble and Purpose** | P1 (title, `firm_name`), Part 2 *Preamble* | always |
-| 2 | **Scope and Governing Authority** | P2 (`jurisdictions`), P3 (`regulatory_regimes`), P5 (`contract_attorneys`), P6 (`existing_policy`) | P2 always; P3/P5/P6 conditional |
+| 1 | **Preamble** | Part 2 *Preamble* | always |
+| 2 | **Application** | P1 title (`firm_name`), P2 (`jurisdictions`), P3 (`regulatory_regimes`), P5 (`contract_attorneys`), P6 (`existing_policy`) | P1/P2 always; P3/P5/P6 conditional |
 | 3 | **Competency** | P22, Part 2 *Competency*, Part 2 *every attorney reviews every filing before signing*, Part 2 *may not use a tool they do not understand* | always |
-| 4 | **Staff Training and Attestation** | P4 (`roster`), Part 2 *STAFF COMPETENCY* | always; scales at zero non-attorney staff |
-| 5 | **Approved Tools and Data Protection** | Part 2 *Confidentiality*, Part 2 *no-training requirement*, Part 2 *third-party vendor factors*, Part 2 *shrinkwrap / clickwrap*, Part 2 *approved vs non-approved tools*, P7 (`prohibited_tools`), P8 (`personal_devices`), P12 (general LLMs), **G-Q8 (tool approval process)** | mixed |
-| 6 | **Platforms and Systems** | P10, P14 (`case_mgmt`, per-platform block), P11 → **action list**, P15 (**G-Q1**, conflicts checks), P16 (`comms_platforms`, per-platform block) | `case_mgmt` ≠ `none`; comms always |
-| 7 | **Legal Research** | Part 2 *LEGAL RESEARCH*, P9 (`research_tools`, per-tool block), P13 | `research_tools` ≠ `none` |
-| 8 | **Verification and Hallucinations** | Part 2 *Hallucinations* (all three sub-points), the canonical source-reporter rule | always. §7 and §9 cross-reference this rather than restate it |
-| 9 | **Drafting and Translation** | Part 2 *Drafting*, P17, P18, P19 + Part 2 *Foreign language output*, P20 (`filing_courts`) | `drafting_uses` ≠ `none`; P20 always |
-| 10 | **Court Disclosure and Certification** | P21 (`court_ai_orders`, `standing_order_check`, `court_cert_template`) | `court_ai_orders` ≠ `no` |
-| 11 | **Brainstorming** | P30, Part 2 *Brainstorming* | `brainstorming` = `yes` |
-| 12 | **Document Review and Summarizing** | **P23 and P31 merged** (§5 overlap 1), Part 2 *Summarizing*, P32 (`tar`) | `doc_review` = `yes`; P32 on `tar` |
-| 13 | **Meetings and AI Notetakers** | P24, Part 2 *AI Notetakers* incl. the Iurix non-assurance note | always; three stances plus the new `not_sure` (**G-Q2**) |
-| 14 | **Automations** | Part 2 *AUTOMATIONS*, **G-Q7** | `automations` = `yes` |
-| 15 | **Client Disclosure and Client Use of AI** | Part 2 *Disclosure*, P33 (**G-B3**), P27 (`client_ai`, `client_ai_approach`), Part 2 *Give examples* (**G-Q4**) | mixed |
-| 16 | **Billing** | P28 (`bill_ai_costs`), P34, Part 2 *Billing* | always |
-| 17 | **Records and Retention** | P36 (`retain_prompts`, `retention_schedule`) | always |
-| 18 | **Employment and Hiring** | P25 (`hiring_ai`, `hiring_states`), Part 2 *Employment decisions* | always; stronger on `hiring_ai` = `yes` |
-| 19 | **Advertising and Marketing** | P37 (`ai_marketing`, `marketing_review`), Part 2 *Advertising and Marketing* | `ai_marketing` = `yes` |
-| 20 | **Malpractice Insurance** | P35 (`carrier_notified`, **G-Q5**), Part 2 *Malpractice insurance* | always; `not_sure` → action list |
-| 21 | **Vendor Incidents** | P29 (`vendor_security_contact`, `vendor_incident_protocol`) | always |
-| 22 | **Enforcement and Discipline** | P26 (`discipline`, **G-Q3** enforcement authority), Part 2 *Discipline* | always |
-| 23 | **Definitions** | P38 (**G-B4**) | always |
+| 4 | **Staff Training and Attestation** | P4 (`roster`), Part 2 *STAFF COMPETENCY*, **G-Q9** | always; scales at zero non-attorney staff |
+| 5 | **Approved Tools and Data Protection** | Part 2 *Confidentiality*, Part 2 *Third party software*, Part 2 *shrinkwrap / clickwrap*, Part 2 *approved vs non-approved tools*, P7 (`prohibited_tools`), P8 (`personal_devices`), P12 (general LLMs), **G-Q6**, **G-Q8** | mixed |
+| 6 | **Platforms and Systems** *(grouping, no source heading — approved)* | P10, P14 (`case_mgmt`), P11 → **action list**, P15 (**G-Q1**), P16 (`comms_platforms`) | `case_mgmt` ≠ `none`; comms always |
+| 7 | **Legal Research** | Part 2 *LEGAL RESEARCH*, P9 (`research_tools`), P13 | `research_tools` ≠ `none` |
+| 8 | **Verification and Hallucinations** | Part 2 *Hallucinations*, **the canonical source-reporter rule** | always. §7 and §9 cross-reference it, never restate it |
+| 9 | **Drafting, Translation and Filings** | Part 2 *Drafting*, P17, P18, P19 + Part 2 *Foreign language output*, P20 (`filing_courts`), **P21** (`court_ai_orders`, `standing_order_check`, `court_cert_template`) | `drafting_uses` ≠ `none`; P20 always; P21 when `court_ai_orders` ≠ `no` |
+| 10 | **Brainstorming** | P30, Part 2 *Brainstorming* | `brainstorming` = `yes` |
+| 11 | **Document Review and Summarizing** | **P23 + P31 merged**, Part 2 *Summarizing*, P32 (`tar`) | `doc_review` = `yes`; P32 on `tar` |
+| 12 | **Meetings and AI Notetakers** | P24, Part 2 *AI Notetakers* incl. the Iurix non-assurance note | always; three stances plus new `not_sure` (**G-Q2**) |
+| 13 | **Automations** | Part 2 *AUTOMATIONS*, **G-Q7** | `automations` = `yes` |
+| 14 | **Client Disclosure and Client Use of AI** | Part 2 *Disclosure*, P33 (**G-B3**), P27, Part 2 *POLICY REGARDING CLIENT USE OF AI*, Part 2 *Give examples* (**G-Q4**) | mixed |
+| 15 | **Billing** | P28 (`bill_ai_costs`), P34, Part 2 *Billing* | always |
+| 16 | **Records and Retention** | P36 (`retain_prompts`, `retention_schedule`) | always |
+| 17 | **Employment and Hiring** | P25, Part 2 *Employment decisions* | always; stronger on `hiring_ai` = `yes` |
+| 18 | **Advertising and Marketing** | P37, Part 2 *Advertising and Marketing* | `ai_marketing` = `yes` |
+| 19 | **Malpractice Insurance** | P35 (**G-Q5**), Part 2 *Malpractice insurance* | always; `not_sure` → action list |
+| 20 | **Vendor Incidents** | P29 | always |
+| 21 | **Enforcement and Discipline** | P26 (**G-Q3**), Part 2 *Discipline* | always |
+| 22 | **Definitions** | P38 (**G-B4**) — operative terms only, **not** the 16-term glossary (D7) | always |
 
 **Separate deliverable, per D2: the ACTION ITEM LIST.** Fed by §6 (P11 `case_mgmt_ai` = `not_sure`),
-§13 (P24 `notetaker_stance` = `not_sure`) and §20 (P35 `carrier_notified` = `not_sure`).
+§12 (P24 `notetaker_stance` = `not_sure`) and §19 (P35 `carrier_notified` = `not_sure`).
 
 ### 11.3 What ratifying this settles
 
-- The two duplications in §5 are resolved: **P23 + P31 become one section** (§12), and the
+- The two duplications in §5 are resolved: **P23 + P31 become one section** (§11), and the
   source-reporter rule is **stated once** in §8.
-- Every approved new question has a home: G-Q1 §6, G-Q2 §13, G-Q3 §22, G-Q4 §15, G-Q5 §20,
-  G-Q6 §5, G-Q7 §14, G-Q8 §5, G-Q9 §4.
-- Section count is 23 with an appendix, against Texas's 7 and VBA's 7.
+- Every approved new question has a home: G-Q1 §6, G-Q2 §12, G-Q3 §21, G-Q4 §14, G-Q5 §19,
+  G-Q6 §5, G-Q7 §13, G-Q8 §5, G-Q9 §4.
+- Section count is **22**, with the action item list as a separate deliverable (D2), against
+  Texas's 7 and VBA's 7.
 
 ### 11.4 What it does not settle
 
-- **G-B4, one Definitions entry.** ⚠️ **Downgraded 2026-08-31.** §23 is not a hole: Katy's glossary
+- **G-B4, one Definitions entry.** ⚠️ **Downgraded 2026-08-31.** §22 is not a hole: Katy's glossary
   supplies **16 finished, sourced entries** and is the section's content. What is missing is the
-  single entry "professional level of data protection", which §5, §9 and §11 cross-reference by
+  single entry "professional level of data protection", which §5, §9 and §10 cross-reference by
   name — Katy's own P12 says "(DEFINITIONS AT END)". One line, not a section.
 - **G-B3, the disclosure situations.** §15 has the reasoning from Part 2 but not the list.
-- **G-A1/A2/A3.** §6 (case-management and comms platforms) and §7 (research tools) have slots with
-  nothing to put in them.
+- **G-A1/A2/A3.** §6 and §7 have slots with nothing in them. ✅ **Now covered by
+  `.planning/POLICY-BLOCKS-RESEARCH.md`** and its pre-seeded `policy-blocks.csv`, plus the
+  named-generic fallback that makes an unresearched row harmless.
 
 ---
 
@@ -463,9 +482,9 @@ Three consequences worth naming, because they are choices rather than deductions
 | Whose it is | Katy's | **Max wrote it** (2026-08-31: *"i wrote that glossary and its purely so katy can understand the terms better"*) |
 | What it is for | telling a firm what a term in its own policy means | **giving Max and Katy a shared vocabulary so they can polish the policy** — Katy was not fluent in some of the terms, the tiers among them |
 | Became its own asset? | no | **yes** — `AI-Terms-Glossary-2026-08-22.docx` / `.csv`, two days later |
-| **Verdict** | ✅ **stays as §23** | 📖 **an authoring aid, not a deliverable** |
+| **Verdict** | ✅ **stays as §22** | 📖 **an authoring aid, not a deliverable** |
 
-**§23 is therefore an operative-terms block of roughly three entries, not a glossary.** The earlier
+**§22 is therefore an operative-terms block of roughly three entries, not a glossary.** The earlier
 claim that the 16-term glossary "supplies §23's content" is withdrawn. A firm's AI policy has no
 reason to define "retrieval-augmented generation"; it has every reason to define the term its own
 data-security rule turns on.
@@ -497,4 +516,11 @@ P17/P18 to branch on `noTraining` rather than on tier. That:
 - makes the policy consistent with the 2026-08-28 tier removal rather than contradicting it,
 - and removes the last place where the assembler would need data the intake does not collect.
 
-⏳ **Awaiting Max.** Do not write §23 until the definition is settled, because four clauses quote it.
+✅ **Settled by Max, 2026-08-31:** *"then lets list them as examples not an authoritative absolute
+list. include the rule."*
+
+**§22 is a rule followed by non-exhaustive examples.** Roughly: *professional level of data
+protection means any tool used under an agreement that the vendor will not train on the firm's data;
+examples include API access and Claude Enterprise.* The rule decides, the examples illustrate, and a
+new vendor never requires reopening the policy. It also aligns the policy with the 2026-08-28 tier
+removal rather than contradicting it (§12.1): **P17 and P18 branch on `noTraining`, not on tier.**
