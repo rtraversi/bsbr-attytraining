@@ -1,3 +1,8 @@
+> **ARCHIVED 2026-08-27.** Executed. grep over the source returns zero hits for the retired names, verified 2026-08-27.
+> Historical record only. Do not cite it for current status: that lives in `.planning/STATE.md`.
+
+---
+
 # Rename → Iurix — Scoping Doc
 
 **Prepared:** 2026-07-26 (Rob + Claude, terminal). **For:** Max, 2026-07-27.

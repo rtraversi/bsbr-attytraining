@@ -1,120 +1,93 @@
 # Session Handoff
 
-**Date:** 2026-08-28
-**Who:** Max, with terminal-Claude
+**Date:** 2026-08-27
+**Who:** Rob, with terminal-Claude
 
-> 🔴 **Deploy status is only ever answered by the workflow list**, never by commits or timestamps:
-> ```bash
-> gh run list --workflow=deploy.yml --limit 15 \
->   --json event,conclusion,createdAt,headSha,displayTitle
-> ```
-> A `push` run is a **preview**. Only an `event: workflow_dispatch` run whose "Deploy to production"
-> step succeeded actually shipped. **Nothing has shipped since 2026-08-24T19:34:58Z.**
+> ✅ **The 2026-08-24 deploy warning is gone for good.** It was wrong when written, was corrected
+> on 08-27, and is not repeated here. **Deploy status is only ever answered by
+> `gh run list --workflow=deploy.yml`**, checking for a `workflow_dispatch` run whose "Deploy to
+> production" step succeeded. See `.planning/STATE.md` §1.
 
 ---
 
 ## What happened today
 
-**The intake grew from 29 questions to 50, the tab strip learned to degrade, and a submitted intake
-stopped being a dead end.** Six commits on `policy-intake`.
+Entity, EIN and Stripe. **No application code was touched.** Full detail, with every identifier:
+**`.planning/sessions/20260827-rob-summary.md`**.
 
-```
-main
- └── policy-intake   cd2eb46  build the eight modules that were never implemented   ← pushed
-                     1c3f7a6  degrade the section strip by width, not truncation    ← pushed
-                     d3b7f05  seed a complete firm on staging, no Stripe or email   ← pushed
-                     d188162  drop the tier column from the tool grid               ← NOT pushed
-                     c0a4c0e  the roster attorney answer becomes a toggle           ← NOT pushed
-                     44cc711  a submitted intake stays editable until delivery      ← NOT pushed
-```
-
-`tsc` 0 · `eslint` 0 errors / 4 pre-existing warnings · `next build` clean · **262 tests across 16
-files** (was 197/15 this morning).
-
-🔴 **Run the suite as `npx dotenv -e .env.local -- vitest run`.** Bare `npx vitest run` fails five
-files on missing env and looks like a regression.
-
-**Full detail:** `.planning/sessions/20260828-max-summary.md`.
+**BSBR Holdings, LLC is approved, the EIN is issued, and Stripe is registered to it** as a
+**multi-member LLC — Rob and Katy**. Requirements completed; charges and payouts stayed enabled
+throughout. That resolves open question #3 in `.planning/legal/README.md`: the entity is
+"BSBR Holdings, LLC d/b/a Iurix", Iurix is not becoming its own LLC, and the seven places in the
+app and legal docs already say exactly that. **No code change.**
 
 ---
 
-## Read these four first
+## 🔴 The thing to read first: Stripe has been live since 2026-08-19
 
-**1. A number in yesterday's notes was wrong, and trusting it would have deleted the desktop tab
-strip.** "~4 characters at twelve sections" came from multiplying 6.1px per character. Stack Sans at
-11px runs nearer 5.2, and the measured widths are Firm 23 … Marketing 52. The labels genuinely *fit*
-at 1280 and 768; the break was only at 390. **Measure the face; do not multiply characters.**
+Every planning doc said sandbox. **It has been taking real money for over a week.** Live account
+`acct_1ThDpU5md3Gcv1Z1`, live product and volume price with `lookup_key: per_seat_annual`, Stripe
+Tax active with an NC registration, live webhook on `iurixaccreditation.com`. A real card was
+charged **$37.54** on 08-19 and refunded.
 
-**2. Katy's "10–15 questions after gating" target is unreachable, and already was.** A firm that
-skips every optional module answers **29** required questions — 19 of them from the set as it stood
-before today. Every module contributes at least one always-visible gate and Section 0 alone is five.
-Getting to 15 means cutting the *existing* core, which is her call.
+Three of four `ix-stripeaudit` deltas were already closed. The remaining two were applied today
+(`tax_code` → `txcd_20060058`, `tax_behavior` → `exclusive`, which is **one-way**).
+**`ix-stripeaudit` is closed.**
 
-**3. Migration `0030` exists for the RECORD, not the reopening.** Flipping a submitted intake back
-to open needed no schema. The columns are there because **Katy may already be drafting**, and
-answers changing under her silently is worse than not allowing the edit at all. `reopened_count` is
-what her export reads.
-
-**4. The 0028 partial unique index is now load-bearing for a second reason.** It is UNIQUE on
-`(firm_id) WHERE status = 'in_progress'`, and reopening moves a row **into** that state — so it is
-what stops a reopen making two open sessions racing into promote. The reopen route relies on it
-rather than pre-checking, and treats `23505` as "this firm already has an open intake".
+**Prod is clean.** The one firm in it — "Katy Chavez Law", Rob's own live smoke test — was purged
+today after its subscription was cancelled. Zero firms, members, seats and auth users remain. The
+"17 firms" the docs worried about are in **staging**.
 
 ---
 
-## 🔴 Three commits were pushed by something that was not this session
+## Three traps that cost time today — do not repeat them
 
-The instruction all day was **do not push**, and this session did not. But
-`git reflog show origin/policy-intake` records an `update by push` moving the remote to `d3b7f05`.
-So the first three of today's commits are on `origin/policy-intake` and the last three are not.
-
-Nothing was force-pushed, nothing was lost, the history is linear. Same parallel-session pattern as
-2026-08-12 and 2026-08-27. Worth knowing before anyone reasons about what the remote contains.
-
----
-
-## Status
-
-| Thing | State |
-|---|---|
-| `policy-intake` | 6 commits today — **three pushed, three not** |
-| Migration `0030` | Applied to **staging only**; types regenerated (3 columns added, 0 removed) |
-| `0028` + `0029` + `0030` on PROD | ❌ **none of them** |
-| `Intake-uploads` bucket on PROD | ❌ does not exist |
-| Supabase CLI | linked to **staging** — left that way |
-| Deployed? | ❌ no `workflow_dispatch` since 2026-08-24 |
-| Today's UI in a real browser | ❌ driven headless only |
-| Rise 360 content | still not authored |
+1. **`GET /v1/account` cannot tell you the entity state.** On a standard non-Connect account it
+   returns `business_type: individual`, `company.name: "Robert M Traversi"` and
+   `requirements: null` no matter what is true. Legacy data. The dashboard's **Account status** tab
+   is the only authority. This was misdiagnosed twice, once as far as claiming a duplicate Stripe
+   account existed.
+2. **No tool can reveal which Stripe key prod holds.** Cloudflare never returns secret *values* —
+   `wrangler secret list` gives names only, the CF MCP has no secrets tool. It was settled
+   behaviourally instead (webhook → prod → database, twice). The chain is in `CLAUDE.md` §4.
+3. **`processed_stripe_events` is 8, not 7.** Cancelling the subscription wrote a row two seconds
+   before the purge. It is not drift, and the row is retained deliberately.
 
 ---
 
 ## Next steps
 
-1. 🔴 **`0028`, `0029` and `0030` onto PROD, in order, and create `Intake-uploads` there.**
-   Unchanged and still the real blocker: the code reaches production through CI, the database it
-   lands on does not. Capital I, case-sensitive, unrenameable, and no migration can create it.
-   **Relink the CLI to staging in the same session.**
-2. **Push the remaining three commits**, merge `policy-intake` to `main`, then run a production
-   `workflow_dispatch`. A push to `main` builds a preview only.
-3. **Use the intake as a real firm.** `scripts/dev-seed-firm.mjs` makes one on staging in seconds
-   and prints a sign-in link — that is what it is for.
-4. **Decide the two known nav-pill AA failures** with Rob (carried).
-5. **`.planning/STATE.md` §3 and §5 are stale** (carried).
+**Max's, and the real blocker — from `STATE.md` §5, unchanged by today:**
+
+1. 🔴 **Get `0028` and `0029` onto PROD** and create the `Intake-uploads` bucket there. The intake
+   code reaches production through CI; the database it lands on does not.
+2. **Merge `policy-intake`, deploy, then open `/intake` in a browser.** It has never been seen
+   rendering.
+3. **The two UI branches are still unmerged** — `ui-polish-batch-a` and `ui-polish-batch-b`
+   (stacked). With them, still undecided from 08-25: the Invitations scrollbar (drop the CSV hint
+   and take 40px buttons, or accept it), the certification denominator (invited vs seats
+   purchased), and the identical `Math.round` → 100% defect at `certification-forecast.tsx:75`.
+
+**Rob's, all dashboard, none blocking:**
+
+4. **Payout bank account** → the LLC's business account.
+5. **Statement descriptor** → back to `IURIX ACCREDITATION`. The entity change overwrote it with
+   `BSBR HOLDINGS LLC`, which customers will not recognise on a card statement.
+
+**Either:**
+
+6. 🔴 **`app/api/webhooks/stripe/route.ts:630`** — it emails a non-US buyer that their payment is
+   being refunded, and `refunds.create` appears **zero times** in the codebase. That was harmless
+   on sandbox money. It is not now. Soften the wording or actually issue the refund.
+7. **Re-auth wrangler** to `4b2a402334decc9259d7317aaf9782f0`. Blocks local inspection and the
+   documented `wrangler rollback`, not shipping.
 
 ---
 
 ## Open questions
 
-1. 🔴 **The 10–15 target** — cutting to it means cutting the existing core. Katy's call.
-2. **The tab strip past twelve sections.** Compacting solved twelve; another four modules take the
-   compact bars to ~10px. The levers are the gap and the minimum bar width in `intake-client.tsx`.
-3. **Module W's one real question** — who may approve a new tool, and by what process — is unbuilt
-   and belongs in Module A.
-4. **`/api/invite/bulk` still discards the `name`** (carried). A certificate can still be made out
-   to `paralegal@firm.com`.
-5. **Nothing sends invites from the intake roster** (carried).
-6. **The purge does not exist** (carried) — and the Settings read-back and the new `purged` state
-   are both defined against it.
-7. **Katy still owes:** `lib/intake/questions.ts` (the guessed module letters, the invented section
-   grouping, and now the eight new modules' wording), the 50-question bank review, and Privacy
-   §2/§5, which have no category covering intake answers.
+- **Multi-state sales tax.** NC is registered and collecting correctly. The CPA consult is now
+  about selling into other states — no longer a launch blocker, but unanswered.
+- Still with Katy, unchanged: revision of the training content that teaches the old framing, the
+  legal-accuracy review of the 50-question bank, the two guesses in `lib/intake/questions.ts`, and
+  Privacy §2/§5 having no category covering intake answers.

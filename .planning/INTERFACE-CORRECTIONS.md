@@ -1,3 +1,9 @@
+> ℹ️ **Findings log from 2026-07-10, not a status document (checked 2026-08-27).** The record of the
+> first external user test (Katy and Rob on the light-theme rebuild). Which items were fixed is not
+> tracked here. Kept for the record.
+
+---
+
 # Interface Corrections — Real User Testing Feedback
 
 **Date:** 2026-07-10

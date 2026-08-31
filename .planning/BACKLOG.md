@@ -1,3 +1,8 @@
+> ⚠️ **Last updated 2026-08-03 (checked 2026-08-27).** Predates the PROD cutover, the framing
+> correction and the policy intake. Cross-check anything here against `STATE.md` before working it.
+
+---
+
 # Backlog — Issues & Improvements
 
 Items discovered during development that must be addressed before real customers,
@@ -178,4 +183,4 @@ in `quiz-component.tsx` with `onRetry?.()`.
 - Renewal flow (Phase 5) — automated reminders at 90/30/7 days before cert expiry.
 - Supabase prod project ownership — currently under Max's account; move to Rob's
   before launch (and upgrade to Pro tier).
-- Stripe live-mode objects — deferred pending Stripe Tax setup + CPA consult.
+- ~~Stripe live-mode objects — deferred pending Stripe Tax setup + CPA consult.~~ ✅ **DONE — live since 2026-08-19.** Stripe Tax active, NC registered, live product + price in use. CPA consult on multi-state SaaS sales tax is still worth doing but no longer blocks anything.

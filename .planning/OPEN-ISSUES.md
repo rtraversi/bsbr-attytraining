@@ -1,3 +1,10 @@
+> ⚠️ **Snapshot from 2026-08-05, not a live list (checked 2026-08-27).** Written the day the
+> redesign went to production. It predates the PROD database cutover, the framing correction, the
+> published Terms and Privacy, the 50-question bank, and the entire policy intake. Some items here
+> are closed. Current blockers are in `STATE.md` §5.
+
+---
+
 # Open Issues — as of 2026-08-05, after the redesign went live
 
 **Written:** 2026-08-05 (Rob + Claude), immediately after production was promoted to
@@ -88,39 +95,59 @@ table, deliberately inside `overflow-x-auto`.
 
 ## 🟠 P1 — before taking real money
 
-### 6. Stripe is still in sandbox · **Rob**
-Live-mode object creation was deferred pending Stripe Tax. The 17 firms in the database all carry a
-`stripe_subscription_id` and are therefore test records — **confirm that before assuming it.**
+### 6. ~~Stripe is still in sandbox~~ — ✅ **CLOSED 2026-08-27**
+**This was wrong for weeks.** Stripe has been live since 2026-08-19: live account
+`acct_1ThDpU5md3Gcv1Z1`, live Product `prod_V6NwTwWVBDkz7R`, live Price
+`price_1U6BAj5md3Gcv1Z13Rx9qQll` carrying `lookup_key: per_seat_annual`, Stripe Tax active with an
+NC registration, and a live webhook endpoint on `iurixaccreditation.com`. A real card was charged
+$37.54 and refunded. The deployed Worker holds live keys — **proven behaviourally**, since
+Cloudflare never returns secret values. Full evidence chain in `CLAUDE.md` §4.
 
-> ✅ **The hardcoded price ID is gone** (branch `stripe-lookup-key`, built and preview-verified
-> 2026-08-05, **not yet merged or deployed**). Checkout resolves the Price by `lookup_key` at
-> runtime, so going live no longer requires a source edit and a redeploy in the middle of the
-> key-and-webhook cutover. The fallback to the sandbox ID is gated on the secret key being a **test**
-> key, so live mode refuses rather than charging against a Price nobody chose. **What remains is a
-> dashboard action: create the live Price with `lookup_key: per_seat_annual`.**
+**The "17 firms" line was also wrong** — those are in **staging**. Prod held exactly one firm
+("Katy Chavez Law", Rob's own live smoke test), purged 2026-08-27; see `PROD-CUTOVER.md`.
+Prod is now empty of firms, members, seats and auth users.
 
 ### 6b. 🔴 The refund the code promises but never issues · **Rob**, before live money
 `app/api/webhooks/stripe/route.ts:630` emails a **non-US buyer** telling them *in writing* that
 their payment is being refunded. `refunds.create` appears **zero times** in the codebase, by design
 — cancelling a subscription stops future billing, it does not return the payment just captured.
 
-Harmless on sandbox money. The day Stripe goes live, a non-US buyer who slips past the checkout
-guard is charged, cancelled, told a refund is coming, and nothing issues it unless Rob acts on the
-operator alert. Either soften the wording or actually call `refunds.create`. **This is issue #2
+🔴 **This is no longer hypothetical — as of 2026-08-27 it is live.** Charges are enabled on a
+real account with real cards. A non-US buyer who slips past the checkout guard is charged,
+cancelled, told in writing that a refund is coming, and nothing issues it unless Rob acts on the
+operator alert. **This is now the highest-priority open item on the Stripe path.** Either soften the wording or actually call `refunds.create`. **This is issue #2
 below, localised** — it is the non-US path specifically, not the duplicate path, which only alerts
 the operator to decide.
 
-### 7. Four Stripe config deltas, all customer-visible or tax-affecting · **Rob**, dashboard
-From the 2026-08-03 audit in `CLAUDE.md`:
+### 7. ~~Four Stripe config deltas~~ — ✅ **CLOSED 2026-08-27**
+All four are resolved. `tax_behavior` → `exclusive` (one-way; cannot be changed again).
+`tax_code` → `txcd_20060058` "Training Services – Self-study Web-based". `lookup_key`
+→ `per_seat_annual` was already set. The product was already renamed to
+"Iurix Accreditation — Annual Certification". **`ix-stripeaudit` is done.**
 
-- `tax_behavior` is **`unspecified`** while `app/api/checkout/route.ts:68` sets
-  `automatic_tax: { enabled: true }`. Stripe expects an explicit `inclusive`/`exclusive`.
-- **No `tax_code`** on the product — automatic tax falls back to the account default category.
-- **No `lookup_key`**, so the hardcoded price ID is the only handle. Setting one would remove the
-  ID swap from the launch checklist.
-- **The product is still named "AI Staff Compliance Training — Annual Certification"**, the retired
-  course name. `grep` finds zero occurrences in source because the Stripe product name is not
-  source — it renders on hosted Checkout, every invoice and every receipt.
+Only cosmetic remnant: product `metadata` is still empty (`pricing_model=per_seat_volume` was never
+set). Nothing reads it.
+
+🟠 **One new item created by the entity change:** the **statement descriptor** became
+`BSBR HOLDINGS LLC`, where it read `IURIX ACCREDITATION`. Customers recognise the brand, not the
+holding company; unrecognised descriptors drive chargebacks. **Set it back** — Settings →
+Business → Statement descriptor. · **Rob**, dashboard
+
+### 7b. Entity is now BSBR HOLDINGS LLC · **Rob**, dashboard — mostly done
+Business type Company / **multi-member LLC** (Rob and Katy), legal name `BSBR HOLDINGS LLC`, EIN on
+file, requirements completed 2026-08-27. `charges_enabled` and `payouts_enabled` both true.
+
+This answers **open question #3 in `.planning/legal/README.md`**: the entity is
+"BSBR Holdings, LLC d/b/a Iurix", not a separate Iurix LLC. The seven places in the app and legal
+docs already say exactly that — **no code change needed.**
+
+Remaining: **move the payout bank account to the LLC's business account.** A company-type account
+paying out to a personal account is a mismatch Stripe eventually flags.
+
+⚠️ **Do not diagnose entity state from `GET /v1/account`.** On a standard non-Connect account it
+returns `business_type: individual`, `company.name: "Robert M Traversi"` and `requirements: null`
+regardless of the truth. That is legacy data. The dashboard's **Account status** tab is the only
+authority — this was misread twice on 2026-08-27.
 
 ### 8. Resend's send path is not fully verified · **Max**
 DNS looks correct — DKIM at `resend._domainkey` intact, `send.` subdomain keeps its own MX and SPF,

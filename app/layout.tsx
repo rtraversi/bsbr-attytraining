@@ -61,11 +61,18 @@ const kapakana = localFont({
 // relative path and every scraper silently ignores it.
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://iurixaccreditation.com";
 
-// Leads with governance, not certification. This string is the most-shared
-// surface there is — it is the og:title and twitter:title on every link anyone
-// pastes into a chat — and "AI compliance certification" put the training first,
-// which is the framing corrected on 2026-08-24. The policy is the product.
-const TITLE = "IURIX — AI governance for small law firms";
+// This string is the most-shared surface there is: it is the <title>, the
+// og:title and the twitter:title on every link anyone pastes into a chat. It is
+// also the only title the homepage gets — app/page.tsx deliberately sets no
+// metadata of its own, so the share card and the browser tab cannot drift apart
+// again the way they had by 2026-08-24 (three different strings on one page).
+//
+// "certification" rather than "governance" is Rob’s call, 2026-08-24. An earlier
+// pass swapped it to "governance" to echo the framing correction; that
+// correction is about Rule 5.3 not being the thesis, and the DESCRIPTION below
+// already satisfies it by leading with the written policy. Do not swap the
+// title back without asking.
+const TITLE = "IURIX — AI compliance certification for law firms";
 const DESCRIPTION =
   "A written AI use policy for your firm, training and signed attestations for your staff, and a record you can produce. One annual fee per seat.";
 

@@ -1,3 +1,8 @@
+> ⚠️ **Checked 2026-08-27: the external uptime monitor named here was never chosen.** UptimeRobot
+> versus BetterStack is still an open decision. See `STATE.md` §5.
+
+---
+
 # Monitoring & Capacity-Alerting Roadmap
 
 **Prepared:** 2026-07-09 | **For:** Rob (operator) — reference/roadmap, not prose.

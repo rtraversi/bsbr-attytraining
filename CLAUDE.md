@@ -162,25 +162,52 @@ The interactive learning content is built in **Articulate Rise 360** by Rob + Ka
 
 ### 4. Stripe — per-seat volume pricing, webhooks, portal
 
-> **Corrected 2026-08-03.** The two lines below previously named `prod_UgzKT3NrGNAvDA` and
-> `price_1ThbLNCzT2268ei9nkadS8kD`. Those objects belong to a **retired Stripe account** and are not
-> what the code uses. The values below were read live from the Stripe API on 2026-08-03 against
-> sandbox `acct_1ThDpr6ZCSojEKRr`, which has exactly **one** active product and **one** active price.
+> **Corrected 2026-08-27 (Rob + terminal-Claude).** Everything that stood here described a
+> **sandbox-only** setup with no `lookup_key`, no `tax_code` and the retired product name. It was a
+> full release behind: live mode had already been built out and was taking real money. The objects
+> below were read from the Stripe API on 2026-08-27. The sandbox account `acct_1ThDpr6ZCSojEKRr` and
+> its Price `price_1TjNHc6ZCSojEKRrKs79ToJ0` still exist but are **not what production charges
+> through** — do not reason from them.
 
-- ONE Product: `prod_UiovBHrxJSDVpf` (verified) named **"AI Staff Compliance Training — Annual Certification"**. `tax_code`: **not set**. `metadata`: **empty**.
-- ONE Price: `price_1TjNHc6ZCSojEKRrKs79ToJ0` (verified). **No longer hardcoded** — as of 2026-08-05 checkout resolves the Price by `lookup_key` at runtime (`lib/stripe-price.ts`), falling back to this ID **only while the secret key is a test key**. `lookup_key`: **not set**. Recurring yearly, `billing_scheme=tiered`, `tiers_mode=volume`, tiers confirmed up_to 9 → $35/unit, up_to 24 → $32/unit, inf → $28/unit. `tax_behavior`: **`unspecified`**. `livemode: false`.
+**The live account is `acct_1ThDpU5md3Gcv1Z1`.** `charges_enabled` and `payouts_enabled` are both
+true. The keys in `.env.local`, `.env.prod` and the deployed Worker are all `sk_live`.
 
-> 🔴 **Three deltas from the intended config, all feeding `ix-stripeaudit`:**
-> 1. **`tax_behavior=unspecified`** while `app/api/checkout/route.ts:68` sets `automatic_tax: { enabled: true }`. This doc previously claimed `exclusive`. Stripe expects an explicit `inclusive`/`exclusive` for automatic tax, so this must be resolved on the live-mode object.
-> 2. **No `tax_code` on the product** (this doc claimed `txcd_20060058`) and **no product metadata** (claimed `pricing_model=per_seat_volume`). Automatic tax will fall back to the account default tax category.
-> 3. **No `lookup_key`** (claimed `per_seat_annual`). ✅ **The code side of this is now done** — checkout resolves by lookup key (`lib/stripe-price.ts`), so the hardcoded-ID swap is off the launch checklist. What remains is a **dashboard action**: set `lookup_key: per_seat_annual` on the live Price when it is created, and on the sandbox Price whenever convenient. Live mode **refuses to charge** if no active Price carries the key — deliberately, rather than falling back to a Price nobody chose.
+- ONE Product: `prod_V6NwTwWVBDkz7R`, **"Iurix Accreditation — Annual Certification"**. Already renamed — the retired "AI Staff Compliance Training" name is gone from Checkout, invoices and receipts. `tax_code`: **`txcd_20060058`** ("Training Services – Self-study Web-based"), set 2026-08-27, replacing `txcd_10000000`. `metadata`: **still empty** — `pricing_model=per_seat_volume` was never set and nothing reads it.
+- ONE Price: `price_1U6BAj5md3Gcv1Z13Rx9qQll`, **`lookup_key: per_seat_annual` is set**, so `lib/stripe-price.ts` resolves it by key and the sandbox fallback is unreachable. Recurring yearly, `billing_scheme=tiered`, `tiers_mode=volume`, tiers verified up_to 9 → $35/unit, up_to 24 → $32/unit, inf → $28/unit. `tax_behavior`: **`exclusive`**, set 2026-08-27 — **this is one-way. It cannot be changed again**, only superseded by a new Price.
+- **Stripe Tax is active.** Head office Garner NC; one registration `taxreg_1U6B2M5md3Gcv1Z1r6EWlpt2`, NC `state_sales_tax`. The account default `tax_behavior` is `inferred_by_currency`, which already inferred exclusive for USD — so the explicit setting above changed nothing in practice, it only stopped it being implicit.
+- Live webhook endpoint `we_1U6FJr5md3Gcv1Z1d2MEOvcY` → `https://iurixaccreditation.com/api/webhooks/stripe`, enabled, 5 events.
+
+> ✅ **All four deltas from the 2026-08-03 audit are closed** (three on 2026-08-27, the rename
+> earlier): `tax_behavior` explicit, `tax_code` set, `lookup_key` set, product renamed.
+> **`ix-stripeaudit` is done.** Product metadata is the only item left and it is cosmetic.
+
+> **Production runs on live keys — proven, not assumed (2026-08-27).** Cloudflare never returns
+> secret *values*: `wrangler secret list` gives names only, and the CF MCP has no secrets tool at
+> all. **This cannot be settled by inspection** — do not burn time trying. It was established
+> behaviourally:
+> 1. Live session `cs_live_b1ryl…` **paid $37.54** on 2026-08-19 — $35.00 + $2.54 NC tax — with `success_url` on `iurixaccreditation.com`.
+> 2. The prod Supabase firm "Katy Chavez Law" was provisioned **37 seconds later**, carrying that subscription.
+> 3. On 2026-08-27, cancelling that subscription fired `customer.subscription.deleted` and prod processed it **2 seconds later**, flipping the firm to `cancelled` and writing `evt_1U99KS5md3Gcv1Z15goDQ6tO` into `processed_stripe_events`.
 >
-> ⚠️ **Also customer-visible:** the product name still reads "AI Staff Compliance Training", the
-> retired course name. `grep` shows zero occurrences in *source*, but the Stripe product name is not
-> source: it renders on the hosted Checkout page and on every invoice and receipt. Renaming the
-> Stripe object is a dashboard action, not a code change.
+> Steps 2 and 3 only happen if the deployed Worker holds the **live** `STRIPE_WEBHOOK_SECRET`.
+
+> **The entity — 2026-08-27.** The account is now **BSBR HOLDINGS LLC**, a **multi-member LLC**
+> (Rob and Katy), EIN on file. This answers open question #3 in `.planning/legal/README.md`: it is
+> **"BSBR Holdings, LLC d/b/a Iurix"**, not a separate Iurix entity. The app and legal docs already
+> carry that exact wording in seven places and need **no change**.
+>
+> ⚠️ **`GET /v1/account` is not a reliable read of any of this.** On a standard non-Connect account
+> it still returns `business_type: individual` and `company.name: "Robert M Traversi"` — legacy
+> data, not live state — and returns `requirements: null` no matter what is actually outstanding.
+> The dashboard's **Account status** tab is the only authority. This was misdiagnosed twice on
+> 2026-08-27 from the API. Do not re-diagnose it that way.
+>
+> 🟠 **The statement descriptor became `BSBR HOLDINGS LLC`** when the entity changed; it read
+> `IURIX ACCREDITATION`. Buyers recognise the brand, not the holding company, and an unrecognised
+> descriptor is a chargeback driver. **Set it back** — Settings → Business → Statement descriptor.
+
 - **Per-seat volume pricing, flat on renewal — locked 2026-06-12 (Rob).** ONE product, ONE price. Stripe Checkout `quantity` = number of seats purchased; `adjustable_quantity` enabled so the buyer picks seat count in Checkout; Stripe auto-computes the band rate automatically via `tiers_mode=volume`. Seat enforcement: seats owned = subscription `quantity` (no `seat_cap` metadata). Renewal reuses the same single Price ID at the same band rate — no separate renewal price.
-- Old test-mode objects archived (active=false, lookup keys released): products `prod_UgyZjCbV9uJdzX` / `prod_UgyZ7rqNgXZYao` / `prod_UgyZ30zgvigsd6`; prices `price_1ThachCzT2268ei9HlR1YivD` / `price_1ThaciCzT2268ei9tooaKk8j` / `price_1ThaciCzT2268ei9MRI94R1i`. Live-mode object creation deferred pending Stripe Tax.
+- Old test-mode objects archived (active=false, lookup keys released): products `prod_UgyZjCbV9uJdzX` / `prod_UgyZ7rqNgXZYao` / `prod_UgyZ30zgvigsd6`; prices `price_1ThachCzT2268ei9HlR1YivD` / `price_1ThaciCzT2268ei9tooaKk8j` / `price_1ThaciCzT2268ei9MRI94R1i`. **Live-mode objects now exist and are in use** — see the corrected block above; the "deferred pending Stripe Tax" note that stood here was stale.
 - Use **Stripe Checkout (hosted)**, mode `subscription`. Don't build a card form.
 - After payment, Stripe redirects to `/onboarding?session_id={CHECKOUT_SESSION_ID}` where the app waits for the webhook to provision the firm.
 - Route: `app/api/webhooks/stripe/route.ts` (runs in the Worker, Node runtime — do NOT add `export const runtime = 'edge'`).
@@ -264,7 +291,7 @@ Grading, session validation and the single-use claim live in **`lib/training/ass
 | `fetch()` default caching in Next.js 15 | Changed behavior from Next.js 14 — was cached, now is not. Easy to assume old behavior. | Explicit `cache: 'force-cache'` or `next: { revalidate: N }` per request |
 | `jsonwebtoken` for Cloudflare Stream signed URLs | Heavier, Node-only assumptions, unnecessary — may load under nodejs_compat but not needed | `jose` (web-standard, works in plain CF Workers and the Next.js Worker alike) |
 | PDF generation requiring a headless browser (Puppeteer/Chrome) on edge | No headless Chrome on CF Workers edge | `pdf-lib` (pure JS) in a CF Worker — no native deps, runs without a browser |
-| Multiple fixed-price Stripe Prices with `seat_cap` metadata (old 3-tier pattern) | Old pattern — three distinct fixed-price Products/Prices with `seat_cap` metadata. Replaced by per-seat volume pricing: a single volume-tiered Price where `quantity` = seats and Stripe computes the band rate automatically. | ONE Product `prod_UiovBHrxJSDVpf` + ONE volume-tiered Price `price_1TjNHc6ZCSojEKRrKs79ToJ0` (`tiers_mode=volume`; **no lookup_key is set** on the real object, contrary to earlier notes); Checkout `quantity` = seats; seat enforcement = subscription `quantity`. IDs verified against the Stripe API 2026-08-03. |
+| Multiple fixed-price Stripe Prices with `seat_cap` metadata (old 3-tier pattern) | Old pattern — three distinct fixed-price Products/Prices with `seat_cap` metadata. Replaced by per-seat volume pricing: a single volume-tiered Price where `quantity` = seats and Stripe computes the band rate automatically. | ONE Product `prod_V6NwTwWVBDkz7R` + ONE volume-tiered Price `price_1U6BAj5md3Gcv1Z13Rx9qQll` (`tiers_mode=volume`, **`lookup_key: per_seat_annual`**); Checkout `quantity` = seats; seat enforcement = subscription `quantity`. **Live IDs, verified against the Stripe API 2026-08-27** — this row previously named the sandbox objects and claimed no lookup key was set. |
 | Storing `STRIPE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` in client code | Total compromise — these keys can do anything on your account | Worker environment variables/secrets (encrypted at rest); set via `wrangler secret put` or the Worker's CF dashboard Settings; never in source code |
 | Free-tier Supabase in production | Pauses after 7 days inactivity, 500 MB RAM, no point-in-time recovery | Pro tier ($25/mo) before launch |
 | Old Supabase API keys for new projects | Will be retired end of 2026 | New `sb_publishable_*` + `sb_secret_*` key format |
