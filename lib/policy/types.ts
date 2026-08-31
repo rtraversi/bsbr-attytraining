@@ -87,6 +87,21 @@ export interface Slot {
    * is transcribed verbatim; only what goes into the slot changes.
    */
   exclude?: readonly string[]
+  /**
+   * Text to remove when this slot renders empty — the slot's own clause, cut at
+   * a boundary Katy already wrote.
+   *
+   * Without it an empty slot leaves a visible `[PLACEHOLDER]` in the delivered
+   * policy. P2 is the case this exists for: a purely federal practice selects
+   * FEDERAL and no state, and the sentence should simply end after "Circuits"
+   * rather than trail off at "as well as state(s) of".
+   *
+   * 🔴 TRUNCATION, NOT REWORDING. The string must be an exact substring of the
+   * block's text and must contain the placeholder — assertSpineInvariants()
+   * enforces both — so this can only ever delete a span Katy wrote. It cannot
+   * introduce a word she did not.
+   */
+  dropWhenEmpty?: string
 }
 
 // ---------------------------------------------------------------------------

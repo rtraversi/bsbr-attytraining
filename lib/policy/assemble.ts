@@ -137,7 +137,12 @@ function fillSlots(text: string, slots: readonly Slot[] | undefined, answers: An
   if (!slots?.length) return text
   return slots.reduce((acc, slot) => {
     const filled = renderAnswer(slot.key, answers, slot.exclude)
-    return filled === null ? acc : acc.split(slot.placeholder).join(filled)
+    if (filled !== null) return acc.split(slot.placeholder).join(filled)
+    // Empty. Cut the slot's clause at the boundary the block declared, rather
+    // than shipping a visible placeholder — see Slot.dropWhenEmpty. Only a span
+    // Katy wrote can be removed; nothing is reworded and nothing is added.
+    if (slot.dropWhenEmpty) return acc.split(slot.dropWhenEmpty).join('')
+    return acc
   }, text)
 }
 

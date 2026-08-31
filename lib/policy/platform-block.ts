@@ -20,14 +20,24 @@
 // instruction. Nothing in the assembler may special-case a vendor in a way that
 // reintroduces the empty-section failure.
 //
-// ── What is NOT here ────────────────────────────────────────────────────────
-// The researched per-vendor text. Reading policy-blocks.csv and emitting
-// specific blocks is a later batch (out of scope, and the CSV has 7 of 20 rows
-// filled). This file is only the fallback.
+// ── The two shapes, and which one a vendor gets ─────────────────────────────
+// As of this batch all 20 rows are researched, so a listed vendor gets the
+// COMPOSED block from lib/policy/vendor-block.ts — feature name, default state,
+// where the control lives, and what the vendor's terms do not address.
+//
+// The generic text below is still reached, and still load-bearing, for:
+//   • an `other:` free-text platform the firm typed, which has no row and never
+//     will
+//   • any option value added to the intake before its CSV row is filled
+//
+// So the property the brief describes survives: an unresearched vendor is
+// harmless rather than an empty section.
 // =============================================================================
 
 import { getQuestion } from '@/lib/intake/questions'
 import { isOtherValue, otherText } from '@/lib/intake/types'
+import { composeVendorBlock } from '@/lib/policy/vendor-block'
+import { vendorFacts } from '@/lib/policy/vendor-data'
 
 /**
  * Option values that are not vendors and get no platform block.
@@ -77,9 +87,13 @@ export function platformDisplayName(answerKey: string, value: string): string | 
  * is reviewed text and it ships to every firm using an unresearched vendor.
  */
 export function genericPlatformText(displayName: string): string {
+  // The brief writes the possessive as "[Platform]'s". Rendering that slot for a
+  // name already ending in "s" takes an apostrophe alone — this is how the
+  // placeholder reads, not a change to the wording.
+  const its = displayName.endsWith('s') ? `${displayName}'` : `${displayName}'s`
   return (
-    `The firm uses ${displayName}. The firm shall confirm whether ${displayName}'s AI ` +
-    `features are enabled, review ${displayName}'s terms of service for data-training ` +
+    `The firm uses ${displayName}. The firm shall confirm whether ${its} AI ` +
+    `features are enabled, review ${its} terms of service for data-training ` +
     `language, and record the result.`
   )
 }
@@ -89,6 +103,26 @@ export interface PlatformBlock {
   value: string
   displayName: string
   text: string
+  /**
+   * `researched` — composed from that vendor's row in policy-blocks.csv.
+   * `generic`    — the named fallback, because no row exists for this value.
+   */
+  source: 'researched' | 'generic'
+}
+
+/**
+ * The block for one platform: the researched text where there is a row for it,
+ * and the named generic block where there is not.
+ */
+export function platformText(
+  value: string,
+  displayName: string,
+): { text: string; source: 'researched' | 'generic' } {
+  // An `other:` entry is free text the firm typed; it can never have a row.
+  const facts = isOtherValue(value) ? null : vendorFacts(value)
+  return facts
+    ? { text: composeVendorBlock(facts), source: 'researched' }
+    : { text: genericPlatformText(displayName), source: 'generic' }
 }
 
 /**
@@ -117,6 +151,6 @@ export function platformBlocks(answerKey: string, selected: readonly string[]): 
     .map(({ value, displayName }) => ({
       value,
       displayName,
-      text: genericPlatformText(displayName),
+      ...platformText(value, displayName),
     }))
 }

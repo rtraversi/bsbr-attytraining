@@ -227,6 +227,25 @@ export function assertSpineInvariants(sections: readonly Section[] = SPINE): voi
           if (!getQuestion(slot.key)) {
             throw new Error(`Block "${block.id}" slot fills from unknown question "${slot.key}".`)
           }
+          // 6. dropWhenEmpty may only DELETE a span of Katy's own text, and that
+          //    span must carry the placeholder with it — otherwise a truncation
+          //    could leave the bracket behind, or cut a clause the slot does not
+          //    own.
+          if (slot.dropWhenEmpty !== undefined) {
+            if (!block.text.text.includes(slot.dropWhenEmpty)) {
+              throw new Error(
+                `Block "${block.id}" declares dropWhenEmpty "${slot.dropWhenEmpty}", which is not ` +
+                  `a substring of its text. Truncation may only remove text that is actually there.`,
+              )
+            }
+            if (!slot.dropWhenEmpty.includes(slot.placeholder)) {
+              throw new Error(
+                `Block "${block.id}" declares dropWhenEmpty "${slot.dropWhenEmpty}", which does ` +
+                  `not contain the placeholder "${slot.placeholder}". Dropping it would leave the ` +
+                  `bracket in the delivered policy.`,
+              )
+            }
+          }
         }
       }
     }

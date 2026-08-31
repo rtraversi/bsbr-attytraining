@@ -40,17 +40,22 @@ export const SECTION_2_BLOCKS: readonly Block[] = [
       // would read Federal twice in one sentence. The slot is for the STATES
       // half — which is what her placeholder says.
       //
-      // ⚠️ A purely federal practice (immigration, patent) may select FEDERAL and
-      // nothing else. The list is then empty and the placeholder stays visible
-      // rather than the sentence trailing off at "state(s) of". That is the loud,
-      // catchable outcome, but it is not a finished answer: it needs either a
-      // variant of P2 for firms with no state jurisdictions or a reworded clause,
-      // and both are Katy's call, not the assembler's.
+      // A purely federal practice (immigration, patent) may select FEDERAL and
+      // no state, leaving the slot empty. The sentence then ENDS AFTER
+      // "Circuits" — the trailing "as well as state(s) of …" is cut, because
+      // there are no states for it to introduce.
+      //
+      // 🔴 That is a truncation at a boundary Katy already wrote, not a variant
+      // of her clause and not a rewording: the span removed is her own, and
+      // assertSpineInvariants() enforces that it is a real substring carrying
+      // the placeholder. Neither form ends in a full stop, because her source
+      // line does not either.
       slots: [
         {
           placeholder: '[STATES OR JURISDICTIONS LISTED]',
           key: 'jurisdictions',
           exclude: [FEDERAL_OPTION.value],
+          dropWhenEmpty: ', as well as state(s) of [STATES OR JURISDICTIONS LISTED]',
         },
       ],
     },

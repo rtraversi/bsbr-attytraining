@@ -262,15 +262,36 @@ describe('slot filling', () => {
     )
   })
 
-  it('leaves the placeholder visible for a federal-only practice', () => {
-    // ⚠️ KNOWN EDGE, flagged rather than papered over. An immigration or patent
-    // firm may select FEDERAL and nothing else; the slot is then empty. The
-    // placeholder stays rather than the sentence trailing off at "state(s) of",
-    // which is loud and catchable — but the real fix is a variant of P2 for
-    // firms with no state jurisdictions, and that is Katy's call.
-    expect(p2TextOf(assemble({ ...MINIMAL, jurisdictions: ['FEDERAL'] }))).toContain(
-      '[STATES OR JURISDICTIONS LISTED]',
+  it('ends P2 after "Circuits" for a federal-only practice', () => {
+    // An immigration or patent firm may select FEDERAL and no state. There are
+    // then no states for "as well as state(s) of" to introduce, so that trailing
+    // span — Katy's own words — is cut. No placeholder ships.
+    const text = p2TextOf(assemble({ ...MINIMAL, jurisdictions: ['FEDERAL'] }))
+
+    expect(text).toBe(
+      'Attorneys and staff must comply with all requirements of Federal Courts, ' +
+        'Agencies, Circuits',
     )
+    expect(text).not.toContain('[STATES OR JURISDICTIONS LISTED]')
+    expect(text).not.toContain('as well as state(s) of')
+    // The federal duty itself survives — only the states clause was cut.
+    expect(text).toContain('Federal Courts, Agencies, Circuits')
+  })
+
+  it('keeps the states clause when the firm has a state, alongside FEDERAL', () => {
+    const text = p2TextOf(assemble({ ...MINIMAL, jurisdictions: ['NC', 'FEDERAL'] }))
+
+    expect(text).toBe(
+      'Attorneys and staff must comply with all requirements of Federal Courts, ' +
+        'Agencies, Circuits, as well as state(s) of North Carolina',
+    )
+    expect(text).toContain('as well as state(s) of')
+  })
+
+  it('ends P2 after "Circuits" when jurisdictions is unanswered entirely', () => {
+    const text = p2TextOf(assemble({ ...MINIMAL, jurisdictions: undefined }))
+    expect(text).not.toContain('[STATES OR JURISDICTIONS LISTED]')
+    expect(text.endsWith('Circuits')).toBe(true)
   })
 
   it('leaves the placeholder visible when the answer is missing', () => {
@@ -287,25 +308,52 @@ describe('the platform fallback', () => {
     expect(ids).toContain('p14-case-mgmt-per-platform--smokeball')
   })
 
-  it('uses the exact text from POLICY-BLOCKS-RESEARCH.md §7', () => {
+  it('gives a researched vendor its composed block, not the generic one', () => {
+    // All 20 CSV rows are now filled, so Clio reaches the composed block from
+    // lib/policy/vendor-block.ts. See tests/policy-vendor-block.test.ts for the
+    // composition itself.
     const clio = assemble(MAXIMAL)
       .policy.sections.find((s) => s.number === 6)!
       .blocks.find((b) => b.id === 'p14-case-mgmt-per-platform--clio')!
-    expect(clio.text).toBe(genericPlatformText('Clio'))
-    expect(clio.text).toBe(
-      "The firm uses Clio. The firm shall confirm whether Clio's AI features are enabled, " +
-        "review Clio's terms of service for data-training language, and record the result.",
+
+    expect(clio.text).toContain('Clio provides AI features: Manage AI (formerly Clio Duo).')
+    expect(clio.text).not.toBe(genericPlatformText('Clio'))
+  })
+
+  it('uses the exact text from POLICY-BLOCKS-RESEARCH.md §7 where no row exists', () => {
+    // The generic block is still load-bearing for an `other:` platform the firm
+    // typed, which can never have a CSV row.
+    const leap = assemble({ ...MINIMAL, case_mgmt: ['other:Leap'] })
+      .policy.sections.find((s) => s.number === 6)!
+      .blocks.find((b) => b.id === 'p14-case-mgmt-per-platform--other:Leap')!
+
+    expect(leap.text).toBe(genericPlatformText('Leap'))
+    expect(leap.text).toBe(
+      "The firm uses Leap. The firm shall confirm whether Leap's AI features are enabled, " +
+        "review Leap's terms of service for data-training language, and record the result.",
     )
   })
 
   it('is what makes an unresearched vendor harmless — no empty section', () => {
-    // Smokeball's row in policy-blocks.csv is still empty (tier 2). The firm
-    // must still get a true instruction, not silence.
+    // A platform the firm typed itself has no CSV row and never will. It must
+    // still produce a true instruction, not silence.
+    const section6 = assemble({
+      ...MINIMAL,
+      case_mgmt: ['other:Acme Legal'],
+    }).policy.sections.find((s) => s.number === 6)
+
+    expect(section6).toBeDefined()
+    expect(section6!.blocks.some((b) => b.text.includes('Acme Legal'))).toBe(true)
+  })
+
+  it('gives a researched vendor real facts rather than an instruction to go and look', () => {
     const section6 = assemble({ ...MINIMAL, case_mgmt: ['smokeball'] }).policy.sections.find(
       (s) => s.number === 6,
-    )
-    expect(section6).toBeDefined()
-    expect(section6!.blocks.some((b) => b.text.includes('Smokeball'))).toBe(true)
+    )!
+    const smokeball = section6.blocks.find(
+      (b) => b.id === 'p14-case-mgmt-per-platform--smokeball',
+    )!
+    expect(smokeball.text).toContain('Smokeball provides AI features: Smokeball AI; Archie AI.')
   })
 
   it('names platforms with their intake labels', () => {
