@@ -1,93 +1,92 @@
 # Session Handoff
 
-**Date:** 2026-08-27
-**Who:** Rob, with terminal-Claude
+**Date:** 2026-08-31
+**Who:** Max, with desktop-Claude, terminal-Claude and Codex
 
-> ✅ **The 2026-08-24 deploy warning is gone for good.** It was wrong when written, was corrected
-> on 08-27, and is not repeated here. **Deploy status is only ever answered by
-> `gh run list --workflow=deploy.yml`**, checking for a `workflow_dispatch` run whose "Deploy to
-> production" step succeeded. See `.planning/STATE.md` §1.
+> 🔴 **Deploy status is only ever answered by the workflow list**, never by commits or timestamps:
+> ```bash
+> gh run list --workflow=deploy.yml --limit 15 \
+>   --json event,conclusion,createdAt,headSha,displayTitle
+> ```
+> A `push` run is a **preview**. Only a `workflow_dispatch` whose "Deploy to production" step
+> succeeded actually shipped. **Nothing has shipped since 2026-08-24T19:34:58Z.**
 
 ---
 
 ## What happened today
 
-Entity, EIN and Stripe. **No application code was touched.** Full detail, with every identifier:
-**`.planning/sessions/20260827-rob-summary.md`**.
+**The policy generator went from an idea to a tested engine.** Katy's policy was dissected clause
+by clause, mapped to the intake's real question keys, ratified as a 22-section spine, and built.
+All 20 vendor platforms researched.
 
-**BSBR Holdings, LLC is approved, the EIN is issued, and Stripe is registered to it** as a
-**multi-member LLC — Rob and Katy**. Requirements completed; charges and payouts stayed enabled
-throughout. That resolves open question #3 in `.planning/legal/README.md`: the entity is
-"BSBR Holdings, LLC d/b/a Iurix", Iurix is not becoming its own LLC, and the seven places in the
-app and legal docs already say exactly that. **No code change.**
+```
+main               4837632  D8 — Katy's 08-31 reversals, locked and not built   ← pushed
+policy-assembler   3317db7  P2 truncates cleanly, vendor blocks deliver facts   ← pushed
+```
 
----
+**371 tests**, clean `tsc` and `eslint`. Working tree clean, nothing uncommitted anywhere.
 
-## 🔴 The thing to read first: Stripe has been live since 2026-08-19
-
-Every planning doc said sandbox. **It has been taking real money for over a week.** Live account
-`acct_1ThDpU5md3Gcv1Z1`, live product and volume price with `lookup_key: per_seat_annual`, Stripe
-Tax active with an NC registration, live webhook on `iurixaccreditation.com`. A real card was
-charged **$37.54** on 08-19 and refunded.
-
-Three of four `ix-stripeaudit` deltas were already closed. The remaining two were applied today
-(`tax_code` → `txcd_20060058`, `tax_behavior` → `exclusive`, which is **one-way**).
-**`ix-stripeaudit` is closed.**
-
-**Prod is clean.** The one firm in it — "Katy Chavez Law", Rob's own live smoke test — was purged
-today after its subscription was cancelled. Zero firms, members, seats and auth users remain. The
-"17 firms" the docs worried about are in **staging**.
+**Full detail:** `.planning/sessions/20260831-max-summary.md`.
+**The artifact:** `.planning/POLICY-ENGINE-MAP.md` — the dissection, the spine, D1–D8, the gaps.
 
 ---
 
-## Three traps that cost time today — do not repeat them
+## Read these three first
 
-1. **`GET /v1/account` cannot tell you the entity state.** On a standard non-Connect account it
-   returns `business_type: individual`, `company.name: "Robert M Traversi"` and
-   `requirements: null` no matter what is true. Legacy data. The dashboard's **Account status** tab
-   is the only authority. This was misdiagnosed twice, once as far as claiming a duplicate Stripe
-   account existed.
-2. **No tool can reveal which Stripe key prod holds.** Cloudflare never returns secret *values* —
-   `wrangler secret list` gives names only, the CF MCP has no secrets tool. It was settled
-   behaviourally instead (webhook → prod → database, twice). The chain is in `CLAUDE.md` §4.
-3. **`processed_stripe_events` is 8, not 7.** Cancelling the subscription wrote a row two seconds
-   before the purge. It is not drift, and the row is retained deliberately.
+**1. Katy reversed three things this morning and none of them are built.** Answers are **kept**, not
+purged. Editable **indefinitely**, including after the policy is delivered. Retained for the life of
+the paid subscription plus a renewal grace period, which she wants pitched as a reason to renew.
+Output is **`.docx`**, never a static PDF. Three of these contradict shipped code — map §13.1.
+**Migration `0030` is not wasted**: only the lock moves, `reopened_count` still does its job.
+
+**2. `lib/policy/vendor-block.ts` has not been legally reviewed and should not ship.** It is the only
+place in `lib/policy` where text is generated rather than transcribed. For the **15 vendors whose
+terms are unclear**, the generated clause bars client-confidential information from the platform
+until the firm obtains written no-training confirmation. That follows from Katy's baseline, but it
+is a **reading** of her rule, not her words. Show her.
+
+**3. The committed `.txt` had never contained the actual policy.** It carried the modules, the prose,
+the ethics catalogue and the full glossary, and **zero** hits for `ARTIFICIAL INTELLIGENCE POLICY
+FOR`. The operative draft existed only in `~/Downloads`. The complete `.md` is now committed.
+
+---
+
+## Status
+
+| Thing | State |
+|---|---|
+| Policy engine | built, 371 tests, **not merged to `main`** |
+| §5–§22 block text | TODO. Most is transcription; **P3, P7, P8, P24, P26, P27, P28 need drafting** |
+| Vendor research | **20/20 rows**, every one with source URL, verbatim quote and date |
+| D8 (Katy's reversals) | **locked, not built** |
+| Privacy §2/§5 intake-answer category | ❌ still unwritten, now also needs the retention rule |
+| `0028`+`0029`+`0030` on PROD | ❌ none of them |
+| `Intake-uploads` bucket on PROD | ❌ does not exist |
+| Resend | ❌ still 403 `domain is not verified` |
+| Deployed? | ❌ no `workflow_dispatch` since 2026-08-24 |
 
 ---
 
 ## Next steps
 
-**Max's, and the real blocker — from `STATE.md` §5, unchanged by today:**
-
-1. 🔴 **Get `0028` and `0029` onto PROD** and create the `Intake-uploads` bucket there. The intake
-   code reaches production through CI; the database it lands on does not.
-2. **Merge `policy-intake`, deploy, then open `/intake` in a browser.** It has never been seen
-   rendering.
-3. **The two UI branches are still unmerged** — `ui-polish-batch-a` and `ui-polish-batch-b`
-   (stacked). With them, still undecided from 08-25: the Invitations scrollbar (drop the CSV hint
-   and take 40px buttons, or accept it), the certification denominator (invited vs seats
-   purchased), and the identical `Math.round` → 100% defect at `certification-forecast.tsx:75`.
-
-**Rob's, all dashboard, none blocking:**
-
-4. **Payout bank account** → the LLC's business account.
-5. **Statement descriptor** → back to `IURIX ACCREDITATION`. The entity change overwrote it with
-   `BSBR HOLDINGS LLC`, which customers will not recognise on a card statement.
-
-**Either:**
-
-6. 🔴 **`app/api/webhooks/stripe/route.ts:630`** — it emails a non-US buyer that their payment is
-   being refunded, and `refunds.create` appears **zero times** in the codebase. That was harmless
-   on sandbox money. It is not now. Soften the wording or actually issue the refund.
-7. **Re-auth wrangler** to `4b2a402334decc9259d7317aaf9782f0`. Blocks local inspection and the
-   documented `wrangler rollback`, not shipping.
+1. **Katy reviews `vendor-block.ts`**, the 15-unclear restriction clause especially.
+2. **Build D8** — reopen after delivery, kill the purge, a subscription-scoped retention clock, a
+   `.docx` renderer.
+3. **Transcribe §5–§22.** Mechanical for most; the seven listed above need real drafting.
+4. **Privacy §2/§5.** Katy's copy. Carried since the intake's first batch.
+5. Carried: PROD migrations + the bucket, Resend, the two nav-pill AA failures.
 
 ---
 
 ## Open questions
 
-- **Multi-state sales tax.** NC is registered and collecting correctly. The CPA consult is now
-  about selling into other states — no longer a launch blocker, but unanswered.
-- Still with Katy, unchanged: revision of the training content that teaches the old framing, the
-  legal-accuracy review of the 50-question bank, the two guesses in `lib/intake/questions.ts`, and
-  Privacy §2/§5 having no category covering intake answers.
+1. 🔴 **Do the 15 `unclear` vendor blocks earn their keep?** They cannot settle the training
+   question, but they do name the feature, say whether it is on by default, and give the opt-out
+   path. Kept on that basis; Katy may disagree.
+2. **Slack.** Verified against slack.com: it trains models on customer messages by default, and
+   opting out is an email from an Org Owner rather than a setting. It does **not** train generative
+   AI on customer data. A firm on stock Slack is offside Katy's baseline until that email is sent.
+3. **`general_llms`** is an option on `research_tools` but is a category, not a vendor. P12 covers
+   it. Confirm nothing else is expected there.
+4. Carried: `/api/invite/bulk` still discards the `name`; nothing sends invites from the intake
+   roster; the purge does not exist — **and per D8 it now never should**.
