@@ -113,6 +113,19 @@ export function isAnswered(question: Question, answers: AnswerMap): boolean {
 // Conditions
 // ---------------------------------------------------------------------------
 
+/**
+ * Evaluate one condition against an answer map.
+ *
+ * Exported (2026-08-31) so lib/policy can branch on the SAME language the
+ * intake branches on. The policy assembler reads the same answers and has to
+ * agree with the intake about what they mean; a second condition evaluator is
+ * a second set of edge cases around `not` and single-element arrays, and the
+ * two would drift. Nothing about the intake's own behaviour changes here.
+ */
+export function evaluateCondition(condition: Condition, answers: AnswerMap): boolean {
+  return evaluate(condition, answers)
+}
+
 function evaluate(condition: Condition, answers: AnswerMap): boolean {
   if ('all' in condition) return condition.all.every((c) => evaluate(c, answers))
   if ('any' in condition) return condition.any.some((c) => evaluate(c, answers))
