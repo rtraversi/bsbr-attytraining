@@ -524,3 +524,46 @@ protection means any tool used under an agreement that the vendor will not train
 examples include API access and Claude Enterprise.* The rule decides, the examples illustrate, and a
 new vendor never requires reopening the policy. It also aligns the policy with the 2026-08-28 tier
 removal rather than contradicting it (§12.1): **P17 and P18 branch on `noTraining`, not on tier.**
+
+---
+
+## 13. D8 — Katy's 2026-08-31 reversals. AUTHORITATIVE. Not yet built.
+
+Source: the Max/Katy conversation of 2026-08-31, 06:12–06:47. **Max: "our conversation, the one
+between me and katy, is authoritative and the final say so."** Locked, **do not build yet.**
+
+| # | Katy's decision | Her words |
+|---|---|---|
+| 1 | **Answers are retained**, not purged | *"We should save the previous responses so they can easily redo without typing in everything from scratch"* — an explicit reversal of her own earlier position |
+| 2 | **Answers stay editable INDEFINITELY**, before and after the policy is delivered | *"they can update their answers indefinitely to update the policy as they aquire more information, or change their mind about free text items"* |
+| 3 | **Retention = the life of the paid subscription + a renewal grace period** | *"It should be as long as they have a paid subscription"*; grace added for slow renewals |
+| 4 | **Retention is a renewal incentive and must be said out loud** | *"if they renew then it remains active. So that is an incentive to renew so they dont lose the work they progressed in making the policy"* |
+| 5 | **Output is `.docx`, never a static PDF** | so the firm can edit it in a word processor, or *"putting into their own AI asking for more cusomtizations"* |
+| 6 | **Policy + action list, from the intake** | *"the intake can create a customized policy and with it an action list to investigate"* — confirms D2 |
+| 7 | Katy's **content is finished**; doc last edited Fri 2026-08-28 | Max confirmed it is the same file as `AI-Policy-Research-2026-08-20.md` |
+
+### 13.1 🔴 What this breaks in shipped code — fix in a later batch
+
+| Conflict | Where |
+|---|---|
+| `canReopen(state)` returns true **only** for `'submitted'`. A delivered policy locks the intake forever. **D8-2 requires reopen after delivery.** | `lib/intake/review.ts` |
+| A `'purged'` state exists whose on-screen copy reads *"Your answers were deleted after your policy was delivered"*. **D8-1 kills the purge.** | `app/intake/_components/intake-review.tsx:107`, `intakeStateOf()` |
+| No retention clock exists. D8-3 needs one tied to subscription state plus grace. | new |
+| No `.docx` renderer. The assembler emits text blocks. | `lib/policy/assemble.ts` |
+
+**Migration `0030` is NOT wasted.** It exists so Katy knows when answers changed under her while
+drafting; `reopened_count` still does that. Only the *lock* moves, not the *record*.
+
+### 13.2 🔴 Carried, must not be lost again
+
+**Privacy §2 and §5 still have no category covering intake answers**, open since the intake's first
+batch. D8-3 and D8-4 now have to be disclosed there. **`POLICY-BLOCKS-RESEARCH.md` also needs a
+note that retention is subscription-scoped.** Katy's copy, not ours.
+
+### 13.3 Open for Katy — from the 2026-08-31 assembler batch
+
+`lib/policy/vendor-block.ts` is the **only** place in `lib/policy` where text is generated rather
+than transcribed. Sanctioned by the research brief §8, but 20 blocks of unreviewed language. The
+consequential part: for the **15 `unclear` vendors** the generated clause bars client-confidential
+information from the platform until the firm gets written no-training confirmation. That follows
+from Katy's own baseline, but it is a reading of her rule, not her words. **Show her before it ships.**
