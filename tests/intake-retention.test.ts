@@ -58,6 +58,12 @@ describe('once it is cancelled', () => {
     // indistinguishable from keeping them forever and cancels the renewal
     // incentive D8-4 exists to create, so drifting back up is a product
     // regression rather than a tuning change, and it should fail here.
+    //
+    // 🔴 IT ALSO GUARDS THE COPY. The approved on-screen sentence spells the
+    // number out in prose ("a grace period of three days") and no longer
+    // interpolates this constant, so the two can drift apart silently. This
+    // assertion is the only thing that catches it — if it fails, change
+    // RetentionNote in app/intake/_components/intake-review.tsx too.
     expect(RENEWAL_GRACE_DAYS).toBe(3)
     // Two days after the period ended: still one day left, not three weeks.
     expect(retentionOf({ status: 'cancelled', current_period_end: daysFromNow(-2) }, NOW).daysLeft).toBe(1)
