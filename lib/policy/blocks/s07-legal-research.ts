@@ -18,11 +18,14 @@ export const SECTION_7_BLOCKS: readonly Block[] = [
     clause: 'Part 2 — LEGAL RESEARCH',
     when: { key: 'research_tools', not: NONE_VALUE },
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line and needs transcription only. Its closing ' +
-        'duty — "Firm admin must approve the specific platform" — has no question ' +
-        'behind it and is part of G-Q8, carried by §5.',
+      kind: 'verbatim',
+      // Its closing duty — “Firm admin must approve the specific platform” —
+      // has no question behind it and is part of G-Q8, carried by §5.
+      text:
+        'LEGAL RESEARCH: Dedicated legal research tools are in a distinct class from ' +
+        '“ordinary tasks” like letter drafting or case management.  Any legal research ' +
+        'tools must be compliant.  Firm admin must approve the specific platform based on ' +
+        'its reliability and safety.',
       sourceLine: 397,
     },
   },

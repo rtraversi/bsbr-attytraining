@@ -24,13 +24,15 @@ export const SECTION_13_BLOCKS: readonly Block[] = [
     clause: 'Part 2 — AUTOMATIONS',
     when: { key: 'automations', is: 'yes' },
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line and needs transcription only: the firm may ' +
-        'build automations with AI-written code because client data is not shared, and ' +
-        'may use third-party automations, provided they run locally and send client ' +
-        'information only through an API or under a commercial confidentiality ' +
-        'agreement. Blocked on G-Q7 for its trigger.',
+      kind: 'verbatim',
+      // Still never appears: the section gates on `automations`, the key G-Q7
+      // will add. Transcribed now so the day G-Q7 lands nothing else is needed.
+      text:
+        'AUTOMATIONS:  Firm may create automations by using AI to create the necessary code ' +
+        'to create the automation because client data does not get shared.  Firm may also ' +
+        'use automations created by third parties. The automation must run locally and send ' +
+        'client information only through API, or using a commercial agreement insuring ' +
+        'confidentiality.',
       sourceLine: 384,
     },
   },

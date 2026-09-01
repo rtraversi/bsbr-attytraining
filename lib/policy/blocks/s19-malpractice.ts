@@ -13,12 +13,13 @@ export const SECTION_19_BLOCKS: readonly Block[] = [
     id: 'p35-malpractice-disclosure',
     clause: 'P35',
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line for the second half ("Firm shall comply with ' +
-        'any requirements to disclose AI use to malpractice carrier"); the first half ' +
-        'is the action-list bracket. G-Q5 (AI-specific exclusions or riders) was ' +
-        'specified in Module R and never built.',
+      kind: 'verbatim',
+      // Line 334 is half instruction, half clause. The opening bracket — “[add
+      // to action list to check if malpractice insurance requires notification
+      // of AI tools]” — is the action-list route, carried by
+      // lib/policy/action-items.ts, and the words after it are the clause. The
+      // same split as P6 at line 274.
+      text: 'Firm shall comply with any requirements to disclose AI use to malpractice carrier.',
       sourceLine: 334,
     },
   },
@@ -26,8 +27,10 @@ export const SECTION_19_BLOCKS: readonly Block[] = [
     id: 'malpractice-insurance',
     clause: 'Part 2 — Malpractice insurance',
     text: {
-      kind: 'todo',
-      reason: 'Source text EXISTS at this line and needs transcription only.',
+      kind: 'verbatim',
+      text:
+        'Malpractice insurance:  Firm will insure that necessary disclosures are made to ' +
+        'Professional Liability carrier',
       sourceLine: 413,
     },
   },

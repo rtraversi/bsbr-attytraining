@@ -15,10 +15,14 @@ export const SECTION_17_BLOCKS: readonly Block[] = [
     id: 'p25-employment-hiring',
     clause: 'P25',
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line and needs transcription only. hiring_states ' +
-        'is a slot fill.',
+      kind: 'verbatim',
+      // hiring_states was noted as a slot fill; Katy wrote no bracket for it,
+      // so no slot is declared. She says “all local regulations”, which reads
+      // correctly without naming the states.
+      text:
+        'EMPLOYMENT AND HIRING:  Firm shall ensure that any use of AI in selection of ' +
+        'potential candidates for hiring conforms with all local regulations and if unsure ' +
+        'will engage practice specific counsel about this issue.',
       sourceLine: 314,
     },
   },
@@ -27,11 +31,10 @@ export const SECTION_17_BLOCKS: readonly Block[] = [
     clause: 'Part 2 — Employment decisions',
     when: { key: 'hiring_ai', is: 'yes' },
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line and needs transcription only: screening ' +
-        'applicants must be vetted against current state compliance, and "We cannot ' +
-        'provide a standard policy."',
+      kind: 'verbatim',
+      text:
+        'Employment decisions: If firm wants to use AI in screening applicants that must be ' +
+        'vetted with current state compliance.  We cannot provide a standard policy.',
       sourceLine: 382,
     },
   },

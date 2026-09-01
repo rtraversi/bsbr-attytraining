@@ -12,11 +12,10 @@ export const SECTION_18_BLOCKS: readonly Block[] = [
     clause: 'P37',
     when: { key: 'ai_marketing', is: 'yes' },
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line and needs transcription only: AI-generated ' +
-        'advertising is independently reviewed by an attorney for compliance with ' +
-        'legal advertising rules.',
+      kind: 'verbatim',
+      text:
+        'ADVERTISING:  Any AI generated advertising will be independently reviewed by ' +
+        'attorney for compliance with legal advertising',
       sourceLine: 338,
     },
   },

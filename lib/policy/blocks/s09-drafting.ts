@@ -35,11 +35,15 @@ export const SECTION_9_BLOCKS: readonly Block[] = [
     clause: 'P17',
     when: { key: 'drafting_uses', not: NO_DRAFTING },
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line ("Consumer level pr pro level may be used…"). ' +
-        'Per D7 §12.1 it must be rewritten to branch on tool_grid[].noTraining rather ' +
-        'than on a tier the intake no longer collects.',
+      kind: 'verbatim',
+      // “pr” is the source’s typo for “or”. Left alone.
+      // Still carries the CONSUMER/PROFESSIONAL tier language the intake stopped
+      // collecting on 2026-08-28; per D7 §12.1 the BRANCH must be rewritten onto
+      // tool_grid[].noTraining. Katy’s words do not change when it is.
+      text:
+        'Consumer level pr pro level may be used for drafting of templates as long as no ' +
+        'personally identifiable case or client information is used and it is strictly for ' +
+        'form and not content',
       sourceLine: 298,
     },
   },
@@ -48,10 +52,12 @@ export const SECTION_9_BLOCKS: readonly Block[] = [
     clause: 'P18',
     when: { key: 'drafting_client_data', is: 'client_data' },
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line. Same tier rewrite as P17 (D7 §12.1); it ' +
-        'turns on "Professional level security", the term §22 must define.',
+      kind: 'verbatim',
+      // Turns on “Professional level security”, the term §22 must define (G-B4).
+      // Same tier rewrite as P17 — see the note there.
+      text:
+        'Professional level security is required for any drafting that we utilize or have ' +
+        'access to case or client specific data.',
       sourceLine: 300,
     },
   },
@@ -60,11 +66,14 @@ export const SECTION_9_BLOCKS: readonly Block[] = [
     clause: 'P19',
     when: { key: 'drafting_foreign_language', is: 'yes' },
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line, and Part 2 states the same duty at line 415 ' +
-        '("Foreign language output"). One of the two is canonical; the languages ' +
-        'themselves are a slot fill from foreign_languages.',
+      kind: 'verbatim',
+      // “professional lever” is the source’s typo for “professional level”.
+      // Part 2 states the same duty at line 415 (“Foreign language output”);
+      // one of the two is canonical and that is still open.
+      text:
+        'Translations shall be independently reviewed by a person competent to do so and ' +
+        'will always be done with professional lever data security since it will handle ' +
+        'client data.',
       sourceLine: 302,
     },
   },
@@ -74,10 +83,12 @@ export const SECTION_9_BLOCKS: readonly Block[] = [
     // Always: a transactional firm files with nobody, and the duty still reads
     // correctly with an empty court list (map §2.3).
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line, and Part 2 restates it at line 367. ' +
-        'filing_courts is an optional slot fill.',
+      kind: 'verbatim',
+      // Part 2 restates this at line 367.
+      text:
+        'Attorneys will be responsible for ensuring that all local filing rules are ' +
+        'complied with including but not limited to:  format, margins, font size, and ' +
+        'content elements.',
       sourceLine: 304,
     },
   },
@@ -88,11 +99,16 @@ export const SECTION_9_BLOCKS: readonly Block[] = [
     // the reason NO_COURT_AI_ORDERS is exported from questions.ts.
     when: { key: 'court_ai_orders', not: NO_COURT_AI_ORDERS },
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line. Three-way per the map: `yes` states the ' +
-        'duty; `not_sure` adds a check-before-filing instruction; court_cert_template ' +
-        '= yes appends a certification statement template.',
+      kind: 'verbatim',
+      // The opening quote before “AI was used for X” is never closed in the
+      // source. Left exactly as she wrote it.
+      // The three-way split (yes / not_sure / court_cert_template) is a BRANCH
+      // still to build around this clause, not a change to it.
+      text:
+        'Firm will be responsible for being aware and complying with any local or court or ' +
+        'judge specific affirmative AI disclosures.  For example if a jurisdiction requires ' +
+        'every filing to affirmatively state “AI was used for X, or AI was not used in the ' +
+        'preparation of the filing.',
       sourceLine: 306,
     },
   },

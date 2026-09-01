@@ -24,8 +24,10 @@ export const SECTION_15_BLOCKS: readonly Block[] = [
     id: 'p34-no-billing-hours-not-spent',
     clause: 'P34',
     text: {
-      kind: 'todo',
-      reason: 'Source text EXISTS at this line and needs transcription only.',
+      kind: 'verbatim',
+      text:
+        'FIRM shall never bill for hours not actually spent on case for any reason, ' +
+        'including that the task would have taken longer without AI.',
       sourceLine: 332,
     },
   },
@@ -33,11 +35,14 @@ export const SECTION_15_BLOCKS: readonly Block[] = [
     id: 'billing',
     clause: 'Part 2 — Billing',
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line and needs transcription only: bill the actual ' +
-        'reduced time, or charge a flat fee agreed at the time of engagement. Reads ' +
-        'against billing_models — HOURLY_BILLING_MODELS is the set this bites on.',
+      kind: 'verbatim',
+      // Reads against billing_models — HOURLY_BILLING_MODELS is the set this
+      // bites on. That is a BRANCH still to build, not an edit to the clause.
+      text:
+        'Billing:  Attorney may not bill hourly time unless that time was actually spent on ' +
+        'the matter.  If AI allows an attorney to complete the same task in less time then ' +
+        'they must bill for the actual reduced time, or must charge a flat fee for their ' +
+        'service at the time of agreement',
       sourceLine: 399,
     },
   },

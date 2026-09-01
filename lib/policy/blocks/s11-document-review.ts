@@ -15,13 +15,13 @@ export const SECTION_11_BLOCKS: readonly Block[] = [
     clause: 'P23 + P31 (merged)',
     when: { key: 'doc_review', is: 'yes' },
     text: {
-      kind: 'todo',
-      reason:
-        'P31 has source text at line 326 ("AI shall only be used as an additional aid ' +
-        'to human document review and summarizing, not as a replacement"); P23 at line ' +
-        '310 is an instruction only. One merged clause, per ratification. ' +
-        'doc_review_scale currently changes nothing — Katy wanted heavier language at ' +
-        '`ediscovery`, which is an open decision.',
+      kind: 'verbatim',
+      // P23 (line 310, “DISCOVERY REVIEW”) is an instruction with no clause;
+      // P31 at line 326 is the clause. Merged into one block per ratification,
+      // so the transcribed text is P31’s and the id names both.
+      text:
+        'SUMMARIZING AND DOCUMENT REVIEW:  AI shall only be used as an additional aid to ' +
+        'human document review and summarizing, not as a replacement',
       sourceLine: 326,
     },
   },
@@ -30,8 +30,12 @@ export const SECTION_11_BLOCKS: readonly Block[] = [
     clause: 'Part 2 — Summarizing',
     when: { key: 'doc_review', is: 'yes' },
     text: {
-      kind: 'todo',
-      reason: 'Source text EXISTS at this line and needs transcription only.',
+      kind: 'verbatim',
+      // Curly quotes around “doc review” are the source’s.
+      text:
+        'Summarizing (“doc review”):  be aware that while AI can sometimes efficiently ' +
+        'identify items in long documents, it also can be wrong and miss items.  AI can be ' +
+        'used as a supplement but not a replacement for human review.',
       sourceLine: 373,
     },
   },
@@ -40,8 +44,10 @@ export const SECTION_11_BLOCKS: readonly Block[] = [
     clause: 'P32',
     when: { key: 'tar', is: 'yes' },
     text: {
-      kind: 'todo',
-      reason: 'Source text EXISTS at this line and needs transcription only.',
+      kind: 'verbatim',
+      text:
+        'TECHNOLOGY ASSISTED REVIEW:  Any TAR methodology, if used, must be documented and ' +
+        'if required by local rule, disclosed.',
       sourceLine: 328,
     },
   },

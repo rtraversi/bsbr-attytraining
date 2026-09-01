@@ -28,13 +28,17 @@ export const SECTION_12_BLOCKS: readonly Block[] = [
     id: 'ai-notetakers',
     clause: 'Part 2 — AI Notetakers',
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at lines 375-380: the stance list, and the Iurix ' +
-        'non-assurance note ("Iurix cannot assure compliance with regard to notetakers ' +
-        'and firms must determine their own liability and local regulations"), which is ' +
-        'unconditional and must survive every stance branch.',
-      sourceLine: 375,
+      kind: 'verbatim',
+      // ⚠️ THE CITED LINE MOVED, 375 → 380, and deliberately.
+      // Line 375 is a heading plus a menu intro (“AI Notetakers:  Subject to
+      // firm preference:”) and 376-379 are the stance MENU — the firm’s choice,
+      // which is P24’s material, and P24 is an instruction with no clause to
+      // transcribe. Line 380 is the one sentence here that is policy language,
+      // and it is unconditional: it survives every stance branch.
+      text:
+        'NOTE that Iurix cannot assure compliance with regard to notetakers and firms must ' +
+        'determine their own liability and local regulations.',
+      sourceLine: 380,
     },
   },
 ]

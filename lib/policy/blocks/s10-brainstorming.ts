@@ -14,10 +14,11 @@ export const SECTION_10_BLOCKS: readonly Block[] = [
     clause: 'P30',
     when: { key: 'brainstorming', is: 'yes' },
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line ("Case and strategy brainstorming shall only ' +
-        'be done with professional level security"). Depends on §22 defining that term.',
+      kind: 'verbatim',
+      // Turns on “professional level security”, the term §22 must define (G-B4).
+      text:
+        'BRAINSTORMING:  Case and strategy brainstorming shall only be done with ' +
+        'professional level security',
       sourceLine: 324,
     },
   },
@@ -26,12 +27,14 @@ export const SECTION_10_BLOCKS: readonly Block[] = [
     clause: 'Part 2 — Brainstorming',
     when: { key: 'brainstorming', is: 'yes' },
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at lines 370-371 and needs transcription only: case ' +
-        'specific brainstorming happens locally, with only API or Commercial Use ' +
-        'licences, no training allowed.',
-      sourceLine: 370,
+      kind: 'verbatim',
+      // ⚠️ THE CITED LINE MOVED, 370 → 371. Line 370 is the bare heading
+      // “Brainstorming:”; the clause is the bullet under it. The leading “-” is
+      // Katy’s list marker, not policy language, and is dropped with the “**”.
+      text:
+        'Maintain confidentiality: Any case specific brainstorming must happen locally with ' +
+        'only API or Commercial Use licenses with no training allowed',
+      sourceLine: 371,
     },
   },
 ]

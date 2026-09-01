@@ -16,8 +16,10 @@ export const SECTION_6_BLOCKS: readonly Block[] = [
     clause: 'P10',
     when: { key: 'case_mgmt', not: NONE_VALUE },
     text: {
-      kind: 'todo',
-      reason: 'Source text EXISTS at this line and needs transcription only.',
+      kind: 'verbatim',
+      text:
+        'Firm shall ensure that case management platforms are contractually bound to ensure ' +
+        'that training on data is disabled.',
       sourceLine: 282,
     },
   },
@@ -38,12 +40,10 @@ export const SECTION_6_BLOCKS: readonly Block[] = [
     // what is missing is the question that decides whether it applies.
     when: { key: 'case_mgmt', not: NONE_VALUE },
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line and needs transcription only. Its own ' +
-        'question is G-Q1 (does the platform run AI conflicts checks, and is the ' +
-        'output independently verified) — approved for build, not yet built, so this ' +
-        'currently gates on case_mgmt instead.',
+      kind: 'verbatim',
+      // The clause is transcribed; what is still missing is G-Q1, the question
+      // that decides whether it applies. Until then it gates on case_mgmt.
+      text: 'All conflicts checks performed by AI will be independently verified.',
       sourceLine: 292,
     },
   },

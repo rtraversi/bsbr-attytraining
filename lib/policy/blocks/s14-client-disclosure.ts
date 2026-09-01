@@ -10,15 +10,62 @@ import type { Block } from '@/lib/policy/types'
 
 export const SECTION_14_BLOCKS: readonly Block[] = [
   {
+    id: 'disclosure-not-every-use',
+    clause: 'Part 2 — Disclosure',
+    text: {
+      kind: 'verbatim',
+      text: 'Not every possible use of AI needs to be affirmatively disclosed.',
+      sourceLine: 392,
+    },
+  },
+  {
     id: 'disclosure-reasoning',
     clause: 'Part 2 — Disclosure',
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at lines 391-395 and needs transcription only. This is the ' +
-        'raw material for G-B3: not every use needs disclosure, but delegating ' +
-        'SUBSTANTIVE tasks is akin to outsourcing and needs advance informed consent.',
-      sourceLine: 391,
+      kind: 'verbatim',
+      // ⚠️ THE CITED LINE MOVED, 391 → 393, and the block SPLIT ACROSS FOUR.
+      // Line 391 is a bare heading (“Disclosure : What specific disclosures are
+      // required to the clients”) with no clause in it. 392-395 are four
+      // separate rules, and the fidelity test checks a block against ONE line,
+      // so each is its own block citing its own line.
+      // The “ .Generally” mid-sentence is what her markdown leaves behind
+      // (“representation **.**Generally”). Left exactly as it normalises, so
+      // the transcription check compares like with like.
+      text:
+        'Disclosure is required to the extent reasonably necessary to permit the client to ' +
+        'make informed decisions regarding the representation .Generally, a lawyer need not ' +
+        'inform her client that she is using an AI tool to complete ordinary tasks, such as ' +
+        'generic case/practice management. However, if a lawyer delegates substantive tasks ' +
+        'in furtherance of the representation to an AI tool, the lawyer’s use of the tool ' +
+        'is akin to outsourcing legal work to a nonlawyer or other third-party resource or ' +
+        'service, for which the client’s advanced informed consent is required.',
+      sourceLine: 393,
+    },
+  },
+  {
+    id: 'disclosure-billing',
+    clause: 'Part 2 — Disclosure',
+    text: {
+      kind: 'verbatim',
+      text:
+        'If billing clients for the cost of AI tools then disclosure of that is required ' +
+        'prior to being retained.',
+      sourceLine: 394,
+    },
+  },
+  {
+    id: 'disclosure-tribunal',
+    clause: 'Part 2 — Disclosure',
+    text: {
+      kind: 'verbatim',
+      // One of the five disclosure situations, in Katy’s own words.
+      text:
+        'In all venues where the tribunal requires disclosure the attorney must insure that ' +
+        'such disclosure is made.  Some tribunals require every filing to state “No ' +
+        'generative AI was used” when this is the case.  In the case that it was then there ' +
+        'may be a requirement to state “AI was used and all output was verified”.  Attorney ' +
+        'is responsible for ensuring compliance with this requirement.',
+      sourceLine: 395,
     },
   },
   {
@@ -70,11 +117,10 @@ export const SECTION_14_BLOCKS: readonly Block[] = [
     id: 'give-examples',
     clause: 'Part 2 — Give examples',
     text: {
-      kind: 'todo',
-      reason:
-        'Source text EXISTS at this line (safe chat questions — mailing address, filing ' +
-        'fee). G-Q4 makes including it optional, per Katy\'s Module T Q3; until that ' +
-        'question exists there is no answer to gate it on.',
+      kind: 'verbatim',
+      text:
+        'Give examples:  OK to ask in chat “What is correct mailing address for this ' +
+        'matter”  “what is filing fee for this form?”',
       sourceLine: 417,
     },
   },
