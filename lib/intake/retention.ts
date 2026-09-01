@@ -29,15 +29,26 @@
 /**
  * Days after the paid period ends before the answers stop being kept.
  *
- * ⚠️ A NUMBER SOMEBODY HAS TO CONFIRM. Katy asked for "a renewal grace period"
- * and did not name a length. 30 days is the same window the retired purge used,
- * which makes it the one figure already reviewed in this product rather than a
- * fresh invention — but it is a placeholder for her decision, not her decision.
+ * ✅ DECIDED BY MAX, 2026-09-01. It was 30 — a placeholder borrowed from the
+ * retired purge window — until he cut it to three:
+ *
+ *   "I said grace period because I was cautious a firm might not renew but come
+ *    back. however lets make it shorter. katy said this could be a seling point
+ *    of renewing to save their answers. and i like it. so have it be three days
+ *    only."
+ *
+ * 🔴 THE SHORT WINDOW IS THE POINT, NOT A COMPROMISE. A month of holding a
+ * lapsed firm's answers is indistinguishable from keeping them forever, and it
+ * quietly cancels the thing D8-4 is for: if the work survives a long lapse
+ * anyway, not renewing costs nothing. Three days makes renewal the way a firm
+ * keeps its answers, which is what Katy wanted to sell.
+ *
+ * Recorded in .planning/POLICY-DECISIONS.md under "Answer retention".
  *
  * It is a single exported constant so changing it is one edit and the tests,
  * the UI copy and any future sweeper all move together.
  */
-export const RENEWAL_GRACE_DAYS = 30
+export const RENEWAL_GRACE_DAYS = 3
 
 const DAY_MS = 24 * 60 * 60 * 1000
 

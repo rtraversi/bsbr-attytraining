@@ -45,10 +45,26 @@ describe('while the firm is paying', () => {
 
 describe('once it is cancelled', () => {
   it('the grace window runs from the period end', () => {
-    const r = retentionOf({ status: 'cancelled', current_period_end: daysFromNow(-10) }, NOW)
+    const r = retentionOf({ status: 'cancelled', current_period_end: daysFromNow(-1) }, NOW)
     expect(r.state).toBe('grace')
-    expect(r.daysLeft).toBe(RENEWAL_GRACE_DAYS - 10)
-    expect(r.deletesAt).toBe(new Date(NOW.getTime() + (RENEWAL_GRACE_DAYS - 10) * DAY).toISOString())
+    expect(r.daysLeft).toBe(RENEWAL_GRACE_DAYS - 1)
+    expect(r.deletesAt).toBe(new Date(NOW.getTime() + (RENEWAL_GRACE_DAYS - 1) * DAY).toISOString())
+  })
+
+  it('🔴 the window is THREE days, not thirty', () => {
+    // Pinned as a value and not only as a constant. Max cut it from the 30 the
+    // retired purge used (2026-09-01): "lets make it shorter … so have it be
+    // three days only." A month of holding a lapsed firm's answers is
+    // indistinguishable from keeping them forever and cancels the renewal
+    // incentive D8-4 exists to create, so drifting back up is a product
+    // regression rather than a tuning change, and it should fail here.
+    expect(RENEWAL_GRACE_DAYS).toBe(3)
+    // Two days after the period ended: still one day left, not three weeks.
+    expect(retentionOf({ status: 'cancelled', current_period_end: daysFromNow(-2) }, NOW).daysLeft).toBe(1)
+    // Four days after: gone.
+    expect(retentionOf({ status: 'cancelled', current_period_end: daysFromNow(-4) }, NOW).state).toBe(
+      'expired',
+    )
   })
 
   it('a cancellation with the period still to run has the whole window ahead of it', () => {

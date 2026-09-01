@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BTN, MUTED, NOTICE } from './intake-styles'
 import type { ReviewSection } from '@/lib/intake/review'
-import type { Retention } from '@/lib/intake/retention'
+import { RENEWAL_GRACE_DAYS, type Retention } from '@/lib/intake/retention'
 
 /**
  * A submitted intake, read back to the firm that gave it.
@@ -197,11 +197,12 @@ export function IntakeReview({
  * screen as the answers it is about, immediately under the button that edits
  * them.
  *
- * `active` says what the firm keeps and why, and names renewal. `grace` and
- * `expired` are the only states with a date, and they are the two where saying
- * nothing would be the failure — a firm whose subscription lapsed has a window
- * to renew and get its work back, and it cannot use a window it was not told
- * about.
+ * 🔴 THE WINDOW IS THREE DAYS AND THE COPY HAS TO SAY SO PLAINLY (Max,
+ * 2026-09-01 — see RENEWAL_GRACE_DAYS). A short window that a firm only finds
+ * out about after it closes is not an incentive, it is a trap. So `active`
+ * names the limit BEFORE it can matter, rather than promising an open-ended
+ * hold and correcting it later, and `grace` leads with the days remaining
+ * instead of burying them after a date.
  */
 function RetentionNote({ retention }: { retention: Retention }) {
   const when = retention.deletesAt ? date(retention.deletesAt) : null
@@ -211,7 +212,8 @@ function RetentionNote({ retention }: { retention: Retention }) {
       <p className={`mt-4 max-w-[38rem] text-[13px] leading-relaxed ${MUTED}`}>
         We keep these answers for as long as your subscription is active, so renewing means you
         never start this questionnaire over — you edit what is already here and your policy is
-        rewritten from it.
+        rewritten from it. If the subscription lapses they are held for {RENEWAL_GRACE_DAYS} days
+        and then removed.
       </p>
     )
   }
@@ -219,10 +221,17 @@ function RetentionNote({ retention }: { retention: Retention }) {
   if (retention.state === 'grace') {
     return (
       <p className={`mt-4 max-w-[38rem] text-[13px] leading-relaxed ${MUTED}`}>
-        Your subscription has ended. We are still holding these answers
-        {when ? ` until ${when}` : ''}
-        {retention.daysLeft !== null ? ` — ${retention.daysLeft} days` : ''}. Renew before then and
-        everything here stays as it is, so you will not have to fill any of it in again.
+        Your subscription has ended.{' '}
+        {retention.daysLeft !== null ? (
+          <>
+            You have <strong>{retention.daysLeft === 1 ? '1 day' : `${retention.daysLeft} days`}</strong> to
+            renew before these answers are removed{when ? ` on ${when}` : ''}.
+          </>
+        ) : (
+          <>We are still holding these answers.</>
+        )}{' '}
+        Renew in time and everything here stays as it is, so you will not have to fill any of it in
+        again.
       </p>
     )
   }

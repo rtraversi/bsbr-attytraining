@@ -165,3 +165,48 @@ certificates they support, which is indefinitely. That must be stated rather tha
 8. **Privacy Policy scope: one document, three named audiences** — visitors, firm administrators,
    and staff members. Staff are the majority of data subjects and never chose to be here, so they get
    their own section rather than being folded into "users."
+
+---
+
+## Answer retention — decided 2026-09-01 (Max)
+
+**The intake answers are kept for the life of the paid subscription, plus a grace period of
+THREE DAYS.**
+
+> *"I said grace period because I was cautious a firm might not renew but come back. however lets
+> make it shorter. katy said this could be a seling point of renewing to save their answers. and i
+> like it. so have it be three days only."*
+
+**This supersedes the 30-day placeholder.** That figure was not a decision — it was borrowed from
+the retention window of the **retired purge** (the model that deleted a firm's answers 30 days after
+its policy was delivered, removed on 2026-09-01 as D8-1) on the reasoning that it was the one number
+already reviewed in this product. Katy asked for "a renewal grace period" and named no length; Max
+named it.
+
+**Why shorter is the point rather than a compromise.** A month of holding a lapsed firm's answers is
+indistinguishable from keeping them forever, and it quietly cancels the thing the retention rule is
+*for*: Katy's own framing is that keeping the answers is **a selling point of renewing** (D8-4, "so
+that is an incentive to renew so they dont lose the work they progressed in making the policy"). If
+the work survives a long lapse anyway, not renewing costs the firm nothing. Three days makes renewal
+the way a firm keeps its answers.
+
+**Consequences for the Privacy Policy.** This is one of the two D8 facts that `.planning/
+POLICY-ENGINE-MAP.md` §13.2 says must be disclosed, and the section covering intake answers **still
+does not exist** — open since the intake's first batch. It must state:
+
+1. Intake answers are retained for the life of the paid subscription, **not** deleted on delivery of
+   the policy. The previously drafted "deleted after delivery" language is withdrawn.
+2. On cancellation they are retained for **three days** and then removed.
+3. `payment_failed` is **not** cancellation for this purpose — Stripe's retries are still running
+   and nothing is deleted.
+
+⚠️ **A three-day window is short enough that the notice matters.** A firm that only learns the
+window exists after it closes has been trapped rather than incentivised, so the app states the limit
+on the intake read-back screen **while the subscription is still active** — before it can bite —
+rather than announcing it at cancellation. The Privacy Policy should not be the first place a firm
+could have found this out.
+
+**Implemented as** `RENEWAL_GRACE_DAYS` in `lib/intake/retention.ts` — one exported constant, so the
+clock, the on-screen copy and any future sweeper cannot disagree. `tests/intake-retention.test.ts`
+pins the value at 3 rather than only referencing the constant, so drifting back up fails as the
+product regression it would be.
