@@ -12,77 +12,22 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { NONE_VALUE, NO_DRAFTING } from '@/lib/intake/questions'
-import type { RosterRow } from '@/lib/intake/types'
+import { NONE_VALUE } from '@/lib/intake/questions'
 import { ACTION_ITEM_IDS } from '@/lib/policy/action-items'
 import { assemble } from '@/lib/policy/assemble'
+import { ATTORNEY, MAXIMAL, MINIMAL, PARALEGAL } from '@/lib/policy/fixtures'
 import { genericPlatformText } from '@/lib/policy/platform-block'
 import { assertSpineInvariants, SPINE } from '@/lib/policy/spine'
 import type { AnswerMap } from '@/lib/policy/types'
 
 // ---------------------------------------------------------------------------
 // Fixtures
+//
+// MINIMAL and MAXIMAL live in lib/policy/fixtures.ts rather than here, because
+// scripts/render-policy.mjs renders the same two firms. A renderer built on its
+// own copy would show a document these tests never checked — see that file's
+// header.
 // ---------------------------------------------------------------------------
-
-const ATTORNEY: RosterRow = { name: 'A. Partner', email: 'partner@firm.test', isAttorney: true }
-const PARALEGAL: RosterRow = { name: 'P. Staff', email: 'staff@firm.test', isAttorney: false }
-
-/**
- * A firm that answers "no" or "none" to everything optional.
- *
- * This is the floor: whatever survives here is in EVERY policy, so it is the
- * fixture that proves exclusion works.
- */
-const MINIMAL: AnswerMap = {
-  firm_name: 'Chavez Law',
-  roster: [ATTORNEY],
-  jurisdictions: ['NC'],
-  contract_attorneys: 'no',
-  existing_policy: 'no',
-  research_tools: [NONE_VALUE],
-  case_mgmt: [NONE_VALUE],
-  comms_platforms: ['email_only'],
-  regulatory_regimes: [NONE_VALUE],
-  drafting_uses: [NO_DRAFTING],
-  court_ai_orders: 'no',
-  personal_devices: 'no',
-  brainstorming: 'no',
-  doc_review: 'no',
-  client_ai: 'no',
-  ai_marketing: 'no',
-  hiring_ai: 'no',
-  bill_ai_costs: 'no',
-  retain_prompts: 'no',
-  notetaker_stance: 'not_permitted',
-  carrier_notified: 'yes',
-}
-
-/** A firm that takes nearly every branch. */
-const MAXIMAL: AnswerMap = {
-  ...MINIMAL,
-  roster: [ATTORNEY, PARALEGAL],
-  jurisdictions: ['NC', 'FEDERAL'],
-  contract_attorneys: 'yes',
-  existing_policy: 'yes',
-  regulatory_regimes: ['hipaa'],
-  research_tools: ['cocounsel', 'general_llms'],
-  case_mgmt: ['clio', 'smokeball'],
-  comms_platforms: ['slack', 'teams'],
-  tool_grid: [{ tool: 'chatgpt', noTraining: 'yes' }],
-  prohibited_tools: 'DeepSeek',
-  personal_devices: 'yes',
-  drafting_uses: ['form', 'substantive'],
-  drafting_client_data: 'client_data',
-  drafting_foreign_language: 'yes',
-  court_ai_orders: 'not_sure',
-  brainstorming: 'yes',
-  doc_review: 'yes',
-  tar: 'yes',
-  client_ai: 'yes',
-  ai_marketing: 'yes',
-  hiring_ai: 'yes',
-  bill_ai_costs: 'yes',
-}
 
 const blockIds = (answers: AnswerMap): string[] =>
   assemble(answers).policy.sections.flatMap((s) => s.blocks.map((b) => b.id))
