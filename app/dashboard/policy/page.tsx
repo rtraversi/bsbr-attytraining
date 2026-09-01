@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authorizeIntake } from '@/lib/intake/session'
-import { policyForFirm } from '@/lib/policy/for-firm'
+import { policyForFirm, type PolicyForFirm } from '@/lib/policy/for-firm'
 import type { AssembledSection, ActionItem } from '@/lib/policy/types'
 
 export const metadata = {
@@ -44,29 +44,7 @@ export default async function PolicyPage() {
 
   const found = await policyForFirm(createAdminClient(), auth.actor.firmId)
 
-  if (!found.ok) {
-    return (
-      <Shell>
-        <section className={CARD}>
-          <p className="text-[15px] leading-relaxed">
-            {found.reason === 'no-intake' ? (
-              <>
-                Your policy is assembled from your intake, and you have not completed one yet.
-              </>
-            ) : (
-              <>
-                Your intake is open for editing, so there are no settled answers to assemble a
-                policy from yet. Send it again when you are done.
-              </>
-            )}
-          </p>
-          <Link href="/intake" className={`mt-5 ${BTN}`}>
-            {found.reason === 'no-intake' ? 'Start your intake' : 'Go to your intake'}
-          </Link>
-        </section>
-      </Shell>
-    )
-  }
+  if (!found.ok) return <Unavailable found={found} />
 
   const blocks = found.result.policy.sections.flatMap((s) => s.blocks)
   const todoCount = blocks.filter((b) => b.status === 'todo').length
@@ -147,6 +125,77 @@ export default async function PolicyPage() {
     </Shell>
   )
 }
+
+/**
+ * The three reasons there is no policy to show, each said as the firm should
+ * hear it.
+ *
+ * 🔴 `intake-submitted` IS A WAITING ROOM, NOT AN ERROR. It is the state most
+ * firms will sit in, and until 2026-09-01 it did not exist here at all — a
+ * submitted intake rendered the assembled draft, so a firm saw its own
+ * unreviewed policy with every unwritten clause marked in red. What it says now
+ * is the truth: the answers are in, an attorney has them, and the document
+ * arrives when they have read it.
+ *
+ * There is deliberately no download and no preview on this screen. A firm that
+ * could read the draft while waiting would be reading the thing the review
+ * exists to catch.
+ */
+function Unavailable({ found }: { found: Extract<PolicyForFirm, { ok: false }> }) {
+  if (found.reason === 'intake-submitted') {
+    return (
+      <Shell>
+        <section className={CARD}>
+          <p className="text-[15px] leading-relaxed">
+            Your answers are with the attorney
+            {found.submittedAt ? <> since {date(found.submittedAt)}</> : null}. Your policy will
+            appear here once it has been reviewed, and we will email you when it does.
+          </p>
+          <p className={`mt-4 text-[14px] leading-relaxed ${MUTED}`}>
+            You can still change any answer in the meantime. Doing so sends it back for review.
+          </p>
+          <Link href="/intake" className={`mt-5 ${BTN_SECONDARY}`}>
+            Review your answers
+          </Link>
+        </section>
+      </Shell>
+    )
+  }
+
+  return (
+    <Shell>
+      <section className={CARD}>
+        <p className="text-[15px] leading-relaxed">
+          {found.reason === 'no-intake' ? (
+            <>Your policy is assembled from your intake, and you have not completed one yet.</>
+          ) : (
+            <>
+              Your intake is open for editing, so there are no settled answers to assemble a policy
+              from yet. Send it again when you are done.
+            </>
+          )}
+        </p>
+        <Link href="/intake" className={`mt-5 ${BTN}`}>
+          {found.reason === 'no-intake' ? 'Start your intake' : 'Go to your intake'}
+        </Link>
+      </section>
+    </Shell>
+  )
+}
+
+/**
+ * 🔴 FORMATTED IN UTC, for the same reason app/intake/_components/intake-review.tsx
+ * is — see that file's note. Formatting a midnight-UTC date in local time west
+ * of Greenwich prints the day before, and the two screens must not disagree
+ * about when a firm submitted.
+ */
+const date = (iso: string) =>
+  new Date(iso).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (

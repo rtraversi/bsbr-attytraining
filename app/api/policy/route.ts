@@ -44,6 +44,12 @@ const UNAVAILABLE: Record<PolicyUnavailable, { status: 404 | 409; error: string 
       'Your intake is open for editing. Send it again to have your policy assembled from the ' +
       'answers as they now stand.',
   },
+  'intake-submitted': {
+    status: 409,
+    error:
+      'Your intake is with the attorney. Your policy will be available here once it has been ' +
+      'reviewed.',
+  },
 }
 
 export async function GET(request: Request) {
@@ -53,14 +59,25 @@ export async function GET(request: Request) {
   const admin = createAdminClient()
   const found = await policyForFirm(admin, auth.actor.firmId)
 
-  if (!found.ok) {
-    const { status, error } = UNAVAILABLE[found.reason]
-    return NextResponse.json({ error, reason: found.reason }, { status })
-  }
-
   const url = new URL(request.url)
   const format = url.searchParams.get('format')
   const wantsActionItems = url.searchParams.get('document') === 'action-items'
+
+  if (!found.ok) {
+    // 🔴 A DOWNLOAD REFUSES WITH 404, NOT WITH THE STATE. The JSON view is a
+    // screen talking to itself and can say "with the attorney"; a file endpoint
+    // should not confirm that a document exists but is being withheld. 404 is
+    // the non-disclosing answer, and it is what a firm's browser gets if they
+    // guess the URL of a policy that has not been approved.
+    if (format === 'docx') {
+      return NextResponse.json({ error: 'Not found.' }, { status: 404 })
+    }
+    const { status, error } = UNAVAILABLE[found.reason]
+    return NextResponse.json(
+      { error, reason: found.reason, submittedAt: found.submittedAt ?? null },
+      { status },
+    )
+  }
 
   // ── JSON ────────────────────────────────────────────────────────────────
   if (format !== 'docx') {
