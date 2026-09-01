@@ -61,8 +61,13 @@ next-env.d.ts
 # one developer's absolute paths — pushing it would apply Rob's grants on Max's
 # machine and vice versa. The skill packs are installed by tooling and restore
 # themselves. Remove these lines if we ever want project skills shared in-repo.
-.claude/settings.local.json
-.claude/skills/
+# Local launch config and tool-managed skill packs. Ignored WHOLESALE (Max,
+# 2026-09-01) rather than file by file: the directory is per-machine — one
+# developer's absolute paths, their permission grants, their agent definitions —
+# and a named-file list has already had to grow twice as the tooling added
+# files. Nothing in here is shared, and anything that should be belongs in the
+# repo proper.
+.claude/
 .agents/skills/
 skills-lock.json
 

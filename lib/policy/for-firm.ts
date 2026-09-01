@@ -35,6 +35,17 @@ export type PolicyUnavailable =
   | 'no-intake'
   /** There is an intake, but it is open — mid-answer, so there is nothing settled to assemble. */
   | 'intake-open'
+  /**
+   * Submitted, and NOT YET APPROVED BY AN ATTORNEY.
+   *
+   * 🔴 THIS IS THE CORRECTNESS FIX, AND IT IS WHY THIS TYPE GREW A THIRD
+   * MEMBER. Until 2026-09-01 a submitted session returned ok:true, so
+   * /dashboard/policy showed a firm its own unreviewed draft — every
+   * untranscribed clause, red TODO markers and all — before any attorney had
+   * looked at it. A firm reading that could reasonably believe it was their
+   * policy, and it is not: it is the engine's output pending review.
+   */
+  | 'intake-submitted'
 
 export type PolicyForFirm =
   | {
@@ -46,10 +57,30 @@ export type PolicyForFirm =
       deliveredAt: string | null
       result: AssembleResult
     }
-  | { ok: false; reason: PolicyUnavailable }
+  | {
+      ok: false
+      reason: PolicyUnavailable
+      /** Present on 'intake-submitted', so the waiting screen can say since when. */
+      submittedAt?: string | null
+    }
 
 /**
  * Assemble the policy for one firm from its latest intake.
+ *
+ * ── 🔴 Why a SUBMITTED intake is refused, unless the caller says otherwise ──
+ * A submitted intake has settled answers, so it assembles perfectly well. What
+ * it has not had is an attorney reading the result. Delivery is the act of
+ * approving it (see lib/policy/delivery.ts), and `policy_delivered_at` is the
+ * record of that act — so `delivered` is the only state a FIRM may read.
+ *
+ * `allowUndelivered` is how the operator reads exactly the same document before
+ * approving it. One code path, two callers, which is the reason this module
+ * exists at all — an operator script that assembled the policy its own way
+ * could approve a document the firm never receives.
+ *
+ * ⚠️ It defaults to FALSE, and every firm-facing caller must leave it that way.
+ * The parameter is deliberately not a string option or a config object: it is
+ * one boolean, at one call site, in a script that is never deployed.
  *
  * ── Why an OPEN intake is refused ───────────────────────────────────────────
  * D8-2 lets a firm reopen its intake at any time, including after the policy
@@ -71,12 +102,16 @@ export type PolicyForFirm =
 export async function policyForFirm(
   admin: AdminClient,
   firmId: string,
+  { allowUndelivered = false }: { allowUndelivered?: boolean } = {},
 ): Promise<PolicyForFirm> {
   const session = await latestSession(admin, firmId)
   if (!session) return { ok: false, reason: 'no-intake' }
 
   const state = intakeStateOf(session)
   if (state === 'editable') return { ok: false, reason: 'intake-open' }
+  if (state === 'submitted' && !allowUndelivered) {
+    return { ok: false, reason: 'intake-submitted', submittedAt: session.submitted_at }
+  }
 
   const [answers, firm] = await Promise.all([
     loadAnswers(admin, session.id),

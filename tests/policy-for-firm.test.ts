@@ -73,11 +73,31 @@ const ANSWERS = [
   { question_key: 'jurisdictions', value: ['NC'] },
 ]
 
+const DELIVERED = { ...SUBMITTED, policy_delivered_at: '2026-08-10T00:00:00Z' }
+
 describe('which sessions produce a policy', () => {
-  it('a submitted intake does', async () => {
+  it('🔴 a submitted intake does NOT — it has not been reviewed', async () => {
+    // ⚠️ THIS ASSERTION WAS INVERTED ON 2026-09-01, and the version it replaces
+    // was pinning a bug. It read "a submitted intake does", which is how
+    // /dashboard/policy came to show a firm its own unreviewed draft — every
+    // unwritten clause, marked in red — before any attorney had seen it.
+    //
+    // Delivery is an approval (lib/policy/delivery.ts). `delivered` is the only
+    // state a firm may read.
     const found = await policyForFirm(
       fakeAdmin({ session: SUBMITTED, answers: ANSWERS, firmName: 'Chavez Law LLC' }),
       'firm-1',
+    )
+    expect(found.ok).toBe(false)
+    if (found.ok) return
+    expect(found.reason).toBe('intake-submitted')
+  })
+
+  it('…but the operator reads exactly that document, through the same function', async () => {
+    const found = await policyForFirm(
+      fakeAdmin({ session: SUBMITTED, answers: ANSWERS, firmName: 'Chavez Law LLC' }),
+      'firm-1',
+      { allowUndelivered: true },
     )
     expect(found.ok).toBe(true)
     if (!found.ok) return
@@ -85,13 +105,9 @@ describe('which sessions produce a policy', () => {
     expect(found.result.policy.sections.length).toBeGreaterThan(0)
   })
 
-  it('a DELIVERED intake does too — this is the ordinary case', async () => {
+  it('a DELIVERED intake does — this is the ordinary case', async () => {
     const found = await policyForFirm(
-      fakeAdmin({
-        session: { ...SUBMITTED, policy_delivered_at: '2026-08-10T00:00:00Z' },
-        answers: ANSWERS,
-        firmName: 'Chavez Law LLC',
-      }),
+      fakeAdmin({ session: DELIVERED, answers: ANSWERS, firmName: 'Chavez Law LLC' }),
       'firm-1',
     )
     expect(found.ok).toBe(true)
@@ -119,24 +135,33 @@ describe('which sessions produce a policy', () => {
     expect(found).toEqual({ ok: false, reason: 'intake-open' })
   })
 
-  it('🔴 reopened and resubmitted after delivery still produces a policy', async () => {
-    // The state D8-2 created: policy_delivered_at set, submitted_at later.
-    // intakeStateOf reads it as `submitted` — a fresh policy is due, and this
-    // is exactly where the firm goes to get it.
+  it('🔴 D8-2: reopened and resubmitted after delivery goes BACK to waiting', async () => {
+    // ⚠️ ALSO INVERTED ON 2026-09-01. It used to assert that this "still
+    // produces a policy" — which would have shown the firm a REVISED document
+    // nobody had reviewed, on the strength of an approval given to the previous
+    // version of it. The old policy was approved; this one is not.
+    //
+    // intakeStateOf reads it as `submitted`, so the firm waits and the session
+    // reappears in pendingDeliveries(). See tests/policy-delivery.test.ts.
+    const resubmitted = {
+      ...SUBMITTED,
+      policy_delivered_at: '2026-08-10T00:00:00Z',
+      submitted_at: '2026-08-20T00:00:00Z',
+    }
     const found = await policyForFirm(
-      fakeAdmin({
-        session: {
-          ...SUBMITTED,
-          policy_delivered_at: '2026-08-10T00:00:00Z',
-          submitted_at: '2026-08-20T00:00:00Z',
-        },
-        answers: ANSWERS,
-        firmName: 'X',
-      }),
+      fakeAdmin({ session: resubmitted, answers: ANSWERS, firmName: 'X' }),
       'f',
     )
-    expect(found.ok).toBe(true)
-    if (found.ok) expect(found.state).toBe('submitted')
+    expect(found.ok).toBe(false)
+    if (!found.ok) expect(found.reason).toBe('intake-submitted')
+
+    // And the operator can review the revision.
+    const operator = await policyForFirm(
+      fakeAdmin({ session: resubmitted, answers: ANSWERS, firmName: 'X' }),
+      'f',
+      { allowUndelivered: true },
+    )
+    expect(operator.ok).toBe(true)
   })
 })
 
@@ -146,7 +171,7 @@ describe('the firm name', () => {
     // document whose heading and body disagreed about the firm's name would be
     // worse than one using a slightly stale name consistently.
     const found = await policyForFirm(
-      fakeAdmin({ session: SUBMITTED, answers: ANSWERS, firmName: 'Stale Name LLC' }),
+      fakeAdmin({ session: DELIVERED, answers: ANSWERS, firmName: 'Stale Name LLC' }),
       'f',
     )
     expect(found.ok && found.firmName).toBe('Chavez Law')
@@ -154,7 +179,7 @@ describe('the firm name', () => {
 
   it('falls back to firms.name when the answer is missing', async () => {
     const found = await policyForFirm(
-      fakeAdmin({ session: SUBMITTED, answers: [], firmName: 'Fallback LLC' }),
+      fakeAdmin({ session: DELIVERED, answers: [], firmName: 'Fallback LLC' }),
       'f',
     )
     expect(found.ok && found.firmName).toBe('Fallback LLC')
@@ -162,7 +187,7 @@ describe('the firm name', () => {
 
   it('falls back again rather than rendering an empty heading', async () => {
     const found = await policyForFirm(
-      fakeAdmin({ session: SUBMITTED, answers: [{ question_key: 'firm_name', value: '   ' }], firmName: null }),
+      fakeAdmin({ session: DELIVERED, answers: [{ question_key: 'firm_name', value: '   ' }], firmName: null }),
       'f',
     )
     expect(found.ok && found.firmName).toBe('Your firm')

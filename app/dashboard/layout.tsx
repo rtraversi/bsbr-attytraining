@@ -4,6 +4,8 @@ import { ThemeProvider, ThemeScript } from './_components/theme'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hasSubmittedIntake, intakeInProgress } from '@/lib/intake/gate'
+import { latestSession } from '@/lib/intake/session'
+import { intakeStateOf } from '@/lib/intake/review'
 import { needsEmailAttention } from '@/lib/email-verification'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -18,6 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const firmId = user?.app_metadata?.firm_id as string | undefined
   let firmName: string | null = null
   let setup: SetupState | null = null
+  let policyDelivered = false
 
   if (firmId) {
     const admin = createAdminClient()
@@ -25,10 +28,28 @@ export default async function DashboardLayout({ children }: { children: React.Re
     firmName = firm?.name ?? null
 
     // Setup chips are admin-only, so employees pay for none of this.
-    if (role === 'admin') setup = await resolveSetupState(firmId)
+    if (role === 'admin') {
+      setup = await resolveSetupState(firmId)
+
+      // The Policy nav link, gated on the policy actually being delivered — a
+      // link to a waiting screen teaches people to ignore the nav. One indexed
+      // single-row read, admin only, and it reuses intakeStateOf() rather than
+      // asking its own question so the nav and the page cannot disagree about
+      // whether a policy exists. That matters for the D8-2 case: a firm that
+      // resubmitted after delivery is back to `submitted`, and the link goes
+      // away again until the revision is released.
+      policyDelivered = intakeStateOf(await latestSession(admin, firmId)) === 'delivered'
+    }
   }
 
-  const pill = <NavPill firmName={firmName} role={role} setup={setup} />
+  const pill = (
+    <NavPill
+      firmName={firmName}
+      role={role}
+      setup={setup}
+      policyDelivered={policyDelivered}
+    />
+  )
 
   // Shell choice is route-based (see DashboardShell): the training routes always
   // get the training shell + bottom tab bar regardless of role, so an admin can

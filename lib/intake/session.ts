@@ -15,7 +15,6 @@
 // SERVER ONLY. Importing this from a client component leaks the service-role key.
 // =============================================================================
 
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getQuestion } from './questions'
 import type { Json } from '@/types/supabase'
@@ -47,6 +46,16 @@ export type IntakeAuth =
  * instant privilege escalation.
  */
 export async function authorizeIntake(): Promise<IntakeAuth> {
+  // ⚠️ IMPORTED LAZILY, AND NOT FOR PERFORMANCE. @/lib/supabase/server pulls in
+  // `next/headers`, which only exists inside a Next request — so a static
+  // import here made this ENTIRE MODULE unloadable outside Next, taking
+  // latestSession() and loadAnswers() with it. Those two are plain
+  // admin-client helpers that scripts legitimately need, and
+  // scripts/deliver-policy.mjs is the one that found this.
+  //
+  // The dependency is real but it belongs to this function alone: everything
+  // else here is handed an admin client by its caller.
+  const { createClient } = await import('@/lib/supabase/server')
   const supabase = await createClient()
   const {
     data: { user },

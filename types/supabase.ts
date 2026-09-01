@@ -446,6 +446,8 @@ export type Database = {
           firm_id: string
           id: string
           policy_delivered_at: string | null
+          policy_delivered_by: string | null
+          policy_delivered_note: string | null
           reopened_at: string | null
           reopened_by: string | null
           reopened_count: number
@@ -460,6 +462,8 @@ export type Database = {
           firm_id: string
           id?: string
           policy_delivered_at?: string | null
+          policy_delivered_by?: string | null
+          policy_delivered_note?: string | null
           reopened_at?: string | null
           reopened_by?: string | null
           reopened_count?: number
@@ -474,6 +478,8 @@ export type Database = {
           firm_id?: string
           id?: string
           policy_delivered_at?: string | null
+          policy_delivered_by?: string | null
+          policy_delivered_note?: string | null
           reopened_at?: string | null
           reopened_by?: string | null
           reopened_count?: number

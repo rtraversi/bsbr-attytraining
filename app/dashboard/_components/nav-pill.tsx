@@ -22,6 +22,18 @@ interface NavPillProps {
    * Null for employees and for any firm with nothing outstanding.
    */
   setup?: SetupState | null
+  /**
+   * Whether this firm's policy has been approved and released.
+   *
+   * 🔴 GATED ON `delivered`, NOT ON "an intake exists". A link to
+   * /dashboard/policy before delivery leads to a waiting screen, and a nav item
+   * that reliably goes nowhere teaches people to ignore it. It appears the day
+   * the document does — which also makes its appearance the signal.
+   *
+   * Resolved in the LAYOUT, not here: it needs the session row, and the layout
+   * is already reading intake state for the setup chips.
+   */
+  policyDelivered?: boolean
 }
 
 export interface SetupState {
@@ -68,6 +80,14 @@ function SettingsIcon() {
   return (
     <svg className={ICON_CLASS} viewBox="0 0 2250 2250" fill="currentColor">
       <path d="M578.628,178.657c359.438,35.9 733.306,35.9 1092.74,-0c148.628,329.232 335.561,653.011 546.371,946.343c-210.81,293.332 -397.743,617.111 -546.371,946.343c-359.438,-35.9 -733.306,-35.9 -1092.74,0c-148.628,-329.232 -335.561,-653.011 -546.371,-946.343c210.81,-293.332 397.743,-617.111 546.371,-946.343Zm546.372,516.581c-243.399,0 -441.008,197.609 -441.008,441.008c0,243.399 197.609,441.008 441.008,441.008c243.399,0 441.008,-197.609 441.008,-441.008c-0,-243.399 -197.609,-441.008 -441.008,-441.008Z" />
+    </svg>
+  )
+}
+
+function PolicyIcon() {
+  return (
+    <svg className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   )
 }
@@ -218,7 +238,7 @@ function ThemeToggle() {
  * Separate from EmployeeTabBar: this switches app sections, that one navigates
  * within the training area.
  */
-export function NavPill({ firmName, role, setup = null }: NavPillProps) {
+export function NavPill({ firmName, role, setup = null, policyDelivered = false }: NavPillProps) {
   const pathname = usePathname()
   const isAdmin = role === 'admin'
   const isDashboardActive = pathname === '/dashboard'
@@ -234,6 +254,20 @@ export function NavPill({ firmName, role, setup = null }: NavPillProps) {
       icon: <TrainingIcon />,
       active: isTrainingRoute(pathname),
     },
+    // Admin-only and delivered-only. The policy carries the firm's disclosures,
+    // its tool inventory and its vendor positions; staff have no business in it,
+    // which is the same rule /dashboard/policy enforces server-side. This is
+    // the affordance, not the gate.
+    ...(isAdmin && policyDelivered
+      ? [
+          {
+            href: '/dashboard/policy',
+            label: 'Policy',
+            icon: <PolicyIcon />,
+            active: pathname.startsWith('/dashboard/policy'),
+          },
+        ]
+      : []),
     // Order is Training → Support → Settings (Max): Settings sits last so it is
     // adjacent to the light/dark toggle, which is also a preference control.
     {
