@@ -4,7 +4,7 @@
 // Every write in the intake goes through the SERVICE ROLE. Migration 0028 gives
 // intake_sessions, intake_answers and intake_uploads a SELECT policy and nothing
 // else, and gives intake_sensitive no policy at all. That is deliberate: promote
-// (batch 4) and purge each have to be one transaction, and a client writing its
+// (batch 4) has to be one transaction, and a client writing its
 // own rows makes both a sequence of calls that can half-fail.
 //
 // So this module is the only place that touches those tables, and it is the only
@@ -79,21 +79,21 @@ export async function authorizeIntake(): Promise<IntakeAuth> {
  * field that decides whether a delivered policy's answers can still be edited.
  */
 const SESSION_COLUMNS =
-  'id, status, current_question, submitted_at, policy_delivered_at, purged_at, reopened_count'
+  'id, status, current_question, submitted_at, policy_delivered_at, reopened_count'
 
 export interface IntakeSessionRow {
   id: string
-  status: 'in_progress' | 'submitted' | 'purged'
+  status: 'in_progress' | 'submitted'
   current_question: string | null
   submitted_at: string | null
   /**
-   * Set by hand when Katy says the policy has gone out. It is what closes
-   * reopening: until it is set the firm may still correct their answers, and
-   * after it the answers are the record the document was written from.
+   * When the policy went out.
+   *
+   * ⚠️ It no longer closes anything. Until D8-2 this was the field that locked
+   * the intake forever; now it only says whether the delivered document matches
+   * the current answers — compared against submitted_at by intakeStateOf().
    */
   policy_delivered_at: string | null
-  /** Set by the purge. Non-null means the answers are gone, not merely locked. */
-  purged_at: string | null
   /** 0030. Non-zero means the answers moved after Katy received them. */
   reopened_count: number | null
 }

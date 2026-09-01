@@ -11,6 +11,7 @@ import { IntakeReview } from '@/app/intake/_components/intake-review'
 import { latestSession, loadAnswers } from '@/lib/intake/session'
 import { buildReview, intakeStateOf, type IntakeState } from '@/lib/intake/review'
 import type { ReviewSection } from '@/lib/intake/review'
+import { retentionOf, type Retention } from '@/lib/intake/retention'
 
 export const metadata = {
   title: 'Settings — IURIX',
@@ -58,17 +59,21 @@ export default async function SettingsPage() {
   let intakeSubmittedAt: string | null = null
   let intakeDeliveredAt: string | null = null
   let intakeReopenedCount = 0
+  // D8-3. Defaults to the safe direction — no date, nothing deleted — for the
+  // non-admin path, where no firm row is read at all.
+  let intakeRetention: Retention = retentionOf(null)
 
   if (isAdmin) {
     const admin = createAdminClient()
     const { data: firm } = await admin
       .from('firms')
-      .select('name, reminder_days, notify_cert_earned')
+      .select('name, reminder_days, notify_cert_earned, status, current_period_end')
       .eq('id', firmId)
       .maybeSingle()
     orgName = firm?.name ?? ''
     reminderDays = firm?.reminder_days ?? 7
     notifyCertEarned = firm?.notify_cert_earned ?? true
+    intakeRetention = retentionOf(firm)
 
     const session = await latestSession(admin, firmId)
     intakeState = intakeStateOf(session)
@@ -76,8 +81,7 @@ export default async function SettingsPage() {
       intakeSubmittedAt = session.submitted_at
       intakeDeliveredAt = session.policy_delivered_at
       intakeReopenedCount = session.reopened_count ?? 0
-      // Nothing is read on a purged session — there is nothing there — and an
-      // OPEN one is not read back here either: it belongs on /intake, where it
+      // An OPEN intake is not read back here: it belongs on /intake, where it
       // can still be answered.
       if (intakeState === 'submitted' || intakeState === 'delivered') {
         intakeSections = buildReview(await loadAnswers(admin, session.id))
@@ -179,11 +183,12 @@ export default async function SettingsPage() {
               <h2 className={SECTION_HEADING}>Your intake</h2>
               <section className={CARD}>
                 <IntakeReview
-                  state={intakeState as 'submitted' | 'delivered' | 'purged'}
+                  state={intakeState as 'submitted' | 'delivered'}
                   sections={intakeSections}
                   submittedAt={intakeSubmittedAt}
                   deliveredAt={intakeDeliveredAt}
                   reopenedCount={intakeReopenedCount}
+                  retention={intakeRetention}
                 />
               </section>
             </div>

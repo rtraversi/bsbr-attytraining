@@ -15,7 +15,7 @@
 //
 //   2. The answers are read by a HUMAN drafter and then deleted. No model ever
 //      reads them (Max, 2026-08-26). Nothing here is optimised for machine
-//      consumption, and nothing here needs to survive the purge.
+//      consumption, and nothing here is retained beyond the session.
 //
 // Answer values are stored as jsonb in intake_answers.value (migration 0028),
 // one row per question key, so every shape below has to round-trip through JSON
