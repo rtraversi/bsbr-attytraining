@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BTN, MUTED, NOTICE } from './intake-styles'
 import type { ReviewSection } from '@/lib/intake/review'
+import type { Retention } from '@/lib/intake/retention'
 
 /**
  * A submitted intake, read back to the firm that gave it.
@@ -17,17 +18,19 @@ import type { ReviewSection } from '@/lib/intake/review'
  * component renders whatever it is handed; the rule lives one level down where
  * it cannot be forgotten by a third caller. See that file's header.
  *
- * ── The four states ─────────────────────────────────────────────────────────
+ * ── The states ──────────────────────────────────────────────────────────────
  *
  *   editable   not this component's job — the page renders IntakeClient.
- *   submitted  read-only, plus Reopen. Katy has it but has not delivered.
- *   delivered  read-only, no Reopen. The policy is written; changing the
- *              answers it came from would make the record disagree with the
- *              document.
- *   purged     nothing to show, and it SAYS SO. The spec is explicit: "It
- *              should say so plainly rather than rendering an empty page."
+ *   submitted  read-only, plus Reopen. Sent, and no policy has come back yet.
+ *   delivered  read-only, plus Reopen. D8-2.
+ *
+ * 🔴 THERE IS NO `purged` STATE. It existed until 2026-09-01 and told firms
+ * "Your answers were deleted after your policy was delivered". Katy reversed
+ * it: answers are kept. What ends them is the subscription lapsing, and the
+ * `retention` prop below is where the firm reads that — out loud, because
+ * D8-4 makes it a reason to renew.
  */
-export type ReviewState = 'submitted' | 'delivered' | 'purged'
+export type ReviewState = 'submitted' | 'delivered'
 
 export interface IntakeReviewProps {
   state: ReviewState
@@ -35,6 +38,8 @@ export interface IntakeReviewProps {
   submittedAt: string | null
   deliveredAt: string | null
   reopenedCount: number
+  /** D8-3/D8-4. How long these answers are kept, said out loud. */
+  retention: Retention
   /** Settings renders inside a card that already has a heading; /intake does not. */
   heading?: string
 }
@@ -73,6 +78,7 @@ export function IntakeReview({
   submittedAt,
   deliveredAt,
   reopenedCount,
+  retention,
   heading,
 }: IntakeReviewProps) {
   const router = useRouter()
@@ -99,20 +105,6 @@ export function IntakeReview({
     }
   }
 
-  if (state === 'purged') {
-    return (
-      <section>
-        {heading && <h2 className="mb-2 text-lg font-semibold">{heading}</h2>}
-        <p className={`text-[14.5px] leading-relaxed ${MUTED}`}>
-          Your answers were deleted after your policy was delivered, which is how the intake is
-          meant to end — we keep the policy, not the questionnaire behind it. The record that you
-          completed an intake{submittedAt ? ` on ${date(submittedAt)}` : ''} and received a policy
-          {deliveredAt ? ` on ${date(deliveredAt)}` : ''} is kept; the answers themselves are gone.
-        </p>
-      </section>
-    )
-  }
-
   return (
     <section>
       {heading && <h2 className="mb-2 text-lg font-semibold">{heading}</h2>}
@@ -121,7 +113,7 @@ export function IntakeReview({
         {state === 'delivered' ? (
           <>
             Your policy was delivered{deliveredAt ? ` on ${date(deliveredAt)}` : ''}. These are the
-            answers it was written from, kept until they are deleted.
+            answers it was written from.
           </>
         ) : (
           <>
@@ -131,21 +123,31 @@ export function IntakeReview({
         )}
       </p>
 
-      {state === 'submitted' && (
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button type="button" className={BTN} onClick={() => void reopen()} disabled={busy}>
-            {busy ? 'Reopening…' : 'Reopen to make changes'}
-          </button>
-          <p className={`max-w-[30rem] text-[13px] leading-relaxed ${MUTED}`}>
-            {/* Says the cost before they press it. An attorney may already be
-                reading these answers, and a firm that changes them without
-                knowing that is the case this whole feature has to handle
-                honestly. */}
-            You can change any answer until your policy is delivered. Send it again when you are
-            done — the attorney is told it changed.
-          </p>
-        </div>
-      )}
+      {/* D8-2: offered in BOTH states. A delivered policy used to end this. */}
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <button type="button" className={BTN} onClick={() => void reopen()} disabled={busy}>
+          {busy ? 'Reopening…' : 'Reopen to make changes'}
+        </button>
+        <p className={`max-w-[30rem] text-[13px] leading-relaxed ${MUTED}`}>
+          {/* Says the cost before they press it. An attorney may already be
+              reading these answers, and a firm that changes them without
+              knowing that is the case this whole feature has to handle
+              honestly. */}
+          {state === 'delivered' ? (
+            <>
+              You can change any answer at any time and have your policy rewritten from the new
+              ones. Send it again when you are done — the attorney is told it changed.
+            </>
+          ) : (
+            <>
+              You can change any answer. Send it again when you are done — the attorney is told it
+              changed.
+            </>
+          )}
+        </p>
+      </div>
+
+      <RetentionNote retention={retention} />
 
       {error && <p className={`mt-4 ${NOTICE}`}>{error}</p>}
 
@@ -183,5 +185,53 @@ export function IntakeReview({
         ))}
       </div>
     </section>
+  )
+}
+
+/**
+ * How long these answers are kept — D8-4, and it is deliberately not fine print.
+ *
+ * Katy: "if they renew then it remains active. So that is an incentive to renew
+ * so they dont lose the work they progressed in making the policy." A renewal
+ * incentive nobody is shown is not an incentive, so this renders on the same
+ * screen as the answers it is about, immediately under the button that edits
+ * them.
+ *
+ * `active` says what the firm keeps and why, and names renewal. `grace` and
+ * `expired` are the only states with a date, and they are the two where saying
+ * nothing would be the failure — a firm whose subscription lapsed has a window
+ * to renew and get its work back, and it cannot use a window it was not told
+ * about.
+ */
+function RetentionNote({ retention }: { retention: Retention }) {
+  const when = retention.deletesAt ? date(retention.deletesAt) : null
+
+  if (retention.state === 'active') {
+    return (
+      <p className={`mt-4 max-w-[38rem] text-[13px] leading-relaxed ${MUTED}`}>
+        We keep these answers for as long as your subscription is active, so renewing means you
+        never start this questionnaire over — you edit what is already here and your policy is
+        rewritten from it.
+      </p>
+    )
+  }
+
+  if (retention.state === 'grace') {
+    return (
+      <p className={`mt-4 max-w-[38rem] text-[13px] leading-relaxed ${MUTED}`}>
+        Your subscription has ended. We are still holding these answers
+        {when ? ` until ${when}` : ''}
+        {retention.daysLeft !== null ? ` — ${retention.daysLeft} days` : ''}. Renew before then and
+        everything here stays as it is, so you will not have to fill any of it in again.
+      </p>
+    )
+  }
+
+  return (
+    <p className={`mt-4 max-w-[38rem] text-[13px] leading-relaxed ${MUTED}`}>
+      Your subscription ended{when ? ` and the retention period ran out on ${when}` : ''}. These
+      answers are no longer covered by an active subscription; renewing now may mean starting the
+      questionnaire again.
+    </p>
   )
 }

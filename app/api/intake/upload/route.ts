@@ -2,8 +2,9 @@
 // POST /api/intake/upload — the firm's existing AI policy document.
 //
 // One optional file per intake. It goes to a PRIVATE bucket, a human reads it,
-// and it is never parsed. Same lifecycle as the answers: purged with them
-// (batch 4 owns the purge, and must delete the storage object as well as the
+// and it is never parsed. Same lifecycle as the answers: kept for the life of
+// the subscription plus its grace period (D8-3, lib/intake/retention.ts), and
+// whatever eventually sweeps them must delete the storage object as well as the
 // intake_uploads row — deleting the row does not delete the object).
 // =============================================================================
 

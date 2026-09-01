@@ -235,8 +235,8 @@ describe('formatting an answer back', () => {
 describe('which screen a session gets', () => {
   const session = (over: Partial<Parameters<typeof intakeStateOf>[0] & object> = {}) => ({
     status: 'submitted',
+    submitted_at: '2026-08-01T00:00:00Z',
     policy_delivered_at: null,
-    purged_at: null,
     ...over,
   })
 
@@ -248,42 +248,54 @@ describe('which screen a session gets', () => {
     expect(intakeStateOf(session({ status: 'in_progress' }))).toBe('editable')
   })
 
-  it('submitted, undelivered, is the one state that can be reopened', () => {
+  it('submitted, undelivered', () => {
     expect(intakeStateOf(session())).toBe('submitted')
+  })
+
+  it('delivered', () => {
+    expect(intakeStateOf(session({ policy_delivered_at: '2026-09-01T00:00:00Z' }))).toBe('delivered')
+  })
+
+  it('🔴 D8-2: BOTH read-only states can be reopened, delivery included', () => {
+    // canReopen returned true for 'submitted' only until 2026-09-01, so
+    // delivering a policy locked the intake forever. Katy: "they can update
+    // their answers indefinitely to update the policy as they aquire more
+    // information, or change their mind about free text items."
     expect(canReopen('submitted')).toBe(true)
+    expect(canReopen('delivered')).toBe(true)
+    // Not a bar — it is already open.
+    expect(canReopen('editable')).toBe(false)
   })
 
-  it('delivered is read-only', () => {
-    // The answers are now the record the policy was written from. Changing them
-    // would leave the two disagreeing with nothing to say which is right.
-    const state = intakeStateOf(session({ policy_delivered_at: '2026-09-01T00:00:00Z' }))
-    expect(state).toBe('delivered')
-    expect(canReopen(state)).toBe(false)
-  })
-
-  it('purged wins over delivered, and over submitted', () => {
-    // Either signal means the answers are gone. Reading either as anything else
-    // would offer to show answers that are not there.
-    expect(intakeStateOf(session({ status: 'purged' }))).toBe('purged')
-    expect(intakeStateOf(session({ purged_at: '2026-10-01T00:00:00Z' }))).toBe('purged')
+  it('🔴 resubmitting after delivery reads as submitted, not delivered', () => {
+    // The state D8-2 creates and nothing before it could. Reopen, edit, send
+    // again: policy_delivered_at is still set while the answers behind it have
+    // moved. Reading that as `delivered` would tell the firm their current
+    // answers are the ones their document was written from, which is false.
     expect(
-      intakeStateOf(
-        session({ purged_at: '2026-10-01T00:00:00Z', policy_delivered_at: '2026-09-01T00:00:00Z' }),
-      ),
-    ).toBe('purged')
-    expect(canReopen('purged')).toBe(false)
+      intakeStateOf({
+        status: 'submitted',
+        policy_delivered_at: '2026-09-01T00:00:00Z',
+        submitted_at: '2026-09-05T00:00:00Z',
+      }),
+    ).toBe('submitted')
+
+    // And the ordinary case still reads as delivered: sent, then delivered.
+    expect(
+      intakeStateOf({
+        status: 'submitted',
+        policy_delivered_at: '2026-09-05T00:00:00Z',
+        submitted_at: '2026-09-01T00:00:00Z',
+      }),
+    ).toBe('delivered')
   })
 
-  it('🔴 a MISSING policy_delivered_at column reads as delivered, not as editable', () => {
+  it('🔴 a MISSING policy_delivered_at column reads as submitted, not editable', () => {
     // The dangerous shape: a caller that selects a narrow column list gets
-    // `undefined`, which is falsy, which would read as "not delivered" and
-    // offer a reopen on an intake whose policy has already gone out.
-    //
-    // SESSION_COLUMNS in session.ts is what prevents it. This pins the blast
-    // radius if somebody ever writes their own select anyway: undefined is NOT
-    // treated as null, so the state falls through to `submitted` and the worst
-    // case is an offer to reopen — never a claim that a purged intake is
-    // readable.
+    // `undefined`, which is falsy. SESSION_COLUMNS in session.ts is what
+    // prevents it; this pins the blast radius if somebody writes their own
+    // select anyway. Falling through to `submitted` is the harmless direction —
+    // the screen is read-only either way and both offer a reopen now.
     const narrow = { status: 'submitted' } as unknown as Parameters<typeof intakeStateOf>[0]
     expect(intakeStateOf(narrow)).toBe('submitted')
   })

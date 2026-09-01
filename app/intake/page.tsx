@@ -8,11 +8,11 @@ import {
   seatsPurchased,
 } from '@/lib/intake/session'
 import { buildReview, intakeStateOf } from '@/lib/intake/review'
+import { retentionOf } from '@/lib/intake/retention'
 import { ThemeProvider, ThemeScript } from '@/app/dashboard/_components/theme'
 import { IntakeClient } from './_components/intake-client'
 import { IntakeReview } from './_components/intake-review'
 import { IntakeShell } from './_components/intake-shell'
-import type { AnswerMap } from '@/lib/intake/types'
 
 export const metadata = {
   title: "Your firm's AI policy — IURIX",
@@ -50,19 +50,23 @@ export default async function IntakePage() {
     .maybeSingle()
   const firmName = firm?.name ?? null
 
-  // ── Submitted, delivered or purged: read-only ────────────────────────────
+  // ── Submitted or delivered: read-only, and both can be reopened ──────────
   //
-  // Until 2026-08-28 all three of these were one `locked` flag that loaded no
+  // Until 2026-08-28 both of these were one `locked` flag that loaded no
   // answers at all, so a firm that pressed Send saw an empty screen from then
-  // on and could not check or correct anything they had said. Now the three
-  // are distinct, and only the last of them has nothing to show.
+  // on. There used to be a third state here, `purged`, which had nothing to
+  // show and said so; D8-1 removed it, and the answers are always there now.
   const state = intakeStateOf(latest)
 
   if (latest && state !== 'editable') {
-    // Nothing is read on a purged session. There is nothing there — that is
-    // what purged means — and the screen says so rather than rendering an
-    // empty page.
-    const answers: AnswerMap = state === 'purged' ? {} : await loadAnswers(admin, latest.id)
+    const [answers, firmRow] = await Promise.all([
+      loadAnswers(admin, latest.id),
+      admin
+        .from('firms')
+        .select('status, current_period_end')
+        .eq('id', auth.actor.firmId)
+        .maybeSingle(),
+    ])
 
     return (
       <ThemeProvider>
@@ -70,10 +74,11 @@ export default async function IntakePage() {
         <IntakeShell firmName={firmName}>
           <IntakeReview
             state={state}
-            sections={state === 'purged' ? [] : buildReview(answers)}
+            sections={buildReview(answers)}
             submittedAt={latest.submitted_at}
             deliveredAt={latest.policy_delivered_at}
             reopenedCount={latest.reopened_count ?? 0}
+            retention={retentionOf(firmRow.data)}
           />
         </IntakeShell>
       </ThemeProvider>

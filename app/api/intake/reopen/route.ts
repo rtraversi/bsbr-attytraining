@@ -5,9 +5,17 @@ import { authorizeIntake, latestSession } from '@/lib/intake/session'
 /**
  * Reopen a submitted intake so the firm can correct it.
  *
- * Available until the policy is delivered. After delivery the answers are the
- * record the document was written from, and changing them would leave the two
- * disagreeing with nothing to say which is right.
+ * ── D8-2: available INDEFINITELY, including after delivery ──────────────────
+ *
+ * This used to refuse once `policy_delivered_at` was set, on the reasoning that
+ * changing the answers would leave them disagreeing with the delivered
+ * document. Katy reversed it on 2026-08-31: "they can update their answers
+ * indefinitely to update the policy as they aquire more information, or change
+ * their mind about free text items."
+ *
+ * The disagreement is the point of the edit. A firm that revises its answers
+ * wants a revised policy, and the assembler regenerates one deterministically
+ * from whatever the answers now say.
  *
  * ── The conditional UPDATE is the whole safety story ────────────────────────
  *
@@ -24,7 +32,8 @@ import { authorizeIntake, latestSession } from '@/lib/intake/session'
  * into promote, and we get that guarantee without a pre-check that could be
  * raced.
  *
- * The counter is the reason 0030 exists. Katy may already be drafting; answers
+ * The counter is the reason 0030 exists, and D8-2 does not retire it — only
+ * the LOCK moved, not the RECORD. Katy may already be drafting; answers
  * changing under her silently is worse than not allowing the edit, so every
  * reopen is recorded and her export can say the intake moved after she got it.
  */
@@ -62,9 +71,11 @@ export async function POST() {
     })
     .eq('id', latest.id)
     .eq('firm_id', auth.actor.firmId)
+    // `status` is still the only precondition: a delivered session is a
+    // SUBMITTED row that also carries policy_delivered_at, so matching on
+    // status alone now covers both states D8-2 opens up, and still cannot
+    // match an already-open one.
     .eq('status', 'submitted')
-    .is('policy_delivered_at', null)
-    .is('purged_at', null)
     .select('id')
     .maybeSingle()
 
@@ -84,18 +95,12 @@ export async function POST() {
   // say WHICH one refused rather than a generic failure — "your policy has
   // already been delivered" is an answer; "could not reopen" is not.
   if (!data) {
+    // With delivery no longer a bar, the only way to get here is a session that
+    // is not in the submitted state — it was opened by another tab between the
+    // read above and this write. Re-read so the message says which.
     const fresh = await latestSession(admin, auth.actor.firmId)
-    if (fresh?.purged_at || fresh?.status === 'purged') {
-      return NextResponse.json(
-        { error: 'This intake has been deleted and can no longer be changed.' },
-        { status: 409 },
-      )
-    }
-    if (fresh?.policy_delivered_at) {
-      return NextResponse.json(
-        { error: 'Your policy has already been delivered, so the answers behind it are fixed.' },
-        { status: 409 },
-      )
+    if (fresh?.status === 'in_progress') {
+      return NextResponse.json({ ok: true, alreadyOpen: true })
     }
     return NextResponse.json({ error: 'That intake could not be reopened.' }, { status: 409 })
   }

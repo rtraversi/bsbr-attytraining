@@ -174,29 +174,67 @@ export function isSensitiveKey(key: string): boolean {
  * ONE function, because /intake and Settings must never disagree about whether
  * a firm may still edit. The dangerous mistake is reading `policy_delivered_at`
  * off a row that did not select it — `undefined` is falsy, which reads as
- * "not delivered", which would offer a reopen on an intake whose policy has
- * already gone out. SESSION_COLUMNS in session.ts exists to stop that; this
+ * "not delivered". SESSION_COLUMNS in session.ts exists to stop that; this
  * function is the other half.
+ *
+ * ── D8-1: there is no `purged` state, and there never will be again ─────────
+ *
+ * It existed until 2026-09-01 and its on-screen copy told firms "Your answers
+ * were deleted after your policy was delivered". Katy reversed that outright:
+ * "We should save the previous responses so they can easily redo without
+ * typing in everything from scratch". Answers are KEPT. What ends them is the
+ * subscription lapsing, not the policy going out — see lib/intake/retention.ts.
  */
-export type IntakeState = 'editable' | 'submitted' | 'delivered' | 'purged'
+export type IntakeState = 'editable' | 'submitted' | 'delivered'
 
+/**
+ * 🔴 `delivered` MEANS THE DELIVERED POLICY MATCHES THESE ANSWERS.
+ *
+ * Not "a policy was delivered once". The difference only appeared with D8-2,
+ * which lets a firm reopen AFTER delivery: reopen, edit, send again, and
+ * `policy_delivered_at` is still set while the answers behind it have moved.
+ * Reading that row as `delivered` would tell the firm their current answers
+ * are the ones their document was written from, which is exactly false.
+ *
+ * Comparing the two timestamps is what distinguishes them, and it needs no
+ * column: a resubmission moves `submitted_at` forward (see
+ * app/api/intake/submit/route.ts), so `submitted_at > policy_delivered_at` is
+ * precisely "these answers have not been delivered yet".
+ */
 export function intakeStateOf(session: {
   status: string
+  submitted_at?: string | null
   policy_delivered_at: string | null
-  purged_at: string | null
 } | null): IntakeState {
   if (!session) return 'editable'
-  // Either signal means the answers are gone. `status` is what the purge sets;
-  // `purged_at` is when. Treating both as purged means a half-finished purge
-  // still reads as purged, which is the safe direction — the alternative is
-  // offering to show answers that are not there.
-  if (session.status === 'purged' || session.purged_at) return 'purged'
   if (session.status === 'in_progress') return 'editable'
-  if (session.policy_delivered_at) return 'delivered'
-  return 'submitted'
+  if (!session.policy_delivered_at) return 'submitted'
+  // Resubmitted since the policy went out — awaiting a fresh one.
+  if (session.submitted_at && session.submitted_at > session.policy_delivered_at) {
+    return 'submitted'
+  }
+  return 'delivered'
 }
 
-/** Whether the firm may still reopen and correct this intake. */
+/**
+ * Whether the firm may reopen and correct this intake.
+ *
+ * ── D8-2: yes, indefinitely, delivered or not ───────────────────────────────
+ *
+ * This returned true for `'submitted'` only, so delivering a policy locked the
+ * intake forever. Katy: "they can update their answers indefinitely to update
+ * the policy as they aquire more information, or change their mind about free
+ * text items."
+ *
+ * The old reasoning was that changing the answers would leave them disagreeing
+ * with the delivered document. That is true and it is no longer a reason to
+ * refuse: a firm that revises its answers wants a revised policy, and the
+ * assembler regenerates one deterministically from whatever the answers now
+ * say. The disagreement is the POINT of the edit, not a defect in it — and
+ * `reopened_count` (migration 0030) still records that it happened.
+ *
+ * `editable` is excluded because it is already open, not because it is barred.
+ */
 export function canReopen(state: IntakeState): boolean {
-  return state === 'submitted'
+  return state === 'submitted' || state === 'delivered'
 }
