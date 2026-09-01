@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BTN, MUTED, NOTICE } from './intake-styles'
 import type { ReviewSection } from '@/lib/intake/review'
-import { RENEWAL_GRACE_DAYS, type Retention } from '@/lib/intake/retention'
+import type { Retention } from '@/lib/intake/retention'
 
 /**
  * A submitted intake, read back to the firm that gave it.
@@ -209,11 +209,17 @@ function RetentionNote({ retention }: { retention: Retention }) {
 
   if (retention.state === 'active') {
     return (
+      // ⚠️ APPROVED COPY, VERBATIM (Max, 2026-09-01). Do not edit, polish or
+      // re-punctuate it, and do not reintroduce an em dash.
+      //
+      // 🔴 "three days" IS SPELLED OUT IN PROSE, so this string no longer
+      // interpolates RENEWAL_GRACE_DAYS and the two can now drift apart. If the
+      // constant ever changes, THIS SENTENCE MUST CHANGE WITH IT. The guard is
+      // tests/intake-retention.test.ts, which pins the constant at 3 rather
+      // than merely referencing it, so moving it fails there and points here.
       <p className={`mt-4 max-w-[38rem] text-[13px] leading-relaxed ${MUTED}`}>
-        We keep these answers for as long as your subscription is active, so renewing means you
-        never start this questionnaire over — you edit what is already here and your policy is
-        rewritten from it. If the subscription lapses they are held for {RENEWAL_GRACE_DAYS} days
-        and then removed.
+        We keep these answers for as long as your subscription is active. If it lapses there is a
+        grace period of three days, and then they are permanently removed unless you renew.
       </p>
     )
   }
