@@ -7,6 +7,12 @@ export const metadata = {
   title: 'Sign in — IURIX',
 }
 
+// Footer escape routes. These were text-xs/font-extralight and read as decoration
+// rather than as links — on a page whose only other control is "Sign in", they are
+// the only way out. Bigger, heavier, and padded so each is a real tap target.
+const FOOTER_LINK =
+  'inline-flex items-center rounded-full px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-70'
+
 export default async function LoginPage({
   searchParams,
 }: {
@@ -50,11 +56,11 @@ export default async function LoginPage({
 
           {/* Footer bar — translucent #00B9FF over the footage, right column only */}
           <div className="bg-[#00B9FF]/50 px-6 py-4">
-            <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs font-extralight text-[#FFE5E5]">
-              <Link href="/terms" className="transition-opacity hover:opacity-70">
+            <nav className="flex flex-wrap items-center justify-center gap-x-1 gap-y-0.5 text-[#FFE5E5]">
+              <Link href="/terms" className={FOOTER_LINK}>
                 Terms
               </Link>
-              <Link href="/privacy" className="transition-opacity hover:opacity-70">
+              <Link href="/privacy" className={FOOTER_LINK}>
                 Privacy
               </Link>
               {/* Cookies is intentionally absent, not forgotten. The /cookies
@@ -67,13 +73,10 @@ export default async function LoginPage({
                   domain that silently dropped mail, then at a personal Gmail as
                   a stopgap. Now the same inbox the in-app support form delivers
                   to (app/api/support/contact/route.ts). */}
-              <a
-                href="mailto:info@iurixaccreditation.com"
-                className="transition-opacity hover:opacity-70"
-              >
+              <a href="mailto:info@iurixaccreditation.com" className={FOOTER_LINK}>
                 Contact support
               </a>
-              <Link href="/pricing" className="transition-opacity hover:opacity-70">
+              <Link href="/pricing" className={FOOTER_LINK}>
                 Want to sign up?
               </Link>
             </nav>

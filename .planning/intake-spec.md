@@ -80,6 +80,7 @@ scenario, not a formality.
 | 2026-08-27 06:54 | Katy | Contractors, part-time and occasional people are **deliberately left unaddressed**, at the firm's discretion, for now. |
 | 2026-08-27 06:56 | Katy | *"attorneys can go through the training whenever they want as much as they want but they don't get certificates but the staff get certificates."* |
 | 2026-08-27 06:56 | Katy | *"the training program itself shouldn't be gated it's just the certificate really."* And: *"we don't want it to be hard for people to go back and review the material either."* |
+| 2026-08-27 | Max | **A firm can read back its own intake from Settings**, as a new heading there: the questions and the answers it gave. It stays available until the purge, and the purge wipes it. Answers survive as long as they already do, no longer. |
 
 ### Corrections applied to Katy's refined question list
 
@@ -96,6 +97,55 @@ Her final list is the authority. Four things in it are being changed, and why:
 4. **Firm size band and the non-attorney staff count are replaced by the roster.** The roster
    carries both facts and more besides, so asking them separately is the duplication Katy objected
    to. Seat count is computed from the roster, not asked.
+
+### The eight missing modules, and the sections they needed — 2026-08-28 (Max)
+
+Modules **D, E, F, I, J, Q, U and V** were in Katy's 2026-08-20 research doc and had never been
+built. All eight are now in, transcribed from her doc — 21 questions, taking the set from 29 to 50.
+
+**Module W is deliberately excluded.** Her doc is explicit that it is not a question set: it is a
+generated summary table pulled from A, B, C and M, sorted into approved-for-confidential-use,
+approved-for-generic-use and prohibited. It belongs to the drafted policy, not the intake. The one
+genuine question inside it — *"who is authorized to approve new tools going forward, and what's the
+review process?"* — is **not** built here and is the only thing lost by skipping W. Worth adding to
+Module A later; flagged rather than invented.
+
+#### The section allocation
+
+Eight modules do not fit eight sections. The rule applied, and the reason a section exists at all: a
+section is a lane the firm recognises, and no section runs so long that per-section progress stops
+meaning anything.
+
+**Four new sections**, taking the tab strip from 8 to 12:
+
+| Section | Module | Why it could not go anywhere else |
+|---|---|---|
+| `drafting` | D | `tools` is the inventory of what the firm **has**; D is what it **does** with it |
+| `courts` | E, and D's "which courts do you file with" | Tribunal-facing. Katy is explicit that court certification "runs to the tribunal, not the client", so `clients` is wrong |
+| `records` | U | Katy: "distinct from confidentiality". `data` is what leaves the firm; this is what it keeps |
+| `marketing` | V | Katy: "a genuinely separate compliance lane" |
+
+**Four modules took an existing section**, because each shares its host's lane rather than merely
+fitting in it: **I → `data`** (H vets a vendor before the fact, I is the same vendor after it),
+**J → `data`** (the branch turns on tier and no-training, which is H's axis), **Q → `clients`** (sits
+beside P; both are money), **F → `staff`** (competency, hiring and discipline are one lane).
+
+**No existing question changed section.** `section` is display-only and never stored, so moving one
+costs nothing at the database — it just moves the ground under a firm mid-intake for no gain.
+
+#### 🔴 Two things this batch does not fix
+
+1. **Katy's "10–15 questions after gating" target is now unreachable, and was already.** A firm that
+   skips every optional module answers **29** required questions — 19 of them from the set as it
+   stood before this batch. Every module contributes at least one always-visible gate, and Section 0
+   alone is five. Getting to 15 means cutting from the *existing* core, which is Katy's call.
+   Recorded here so the number is not discovered later as a surprise.
+2. **The tab strip degrades on a phone at twelve sections.** It is a CSS grid of
+   `repeat(N, minmax(0,1fr))` with `truncate` on an 11px label, so it always fits one line by
+   construction and pays in characters: ~6 per label at eight sections and 390px, ~4 at twelve. It
+   was already truncating "Meetings" before this change. The fix is a UI decision — most likely drop
+   the labels below a breakpoint and keep the bars, since the card already names the current section
+   — and it wants Max's eye rather than a guess.
 
 ### The roster wins on names — added 2026-08-26 (Max)
 
@@ -134,6 +184,49 @@ Stripe checkout  →  set email + password  →  POLICY INTAKE  →  dashboard
 ```
 
 An unfinished intake resumes at `intake_sessions.current_question`.
+
+### The walkthrough — 2026-08-27 (Max)
+
+`/onboarding` took a password and dropped the buyer on question one of a long form with nothing
+saying what it was for, how long it ran, whether it saved, or what they got at the end. The intake
+**is** the product, so arriving at it unannounced made the deliverable look like paperwork standing
+between the firm and the thing they bought.
+
+What was built:
+
+- **`app/intake/_components/intake-intro.tsx`** — a "what happens next" screen that takes the place
+  of question one. Three steps: *you answer these questions* → *an attorney assembles and reviews
+  your policy* → *your staff are held to it*. Every step is something that happens today; nothing
+  promises the roster invite action, which does not exist yet.
+- **A one-line bridge on `/onboarding`**, so "continue" names its destination.
+- **A resume line for the returning firm**, in place of the introduction: *Welcome back — picking up
+  in Tools, 9 of 34 required questions answered.* It clears on the first move.
+
+🔴 **Guidance, never a gate.** Katy killed the hard gate on 2026-08-26 12:11. The introduction
+carries an explicit, equal-weight way out — *Look around the dashboard first* — and nothing
+redirects, nothing blocks. The nav-pill intake chip is unchanged and remains the persistent nudge;
+this is the layer above it. The chip says come back, this says what you are coming back to.
+
+**Shown by STATE, not by a dismissal flag.** The introduction renders only on an untouched session —
+no `current_question` and no saved answers. Somebody back three days later has both and never sees
+it again. No cookie, no "seen it" column, nothing that can drift out of step with the session it
+describes.
+
+**`app/dashboard/_components/onboarding-checklist.tsx` was REPLACED, not revived**, and deleted
+along with `POST /api/firm/onboarding/dismiss`, its only caller. Three reasons, all structural:
+
+1. **Its steps are the wrong ones** — *purchased → invite your team → they complete training*. That
+   is the pre-intake product model, from before the policy became the deliverable. The intake is not
+   on the list at all, and "invite your team" is a dashboard action nobody has built.
+2. **It is dismissible**, on a server-persisted `firms.onboarding_dismissed`. The intake prompt is
+   deliberately undismissible because it is the only route to the written policy; a dismissible
+   checklist beside it is two prompts for the same task disagreeing about whether it matters.
+3. **It celebrates "You're compliant!"** and auto-dismisses — Rule 5.3-era framing, corrected
+   2026-08-24.
+
+⚠️ `firms.onboarding_dismissed` (migration `0008`) is now unread by anything. Left in place — a
+column drop is a migration against two databases for no benefit, and PROD is behind on `0028`/`0029`
+already.
 
 ### The buyer never gets an email — 2026-08-26 (Max)
 
@@ -274,6 +367,11 @@ Katy can sort template from bespoke in one pass down the page.
 
 `req` = required. `sens` = stored in `intake_sensitive`, visible only in Katy's export.
 
+> **Numbering.** The original 26 keep the numbers they were given, so the cross-references in this
+> document ("shown if Q11 ≠ none") stay valid. The eight modules added 2026-08-28 are numbered
+> **within their module** (D1, E2, …) rather than continuing the global count. `lib/intake/questions.ts`
+> is the authority for the order a firm actually walks, and `assertQuestionSetInvariants()` enforces it.
+
 ### Profile
 
 | # | key | Question | Type | Module |
@@ -292,16 +390,27 @@ account, and their own attorney answer is what decides whether they occupy a sea
 | # | key | Question | Type |
 |---|---|---|---|
 | 6 | `ai_tools` | Which AI tools does the firm use, or want to use? Tick everything, even if you would not call it AI. | multi-select + other, req |
-| 7 | `tool_grid` | For each tool: which tier, and is there a signed agreement that the vendor will not train on your data? | grid, one row per tool selected in Q6 |
+| 7 | `tool_grid` | For each tool: is there a signed agreement that the vendor will not train on your data? | grid, one row per tool selected in Q6 |
 | 8 | `prohibited_tools` | Any tools the firm wants to prohibit by name? | text, optional |
 | 9 | `personal_devices` | Does the firm ever allow personal devices or personal AI accounts to touch client information? | yes/no, req |
 
 Q6 options: ChatGPT, Claude, Gemini, Microsoft Copilot, CoCounsel, Westlaw Edge, Lexis+ AI, Harvey,
 Spellbook, DraftWise, Otter.ai, other.
 
-Q7 shown only when Q6 is non-empty. Tier is generic on purpose — personal, team, enterprise with a
-data agreement — because real tier names differ per vendor and would be wrong for most of them.
-The training-agreement column is yes / no / don't know.
+Q7 shown only when Q6 is non-empty. The training-agreement column is yes / no / don't know.
+
+🔴 **The Tier column was removed 2026-08-28 (Max).** It offered Personal / Team / Enterprise, kept
+generic because vendors name their tiers differently. Generic was the flaw: several tools on the Q6
+list have no consumer tier at all — Westlaw Edge and CoCounsel are sold to firms — so "Personal" was
+an option that could not be true, and a required grid gave the firm no way to say so.
+
+Nothing is lost, because tier was only ever a **proxy**. What it stood in for is whether the vendor
+may train on the firm's data, and the agreement column asks that outright, from the agreement, which
+is the only place the answer lives. A consumer tier with a signed no-training addendum is compliant
+and an enterprise tier without one is not — and only the agreement column can tell those apart.
+
+No migration: answers are jsonb, and `reconcileToolGrid` rebuilds each row from `tool` and
+`noTraining`, so a session written before this sheds the stale key the next time the grid is touched.
 
 ### Legal research — Module B
 
@@ -325,15 +434,75 @@ CosmoLex, Neos, Monday.com, none, other.
 `not sure` is deliberate here and is not a hedge: it is a real state that puts an instruction in the
 policy to have someone confirm and document the setting.
 
-### Confidentiality — Module H
+### Drafting — Module D
+
+| # | key | Question | Type |
+|---|---|---|---|
+| D1 | `drafting_uses` | What does the firm use AI to draft? | multi-select, req — **the module gate** |
+| D2 | `drafting_client_data` | Does that drafting work involve actual client information? | single-select, shown if D1 ≠ none |
+| D3 | `drafting_foreign_language` | Does the firm need AI for foreign-language drafting or translation? | yes/no, shown if D1 ≠ none |
+| D4 | `foreign_language_content` | Is that translated content client-specific, or template-based? | single-select, shown if D3 yes |
+| D5 | `foreign_languages` | Which languages? | text, shown if D3 yes |
+
+D1 options: routine or form documents · substantive content · boilerplate · none.
+
+**Katy's list has D1 as three separate yes/no questions** (form, substantive, boilerplate). Merged
+into one multi-select, and the merge is recorded rather than silent. Nothing is lost — each of her
+three is a stable option value, so the export still reads `substantive: yes` and the policy still
+handles the three separately. What it buys is her own implementation note: one gate per module, so a
+firm that drafts nothing with AI pays **one** question for module D instead of three.
+
+🔴 **D2 is the one place Katy's 2026-08-20 list and her 2026-08-25 ruling collide.** The list offers
+*"Always client data / Sometimes / Never — templates only"*. "Sometimes" is exactly the hedge she
+killed five days later — *"Eliminate all sometimes options. If a firm does an action then they need a
+policy for it."* The later ruling wins. The two states left are the two that draft differently, and a
+firm that sometimes puts client data in is a firm whose policy must assume client data.
+
+### Courts — Modules D and E
+
+| # | key | Question | Type |
+|---|---|---|---|
+| D6 | `filing_courts` | What courts or agencies does the firm file with regularly? | text, **optional** |
+| E1 | `court_ai_orders` | Do any courts or judges the firm appears before require filings to certify whether AI was used? | yes / no / not sure, req — **the module gate** |
+| E2 | `standing_order_check` | Does the firm have a standard process for confirming current standing orders before filing in a new judge's court? | yes/no, shown if E1 ≠ no |
+| E3 | `court_cert_template` | Should the policy include a default certification statement for filings? | yes/no, shown if E1 ≠ no |
+
+`filing_courts` carries module **D**, which is where Katy lists it, but it sits in the Courts section
+because her own note says it feeds Module E. Module letter and section are independent fields.
+
+It is the only **optional** question added in this batch: a transactional firm files with nobody, and
+a required free-text field a firm cannot answer is a dead end rather than a question.
+
+**E2 and E3 open on "not sure" as well as "yes"**, which is why the branch is `≠ no` and not `= yes`.
+Katy: *"if Unsure, policy should include an instruction to check standing orders before each filing
+rather than assume."* A firm that does not know needs the process question more than one that does.
+
+### Confidentiality and vendors — Modules H, I and J
 
 | # | key | Question | Type |
 |---|---|---|---|
 | 13 | `comms_platforms` | What does the firm use for internal communication? | multi-select + other, req |
 | 14 | `regulatory_regimes` | Does the firm handle data under any regime beyond state bar rules? | multi-select / none, req |
+| I1 | `vendor_incident_protocol` | If an AI vendor disclosed a breach involving client information, does the firm have a notification protocol? | yes/no, req |
+| I2 | `vendor_security_contact` | Who at the firm receives vendor security notices? | text, req |
+| J1 | `brainstorming` | Does the firm use AI to brainstorm strategy, arguments or theories tied to a specific, identifiable matter? | yes/no, req — **the module gate** |
+| J2 | `brainstorming_tier` | On which tier of tool? | single-select, shown if J1 yes |
 
 Q13 options: Microsoft Teams, Slack, Telegram, Signal, email only, other.
 Q14 options: HIPAA, GDPR, GLBA, CCPA/CPRA, FERPA, none.
+J2 options: only paid or API-tier tools under a no-training agreement · sometimes on consumer-tier
+tools.
+
+**Module I is ungated, and that is a decision rather than an omission.** Katy names E, L, N, R and V
+as the modules a small firm skips; I is not among them, because any firm with a single vendor has the
+exposure. A "no" on I1 is not a skip — her note asks that a missing protocol be *"a gap the generated
+policy should flag rather than silently fill with generic language"*, so the no is the answer that
+changes the draft most. I2 stays visible on a no for the same reason: a named recipient is the first
+line of the protocol that firm is about to be told to write.
+
+**Module J lives here rather than in Drafting** because its whole branch turns on tier and
+no-training, which is Module H's axis. J2's "sometimes on consumer-tier tools" is *not* a hedge — it
+is not a way of avoiding the question, it **is** the compliance gap Katy asks to have flagged.
 
 ### Document review — Modules K and L
 
@@ -345,6 +514,16 @@ Q14 options: HIPAA, GDPR, GLBA, CCPA/CPRA, FERPA, none.
 
 Q16 options are described rather than numeric, because a numeric threshold nobody defined produces
 noise: occasional, a few matters a year · regular, most matters · large-scale e-discovery.
+
+### Records — Module U
+
+| # | key | Question | Type |
+|---|---|---|---|
+| U1 | `retain_prompts` | Are prompts and AI-generated drafts kept as part of the client file? | yes/no, req — **the module gate** |
+| U2 | `retention_schedule` | For how long, and on what schedule? | long text, shown if U1 yes |
+
+Its own section because Katy calls it *"a record-keeping/work-product question, distinct from
+confidentiality"*: `data` asks what leaves the firm and who touches it, this asks what the firm keeps.
 
 ### Notetakers — Module M
 
@@ -358,6 +537,20 @@ Q18 options: not permitted at all · permitted only with everyone's consent, wha
 allows · permitted per the consent law of the state involved.
 Q19 options: internal meetings · client meetings · depositions or hearings where permitted.
 
+### Competency — Module F
+
+| # | key | Question | Type |
+|---|---|---|---|
+| F1 | `ai_practice_expansion` | Is the firm considering taking on work it would not take on without AI tools? | yes/no, req |
+| F2 | `cle_process` | Does the firm already track CLE or competency in some way? | yes/no, req |
+
+**Ungated.** Katy marks the module *"usually universal language, but confirm scope"*, so both
+questions apply to everyone. F1's yes routes to a human conversation — it touches the "would not be
+competent without AI" rule — not to another question, so there is nothing for it to unlock.
+
+Placed in `staff` rather than `firm`: competency, hiring and discipline are one lane, and `firm` is
+the first section a buyer sees, where two more questions is two more before they feel any progress.
+
 ### Hiring — Module N
 
 | # | key | Question | Type |
@@ -368,11 +561,23 @@ Q19 options: internal meetings · client meetings · depositions or hearings whe
 A yes routes to separate compliance counsel rather than a drafted clause. The policy draft is
 explicit that no standard policy can be provided here.
 
-### Billing — Module P
+### Billing — Modules P and Q
 
 | # | key | Question | Type |
 |---|---|---|---|
 | 23 | `bill_ai_costs` | Does the firm want to bill clients directly for the cost of AI tools? | yes/no, req |
+| Q1 | `billing_models` | How does the firm bill? | multi-select + other, req — **the module gate** |
+| Q2 | `ai_time_adjustment` | Is there a process for adjusting billed time when AI finishes a task faster? | yes/no, shown if Q1 includes hourly or hybrid |
+
+Q1 options: hourly · flat fee · hybrid · contingency · other. **No "none"** — every firm bills
+somehow, so the escape on this unconditional required multi-select is the free-text `other`, for the
+models nobody listed.
+
+**Q2 follows the hours, not the label.** Katy writes "if hourly"; a *hybrid* firm has billed hours
+and therefore the same problem, so the branch is `includesAny: [hourly, hybrid]`. Flat fee and
+contingency are excluded because the question cannot be answered there — there is no billed time to
+adjust. A no on Q2 is a real answer and the one that matters: her note asks it be flagged as *"a
+policy gap requiring a firm decision, not just boilerplate"*.
 
 ### Discipline — Module S
 
@@ -386,6 +591,18 @@ explicit that no standard policy can be provided here.
 |---|---|---|---|
 | 25 | `client_ai` | Should the policy address clients using AI to second-guess the firm's work? | yes/no, req |
 | 26 | `client_ai_approach` | How would the firm like that handled? | text or "not decided yet", shown if Q25 yes |
+
+### Marketing — Module V
+
+| # | key | Question | Type |
+|---|---|---|---|
+| V1 | `ai_marketing` | Does the firm use AI to draft website copy, blog posts, social media or advertisements? | yes/no, req — **the module gate** |
+| V2 | `marketing_review` | Does someone review that content against attorney advertising rules before it goes out? | yes/no, shown if V1 yes |
+
+Its own section on Katy's own reasoning: *"a genuinely separate compliance lane: specialization
+claims, guarantees, and 'results' language in AI-generated marketing content implicate advertising
+rules, not confidentiality or hallucination risk."* One of the five modules she expects a small firm
+to skip, which here costs them exactly one question.
 
 ### Sensitive — Katy's eyes only
 
@@ -474,6 +691,67 @@ contradict Katy's reversal directly.
 admin API, which no `BEGIN` can enclose. What it is instead: every step idempotent, and the session
 flipped to `submitted` **last**. A promote that fails halfway leaves the intake open, the firm
 presses Send again, and the second run skips what already exists and finishes the rest.
+
+**Reopenable until delivery — added 2026-08-28 (Max)**
+
+A submitted intake was a dead end. `app/intake/page.tsx` locked on `status !== 'in_progress'` and a
+locked session deliberately loaded no answers, so a firm that pressed Send saw an empty screen from
+then on — they could not check what they had said, let alone correct a wrong roster address or a
+jurisdiction picked in a hurry. The only remedy was to email and ask an operator to edit the
+database.
+
+There are now **four states**, decided by one function (`intakeStateOf`, `lib/intake/review.ts`) so
+that `/intake` and Settings can never disagree about whether a firm may still edit:
+
+| State | What the firm sees |
+|---|---|
+| `editable` | the intake, as before |
+| `submitted` | their answers, read-only, plus **Reopen to make changes** |
+| `delivered` | their answers, read-only. No reopen — the answers are the record the policy was written from |
+| `purged` | a plain sentence saying the answers were deleted and what is kept |
+
+🔴 **Reopening is recorded, and that is what migration `0030` is for.** The flip itself needed no
+schema — `status` already has `in_progress` in its CHECK. The columns exist because **Katy may
+already be drafting**, and answers changing under her silently is worse than not allowing the edit
+at all: she would deliver a policy written from a roster or a jurisdiction the firm had since
+changed, and neither of them would ever know why it was wrong. `reopened_at`, `reopened_count` and
+`reopened_by` let her export say the intake moved after she received it, and the screen itself says
+*"Reopened N times since it was first sent."*
+
+🔴 **The 0028 partial unique index is now load-bearing for a second reason.**
+`idx_intake_sessions_one_open_per_firm` is UNIQUE on `(firm_id) WHERE status = 'in_progress'`, and
+reopening moves a row INTO that state — so it is what stops a reopen producing two open sessions
+racing each other into promote. `POST /api/intake/reopen` relies on it rather than checking first:
+one conditional UPDATE with every precondition in the WHERE clause, and `23505` treated as "this
+firm already has an open intake". A read-then-write check would have a gap; the index does not.
+
+The route **refuses**, it does not merely stop offering the button — a delivered intake returns 409
+with "your policy has already been delivered", a purged one with "this intake has been deleted".
+
+⚠️ **PROD is behind.** As of 2026-08-28 production has neither `0028` nor `0029`; `0030` stacks on
+top. Push all three together, create the `Intake-uploads` bucket in the same window, and relink the
+CLI to staging afterwards.
+
+**Readable by the firm before the purge — added 2026-08-27 (Max)**
+
+A submitted intake is visible to the firm under a new heading in **Settings**: the questions as
+asked and the answers as given. It is their own account of their own firm and there is no reason to
+withhold it.
+
+**It is the same screen as the post-submit view above, and is built once** —
+`app/intake/_components/intake-review.tsx` over `buildReview()`. Two copies would drift into two
+different accounts of the same firm's answers.
+
+Three constraints whoever builds it has to hold:
+
+- 🔴 **`intake_sensitive` is excluded.** `prior_ai_error` and `carrier_notified` are Katy's eyes
+  only and this screen is firm-facing. The rule above is unchanged: never rendered in a firm-facing
+  screen, never in the dashboard, never in any export except Katy's. The firm answered them; that
+  does not put them on this page.
+- **Admin only.** It carries firm-level disclosures. Staff have no business in it.
+- **It disappears with the purge**, which is the whole lifecycle below. There is no separate
+  retention: the screen reads what is there, and after the purge there is nothing there. It should
+  say so plainly rather than rendering an empty page.
 
 **Retained after purge, as a receipt**
 

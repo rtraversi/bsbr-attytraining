@@ -10,7 +10,7 @@
 // request plumbing (cookies(), after()), which does not exist under vitest.
 // With the logic here, tests/quiz-session.test.ts drives the REAL code against
 // real staging rows instead of a re-implementation of it. The routes keep
-// exactly what is genuinely request-shaped — auth, body parsing, the seat gate,
+// exactly what is genuinely request-shaped — auth, body parsing, the certificate gate,
 // and the fire-and-forget cert trigger.
 // =============================================================================
 
@@ -578,7 +578,7 @@ export async function recordQuizAttempt(
   // ── Record training events (non-fatal) ───────────────────────────────────
   const { data: firmMember } = await admin
     .from('firm_members')
-    .select('id')
+    .select('id, is_attorney')
     .eq('user_id', userId)
     .eq('firm_id', firmId)
     .maybeSingle()
@@ -617,6 +617,10 @@ export async function recordQuizAttempt(
   }
 
   // ── On pass: mark enrollment + enqueue cert ──────────────────────────────
+  // Passing is a training record. The certificate queue is more restrictive:
+  // attorneys may review and even complete the material, but cannot receive a
+  // certificate. Keep the check immediately beside the insert as a backstop
+  // for direct callers and future routes that bypass api/quiz/attempt.
   let certQueueId: string | null = null
   if (passed) {
     await admin
@@ -624,21 +628,23 @@ export async function recordQuizAttempt(
       .update({ status: 'passed', completed_at: now.toISOString() })
       .eq('id', enrollment.id)
 
-    const { data: queueRow, error: queueErr } = await admin
-      .from('cert_generation_queue')
-      .insert({
-        enrollment_id: enrollment.id,
-        firm_id: firmId,
-        quiz_attempt_id: attemptId,
-        status: 'pending',
-      })
-      .select('id')
-      .single()
+    if (firmMember?.is_attorney === false) {
+      const { data: queueRow, error: queueErr } = await admin
+        .from('cert_generation_queue')
+        .insert({
+          enrollment_id: enrollment.id,
+          firm_id: firmId,
+          quiz_attempt_id: attemptId,
+          status: 'pending',
+        })
+        .select('id')
+        .single()
 
-    if (queueErr) {
-      console.error('[quiz/attempt] cert_generation_queue insert failed:', queueErr)
+      if (queueErr) {
+        console.error('[quiz/attempt] cert_generation_queue insert failed:', queueErr)
+      }
+      certQueueId = queueRow?.id ?? null
     }
-    certQueueId = queueRow?.id ?? null
   }
 
   return {

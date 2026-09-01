@@ -3,10 +3,12 @@
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from './toast-provider'
+import { Modal, ModalActions } from './modal'
 
 interface ParsedRow {
   name: string
   email: string
+  isAttorney: boolean
 }
 
 interface BulkResult {
@@ -30,6 +32,7 @@ function parseCsv(text: string): ParsedRow[] {
 
   const nameIdx = firstCols.indexOf('name')
   const emailIdx = firstCols.indexOf('email')
+  const attorneyIdx = firstCols.findIndex(c => c === 'attorney' || c === 'is_attorney')
   const hasHeader = nameIdx !== -1 || emailIdx !== -1
   const dataLines = hasHeader ? lines.slice(1) : lines
 
@@ -39,7 +42,8 @@ function parseCsv(text: string): ParsedRow[] {
       // If no header detected, assume name=col0 email=col1
       const name = nameIdx !== -1 ? (cols[nameIdx] ?? '') : (cols[0] ?? '')
       const email = emailIdx !== -1 ? (cols[emailIdx] ?? '') : (cols[1] ?? '')
-      return { name, email }
+      const attorneyValue = attorneyIdx !== -1 ? (cols[attorneyIdx] ?? '').toLowerCase() : ''
+      return { name, email, isAttorney: ['1', 'true', 'yes', 'attorney'].includes(attorneyValue) }
     })
     .filter(r => r.name || r.email)
 }
@@ -56,7 +60,54 @@ function summaryText(result: BulkResult): string {
   return parts.join(', ') || 'No rows processed'
 }
 
+/**
+ * The Invitations card's bulk half: one button.
+ *
+ * ── Why the format explanation is a dialog ──────────────────────────────────
+ *
+ * It was two lines of 12px grey under the button — "CSV format: name,email,
+ * attorney — use true for attorneys" — which is the whole of what a firm was
+ * ever told about the only feature on this card that touches a file on their
+ * computer. It could not say what a .csv IS, how to get one out of Excel, what
+ * happens to a row that is already on the team, or that pressing the button
+ * emails every person in the file at once. There was no room on the card, so it
+ * said the least it could and left the rest to be discovered.
+ *
+ * Clicking the button now opens the instructions, and the file picker lives
+ * inside them — so the explanation is unavoidable rather than optional, and it
+ * costs the card nothing at rest. Max, 2026-08-27: "this is going to clear the
+ * space ... and gives us the chance to explain how it works."
+ *
+ * The parsing, the preview and the upload are unchanged.
+ */
 export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <>
+      {/* py-2 / 13px to match the two controls above it — see the sizing note in
+          invite-form.tsx. The picker INSIDE the dialog stays full size: it has
+          the room, and it is the primary action there. */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full rounded-full border border-[#E5EEF5] py-2 text-center text-[13px]/[18px] font-bold text-[#3D3D3D] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[var(--brand-primary)] dark:hover:text-[var(--brand-primary)]"
+      >
+        Bulk invite (CSV)
+      </button>
+
+      {open && <CsvDialog seatsRemaining={seatsRemaining} onClose={() => setOpen(false)} />}
+    </>
+  )
+}
+
+function CsvDialog({
+  seatsRemaining,
+  onClose,
+}: {
+  seatsRemaining: number
+  onClose: () => void
+}) {
   const router = useRouter()
   const { addToast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -65,6 +116,10 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
   const [phase, setPhase] = useState<'idle' | 'preview' | 'uploading' | 'done' | 'error'>('idle')
   const [result, setResult] = useState<BulkResult | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
+
+  const staffRows = rows.filter(r => !r.isAttorney).length
+  const attorneyRows = rows.length - staffRows
+  const overSeats = Math.max(0, staffRows - seatsRemaining)
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -80,7 +135,9 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
       const parsed = parseCsv(text)
       setRows(parsed)
       setPhase(parsed.length > 0 ? 'preview' : 'error')
-      if (parsed.length === 0) setErrorMsg('No rows found. Check that your CSV has name and email columns.')
+      if (parsed.length === 0) {
+        setErrorMsg('No rows found. Check that your file has a name and an email on each line.')
+      }
     }
     reader.readAsText(file)
   }
@@ -112,7 +169,7 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
       addToast(
         failed > 0
           ? `${data.invited} member${data.invited !== 1 ? 's' : ''} added, ${failed} invite email${failed !== 1 ? 's' : ''} couldn’t be sent`
-          : `${data.invited} invite${data.invited !== 1 ? 's' : ''} sent`
+          : `${data.invited} invite${data.invited !== 1 ? 's' : ''} sent`,
       )
     } catch {
       setErrorMsg('Network error. Please try again.')
@@ -120,7 +177,7 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
     }
   }
 
-  function handleReset() {
+  function reset() {
     setPhase('idle')
     setRows([])
     setFileName('')
@@ -129,71 +186,207 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  // Seats-full: the disabled affordance stays visible so the action is still
-  // discoverable. The explanatory note is rendered once by the Invitations card.
-  if (seatsRemaining <= 0) {
+  const busy = phase === 'uploading'
+
+  // ── Finished ──────────────────────────────────────────────────────────────
+  if (phase === 'done' && result) {
     return (
-      <button
-        type="button"
-        disabled
-        className="w-full cursor-not-allowed rounded-xl border border-[#E5EEF5] py-4 text-base font-bold text-[#B0B7BF] dark:border-[#1F2429] dark:text-[#4E555C]"
-      >
-        Bulk invite (CSV)
-      </button>
+      <Modal title="Invites sent" onClose={onClose} wide>
+        <p className="rounded-xl bg-[#EAF8FF] px-4 py-3 text-sm font-semibold text-[var(--brand-emphasis)] dark:bg-[var(--brand-emphasis)]/10">
+          {summaryText(result)}
+        </p>
+        {(result.emailFailed?.length ?? 0) > 0 && (
+          <p className="mt-3 text-xs leading-relaxed text-[#B45309] dark:text-[#F0B357]">
+            Those people are on your team and their seats are real — only the email did not go.
+            They are badged “Invite not delivered” in the team table, where you can resend.
+          </p>
+        )}
+        {/* Not ModalActions: neither button here is a cancel or a confirm —
+            one starts a second upload and the other closes. Forcing them into
+            that shape would have mislabelled both. */}
+        <div className="mt-5 flex gap-3">
+          <button
+            type="button"
+            onClick={reset}
+            className="flex-1 rounded-full border border-[#E5EEF5] bg-[#F2F4F7] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#E5EEF5] dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
+          >
+            Upload another
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#262626] dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-[#E5EEF5]"
+          >
+            Done
+          </button>
+        </div>
+      </Modal>
     )
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <label className="cursor-pointer">
-        <span className="block w-full rounded-xl border border-[#E5EEF5] py-4 text-center text-base font-bold text-[#3D3D3D] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[var(--brand-primary)] dark:hover:text-[var(--brand-primary)]">
-          {fileName || 'Bulk invite (CSV)'}
-        </span>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv,text/csv"
-          onChange={handleFileChange}
-          className="sr-only"
-        />
-      </label>
+    <Modal
+      title="Invite your team from a file"
+      description="Upload one file and everyone in it is invited at once — one email each, sent when you press Send."
+      onClose={onClose}
+      busy={busy}
+      wide
+    >
+      {/* ── 1. The file ─────────────────────────────────────────────────────── */}
+      <Section n={1} title="It has to be a .csv file">
+        <p>
+          A CSV is a plain spreadsheet. In Excel, Numbers or Google Sheets, open your staff list
+          and choose <Kbd>File → Save As</Kbd> (or <Kbd>Download</Kbd>) and pick{' '}
+          <Kbd>CSV</Kbd>. An <Kbd>.xlsx</Kbd>, <Kbd>.numbers</Kbd> or <Kbd>.pdf</Kbd> will not
+          open here.
+        </p>
+      </Section>
 
-      <p className="text-center text-sm text-[#8A8A8A] dark:text-[#7A8189]">
-        CSV format: <code className="rounded bg-[#F5F7FA] px-1 py-0.5 dark:bg-[#131A20]">name,email</code> — one per row.
-      </p>
+      {/* ── 2. The columns ──────────────────────────────────────────────────── */}
+      <Section n={2} title="Three columns, one person per row">
+        <pre className="overflow-x-auto rounded-lg border border-[#E5EEF5] bg-[#F7F9FB] p-3 font-mono text-[11px] leading-relaxed text-[#0A0A0A] dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA]">
+{`name,email,attorney
+Jane Ruiz,jane@yourfirm.com,true
+Marcus Bell,marcus@yourfirm.com,
+Dana Whitfield,dana@yourfirm.com,false`}
+        </pre>
+        <ul className="mt-3 flex flex-col gap-2">
+          <Col name="name">
+            Their full name — first and last, written the way you would write it formally, not a
+            nickname or an initial.
+          </Col>
+          <Col name="email">
+            Where their invite goes. Check these carefully: a transposed character means that
+            person never hears from us, and you will not find out until a certificate does not
+            arrive.
+          </Col>
+          <Col name="attorney">
+            <Kbd>true</Kbd> for an attorney. Leave it blank or put <Kbd>false</Kbd> for everyone
+            else. Getting this wrong on a staff member is what spends a seat you did not mean to
+            spend.
+          </Col>
+        </ul>
+        <p className="mt-3">
+          The header row is optional — without one we read the first column as the name and the
+          second as the email.
+        </p>
+      </Section>
 
-      {phase === 'preview' && (
-        <>
-          <button
-            onClick={handleUpload}
-            className="w-full rounded-xl bg-black py-4 text-base font-bold text-white transition-colors hover:bg-gray-800 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
-          >
-            Invite {rows.length} {rows.length === 1 ? 'employee' : 'employees'}
-          </button>
-          <p className="text-center text-sm text-[#8A8A8A] dark:text-[#7A8189]">
-            {rows.length} {rows.length === 1 ? 'row' : 'rows'} found — {seatsRemaining} seat
-            {seatsRemaining !== 1 ? 's' : ''} remaining
+      {/* ── 3. What sending does ────────────────────────────────────────────── */}
+      <Section n={3} title="What happens when you send">
+        <ul className="flex list-disc flex-col gap-1.5 pl-4">
+          <li>Everyone in the file is emailed an invite at the same time.</li>
+          <li>
+            Staff each take one seat. Attorneys take none, and are not issued a certificate.
+          </li>
+          <li>Anyone already on your team is skipped rather than invited twice.</li>
+          <li>Rows without a usable email are reported back and nothing is created for them.</li>
+        </ul>
+      </Section>
+
+      {/* ── The picker ──────────────────────────────────────────────────────── */}
+      <div className="mt-5 border-t border-[#E5EEF5] pt-5 dark:border-[#1F2429]">
+        <label className="cursor-pointer">
+          <span className="block w-full rounded-full border border-[#E5EEF5] py-3 text-center text-sm font-bold text-[#3D3D3D] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[var(--brand-primary)] dark:hover:text-[var(--brand-primary)]">
+            {fileName || 'Choose a .csv file'}
+          </span>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            onChange={handleFileChange}
+            disabled={busy}
+            className="sr-only"
+          />
+        </label>
+
+        {/* Keyed on the parsed rows, not on the phase. A failed send moves the
+            phase to 'error' — if this were phase-gated, the row count and the
+            Send button would both vanish and the only way to retry a network
+            blip would be to pick the same file again. */}
+        {rows.length > 0 && (
+          <p className="mt-3 text-xs leading-relaxed text-[#8A8A8A] dark:text-[#7A8189]">
+            <span className="font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
+              {rows.length} {rows.length === 1 ? 'row' : 'rows'} found
+            </span>{' '}
+            — {staffRows} staff, {attorneyRows} {attorneyRows === 1 ? 'attorney' : 'attorneys'}.
+            You have {seatsRemaining} staff {seatsRemaining === 1 ? 'seat' : 'seats'} left.
+            {overSeats > 0 && (
+              // Said before Send, not after a rejection. The server enforces the
+              // cap; this is so nobody presses Send expecting all of them to go.
+              <>
+                {' '}
+                <span className="font-semibold text-[#B45309] dark:text-[#F0B357]">
+                  That is {overSeats} more staff than you have seats for
+                </span>{' '}
+                —{' '}
+                <a
+                  href="/api/portal"
+                  className="font-semibold underline underline-offset-2 hover:opacity-80"
+                >
+                  add seats in Billing
+                </a>{' '}
+                first, or take them out of the file.
+              </>
+            )}
           </p>
-        </>
-      )}
+        )}
 
-      {phase === 'uploading' && (
-        <span className="text-sm text-[#8A8A8A] dark:text-[#7A8189]">Sending invites…</span>
-      )}
+        {errorMsg && <p className="mt-3 text-xs text-[#DC2626] dark:text-[#F87171]">{errorMsg}</p>}
 
-      {phase === 'done' && result && (
-        <div className="flex items-center justify-between gap-2 rounded-xl bg-[#EAF8FF] px-3 py-2 dark:bg-[var(--brand-emphasis)]/10">
-          <p className="text-sm font-semibold text-[var(--brand-emphasis)]">{summaryText(result)}</p>
-          <button
-            onClick={handleReset}
-            className="shrink-0 text-xs text-[#8A8A8A] transition-colors hover:text-[#0A0A0A] dark:hover:text-[#F5F7FA]"
-          >
-            Upload another
-          </button>
+        <div className="mt-4">
+          <ModalActions
+            onCancel={onClose}
+            busy={busy}
+            disabled={rows.length === 0}
+            confirmLabel={
+              rows.length > 0
+                ? `Send ${rows.length} ${rows.length === 1 ? 'invite' : 'invites'}`
+                : 'Send invites'
+            }
+            busyLabel="Sending…"
+            onConfirm={handleUpload}
+          />
         </div>
-      )}
+      </div>
+    </Modal>
+  )
+}
 
-      {phase === 'error' && <p className="text-sm text-[#DC2626]">{errorMsg}</p>}
-    </div>
+// ── Small local pieces ───────────────────────────────────────────────────────
+
+function Section({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+  return (
+    <section className={n === 1 ? '' : 'mt-5'}>
+      <h3 className="flex items-center gap-2 text-[13px] font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
+        <span
+          aria-hidden
+          className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--brand-emphasis)] text-[11px] font-bold text-white"
+        >
+          {n}
+        </span>
+        {title}
+      </h3>
+      <div className="mt-2 pl-7 text-xs leading-relaxed text-[#8A8A8A] dark:text-[#7A8189]">
+        {children}
+      </div>
+    </section>
+  )
+}
+
+function Col({ name, children }: { name: string; children: React.ReactNode }) {
+  return (
+    <li>
+      <Kbd>{name}</Kbd>{' '}
+      <span className="leading-relaxed">{children}</span>
+    </li>
+  )
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <code className="rounded bg-[#F2F4F7] px-1 py-0.5 font-mono text-[11px] text-[#0A0A0A] dark:bg-[#1F2429] dark:text-[#F5F7FA]">
+      {children}
+    </code>
   )
 }

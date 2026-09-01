@@ -21,11 +21,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  // Parse email
+  // Parse invitee. Attorney status is independent of the app role: invited
+  // attorneys remain employee-role members, but do not consume a staff seat or
+  // qualify for a certificate.
   let email: string
+  let isAttorney: boolean
   try {
-    const body = (await req.json()) as { email?: unknown }
+    const body = (await req.json()) as { email?: unknown; isAttorney?: unknown }
     email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+    isAttorney = body.isAttorney === true
   } catch {
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
   }
@@ -36,18 +40,22 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient()
 
-  // Seat availability check
-  const { data: seat } = await admin
-    .from('seats')
-    .select('used_seats, max_seats')
-    .eq('firm_id', firmId)
-    .single()
+  // Attorneys do not consume staff seats. Only staff invites are blocked by
+  // the purchased-seat cap; the trigger remains the source of truth for the
+  // resulting used_seats count.
+  if (!isAttorney) {
+    const { data: seat } = await admin
+      .from('seats')
+      .select('used_seats, max_seats')
+      .eq('firm_id', firmId)
+      .single()
 
-  if (!seat || seat.used_seats >= seat.max_seats) {
-    return NextResponse.json(
-      { error: 'No seats available. Purchase additional seats to invite more team members.' },
-      { status: 409 }
-    )
+    if (!seat || seat.used_seats >= seat.max_seats) {
+      return NextResponse.json(
+        { error: 'No seats available. Purchase additional seats to invite more team members.' },
+        { status: 409 }
+      )
+    }
   }
 
   const { data: firm } = await admin.from('firms').select('name').eq('id', firmId).single()
@@ -79,6 +87,8 @@ export async function POST(req: NextRequest) {
     user_id: employeeId,
     role: 'employee',
     status: 'invited',
+    is_attorney: isAttorney,
+    occupies_seat: !isAttorney,
   })
 
   if (memberError) {
@@ -88,8 +98,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to create team member.' }, { status: 500 })
   }
 
-  // used_seats is maintained by the sync_used_seats trigger — the row insert
-  // above already counted this seat. Incrementing here too would double it.
+  // used_seats is maintained by the sync_used_seats trigger. For a staff row,
+  // the insert above already counted its seat; an attorney row correctly adds
+  // none. Incrementing here would make either case wrong.
 
   // Generate invite magic link — goes through /auth/callback for PKCE code exchange
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
@@ -108,8 +119,8 @@ export async function POST(req: NextRequest) {
     ? `${appUrl}/auth/confirm?token_hash=${hashedToken}&type=magiclink&next=/update-password`
     : linkData?.properties?.action_link
 
-  // The member and the seat are real by this point, so a send failure is not a
-  // failed request — but it is not a plain success either. Report both halves
+  // The member is real by this point (and a staff seat, where applicable), so a
+  // send failure is not a failed request — but it is not a plain success either. Report both halves
   // and persist the failure so it survives the toast: without that, the only
   // record of a broken email channel was a console.error nobody reads.
   let emailSent = true

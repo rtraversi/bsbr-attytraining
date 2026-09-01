@@ -24,6 +24,33 @@ export async function POST(req: NextRequest) {
 
   let retried = 0
   for (const row of retryRows ?? []) {
+    // Do not revive an old attorney queue row created before certificate
+    // eligibility was enforced. Closing it as succeeded is deliberate: there
+    // is no certificate to retry and the queue has no separate "ineligible"
+    // terminal state.
+    const { data: enrollment } = await admin
+      .from('enrollments')
+      .select('user_id')
+      .eq('id', row.enrollment_id)
+      .maybeSingle()
+    const { data: member } = enrollment
+      ? await admin
+          .from('firm_members')
+          .select('is_attorney')
+          .eq('firm_id', row.firm_id)
+          .eq('user_id', enrollment.user_id)
+          .maybeSingle()
+      : { data: null }
+
+    if (member?.is_attorney === true) {
+      await admin
+        .from('cert_generation_queue')
+        .update({ status: 'succeeded', last_error: 'Certificate ineligible: attorney' })
+        .eq('id', row.id)
+        .eq('status', 'failed')
+      continue
+    }
+
     // Reset to pending (guarded: only if still 'failed' to avoid races)
     const { data: reset } = await admin
       .from('cert_generation_queue')

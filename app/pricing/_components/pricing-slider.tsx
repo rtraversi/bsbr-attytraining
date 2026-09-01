@@ -7,10 +7,18 @@ import { CURRENT_TERMS_VERSION } from "@/lib/legal/terms";
 // → big monospace total. Volume pricing — ALL seats bill at the band rate the
 // headcount lands in (CLAUDE.md), flat on renewal.
 
+// 🔴 NON-ATTORNEY. Attorneys never consume a seat and take the training free
+// (Katy, 2026-08-25 11:57), so the seat count is the firm's non-attorney
+// headcount and nothing else. Band one reads "0–9" rather than "1–9" on Katy's
+// instruction, 2026-08-25 13:30: "Same price. $35 for 0 or 1, and $35 each up to
+// 9" — a solo with no staff still pays for one seat.
+//
+// rateFor() below is unchanged and needs no change: it already returns 35 for
+// anything under 10, and the slider is already min={1}. Only the labels move.
 const BANDS = [
-  { min: 1, max: 9, rate: 35, label: "1–9 staff" },
-  { min: 10, max: 24, rate: 32, label: "10–24 staff" },
-  { min: 25, max: Infinity, rate: 28, label: "25+ staff" },
+  { min: 1, max: 9, rate: 35, label: "0–9 non-attorney staff" },
+  { min: 10, max: 24, rate: 32, label: "10–24 non-attorney staff" },
+  { min: 25, max: Infinity, rate: 28, label: "25+ non-attorney staff" },
 ];
 
 const SLIDER_MAX = 100;
@@ -72,7 +80,7 @@ export function PricingSlider() {
           htmlFor="seats"
           className="block text-[11px] font-medium uppercase tracking-[0.2em] text-ink-mute"
         >
-          How many staff members?
+          How many non-attorney staff?
         </label>
 
         <div className="mt-4 flex items-baseline gap-3">
@@ -83,6 +91,19 @@ export function PricingSlider() {
             {seats === 1 ? "seat" : "seats"}
           </span>
         </div>
+
+        {/*
+          🔴 Said HERE, at purchase, and not at the roster.
+          The intake caps the roster at the seats bought (Max, 2026-08-26,
+          reversing flag-never-block), so by the time somebody is typing their
+          staff's names it is already too late to discover they are short. This
+          is the last moment the number can still be changed for free.
+        */}
+        <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-mute">
+          Your seat count has to cover <strong className="text-ink-soft">every non-attorney on
+          staff</strong> — they are the ones who take the training. Attorneys are unlimited and
+          never use a seat.
+        </p>
 
         {/* Slider */}
         <input

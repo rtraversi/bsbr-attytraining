@@ -63,15 +63,26 @@ function PasswordField({
   )
 }
 
-export function UpdatePasswordForm({
-  email,
-  initialName = '',
-}: {
-  email: string
-  initialName?: string
-}) {
+/**
+ * ── The name field is gone, deliberately (Max, 2026-08-26) ──────────────────
+ *
+ * This screen used to ask every invited employee for their full name, because
+ * app/api/invite/bulk/route.ts accepted { name, email } and DISCARDED the name,
+ * so nothing else ever wrote user_metadata.full_name — and cert generation falls
+ * back to the raw EMAIL ADDRESS when it is missing
+ * (app/api/certs/generate/route.ts:102).
+ *
+ * The intake roster is now authoritative for names: the firm admin types each
+ * person's name as it should appear on the certification, and lib/intake/promote
+ * stamps it into user_metadata.full_name at provisioning. Asking the employee
+ * again would let them overwrite the name their firm is accountable for, on the
+ * one screen where nobody is checking.
+ *
+ * The field is still editable later in Settings, which is the right place for a
+ * correction that somebody can see.
+ */
+export function UpdatePasswordForm({ email }: { email: string }) {
   const router = useRouter()
-  const [fullName, setFullName] = useState(initialName)
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
@@ -85,11 +96,6 @@ export function UpdatePasswordForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const trimmedName = fullName.trim()
-    if (!trimmedName) {
-      setError('Please enter your full name.')
-      return
-    }
     if (password !== confirm) {
       setError('Passwords do not match.')
       return
@@ -129,20 +135,9 @@ export function UpdatePasswordForm({
     }
 
     const supabase = createClient()
-    // Name and password in ONE call, deliberately. `data` writes user_metadata —
-    // never app_metadata, which holds firm_id/role and is security-sensitive.
-    //
-    // Atomic with the password write: a separate follow-up call could fail after
-    // the password had already changed, leaving no way to report it (we navigate
-    // away) and the person nameless again. This is also exactly how Settings
-    // already persists this same field, so the two paths behave identically.
-    //
-    // app/api/certs/generate reads user_metadata.full_name for employeeName, so
-    // certificates and the delivery email pick this up with no further change.
-    const { error: authError } = await supabase.auth.updateUser({
-      password,
-      data: { full_name: trimmedName },
-    })
+    // Password only. full_name is NOT written here — see the note on this
+    // component: the roster is authoritative and promote already stamped it.
+    const { error: authError } = await supabase.auth.updateUser({ password })
 
     if (authError) {
       setError(authError.message)
@@ -179,31 +174,6 @@ export function UpdatePasswordForm({
           tabIndex={-1}
           className="cursor-default rounded-xl border border-zinc-200 bg-zinc-100 px-5 py-4 text-base text-zinc-500"
         />
-      </div>
-
-      {/* Full name — this screen is the first thing every invited employee sees,
-          and until now nothing ever asked. Without it user_metadata.full_name is
-          only set when an admin typed it at invite time, so certificates and
-          emails fell back to the raw email address — which is what ends up on the
-          firm's compliance record. Editable later in Settings. */}
-      <div className="flex flex-col gap-2.5">
-        <label htmlFor="full-name" className="text-base font-medium text-zinc-900">
-          Your full name
-        </label>
-        <input
-          id="full-name"
-          type="text"
-          required
-          autoComplete="name"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          disabled={loading}
-          placeholder="Jane Marsh"
-          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
-        />
-        <p className="text-sm font-extralight text-zinc-500">
-          This is the name printed on your compliance certificate.
-        </p>
       </div>
 
       {/* New password + strength-reactive bot */}

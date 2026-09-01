@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   graphql_public: {
     Tables: {
@@ -251,10 +251,14 @@ export type Database = {
         Row: {
           activated_at: string | null
           created_at: string
+          email_verification_sent_at: string | null
+          email_verification_token: string | null
+          email_verified_at: string | null
           firm_id: string
           id: string
           invite_email_failed: boolean
           invited_at: string
+          is_attorney: boolean
           occupies_seat: boolean
           role: string
           scorm_lesson_location: string | null
@@ -267,10 +271,14 @@ export type Database = {
         Insert: {
           activated_at?: string | null
           created_at?: string
+          email_verification_sent_at?: string | null
+          email_verification_token?: string | null
+          email_verified_at?: string | null
           firm_id: string
           id?: string
           invite_email_failed?: boolean
           invited_at?: string
+          is_attorney?: boolean
           occupies_seat?: boolean
           role?: string
           scorm_lesson_location?: string | null
@@ -283,10 +291,14 @@ export type Database = {
         Update: {
           activated_at?: string | null
           created_at?: string
+          email_verification_sent_at?: string | null
+          email_verification_token?: string | null
+          email_verified_at?: string | null
           firm_id?: string
           id?: string
           invite_email_failed?: boolean
           invited_at?: string
+          is_attorney?: boolean
           occupies_seat?: boolean
           role?: string
           scorm_lesson_location?: string | null
@@ -362,6 +374,164 @@ export type Database = {
           tier?: string
         }
         Relationships: []
+      }
+      intake_answers: {
+        Row: {
+          answered_at: string
+          id: string
+          question_key: string
+          session_id: string
+          value: Json
+        }
+        Insert: {
+          answered_at?: string
+          id?: string
+          question_key: string
+          session_id: string
+          value: Json
+        }
+        Update: {
+          answered_at?: string
+          id?: string
+          question_key?: string
+          session_id?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intake_answers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intake_sensitive: {
+        Row: {
+          answered_at: string
+          id: string
+          question_key: string
+          session_id: string
+          value: Json
+        }
+        Insert: {
+          answered_at?: string
+          id?: string
+          question_key: string
+          session_id: string
+          value: Json
+        }
+        Update: {
+          answered_at?: string
+          id?: string
+          question_key?: string
+          session_id?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intake_sensitive_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intake_sessions: {
+        Row: {
+          created_at: string
+          current_question: string | null
+          firm_id: string
+          id: string
+          policy_delivered_at: string | null
+          purged_at: string | null
+          reopened_at: string | null
+          reopened_by: string | null
+          reopened_count: number
+          started_by: string
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_question?: string | null
+          firm_id: string
+          id?: string
+          policy_delivered_at?: string | null
+          purged_at?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          reopened_count?: number
+          started_by: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_question?: string | null
+          firm_id?: string
+          id?: string
+          policy_delivered_at?: string | null
+          purged_at?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          reopened_count?: number
+          started_by?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intake_sessions_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intake_uploads: {
+        Row: {
+          bytes: number | null
+          content_type: string | null
+          id: string
+          original_name: string | null
+          session_id: string
+          storage_path: string
+          uploaded_at: string
+        }
+        Insert: {
+          bytes?: number | null
+          content_type?: string | null
+          id?: string
+          original_name?: string | null
+          session_id: string
+          storage_path: string
+          uploaded_at?: string
+        }
+        Update: {
+          bytes?: number | null
+          content_type?: string | null
+          id?: string
+          original_name?: string | null
+          session_id?: string
+          storage_path?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intake_uploads_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "intake_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       processed_stripe_events: {
         Row: {

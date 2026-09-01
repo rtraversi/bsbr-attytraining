@@ -5,10 +5,32 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { useTheme } from './theme'
 import { isTrainingRoute } from './employee-tab-bar'
+import { IntakeChip, EmailDeliverabilityChip, type UnreachableMember } from './setup-notices'
 
 interface NavPillProps {
   firmName: string | null
   role: string | null
+  /**
+   * Firm setup state, admin-only, resolved in app/dashboard/layout.tsx.
+   *
+   * These used to be full-width banners above the dashboard grid and are now
+   * chips in this pill — which means they render on EVERY /dashboard route
+   * rather than only the admin home. Deliberate: the intake prompt is the only
+   * thing in the product that ever gets the intake completed (see
+   * setup-notices.tsx), so following the admin around is the point.
+   *
+   * Null for employees and for any firm with nothing outstanding.
+   */
+  setup?: SetupState | null
+}
+
+export interface SetupState {
+  /** Has this firm submitted its policy intake? Drives a CHIP, never a redirect. */
+  intakeSubmitted: boolean
+  /** A part-finished intake, so the chip can say "continue" rather than "start". */
+  intakeInProgress: boolean
+  /** Members whose address is unproven or whose invite bounced. Already filtered. */
+  unreachable: UnreachableMember[]
 }
 
 // The three routes that make up the training experience are now owned by the
@@ -79,7 +101,9 @@ function ProfileIcon() {
 function ProfileSlot({ tone }: { tone: 'idle' | 'active' | 'identity' }) {
   const toneClass = {
     idle: 'bg-white/15',
-    active: 'bg-black/[0.08] dark:bg-white/15',
+    // Was bg-black/[0.08]; the active pill is now blue, on which a black tint
+    // reads as a visible disc. White at 15% keeps it near-invisible as designed.
+    active: 'bg-white/15 dark:bg-black/[0.08]',
     identity: 'bg-black/[0.06] dark:bg-white/10',
   }[tone]
 
@@ -92,8 +116,41 @@ function ProfileSlot({ tone }: { tone: 'idle' | 'active' | 'identity' }) {
   )
 }
 
-/** Dark-mode toggle — capsule knob + click-triggered squish (see the
- * `nav-switch-clicking` keyframe in globals.css). */
+function SunIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <circle cx="12" cy="12" r="4" />
+      <path
+        strokeLinecap="round"
+        d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+      />
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"
+      />
+    </svg>
+  )
+}
+
+/** Dark-mode toggle — a track with a sliding knob and an explicit sun and moon
+ * (Rob asked for the icons), plus the click-triggered squish (see the
+ * `nav-switch-clicking` keyframe in globals.css).
+ *
+ * The icons sit ABOVE the knob and never change colour: the sun is always dark
+ * and the moon always light, which is correct in both themes because the track
+ * and the knob invert together. Light mode = white knob over the sun on a black
+ * track; dark mode = black knob over the moon on a light track. Either way the
+ * dark glyph is on the light surface and the light glyph on the dark one. The
+ * knob marks the selected side, so the unselected glyph is dimmed rather than
+ * recoloured. */
 function ThemeToggle() {
   const themeCtx = useTheme()
   const [clicking, setClicking] = useState(false)
@@ -112,13 +169,35 @@ function ThemeToggle() {
       aria-checked={isDark}
       aria-label="Toggle dark mode"
       onClick={handleClick}
-      className={`relative h-10 w-[88px] shrink-0 rounded-full bg-[#0A0A0A] dark:bg-[#F5F7FA] ${clicking ? 'nav-switch-clicking' : ''}`}
+      className={`relative h-10 w-[88px] shrink-0 rounded-full bg-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-emphasis)] focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:bg-[#F5F7FA] dark:focus-visible:ring-[var(--brand-primary)] dark:focus-visible:ring-offset-[#0D0F12] ${
+        clicking ? 'nav-switch-clicking' : ''
+      }`}
     >
+      {/* Knob. Geometry is shared with the two icon slots below — same top/height
+          and same left-1 / left-11 stops — so each glyph lands dead-centre of the
+          knob when the knob is on its side. */}
       <span
+        aria-hidden
         className={`absolute top-1 h-8 w-10 rounded-full bg-white transition-[left] duration-[380ms] ease-[cubic-bezier(.34,1.56,.64,1)] dark:bg-[#0A0A0A] ${
           isDark ? 'left-11' : 'left-1'
         }`}
       />
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute top-1 left-1 z-10 flex h-8 w-10 items-center justify-center text-[#0A0A0A] transition-opacity duration-[380ms] ${
+          isDark ? 'opacity-50' : 'opacity-100'
+        }`}
+      >
+        <SunIcon />
+      </span>
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute top-1 left-11 z-10 flex h-8 w-10 items-center justify-center text-[#F5F7FA] transition-opacity duration-[380ms] ${
+          isDark ? 'opacity-100' : 'opacity-50'
+        }`}
+      >
+        <MoonIcon />
+      </span>
     </button>
   )
 }
@@ -139,7 +218,7 @@ function ThemeToggle() {
  * Separate from EmployeeTabBar: this switches app sections, that one navigates
  * within the training area.
  */
-export function NavPill({ firmName, role }: NavPillProps) {
+export function NavPill({ firmName, role, setup = null }: NavPillProps) {
   const pathname = usePathname()
   const isAdmin = role === 'admin'
   const isDashboardActive = pathname === '/dashboard'
@@ -171,13 +250,61 @@ export function NavPill({ firmName, role }: NavPillProps) {
     },
   ]
 
+  // ── The bar's colour rule ────────────────────────────────────────────────
+  //
+  //   BLUE is where you can go.  AMBER is what you owe.
+  //
+  // Every nav pill is blue-family: pale tint at rest, solid app blue when
+  // active. The two setup chips are amber-family (see setup-notices.tsx), so
+  // status stops competing with navigation for the same visual language.
+  //
+  // Every pairing below was measured, not eyeballed. AA wants 4.5:1 at this
+  // size (14px semibold is under the 18.66px large-text threshold).
+  //
   // Every pill — dashboard cluster included — shares this exact height,
   // padding, font-size and corner radius. Only pillIdle/pillActive differ.
   const pillBase =
     'inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-colors sm:gap-2 sm:px-5 sm:py-2.5 sm:text-sm'
+  // Idle: pale blue ground, BRAND BLUE label (Max, 2026-08-27). The three
+  // section links now read as blue-on-blue and the active pill as solid-blue,
+  // so the whole left-to-right run is one colour family at two weights.
+  //
+  // Hover moves the GROUND, not the text — the label is already the brand
+  // colour, so darkening it further would read as a second state rather than as
+  // feedback.
+  //
+  // 🔴 #0094FF on #EAF6FF measures 2.86:1. AA wants 4.5:1 at 14px semibold, so
+  // this is below the bar; see the note on pillActive.
   const pillIdle =
-    'bg-[#F5F7FA] text-[#8A8A8A] hover:text-[var(--brand-emphasis)] dark:bg-[#131A20] dark:text-[#7A8189] dark:hover:text-[var(--brand-primary)]'
-  const pillActive = 'bg-black text-white dark:bg-[#F5F7FA] dark:text-[#0A0A0A]'
+    'bg-[#EAF6FF] text-[var(--brand-emphasis)] hover:bg-[#DCEEFF] dark:bg-[#131A20] dark:text-[var(--brand-primary)] dark:hover:bg-[#18212A]'
+  // Active: solid app blue, WHITE label (Max, 2026-08-27), which is what makes
+  // the Dashboard pill read as the anchor against the lighter section links.
+  //
+  // 🔴 KNOWN AND ACCEPTED: white on #0094FF is 3.14:1, under AA's 4.5:1 for
+  // 14px semibold. This is the pairing Batch A introduced and the 2026-08-25
+  // notes flagged; it was briefly near-black (6.30:1) and Max chose white for
+  // the contrast BETWEEN pills. Recorded, not hidden — the alternative that
+  // keeps this exact look and clears AA is a slightly deeper ground, white on
+  // #0077CC (4.66:1), which needs no change to --brand-emphasis itself because
+  // it applies only to this pill. Do not "fix" it by moving the brand token:
+  // #0094FF is the app's signature colour and STATE.md's standing rule is that
+  // the palette does not move without Max saying so.
+  //
+  // Dark mode is untouched and already passes: #0A0A0A on --brand-primary
+  // (#32C7FF) is 10.13:1.
+  const pillActive =
+    'bg-[var(--brand-emphasis)] text-white dark:bg-[var(--brand-primary)] dark:text-[#0A0A0A]'
+
+  // Chips are status, not navigation, so they are quieter and narrower than a
+  // nav pill — but exactly the same HEIGHT at both breakpoints, or the pill's
+  // row goes ragged. That parity is why the numbers look arbitrary and are not:
+  //   below sm  py-2   + text-xs (16px)  = 32px, same as pillBase
+  //   sm and up py-3   + text-xs (16px)  = 40px, same as pillBase's py-2.5 + text-sm
+  // At pillBase's own px-5/text-sm the two chips plus three nav links plus the
+  // firm name overflow a 1280 viewport, which pushes the links into the
+  // horizontal scroller — status should not cost navigation its place.
+  const chipBase =
+    'inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-colors sm:gap-2 sm:px-3.5 sm:py-3'
 
   return (
     <nav className="flex max-w-full">
@@ -203,6 +330,23 @@ export function NavPill({ firmName, role }: NavPillProps) {
         )}
 
         <div className="flex min-w-0 items-center gap-2">
+          {/*
+            Setup chips sit OUTSIDE the overflow-x-auto scroller below, for the
+            same reason ThemeToggle does: the email chip opens an absolutely
+            positioned popover, and an ancestor with overflow-x-auto would clip
+            it to the scroller's box. shrink-0 on each chip means a narrow
+            viewport squeezes the links row — which is built to scroll — rather
+            than the chips, which are not.
+          */}
+          {isAdmin && setup && (
+            <>
+              {!setup.intakeSubmitted && (
+                <IntakeChip inProgress={setup.intakeInProgress} chipClassName={chipBase} />
+              )}
+              <EmailDeliverabilityChip members={setup.unreachable} chipClassName={chipBase} />
+            </>
+          )}
+
           {/* Always visible. min-w-0 + overflow-x-auto lets the row shrink and
               scroll within the pill on a narrow screen instead of pushing the
               whole page sideways. ThemeToggle lives outside this scroller —

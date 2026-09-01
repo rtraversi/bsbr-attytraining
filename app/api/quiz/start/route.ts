@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { fetchSeatAccess, hasTrainingAccess } from '@/lib/seats'
+import { fetchCertifiableMember, isCertifiableMember } from '@/lib/seats'
 import { startQuizSession } from '@/lib/training/assessment'
 
 /**
@@ -47,13 +47,16 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient()
 
-  // ── Seat entitlement ─────────────────────────────────────────────────────
-  // The same gate /api/quiz/attempt applies, checked here too and BEFORE any
-  // write. Enforcing it only at submit time would let someone with no seat pull
-  // the live question set out of this endpoint and simply never submit.
-  const seatAccess = await fetchSeatAccess(admin, userId, firmId)
-  if (!hasTrainingAccess(seatAccess)) {
-    return NextResponse.json({ error: 'You are not enrolled in this training.' }, { status: 403 })
+  // ── Certificate eligibility ──────────────────────────────────────────────
+  // Course material is open to every firm member. The certification exam is
+  // not: it is for paid staff, not attorneys. Check before exposing the live
+  // question set or writing a quiz session.
+  const member = await fetchCertifiableMember(admin, userId, firmId)
+  if (!isCertifiableMember(member)) {
+    return NextResponse.json(
+      { error: 'Training is available to you, but you are not eligible for a certificate.' },
+      { status: 403 }
+    )
   }
 
   const result = await startQuizSession(admin, { userId, firmId, courseId })

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { hasTrainingAccess } from '@/lib/seats'
+import { isCertifiableMember } from '@/lib/seats'
 import { AdminDashboard } from './_components/admin-dashboard'
 import type { TrainingStatus } from './_components/team-table'
 
@@ -33,12 +33,19 @@ export default async function DashboardPage() {
 
   const admin = createAdminClient()
 
+  // The intake reads that used to sit here moved UP to app/dashboard/layout.tsx
+  // on 2026-08-27, along with the banner they fed: it is a chip in the nav pill
+  // now, and the pill is rendered by the layout. Katy's 2026-08-26 12:11
+  // reversal is unchanged — the answer still drives a prompt, never a redirect.
+  // See lib/intake/gate.ts.
   const [firmRes, seatsRes, membersRes] = await Promise.all([
     admin.from('firms').select('name, max_seats, status, tier, current_period_end').eq('id', firmId).single(),
     admin.from('seats').select('used_seats, max_seats').eq('firm_id', firmId).single(),
     admin
       .from('firm_members')
-      .select('id, user_id, role, status, occupies_seat, invited_at, activated_at, invite_email_failed')
+      .select(
+        'id, user_id, role, status, occupies_seat, is_attorney, invited_at, activated_at, invite_email_failed, email_verified_at',
+      )
       .eq('firm_id', firmId)
       .neq('status', 'deleted')
       .neq('status', 'reassigned')
@@ -152,19 +159,29 @@ export default async function DashboardPage() {
 
   memberDetails.sort((a, b) => STATUS_SORT[a.trainingStatus] - STATUS_SORT[b.trainingStatus])
 
-  // Only seat-holders can ever be certified, so only they belong in the
-  // denominator. An admin who declined training at onboarding holds no seat and
-  // is gated out of the course entirely — counting them made 100% unreachable
-  // for that firm, which under the all-or-none accreditation rule (Katy, legal
-  // read 2026-07-30) would mean it could never be accredited at all.
-  //
-  // hasTrainingAccess is the same predicate the seat trigger (0015) and the
-  // training gate use. Reused, not re-derived: a third copy of this rule
-  // drifting out of sync is exactly how the original seat double-count happened.
-  const certifiableMembers = memberDetails.filter(hasTrainingAccess)
+  // Training is open to every firm member. The compliance denominator is the
+  // smaller group that can receive certificates: active/invited paid staff, not
+  // attorneys. Reuse the API's predicate instead of re-deriving it here.
+  const certifiableMembers = memberDetails.filter(isCertifiableMember)
   const certifiedCount = certifiableMembers.filter(m => m.trainingStatus === 'passed').length
   const totalCount = certifiableMembers.length
-  const complianceScore = totalCount > 0 ? Math.round((certifiedCount / totalCount) * 100) : 0
+  // Was Math.round, which let 199/200 render as "100%" — and 100 is the one
+  // number on this card that is a claim rather than a measurement (it drives the
+  // gold state and the "Fully certified" band). Floor instead, so 100 is
+  // reachable only by certifiedCount === totalCount, stated explicitly here
+  // rather than left to depend on floor's behaviour.
+  //
+  // The floor has the mirror problem at the bottom — 1/101 floors to 0 and would
+  // read "Not started" with somebody already certified — so 0 is guarded the
+  // same way: it means nobody, and anything above nobody is at least 1%.
+  const complianceScore =
+    totalCount === 0
+      ? 0
+      : certifiedCount === totalCount
+        ? 100
+        : certifiedCount === 0
+          ? 0
+          : Math.max(1, Math.floor((certifiedCount / totalCount) * 100))
 
   const seatsUsed = seats?.used_seats ?? 0
   const seatsTotal = seats?.max_seats ?? firm?.max_seats ?? 0

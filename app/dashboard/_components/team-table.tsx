@@ -12,10 +12,10 @@ export interface MemberDetail {
   user_id: string
   role: string
   status: string
-  /** Holds a paid seat (0015). With role+status this is the full seat predicate
-   *  in lib/seats — CertificationForecast filters on it so members who cannot be
-   *  certified stay out of its denominator while still appearing in the table. */
+  /** Holds a paid seat (0015). This is billing only; certification also excludes
+   * attorneys, via isCertifiableMember in lib/seats. */
   occupies_seat: boolean
+  is_attorney: boolean
   email: string
   name: string
   trainingStatus: TrainingStatus
@@ -27,6 +27,10 @@ export interface MemberDetail {
   certExpiresAt: string | null
   /** Their invite email failed to send (0016). Cleared by a successful resend. */
   invite_email_failed: boolean
+  /** Deliverability PROVEN (0029). Null means unproven, never "bad" — see the
+   *  migration. Read with invite_email_failed by needsEmailAttention, which
+   *  feeds the deliverability chip in the nav pill (see setup-notices.tsx). */
+  email_verified_at: string | null
 }
 
 // 'rate_limited' is deliberately distinct from 'error'. A nudge blocked by the
@@ -202,15 +206,20 @@ const EM_DASH = 'text-[#C7CDD3] dark:text-[#3A4048]'
 const ROW_ACTION =
   'whitespace-nowrap rounded-lg border border-[#E5EEF5] px-2.5 py-1 text-sm font-semibold text-[#3D3D3D] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[var(--brand-primary)] dark:hover:text-[var(--brand-primary)]'
 
-// Per-column row actions: compact bordered icon buttons, one column each
-// (Remind / Reassign / Delete). The column headers carry the label, so the
-// buttons stay icon-only and the table doesn't balloon. Colours keep the
-// established coding: remind orange, reassign blue, delete red.
+// Per-column row actions: bare icon buttons, one column each (Remind /
+// Reassign / Delete). The column headers carry the label, so the buttons stay
+// icon-only and the table doesn't balloon. Colours keep the established coding:
+// remind orange, reassign blue, delete red.
+//
+// The contour and hover fill were removed (Max) — only the glyph is left. The
+// h-8 w-8 box stays: it is the pointer/tap target, not decoration, and with no
+// border left the focus-visible ring is the only thing that marks keyboard
+// focus, so it is explicit rather than left to the UA default.
 const ICON_ACTION =
-  'inline-flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:opacity-40'
-const ICON_ACTION_REMIND = `${ICON_ACTION} border-[#FF6600]/35 text-[#FF6600] hover:bg-[#FF6600]/10 dark:border-[#FF6600]/45`
-const ICON_ACTION_REASSIGN = `${ICON_ACTION} border-[var(--brand-emphasis)]/35 text-[var(--brand-emphasis)] hover:bg-[#EAF8FF] dark:border-[var(--brand-emphasis)]/45 dark:hover:bg-[var(--brand-emphasis)]/10`
-const ICON_ACTION_DANGER = `${ICON_ACTION} border-[#DC2626]/35 text-[#DC2626] hover:bg-[#DC2626]/10 dark:border-[#DC2626]/45`
+  'inline-flex h-8 w-8 items-center justify-center rounded-lg transition-opacity hover:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-1 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-40 dark:focus-visible:ring-offset-[#0D0F12]'
+const ICON_ACTION_REMIND = `${ICON_ACTION} text-[#FF6600]`
+const ICON_ACTION_REASSIGN = `${ICON_ACTION} text-[var(--brand-emphasis)] dark:text-[var(--brand-primary)]`
+const ICON_ACTION_DANGER = `${ICON_ACTION} text-[#DC2626] dark:text-[#F87171]`
 
 // Window the member list so the block can't grow unbounded and break the
 // six-block grid. Panels paginate past this many members; below it, nothing

@@ -2,7 +2,7 @@ import { after } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { fetchSeatAccess, hasTrainingAccess } from '@/lib/seats'
+import { fetchCertifiableMember, isCertifiableMember } from '@/lib/seats'
 import { recordQuizAttempt, type SubmittedAnswer } from '@/lib/training/assessment'
 
 /**
@@ -75,15 +75,14 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient()
 
-  // ── Seat entitlement ─────────────────────────────────────────────────────
-  // The certifying path. Being signed in with a firm_id is not enough — without
-  // this, an admin who declined training (and so occupies no seat) could pass the
-  // quiz and have a real certificate issued against a seat nobody paid for.
-  // Checked before any write, so a refusal leaves no enrollment behind.
-  const seatAccess = await fetchSeatAccess(admin, userId, firmId)
-  if (!hasTrainingAccess(seatAccess)) {
+  // ── Certificate eligibility ──────────────────────────────────────────────
+  // Training itself is open. The certificate path is not: it requires a paid,
+  // active/invited staff member and explicitly excludes attorneys. Check before
+  // any write; recordQuizAttempt repeats the queue guard for direct callers.
+  const member = await fetchCertifiableMember(admin, userId, firmId)
+  if (!isCertifiableMember(member)) {
     return NextResponse.json(
-      { error: 'You are not enrolled in this training.' },
+      { error: 'Training is available to you, but you are not eligible for a certificate.' },
       { status: 403 }
     )
   }

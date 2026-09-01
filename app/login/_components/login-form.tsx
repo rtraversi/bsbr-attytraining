@@ -63,7 +63,7 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
-          className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
+          className="rounded-full border border-zinc-200 bg-zinc-50 px-5 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
         />
       </div>
 
@@ -81,14 +81,14 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3.5 pr-12 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
+            className="w-full rounded-full border border-zinc-200 bg-zinc-50 px-5 py-3.5 pr-14 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             aria-pressed={showPassword}
-            className="absolute inset-y-0 right-0 flex items-center pr-4 text-zinc-500 transition-opacity hover:opacity-70"
+            className="absolute inset-y-0 right-0 flex items-center pr-5 text-zinc-500 transition-opacity hover:opacity-70"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -112,8 +112,9 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
             aria-hidden
             className="h-6 w-6"
           />
-          {/* Pill checkbox — outline stadium that fills with liquid blue from the
-              bottom on check (scaleY from origin-bottom, clipped by overflow-hidden). */}
+          {/* Square checkbox — outlined 20px box with a ~6px radius that fills with
+              liquid blue from the bottom on check (scaleY from origin-bottom, clipped
+              by overflow-hidden). Was a stadium pill; only the shape changed. */}
           <button
             type="button"
             role="checkbox"
@@ -121,7 +122,7 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
             aria-label="Remember you for 30 days"
             onClick={() => setRememberMe((v) => !v)}
             disabled={loading}
-            className="relative inline-flex h-5 w-10 shrink-0 cursor-pointer overflow-hidden rounded-full border border-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50"
+            className="relative inline-flex h-5 w-5 shrink-0 cursor-pointer overflow-hidden rounded-md border border-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50"
           >
             <span
               aria-hidden

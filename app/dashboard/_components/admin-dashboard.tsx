@@ -5,15 +5,15 @@ import { TeamProvider, ManageTeamPanel, type MemberDetail } from './team-table'
 import { ComplianceScore } from './compliance-score'
 import { CertificationForecast } from './certification-forecast'
 import { ResendInviteAction } from './resend-invite-modal'
-import { OutOfSeatsNotice } from './out-of-seats-notice'
 
 const CARD = 'rounded-3xl bg-white p-6 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
 const HEADING = 'font-headline text-2xl md:text-3xl font-bold text-[#0A0A0A] dark:text-[#F5F7FA]'
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 const LABEL = `text-xs font-bold uppercase tracking-wide ${MUTED}`
 
-// Light card tile with a coloured icon chip. Single source of truth so the
-// resend-invite tile (which takes this as a prop) matches for free.
+// Light card tile holding a bare icon — the coloured chip behind the icon was
+// removed (Max) so only the glyph carries the colour. Single source of truth so
+// the resend-invite tile (which takes this as a prop) matches for free.
 // justify-center matters at lg+, where the tiles stretch to fill the viewport-
 // proportional row instead of leaving dead space under a natural-height grid.
 const QUICK_ACTION_TILE =
@@ -37,6 +37,11 @@ export interface AdminDashboardProps {
   isGracePeriod: boolean
   isLapsed: boolean
 }
+
+// Setup state (intake outstanding, unconfirmed addresses) is NOT a prop here any
+// more. Both were full-width banners above this grid until 2026-08-27 and are now
+// chips in the nav pill, which the dashboard LAYOUT renders — so the layout reads
+// them. See app/dashboard/layout.tsx and setup-notices.tsx.
 
 /**
  * The six-block admin dashboard. Pure presentation — all data is resolved by
@@ -76,6 +81,13 @@ export function AdminDashboard({
         19:26 weights row 2 (Certified/Invitations/Forecast get the height the
         full-bleed shell freed up — Max's call); tune the two numbers here.
         Mobile keeps normal single-column page-scroll (all of this is lg:-only).
+      */}
+      {/*
+        lg:h-full, not lg:flex-1 — the grid is a direct child of the shell's
+        content wrapper again now that the notice column above it is gone, and
+        that wrapper is not a flex container. It takes the wrapper's own
+        lg:flex-1 lg:min-h-0 height directly, which is exactly the layout that
+        existed before the banners were added.
       */}
       <div className="grid grid-cols-12 gap-4 lg:h-full lg:grid-rows-[minmax(0,19fr)_minmax(0,26fr)]">
         {/* ── Quick actions ─────────────────────────────────────────────────── */}
@@ -125,11 +137,24 @@ export function AdminDashboard({
                 centering falls back to start-aligned, and overflow-y-auto keeps
                 the excess inside the card. */}
             <section className={`flex flex-col ${CARD}`}>
-              <h2 className={`${HEADING} mb-3`}>Invitations</h2>
-              <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:justify-center-safe lg:overflow-y-auto">
+              <h2 className={`${HEADING} mb-2`}>Invitations</h2>
+              {/*
+                🔴 THREE CONTROLS, NOTHING ELSE (Max, 2026-08-27). The card had
+                the field, an attorney checkbox, two buttons, a CSV format hint
+                and an out-of-seats disclosure "clunked in there". Both
+                explanations now live in dialogs opened by the buttons they
+                belong to — invite-form.tsx and csv-upload-form.tsx — which is
+                where there is room to say what they mean.
+
+                OutOfSeatsNotice went with them: its text is in the invite
+                dialog, on the staff option, at the moment somebody is choosing
+                it. That is strictly better placement than a disclosure on a
+                card, and it is why the component itself is deleted rather than
+                merely unrendered.
+              */}
+              <div className="flex flex-col gap-1.5 lg:min-h-0 lg:flex-1 lg:justify-center-safe lg:overflow-y-auto">
                 <InviteForm seatsRemaining={seatsRemaining} />
                 <CsvUploadForm seatsRemaining={seatsRemaining} />
-                {seatsRemaining <= 0 && <OutOfSeatsNotice />}
               </div>
             </section>
           </div>
@@ -191,7 +216,7 @@ export function AdminDashboard({
               </div>
               <a
                 href="/api/portal"
-                className="shrink-0 rounded-xl bg-black px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-gray-800 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
+                className="shrink-0 rounded-full bg-black px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-gray-800 dark:bg-[#F5F7FA] dark:text-[#0A0A0A] dark:hover:bg-white"
               >
                 Manage billing
               </a>
@@ -228,7 +253,7 @@ function QuickAction({
 
   const inner = (
     <>
-      <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EAF8FF] text-[var(--brand-emphasis)] dark:bg-[var(--brand-emphasis)]/15 dark:text-[var(--brand-primary)]">
+      <span className="flex items-center justify-center text-[var(--brand-emphasis)] dark:text-[var(--brand-primary)]">
         <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
           {children}
         </svg>

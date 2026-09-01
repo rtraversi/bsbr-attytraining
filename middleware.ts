@@ -68,8 +68,23 @@ export async function middleware(request: NextRequest) {
 
   const path = request.nextUrl.pathname
 
-  // Protected routes — redirect unauthenticated users to login
-  const isProtected = path.startsWith('/dashboard') || path.startsWith('/update-password')
+  // Protected routes — redirect unauthenticated users to login.
+  // /intake is here as well as checking its own claims: the page redirects an
+  // employee to /dashboard, but an anonymous visitor should never reach a
+  // server component that resolves a firm at all.
+  //
+  // ⚠️ There is deliberately NO intake gate here any more. Batch 4 put one in
+  // this file — a per-request query that redirected an admin with no submitted
+  // intake to /intake. Katy reversed the decision behind it on 2026-08-26 12:11:
+  // "The problem is that the intake is time consuming. People will want to
+  // explore without having to fill it all in." Nothing redirects now, so nothing
+  // here should pay a database round-trip on every request to find out. The same
+  // question is asked once, in app/dashboard/page.tsx, where the answer drives a
+  // notice instead. See lib/intake/gate.ts.
+  const isProtected =
+    path.startsWith('/dashboard') ||
+    path.startsWith('/update-password') ||
+    path.startsWith('/intake')
   if (isProtected && !user) {
     const loginUrl = new URL('/login', request.url)
     return NextResponse.redirect(loginUrl)
