@@ -5,9 +5,16 @@
 // Run:  node scripts/render-policy.mjs minimal
 //       node scripts/render-policy.mjs            (renders every fixture)
 //
-// Writes to out/, which is already gitignored. These are a PREVIEW, not a
-// deliverable and not an artifact anyone should commit — the deliverable is a
-// .docx (D8) and it does not exist yet.
+// Writes to out/, which is already gitignored. FOUR files per fixture: the
+// policy and the action item list (D2), each as .md and as .docx.
+//
+// ── Two formats, two audiences ──────────────────────────────────────────────
+// The .docx is the DELIVERABLE (D8-5, Katy: never a static PDF — the firm has
+// to be able to edit it, or hand it to their own AI for more customisation).
+// The .md is the REVIEW COPY: it diffs, it pastes into a message, and it is
+// what makes a change to lib/policy legible without opening Word. Neither is
+// derived from the other — both come straight from assemble(), so the Markdown
+// cannot drift into a second account of what the firm receives.
 //
 // ── Why this exists ─────────────────────────────────────────────────────────
 // The assembler is covered by 371 tests, and every one of them asserts about a
@@ -86,6 +93,7 @@ registerHooks({
 })
 
 const { assemble } = await import('@/lib/policy/assemble')
+const { policyDocuments } = await import('@/lib/policy/docx')
 const { FIXTURES, FIXTURE_NAMES } = await import('@/lib/policy/fixtures')
 
 // ---------------------------------------------------------------------------
@@ -219,6 +227,8 @@ mkdirSync(OUT_DIR, { recursive: true })
 
 for (const name of names) {
   const result = assemble(FIXTURES[name])
+  const firmName = FIXTURES[name].firm_name ?? '(no firm name answered)'
+  const pad = ' '.repeat(name.length + 1)
 
   const policy = renderPolicy(name, result)
   const policyPath = join(OUT_DIR, `policy-${name}.md`)
@@ -228,12 +238,21 @@ for (const name of names) {
   const actionsPath = join(OUT_DIR, `policy-${name}-action-items.md`)
   writeFileSync(actionsPath, actions.markdown, 'utf8')
 
+  // The deliverables. Two documents, never merged — D2, and the same split the
+  // Markdown above makes, from the same assemble() call.
+  const documents = policyDocuments(result, firmName)
+  const policyDocxPath = join(OUT_DIR, `policy-${name}.docx`)
+  const actionsDocxPath = join(OUT_DIR, `policy-${name}-action-items.docx`)
+  writeFileSync(policyDocxPath, documents.policy)
+  writeFileSync(actionsDocxPath, documents.actionItems)
+
   console.log(
     `${name}: ${relative(ROOT, policyPath)} — ${policy.sectionCount} sections, ` +
       `${policy.verbatim} verbatim, ${policy.todo} TODO`,
   )
+  console.log(`${pad} ${relative(ROOT, policyDocxPath)} — ${documents.policy.length} bytes`)
   console.log(
-    `${' '.repeat(name.length + 1)} ${relative(ROOT, actionsPath)} — ` +
-      `${result.actionItems.length} action items`,
+    `${pad} ${relative(ROOT, actionsPath)} — ${result.actionItems.length} action items`,
   )
+  console.log(`${pad} ${relative(ROOT, actionsDocxPath)} — ${documents.actionItems.length} bytes`)
 }
