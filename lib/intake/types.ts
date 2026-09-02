@@ -136,6 +136,7 @@ export type QuestionType =
   | 'single'     // one of `options`
   | 'multi'      // any of `options`
   | 'states'     // US_STATES, plus any extras in `options`
+  | 'languages'  // LANGUAGES, plus any extras in `options`. Same shape as `states`.
   | 'roster'     // RosterRow[] — one screen, not one question per person
   | 'tool-grid'  // ToolGridRow[] — rows derived from the ai_tools answer
   | 'upload'     // UploadRef
@@ -360,3 +361,17 @@ export interface Question {
   /** Absent means always visible. */
   showIf?: Condition
 }
+
+/**
+ * Answers the platform fills in for the firm, rather than the firm giving them.
+ *
+ * Today: firm_name, seeded from firms.name (captured at onboarding, held by the
+ * middleware gate). It is written as a REAL answer row — see seedAutoAnswers —
+ * so isComplete/missingRequired count it and Send is not blocked on retyping a
+ * name the firm already gave.
+ *
+ * The set exists because the first-run walkthrough must still render for a
+ * session whose only answer is one of these. A firm that has typed nothing has
+ * not "been here before" just because we wrote a row on their behalf.
+ */
+export const AUTO_SEEDED_KEYS: ReadonlySet<string> = new Set(['firm_name'])

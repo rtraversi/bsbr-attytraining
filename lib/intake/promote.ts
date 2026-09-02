@@ -57,6 +57,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { AnswerMap, RosterRow } from './types'
+import { normalizeFirmName } from '@/lib/firm-name'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
@@ -81,18 +82,30 @@ export interface PromoteResult {
 /**
  * firm_name → firms.name.
  *
- * The firm row has carried the literal placeholder 'My Firm' since the Stripe
- * webhook created it (app/api/webhooks/stripe/route.ts). This is the first
- * moment the platform learns what the firm is actually called — the name is
- * question one of the intake and stays there, because Katy would not have it
- * moved out (2026-08-25 11:04).
+ * The Stripe webhook creates the firm row with an EMPTY name, not a
+ * human-looking placeholder: a real buyer used to spend the whole intake being
+ * told we were writing "My Firm"'s policy, because this function was the only
+ * thing that ever corrected it and it did not run until submit (Max,
+ * 2026-09-02). Empty holds, and every surface that shows a name is now the one
+ * deciding what to show instead of inheriting a fake one.
+ *
+ * This is still the promote-time write. It is no longer the FIRST write —
+ * app/api/intake/answer/route.ts calls this the moment question one saves, so
+ * the name lands in real time. Both callers are kept deliberately: the
+ * arrival-time call is what a firm sees, and this one is the backstop for a
+ * firm that reaches submit without having gone through that path.
+ *
+ * Idempotent by construction — renaming a firm to the name it already has.
  */
-async function promoteFirmName(
+export async function promoteFirmName(
   admin: AdminClient,
   firmId: string,
   answers: AnswerMap,
 ): Promise<string | null> {
-  const name = typeof answers['firm_name'] === 'string' ? answers['firm_name'].trim() : ''
+  // normalizeFirmName, not a local trim: /onboarding, the middleware gate and
+  // this path all write firms.name, and three ideas of "empty" is how a
+  // whitespace-only name gets past one writer and renders blank everywhere.
+  const name = normalizeFirmName(answers['firm_name'])
   if (!name) return null
 
   await admin.from('firms').update({ name }).eq('id', firmId)
