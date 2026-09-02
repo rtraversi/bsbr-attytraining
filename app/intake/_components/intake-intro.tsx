@@ -35,50 +35,36 @@ import { BTN_GHOST, BTN_PRIMARY, CARD, LINE, MUTED } from './intake-styles'
  * step with the session it describes. The session already knows.
  */
 export function IntakeIntro({
-  firmName,
   questionCount,
-  sectionCount,
   onStart,
 }: {
-  firmName: string | null
-  /** Visible questions at zero answers. Branching moves it, hence "about". */
+  /** Visible questions at zero answers. Branching moves it, hence "around". */
   questionCount: number
-  sectionCount: number
   onStart: () => void
 }) {
   return (
     <div className={CARD}>
-      <p className={`text-[11px] font-bold uppercase tracking-wide ${MUTED}`}>
+      <p className={`text-[12px] font-bold tracking-normal ${MUTED}`}>
         What happens next
       </p>
 
-      <h2 className="mt-3 text-[1.35rem] font-semibold leading-tight tracking-tight">
-        {firmName
-          ? `We are writing ${firmName}’s AI policy.`
-          : 'We are writing your firm’s AI use policy.'}
-      </h2>
-
       {/*
-        The three steps are the JOURNEY, not a feature list, and each one is
-        something that actually happens today. Nothing here promises the invite
-        action that does not exist yet — the roster inside the intake is what
-        sets staff up, and that is what step three says.
+        Two steps, not three. Max dropped the staff/training step deliberately
+        on 2026-09-02 — this screen is about the policy, and the roster inside
+        the intake is where staff actually get set up.
+
+        Copy on this screen is Max's, verbatim. Do not "improve" it.
       */}
       <ol className={`mt-6 divide-y ${LINE} border-y ${LINE}`}>
         <Step
           n={1}
           title="You answer these questions"
-          body={`About ${questionCount} questions across ${sectionCount} short sections — the tools your firm uses, what you want allowed, and who works there. It saves as you go, so you can stop at any point and come back to the question you left.`}
+          body={`Around ${questionCount} questions about the tools your firm uses, what you want allowed, and who works there. It saves as you go, so you can stop at any point and come back to the question you left.`}
         />
         <Step
           n={2}
-          title="An attorney assembles and reviews your policy"
-          body="Your written AI use policy is assembled from these answers and reviewed by an attorney before it reaches you. We email you when it is ready. Nothing is published in the meantime."
-        />
-        <Step
-          n={3}
-          title="Your staff are held to it"
-          body="Everyone you list on the roster here is set up for the training, which exists to keep them aligned to this policy. Their certificates are the evidence that they are."
+          title="Our team assembles and reviews your policy"
+          body="Your written AI use policy is assembled from these answers. We email you when it is ready."
         />
       </ol>
 
@@ -97,8 +83,7 @@ export function IntakeIntro({
       </div>
 
       <p className={`mt-4 text-[12.5px] ${MUTED}`}>
-        Nothing here is a deadline. You can leave whenever you like and finish it later — the
-        prompt in the top bar brings you straight back.
+        You can leave whenever you like and finish it later.
       </p>
     </div>
   )

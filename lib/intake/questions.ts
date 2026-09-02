@@ -213,8 +213,8 @@ const REGIME_OPTIONS: QuestionOption[] = [
 // produces noise: two firms would read "over 500 documents" differently and
 // Katy would have to ask both what they meant.
 const DOC_REVIEW_SCALE_OPTIONS: QuestionOption[] = [
-  { value: 'occasional', label: 'Occasional — a few matters a year' },
-  { value: 'regular', label: 'Regular — most matters' },
+  { value: 'occasional', label: 'Occasional: a few matters a year' },
+  { value: 'regular', label: 'Regular: most matters' },
   { value: 'ediscovery', label: 'Large-scale e-discovery' },
 ]
 
@@ -254,9 +254,9 @@ const YES_NO_NOT_SURE: QuestionOption[] = [
 //   - `none` is the escape, and it is in EXCLUSIVE_OPTION_VALUES, so ticking it
 //     clears the rest.
 const DRAFTING_USE_OPTIONS: QuestionOption[] = [
-  { value: 'form', label: 'Routine or form documents — emails, cover letters, notices' },
-  { value: 'substantive', label: 'Substantive content — complaints, motions, briefs, contracts' },
-  { value: 'boilerplate', label: 'Boilerplate — deeds, trusts, standard agreements' },
+  { value: 'form', label: 'Routine or form documents: emails, cover letters, notices' },
+  { value: 'substantive', label: 'Substantive content: complaints, motions, briefs, contracts' },
+  { value: 'boilerplate', label: 'Boilerplate: deeds, trusts, standard agreements' },
   { value: NONE_VALUE_LITERAL, label: 'None' },
 ]
 
@@ -359,7 +359,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'firm',
     module: null,
     prompt: 'What is the name of the firm to be accredited?',
-    help: 'This is the name that appears on the policy and on every certificate.',
     type: 'text',
     required: true,
   },
@@ -371,6 +370,10 @@ export const QUESTIONS: readonly Question[] = [
     section: 'firm',
     module: '0',
     prompt: 'Everyone at the firm: name, email, and whether they are an attorney.',
+    // Kept in the 2026-09-02 help-text purge, deliberately. It is not editorial:
+    // the name typed here is what gets printed on a permanent certificate, so
+    // this is a formatting instruction that changes the answer (Max: "restore
+    // ok thats why i said only necessary ones").
     help: 'Write each name exactly as it should appear on that person’s certification. Non-attorney staff take the training; everyone signs the attestation.',
     type: 'roster',
     required: true,
@@ -420,7 +423,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'tools',
     module: 'A',
     prompt: 'Which AI tools does the firm use, or want to use?',
-    help: 'Tick everything, even if you would not call it AI.',
     type: 'multi',
     options: AI_TOOL_OPTIONS,
     allowOther: true,
@@ -433,7 +435,7 @@ export const QUESTIONS: readonly Question[] = [
     prompt: 'For each tool, is there a signed agreement that the vendor will not train on your data?',
     // Says why the tier question is gone, at the point somebody would expect to
     // be asked it. The agreement is the fact; the tier was a guess at the fact.
-    help: 'The agreement decides this, not the price tier — a consumer plan with a signed addendum counts, and an enterprise plan without one does not.',
+    help: 'The agreement decides this, not the price tier. A consumer plan with a signed addendum counts, and an enterprise plan without one does not.',
     type: 'tool-grid',
     required: true,
     // Two conditions, not one. "Answered" alone would show an empty grid to a
@@ -509,7 +511,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'drafting',
     module: 'D',
     prompt: 'What does the firm use AI to draft?',
-    help: 'Tick everything that applies. Each one is handled separately in the policy.',
     type: 'multi',
     options: DRAFTING_USE_OPTIONS,
     required: true,
@@ -549,7 +550,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'drafting',
     module: 'D',
     prompt: 'Which languages?',
-    help: 'Output in each of these has to be reviewed by someone fluent in it, so the policy names them.',
     type: 'text',
     required: true,
     showIf: { key: 'drafting_foreign_language', is: 'yes' },
@@ -570,7 +570,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'courts',
     module: 'D',
     prompt: 'What courts or agencies does the firm file with regularly?',
-    help: 'This drives the reminder that local rules — content, margins, font, filing requirements — are the attorney’s to verify, never the software’s.',
     type: 'text',
     required: false,
   },
@@ -634,7 +633,7 @@ export const QUESTIONS: readonly Question[] = [
     section: 'data',
     module: 'I',
     prompt: 'If an AI vendor disclosed a breach involving client information, does the firm have a notification protocol?',
-    help: 'Who gets told, and in what order — client, malpractice carrier, state bar.',
+    help: 'Who gets told, and in what order: client, malpractice carrier, state bar.',
     type: 'yesno',
     required: true,
   },
@@ -647,7 +646,7 @@ export const QUESTIONS: readonly Question[] = [
     section: 'data',
     module: 'I',
     prompt: 'Who at the firm receives vendor security notices?',
-    help: 'A role is enough — “managing partner”, “office administrator”.',
+    help: 'A role is enough: “managing partner”, “office administrator”.',
     type: 'text',
     required: true,
   },
@@ -715,7 +714,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'records',
     module: 'U',
     prompt: 'For how long, and on what schedule?',
-    help: 'Same as the rest of the file, or on its own schedule — either is a real answer.',
     type: 'longtext',
     required: true,
     showIf: { key: 'retain_prompts', is: 'yes' },
@@ -796,7 +794,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'clients',
     module: 'T',
     prompt: 'How would the firm like that handled?',
-    help: "If the firm has not taken a position yet, say so — that is a real answer and it changes what gets drafted.",
     type: 'longtext',
     required: true,
     showIf: { key: 'client_ai', is: 'yes' },
@@ -838,7 +835,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'staff',
     module: 'F',
     prompt: 'Is the firm considering taking on work it would not take on without AI tools?',
-    help: 'A yes is not a problem. It is a conversation the attorney drafting your policy will want to have.',
     type: 'yesno',
     required: true,
   },
@@ -879,7 +875,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'staff',
     module: 'S',
     prompt: 'How should violations of this policy be handled?',
-    help: "If the firm has not decided yet, say so — prepared text covers it.",
     type: 'longtext',
     required: true,
   },
@@ -930,6 +925,7 @@ export function getQuestion(key: string): Question | undefined {
 export function stateOptionsFor(question: Question): QuestionOption[] {
   return [...US_STATES, ...(question.options ?? [])]
 }
+
 
 
 // ---------------------------------------------------------------------------

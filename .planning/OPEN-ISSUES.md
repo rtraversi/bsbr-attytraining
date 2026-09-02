@@ -294,3 +294,54 @@ Node 24. Harmless today, will not be forever.
   required and effectively invisible. Now 9.23:1 / 5.19:1.
 - `/cookies` and `/mockup` are no longer publicly reachable in production.
 - The `noreply@` justification comments were corrected on 08-04 (`98019d3`).
+
+---
+
+# 🔴 Added 2026-09-02 — the intro screen now promises an email nothing can send
+
+> **This entry is newer than the snapshot above.** Everything from the `# Open Issues — as of
+> 2026-08-05` heading down is frozen. This is not. See the note at the end about where it probably
+> belongs.
+
+**What changed today.** `app/intake/_components/intake-intro.tsx` step 2 now reads, verbatim
+(Max's copy, 2026-09-02):
+
+> Our team assembles and reviews your policy
+> Your written AI use policy is assembled from these answers. **We email you when it is ready.**
+
+That sentence is shown to **every buyer**, on the first screen after payment, on an untouched
+session. It is a promise the product makes at its most credible moment.
+
+**Nothing can send that email.** Two independent locks, both deliberate, neither owned by this
+change:
+
+1. **Resend returns `403 The iurixaccreditation.com domain is not verified.`** All four DNS records
+   were verified present and correct on 2026-08-19 (`resend-domain-verification` TXT, `send.` SPF,
+   `send.` MX, `resend._domainkey` DKIM). The remaining step is a click in the Resend dashboard by
+   whoever holds that account — possibly Max's rather than Rob's. Tracked as `ix-dnszoho`. This has
+   been failing since roughly 2026-08-12 and it takes down invites and certificate delivery too,
+   not just this.
+2. **`POLICY_EMAIL_COPY_APPROVED = false`** at `lib/policy/delivery-email.ts:41`, checked at `:77`,
+   and **pinned false by a test** (`tests/policy-delivery.test.ts:327-330`). This is the more
+   important lock and it exists on purpose: without it, the day someone fixes the DNS every
+   delivery would start emailing firms a message reading `[TODO(copy) — headline]`. The copy is
+   Max's to write.
+
+**So the order is fixed, and it is not the obvious one.** Fixing Resend alone does not make the
+promise true — lock 2 still holds, silently. Writing the copy alone does not make it true either.
+**Both** have to land, and the copy has to land *before* or *with* the DNS fix, never after.
+
+**Why this is being recorded rather than fixed.** Max, 2026-09-02: *"i know. so note it."* The
+copy is deliberate and stays as written. This entry exists so that nobody discovers the gap from a
+customer.
+
+**Not a regression.** The pre-2026-09-02 copy made the same promise (*"We email you when it is
+ready"* was already in step 2). What changed is that the surrounding sentence got shorter, so the
+promise is now more prominent, and the screen it sits on is the one every buyer sees.
+
+> 📌 **This is probably the wrong file.** `OPEN-ISSUES.md` declares itself a frozen 2026-08-05
+> snapshot in its own opening banner and points at `STATE.md` §5 for current blockers, and
+> `STATE.md` §0 declares itself the document that wins. The live home for this is
+> **`STATE.md` §5 → "Engineering, verified in the tree today"**. Recorded here because that is
+> where it was asked for; flagged rather than moved silently. Move it and delete this block if you
+> agree.

@@ -41,7 +41,14 @@ export function IntakeShell({
       <div className={`mx-auto ${measure} px-6 pb-24 pt-10 transition-[max-width] duration-200`}>
         <header className="mb-8 border-b border-[#E5EEF5] pb-6 dark:border-[#1F2429]">
           <h1 className="mb-2 text-[1.9rem] font-semibold leading-tight tracking-tight">
-            {firmName ? `${firmName}’s AI policy` : 'Your firm’s AI policy'}
+            {/*
+              Two states, and the name lands in real time. The h1 sits above
+              every section, so as soon as question one saves — which now writes
+              firms.name through immediately (app/api/intake/answer/route.ts) —
+              the firm sees its own name here. Empty is falsy, which is exactly
+              why the webhook writes '' rather than a placeholder.
+            */}
+            {firmName ? `Let’s write ${firmName}’s policy` : 'Let’s write the policy'}
           </h1>
           {subtitle ? <div className={`max-w-[34rem] text-[14.5px] ${MUTED}`}>{subtitle}</div> : null}
         </header>
