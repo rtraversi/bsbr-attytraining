@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BTN, MUTED, NOTICE } from './intake-styles'
@@ -123,28 +124,53 @@ export function IntakeReview({
         )}
       </p>
 
-      {/* D8-2: offered in BOTH states. A delivered policy used to end this. */}
+      {/*
+        🔴 THE EXPLANATORY PARAGRAPH THAT SAT HERE IS GONE, AND IT WAS A LIE.
+        It said "the attorney is told it changed", in both branches. Nothing
+        notifies anyone: markDelivered writes a row, and the only email in the
+        whole delivery path is pinned shut behind POLICY_EMAIL_COPY_APPROVED
+        (lib/policy/delivery-email.ts:41) on top of Resend's standing 403.
+        Max, 2026-09-02, from a browser: "lies. in fact delete that whole
+        paragraph."
+
+        Do not reinstate any version of it until something actually sends.
+
+        The Reopen button moved out of this row and up beside the first section
+        heading, so it reads as an action ON the answers rather than a footnote
+        under a paragraph.
+      */}
+
+      {/*
+        🔴 THE WAY OUT. This screen had no Link and no href of any kind, so a
+        firm that submitted its intake was stranded on it — Max, 2026-09-02:
+        "user is stuck on this page foreve.r again. never fixed." Same shape as
+        the delivery gap found on 09-01, on the firm's side of it.
+
+        Placed directly under the status line, ABOVE the answers, because the
+        answers are long and a way out at the bottom of a scroll is a way out
+        the stranded firm never finds.
+
+        In the delivered state the policy link leads, because that is the thing
+        they bought and the reason they came back. /dashboard/policy is the
+        route the nav pill already reveals on delivery, so this agrees with the
+        nav rather than inventing a second destination.
+      */}
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <button type="button" className={BTN} onClick={() => void reopen()} disabled={busy}>
-          {busy ? 'Reopening…' : 'Reopen to make changes'}
-        </button>
-        <p className={`max-w-[30rem] text-[13px] leading-relaxed ${MUTED}`}>
-          {/* Says the cost before they press it. An attorney may already be
-              reading these answers, and a firm that changes them without
-              knowing that is the case this whole feature has to handle
-              honestly. */}
-          {state === 'delivered' ? (
-            <>
-              You can change any answer at any time and have your policy rewritten from the new
-              ones. Send it again when you are done — the attorney is told it changed.
-            </>
-          ) : (
-            <>
-              You can change any answer. Send it again when you are done — the attorney is told it
-              changed.
-            </>
-          )}
-        </p>
+        {state === 'delivered' && (
+          <Link href="/dashboard/policy" className={BTN}>
+            Read your policy
+          </Link>
+        )}
+        <Link
+          href="/dashboard"
+          className={
+            state === 'delivered'
+              ? `text-[13.5px] font-semibold text-[var(--brand-emphasis)] underline underline-offset-4`
+              : BTN
+          }
+        >
+          Back to your dashboard
+        </Link>
       </div>
 
       <RetentionNote retention={retention} />
@@ -158,15 +184,45 @@ export function IntakeReview({
       )}
 
       <div className="mt-8 space-y-8">
-        {sections.map((section) => (
+        {sections.map((section, sectionIndex) => (
           <div key={section.section}>
-            <h3 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[var(--brand-emphasis)]">
-              {section.label}
-            </h3>
+            {/* D8-2: reopening is offered in BOTH states. A delivered policy
+                used to be the end of the road.
+
+                It sits on the FIRST section heading and nowhere else — Max:
+                "have the button be on over where it says 'firm'". Baseline-
+                aligned with the heading so the two read as one row rather than
+                a button floating beside a label. */}
+            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+              <h3 className="text-[11px] font-bold uppercase tracking-wide text-[var(--brand-emphasis)]">
+                {section.label}
+              </h3>
+              {sectionIndex === 0 && (
+                <button
+                  type="button"
+                  className={BTN}
+                  onClick={() => void reopen()}
+                  disabled={busy}
+                >
+                  {busy ? 'Reopening…' : 'Reopen to make changes'}
+                </button>
+              )}
+            </div>
             <dl className="space-y-4">
               {section.items.map((item) => (
                 <div key={item.key} className="border-b border-[#E5EEF5] pb-4 last:border-0 dark:border-[#1F2429]">
-                  <dt className={`text-[13px] ${MUTED}`}>{item.prompt}</dt>
+                  {/* The number the firm SAW while answering — carried from the
+                      intake, not counted from this list. Same size, weight and
+                      tracking as the counter under the intake card, so the two
+                      screens read as one thing. Numbers can skip where a
+                      Katy-only question was filtered out; that gap is the
+                      intake's own numbering. See ReviewItem.number. */}
+                  <dt className={`text-[13px] ${MUTED}`}>
+                    <span className="mr-2 text-[12px] font-semibold uppercase tracking-wider tabular-nums">
+                      {item.number}
+                    </span>
+                    {item.prompt}
+                  </dt>
                   <dd className="mt-1 text-[14.5px] font-semibold">
                     {item.answer === null ? (
                       // An optional question they passed on. Shown rather than

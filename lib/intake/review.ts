@@ -24,7 +24,7 @@
 // one failure mode and no warning attached to it.
 // =============================================================================
 
-import { QUESTIONS, getQuestion, stateOptionsFor } from './questions'
+import { QUESTIONS, getQuestion, optionsForQuestion } from './questions'
 import { visibleQuestions, isAnswered, toolGridTools } from './branching'
 import {
   SECTION_LABELS,
@@ -44,6 +44,25 @@ export interface ReviewItem {
   prompt: string
   /** Formatted for display. `null` when the question was asked and skipped. */
   answer: string | null
+  /**
+   * The number the firm SAW on this question in the intake — position within
+   * its section, over the visible questions.
+   *
+   * 🔴 NOT THIS LIST'S OWN INDEX, and the distinction is the whole reason this
+   * field exists. buildReview drops the two `sensitive` questions, so counting
+   * the review's own rows would renumber everything after them and the firm
+   * would be reading back a "7" that was an "8" when they answered it. That is
+   * a small error with an unpleasant shape: the one document whose job is to
+   * say "here is exactly what you told us" quietly disagreeing with the form
+   * that collected it.
+   *
+   * The consequence is that the review's numbers can have GAPS where a
+   * sensitive question was. That is correct — it is the intake's numbering,
+   * faithfully carried.
+   */
+  number: number
+  /** Visible questions in the whole intake — the denominator the firm saw. */
+  totalQuestions: number
 }
 
 export interface ReviewSection {
@@ -55,7 +74,7 @@ export interface ReviewSection {
 /** The label for one option value, falling back to the raw value. */
 function optionLabel(question: Question, value: string): string {
   if (isOtherValue(value)) return otherText(value) ?? value
-  const options = question.type === 'states' ? stateOptionsFor(question) : (question.options ?? [])
+  const options = optionsForQuestion(question)
   return options.find((o) => o.value === value)?.label ?? value
 }
 
@@ -87,11 +106,12 @@ export function formatAnswer(question: Question, answers: AnswerMap): string | n
 
     case 'multi':
     case 'states':
+    case 'languages':
       return (value as string[]).map((v) => optionLabel(question, v)).join(' · ')
 
     case 'roster':
       return (value as RosterRow[])
-        .map((r) => `${r.name} — ${r.email} — ${r.isAttorney ? 'Attorney' : 'Staff'}`)
+        .map((r) => `${r.name}, ${r.email}, ${r.isAttorney ? 'Attorney' : 'Staff'}`)
         .join('\n')
 
     case 'tool-grid': {
@@ -105,12 +125,66 @@ export function formatAnswer(question: Question, answers: AnswerMap): string | n
         unknown: 'not known',
       }
       return (value as ToolGridRow[])
-        .map((r) => `${labels.get(r.tool) ?? r.tool} — ${AGREEMENT[r.noTraining ?? ''] ?? '—'}`)
+        .map((r) => `${labels.get(r.tool) ?? r.tool}: ${AGREEMENT[r.noTraining ?? ''] ?? 'Not answered'}`)
         .join('\n')
     }
 
     case 'upload':
       return (value as UploadRef).originalName
+  }
+}
+
+/**
+ * Where a question sits in its SECTION, counted over the questions the firm
+ * actually sees.
+ *
+ * 🔴 ONE IMPLEMENTATION, TWO SCREENS. The intake's own counter and the review's
+ * numbers must agree, and the only way to guarantee that is for both to call
+ * this. app/intake/_components/intake-client.tsx's SectionCounter used to
+ * compute it inline; a second copy is exactly how the form and the read-back
+ * would drift into disagreeing about which question was number 7.
+ *
+ * Per SECTION, never a running total across the intake — "12 of 29" makes a
+ * long form feel long, which is the opposite of what showing one question at a
+ * time is for (see intake-client.tsx's header).
+ *
+ * ⚠️ It counts SENSITIVE questions too, because the firm saw them. buildReview
+ * drops those from what it renders but keeps their numbering, so the review can
+ * skip a number. That gap is the intake's truth, not an off-by-one.
+ */
+/**
+ * Position across the WHOLE intake — the number the firm actually saw.
+ *
+ * This is the big numeral on the intake card, which is `index + 1` over
+ * visibleQuestions() (intake-client.tsx). The review printed the per-SECTION
+ * position until 2026-09-02, so it restarted at 1 in every section while the
+ * intake had been counting 1…31 — two screens numbering the same questions
+ * differently (Max, from a browser: "the count shouldnt be per section, but
+ * exactly like intake").
+ *
+ * ⚠️ Counts SENSITIVE questions, because the firm saw them and they took a
+ * number. buildReview drops those from what it RENDERS but not from the count,
+ * so the review can skip a number. That gap is the intake's own numbering, not
+ * an off-by-one.
+ */
+export function globalPositionOf(
+  question: Question,
+  visible: readonly Question[],
+): { at: number; of: number } {
+  return {
+    at: visible.findIndex((q) => q.key === question.key) + 1,
+    of: visible.length,
+  }
+}
+
+export function sectionPositionOf(
+  question: Question,
+  visible: readonly Question[],
+): { at: number; of: number } {
+  const inSection = visible.filter((q) => q.section === question.section)
+  return {
+    at: inSection.findIndex((q) => q.key === question.key) + 1,
+    of: inSection.length,
   }
 }
 
@@ -127,16 +201,21 @@ export function formatAnswer(question: Question, answers: AnswerMap): string | n
  */
 export function buildReview(answers: AnswerMap): ReviewSection[] {
   const out: ReviewSection[] = []
+  const visible = visibleQuestions(answers)
 
   for (const question of visibleQuestions(answers)) {
     // See the header. This is the only place it is filtered.
     if (question.sensitive) continue
 
     const last = out.at(-1)
+    // The GLOBAL number, matching the intake's big numeral. See globalPositionOf.
+    const position = globalPositionOf(question, visible)
     const item: ReviewItem = {
       key: question.key,
       prompt: question.prompt,
       answer: formatAnswer(question, answers),
+      number: position.at,
+      totalQuestions: position.of,
     }
 
     // Sections are contiguous in QUESTIONS and asserted so at module load, so
