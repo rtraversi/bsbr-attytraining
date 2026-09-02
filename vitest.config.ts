@@ -8,6 +8,19 @@ export default defineConfig({
     jsx: { runtime: 'automatic' },
   },
   test: {
+    // 🔴 A GIT WORKTREE IS NOT PART OF THIS TEST RUN.
+    //
+    // .worktrees/<branch> holds a full checkout of another branch, tests and
+    // all. Without this, `pnpm test` globs those too and reports a number that
+    // is two branches added together — and a stale copy of a test this branch
+    // has since corrected shows up as a failure in work that is actually fine.
+    // That happened on 2026-09-02: 977 tests and 2 phantom failures, from a
+    // parallel session's `em-dash-purge` worktree.
+    // Every suite in this repo lives in tests/. Stating that explicitly is what
+    // actually holds — an exclude alone still let the worktree's files in,
+    // because the default include globs the whole tree.
+    include: ['tests/**/*.test.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/.worktrees/**'],
     // Supabase Auth sign-in + multiple insert round-trips in beforeAll can take
     // several seconds on a cold connection — extend the defaults.
     testTimeout: 15_000,
