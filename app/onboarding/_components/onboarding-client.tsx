@@ -81,6 +81,10 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
   // why an editable field here would bypass every provisioning guard at once.
   const [email, setEmail] = useState('')
   const [seats, setSeats] = useState(1)
+  // Required. The firm row is created with an empty name by the Stripe webhook,
+  // and this is where it stops being empty. Still question one of the intake as
+  // well (Katy, 2026-08-25 11:04) — asked once here, editable there.
+  const [firmName, setFirmName] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
@@ -129,8 +133,17 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
     pollStatus()
   }, [pollStatus])
 
+  // Trim once, use everywhere below. The server re-does this and is the
+  // authority — this only spares a round-trip on the obvious case.
+  const trimmedFirmName = firmName.trim()
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!trimmedFirmName) {
+      setErrorMsg('Enter your firm’s name.')
+      setPhase('error')
+      return
+    }
     if (password !== confirm) {
       setErrorMsg('Passwords do not match.')
       setPhase('error')
@@ -149,7 +162,12 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
         headers: { 'Content-Type': 'application/json' },
         // The email is sent back for the server to CONFIRM against Stripe, not
         // for the buyer to choose. It is read-only in the form above.
-        body: JSON.stringify({ session_id: sessionId, email, password }),
+        body: JSON.stringify({
+          session_id: sessionId,
+          email,
+          password,
+          firm_name: trimmedFirmName,
+        }),
       })
       if (!res.ok) {
         const body = (await res.json()) as { error?: string }
@@ -303,6 +321,32 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
             </p>
           </div>
 
+          {/*
+            Required, and the only editable identity field on this screen — the
+            email above CONFIRMS, this one CHOOSES. It is what the policy and
+            every certificate are made out to, which is why the helper says so.
+          */}
+          <div className="flex flex-col gap-2.5">
+            <label htmlFor="firm-name" className="text-base font-medium text-zinc-900">
+              Firm name
+            </label>
+            <input
+              id="firm-name"
+              type="text"
+              required
+              autoComplete="organization"
+              autoFocus
+              value={firmName}
+              onChange={(e) => setFirmName(e.target.value)}
+              disabled={phase === 'submitting'}
+              placeholder="Chavez Law"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
+            />
+            <p className="text-sm font-extralight text-zinc-500">
+              This is the name on your policy and on every certificate. You can change it later.
+            </p>
+          </div>
+
           <div className="flex flex-col gap-2.5">
             <label htmlFor="password" className="text-base font-medium text-zinc-900">
               Choose a password
@@ -340,7 +384,12 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
 
           <button
             type="submit"
-            disabled={phase === 'submitting' || password.length < 8 || password !== confirm}
+            disabled={
+              phase === 'submitting' ||
+              !trimmedFirmName ||
+              password.length < 8 ||
+              password !== confirm
+            }
             className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand-primary)] px-6 py-4 text-lg font-bold text-white transition-[filter] hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {phase === 'submitting' ? (
