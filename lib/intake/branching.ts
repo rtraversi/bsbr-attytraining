@@ -75,6 +75,7 @@ export function isAnswered(question: Question, answers: AnswerMap): boolean {
 
     case 'multi':
     case 'states':
+    case 'languages':
       return Array.isArray(value) && value.length > 0
 
     case 'roster':

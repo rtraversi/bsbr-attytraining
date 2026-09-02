@@ -100,6 +100,7 @@ const { loadAnswers } = await import('@/lib/intake/session')
 const { markDelivered, pendingDeliveries } = await import('@/lib/policy/delivery')
 const { sendPolicyDeliveredEmail } = await import('@/lib/policy/delivery-email')
 const { actionItemParagraphs, docx, policyParagraphs } = await import('@/lib/policy/docx')
+const { normalizeFirmName } = await import('@/lib/firm-name')
 
 // ── Environment ────────────────────────────────────────────────────────────
 
@@ -211,11 +212,29 @@ async function findSession(sessionId) {
     .eq('id', data.firm_id)
     .maybeSingle()
 
-  return { session: data, firmName: firm?.name ?? '(unknown firm)', ownerId: firm?.owner_id ?? null }
+  // 🔴 The NORMALISED name or null — deliberately NOT a display fallback.
+  //
+  // This used to be `firm?.name ?? '(unknown firm)'`, and `??` does not fire on
+  // an empty string. Since the Stripe webhook began creating firms with
+  // name: '' (2026-09-02), a blank name reached the confirmation prompt as
+  // `Type the firm name to confirm (""):` — and pressing ENTER passed it,
+  // because '' === ''. A bare Enter released a policy.
+  //
+  // Callers decide what a missing name means. deliver() refuses; the read-only
+  // paths may print a placeholder, because printing one cannot release
+  // anything.
+  return {
+    session: data,
+    firmName: normalizeFirmName(firm?.name),
+    ownerId: firm?.owner_id ?? null,
+  }
 }
 
 async function renderTo(sessionId) {
-  const { session, firmName } = await findSession(sessionId)
+  const { session, firmName: storedName } = await findSession(sessionId)
+  // Read-only: this writes files to disk and releases nothing, so a placeholder
+  // is safe here in a way it is not in deliver().
+  const firmName = storedName ?? '(unnamed firm)'
   const result = assemble(await loadAnswers(admin, session.id))
   const blocks = result.policy.sections.flatMap((s) => s.blocks)
   const todo = blocks.filter((b) => b.status === 'todo').length
@@ -256,6 +275,26 @@ async function renderTo(sessionId) {
 
 async function deliver(sessionId) {
   const { session, firmName, ownerId } = await findSession(sessionId)
+
+  // 🔴 REFUSE ON A BLANK NAME. Do not substitute a display string here.
+  //
+  // The confirmation below is "type the firm name", and it is the only thing
+  // standing between this command and an irreversible delivery. With no name
+  // there is nothing to type, so the check degrades to pressing Enter — the
+  // prompt stops being a check at all.
+  //
+  // A blank name is also a real signal in its own right: firms are created with
+  // name: '' and it is filled in at onboarding, so a firm that reached a
+  // submitted intake without one has something wrong with it that wants looking
+  // at before a policy goes out with a nameless title page.
+  if (!firmName) {
+    die(
+      `Firm for session ${sessionId} has no name on ${envName}.\n` +
+        '  Refusing to deliver: the confirmation prompt asks the operator to type the\n' +
+        '  firm name, and there is nothing to type. Set firms.name first.',
+    )
+  }
+
   const result = assemble(await loadAnswers(admin, session.id))
   const todo = result.policy.sections
     .flatMap((s) => s.blocks)

@@ -470,7 +470,20 @@ async function provisionFirm(
   const { data: firm, error: firmError } = await supabase
     .from('firms')
     .insert({
-      name: 'My Firm',            // Updated during onboarding
+      // EMPTY, not a placeholder. firms.name is `text not null` with no CHECK
+      // constraint on it in any migration, so '' is a legal value and this
+      // needs no schema change.
+      //
+      // It used to read 'My Firm', and that name was shown to the buyer: the
+      // intake heading read "We are writing My Firm's AI policy" for the whole
+      // form, because promoteFirmName() in lib/intake/promote.ts was the only
+      // thing that ever corrected it and it did not run until submit. Seeded
+      // firms never showed it because dev-seed-firm.mjs takes the name as an
+      // argument (Max, 2026-09-02).
+      //
+      // The real name arrives at question one of the intake, which now writes
+      // it through immediately (app/api/intake/answer/route.ts).
+      name: '',
       owner_id: userId,
       stripe_customer_id: session.customer as string,
       stripe_subscription_id: sub.id,

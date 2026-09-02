@@ -19,6 +19,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getQuestion } from './questions'
 import type { Json } from '@/types/supabase'
 import type { AnswerMap, AnswerValue } from './types'
+import { normalizeFirmName } from '@/lib/firm-name'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
@@ -205,6 +206,43 @@ export async function loadAnswers(admin: AdminClient, sessionId: string): Promis
  * intake_answers, which firm admins can read — the one thing the split exists
  * to prevent.
  */
+/**
+ * Seed the answers the platform already knows, once, into the open session.
+ *
+ * 🔴 DELIBERATELY DOES NOT touchSession(). current_question staying NULL is what
+ * keeps `resumeAt` null, and resumeAt is half of the untouched test. Every real
+ * answer travels through POST /api/intake/answer, which DOES touch the session —
+ * so "resumeAt is null" reliably means "the firm has saved nothing itself", and
+ * any auto-seeded row present alongside it can only have come from here.
+ *
+ * Returns the answers with the seed applied, and which keys were seeded, so the
+ * caller does not have to re-read.
+ */
+export async function seedAutoAnswers(
+  admin: AdminClient,
+  sessionId: string,
+  answers: AnswerMap,
+  firmName: string | null,
+): Promise<AnswerMap> {
+  // A real saved answer always wins. The firm may have edited the name inside
+  // the intake, and re-seeding firms.name over it would revert their edit on
+  // every page load.
+  if (answers['firm_name'] !== undefined) return answers
+
+  const seed = normalizeFirmName(firmName)
+  if (!seed) return answers
+
+  const { error } = await writeAnswer(admin, sessionId, 'firm_name', seed)
+  if (error) {
+    // Non-fatal. The field still renders, the firm can type it, and the next
+    // page load tries again — better than refusing to show the intake.
+    console.error('[intake] firm_name seed failed:', error)
+    return answers
+  }
+
+  return { ...answers, firm_name: seed }
+}
+
 export async function writeAnswer(
   admin: AdminClient,
   sessionId: string,

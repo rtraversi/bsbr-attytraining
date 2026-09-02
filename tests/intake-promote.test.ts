@@ -83,9 +83,11 @@ async function seedFirm(label: string, ownerEmail: string) {
     await admin
       .from('firms')
       .insert({
-        // The placeholder the Stripe webhook writes. Promote replacing THIS is
+        // What the Stripe webhook actually writes: an EMPTY name, not a
+        // human-looking placeholder (changed 2026-09-02 — 'My Firm' used to be
+        // shown to the buyer for the whole intake). Promote filling THIS in is
         // the thing under test.
-        name: 'My Firm',
+        name: '',
         owner_id: uid,
         tier: 'basic',
         max_seats: PURCHASED_SEATS,
@@ -234,9 +236,9 @@ afterAll(async () => {
 })
 
 describe('promoteIntake', () => {
-  it('renames the firm off its placeholder', async () => {
+  it('fills in the firm name over the empty one the webhook wrote', async () => {
     const before = await admin.from('firms').select('name').eq('id', firmId).single()
-    expect(before.data!.name).toBe('My Firm')
+    expect(before.data!.name).toBe('')
 
     const result = await promoteIntake(admin, firmId, ANSWERS)
     expect(result.skipped).toEqual([])

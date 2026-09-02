@@ -213,8 +213,8 @@ const REGIME_OPTIONS: QuestionOption[] = [
 // produces noise: two firms would read "over 500 documents" differently and
 // Katy would have to ask both what they meant.
 const DOC_REVIEW_SCALE_OPTIONS: QuestionOption[] = [
-  { value: 'occasional', label: 'Occasional — a few matters a year' },
-  { value: 'regular', label: 'Regular — most matters' },
+  { value: 'occasional', label: 'Occasional: a few matters a year' },
+  { value: 'regular', label: 'Regular: most matters' },
   { value: 'ediscovery', label: 'Large-scale e-discovery' },
 ]
 
@@ -254,9 +254,9 @@ const YES_NO_NOT_SURE: QuestionOption[] = [
 //   - `none` is the escape, and it is in EXCLUSIVE_OPTION_VALUES, so ticking it
 //     clears the rest.
 const DRAFTING_USE_OPTIONS: QuestionOption[] = [
-  { value: 'form', label: 'Routine or form documents — emails, cover letters, notices' },
-  { value: 'substantive', label: 'Substantive content — complaints, motions, briefs, contracts' },
-  { value: 'boilerplate', label: 'Boilerplate — deeds, trusts, standard agreements' },
+  { value: 'form', label: 'Routine or form documents: emails, cover letters, notices' },
+  { value: 'substantive', label: 'Substantive content: complaints, motions, briefs, contracts' },
+  { value: 'boilerplate', label: 'Boilerplate: deeds, trusts, standard agreements' },
   { value: NONE_VALUE_LITERAL, label: 'None' },
 ]
 
@@ -359,7 +359,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'firm',
     module: null,
     prompt: 'What is the name of the firm to be accredited?',
-    help: 'This is the name that appears on the policy and on every certificate.',
     type: 'text',
     required: true,
   },
@@ -371,6 +370,10 @@ export const QUESTIONS: readonly Question[] = [
     section: 'firm',
     module: '0',
     prompt: 'Everyone at the firm: name, email, and whether they are an attorney.',
+    // Kept in the 2026-09-02 help-text purge, deliberately. It is not editorial:
+    // the name typed here is what gets printed on a permanent certificate, so
+    // this is a formatting instruction that changes the answer (Max: "restore
+    // ok thats why i said only necessary ones").
     help: 'Write each name exactly as it should appear on that person’s certification. Non-attorney staff take the training; everyone signs the attestation.',
     type: 'roster',
     required: true,
@@ -420,7 +423,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'tools',
     module: 'A',
     prompt: 'Which AI tools does the firm use, or want to use?',
-    help: 'Tick everything, even if you would not call it AI.',
     type: 'multi',
     options: AI_TOOL_OPTIONS,
     allowOther: true,
@@ -433,7 +435,7 @@ export const QUESTIONS: readonly Question[] = [
     prompt: 'For each tool, is there a signed agreement that the vendor will not train on your data?',
     // Says why the tier question is gone, at the point somebody would expect to
     // be asked it. The agreement is the fact; the tier was a guess at the fact.
-    help: 'The agreement decides this, not the price tier — a consumer plan with a signed addendum counts, and an enterprise plan without one does not.',
+    help: 'The agreement decides this, not the price tier. A consumer plan with a signed addendum counts, and an enterprise plan without one does not.',
     type: 'tool-grid',
     required: true,
     // Two conditions, not one. "Answered" alone would show an empty grid to a
@@ -509,7 +511,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'drafting',
     module: 'D',
     prompt: 'What does the firm use AI to draft?',
-    help: 'Tick everything that applies. Each one is handled separately in the policy.',
     type: 'multi',
     options: DRAFTING_USE_OPTIONS,
     required: true,
@@ -549,8 +550,9 @@ export const QUESTIONS: readonly Question[] = [
     section: 'drafting',
     module: 'D',
     prompt: 'Which languages?',
-    help: 'Output in each of these has to be reviewed by someone fluent in it, so the policy names them.',
-    type: 'text',
+    help: 'Start typing to filter. Pick every language the firm produces output in.',
+    // Was `text` until 2026-09-02. See LANGUAGES for why.
+    type: 'languages',
     required: true,
     showIf: { key: 'drafting_foreign_language', is: 'yes' },
   },
@@ -570,7 +572,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'courts',
     module: 'D',
     prompt: 'What courts or agencies does the firm file with regularly?',
-    help: 'This drives the reminder that local rules — content, margins, font, filing requirements — are the attorney’s to verify, never the software’s.',
     type: 'text',
     required: false,
   },
@@ -634,7 +635,7 @@ export const QUESTIONS: readonly Question[] = [
     section: 'data',
     module: 'I',
     prompt: 'If an AI vendor disclosed a breach involving client information, does the firm have a notification protocol?',
-    help: 'Who gets told, and in what order — client, malpractice carrier, state bar.',
+    help: 'Who gets told, and in what order: client, malpractice carrier, state bar.',
     type: 'yesno',
     required: true,
   },
@@ -647,7 +648,7 @@ export const QUESTIONS: readonly Question[] = [
     section: 'data',
     module: 'I',
     prompt: 'Who at the firm receives vendor security notices?',
-    help: 'A role is enough — “managing partner”, “office administrator”.',
+    help: 'A role is enough: “managing partner”, “office administrator”.',
     type: 'text',
     required: true,
   },
@@ -715,7 +716,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'records',
     module: 'U',
     prompt: 'For how long, and on what schedule?',
-    help: 'Same as the rest of the file, or on its own schedule — either is a real answer.',
     type: 'longtext',
     required: true,
     showIf: { key: 'retain_prompts', is: 'yes' },
@@ -796,7 +796,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'clients',
     module: 'T',
     prompt: 'How would the firm like that handled?',
-    help: "If the firm has not taken a position yet, say so — that is a real answer and it changes what gets drafted.",
     type: 'longtext',
     required: true,
     showIf: { key: 'client_ai', is: 'yes' },
@@ -838,7 +837,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'staff',
     module: 'F',
     prompt: 'Is the firm considering taking on work it would not take on without AI tools?',
-    help: 'A yes is not a problem. It is a conversation the attorney drafting your policy will want to have.',
     type: 'yesno',
     required: true,
   },
@@ -879,7 +877,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'staff',
     module: 'S',
     prompt: 'How should violations of this policy be handled?',
-    help: "If the firm has not decided yet, say so — prepared text covers it.",
     type: 'longtext',
     required: true,
   },
@@ -930,6 +927,155 @@ export function getQuestion(key: string): Question | undefined {
 export function stateOptionsFor(question: Question): QuestionOption[] {
   return [...US_STATES, ...(question.options ?? [])]
 }
+
+/**
+ * The languages a firm can name for translation review.
+ *
+ * ── Why a list and not free text ────────────────────────────────────────────
+ *
+ * `foreign_languages` was `type: 'text'` until 2026-09-02. Max, walking the
+ * intake in a browser: "best to have a list and not free text ... bc they can
+ * 100 just type, idk lol, like i am going to do rn." The answer names the
+ * languages in a policy clause, so free text puts whatever someone types into a
+ * legal document.
+ *
+ * ── What is in it ───────────────────────────────────────────────────────────
+ *
+ * 95 entries: the languages with meaningful US speaker counts, ordered by US
+ * prevalence rather than alphabetically, so the ones a firm is most likely to
+ * want are the ones it sees before typing anything. Hardcoded rather than
+ * pulled from a package — it ships to a Worker, it does not change, and a
+ * dependency for 95 strings is not worth the bundle. Same call, and the same
+ * shape, as US_STATES above.
+ *
+ * Values are ISO 639 codes where one exists. They are stored, so DO NOT renumber
+ * or repurpose one: a stored answer would silently become a different language.
+ *
+ * A firm serving a language that is not here uses the "Other" write-in, which
+ * is a deliberate narrow exception rather than the default (Max, 2026-09-02:
+ * "95 fine. other with free text is fine.").
+ */
+export const LANGUAGES: readonly QuestionOption[] = [
+  { value: 'es', label: 'Spanish' },
+  { value: 'zh-cmn', label: 'Chinese, Mandarin' },
+  { value: 'zh-yue', label: 'Chinese, Cantonese' },
+  { value: 'tl', label: 'Tagalog' },
+  { value: 'vi', label: 'Vietnamese' },
+  { value: 'ar', label: 'Arabic' },
+  { value: 'fr', label: 'French' },
+  { value: 'ko', label: 'Korean' },
+  { value: 'ru', label: 'Russian' },
+  { value: 'ht', label: 'Haitian Creole' },
+  { value: 'de', label: 'German' },
+  { value: 'hi', label: 'Hindi' },
+  { value: 'pt', label: 'Portuguese' },
+  { value: 'it', label: 'Italian' },
+  { value: 'pl', label: 'Polish' },
+  { value: 'ur', label: 'Urdu' },
+  { value: 'ja', label: 'Japanese' },
+  { value: 'fa', label: 'Persian (Farsi)' },
+  { value: 'gu', label: 'Gujarati' },
+  { value: 'bn', label: 'Bengali' },
+  { value: 'te', label: 'Telugu' },
+  { value: 'ta', label: 'Tamil' },
+  { value: 'pa', label: 'Punjabi' },
+  { value: 'hy', label: 'Armenian' },
+  { value: 'he', label: 'Hebrew' },
+  { value: 'km', label: 'Khmer' },
+  { value: 'hmn', label: 'Hmong' },
+  { value: 'th', label: 'Thai' },
+  { value: 'lo', label: 'Lao' },
+  { value: 'nv', label: 'Navajo' },
+  { value: 'am', label: 'Amharic' },
+  { value: 'so', label: 'Somali' },
+  { value: 'ne', label: 'Nepali' },
+  { value: 'uk', label: 'Ukrainian' },
+  { value: 'ro', label: 'Romanian' },
+  { value: 'el', label: 'Greek' },
+  { value: 'nl', label: 'Dutch' },
+  { value: 'hu', label: 'Hungarian' },
+  { value: 'cs', label: 'Czech' },
+  { value: 'sk', label: 'Slovak' },
+  { value: 'bg', label: 'Bulgarian' },
+  { value: 'sq', label: 'Albanian' },
+  { value: 'lt', label: 'Lithuanian' },
+  { value: 'tr', label: 'Turkish' },
+  { value: 'sw', label: 'Swahili' },
+  { value: 'ml', label: 'Malayalam' },
+  { value: 'mr', label: 'Marathi' },
+  { value: 'kn', label: 'Kannada' },
+  { value: 'si', label: 'Sinhala' },
+  { value: 'my', label: 'Burmese' },
+  { value: 'id', label: 'Indonesian' },
+  { value: 'ms', label: 'Malay' },
+  { value: 'mn', label: 'Mongolian' },
+  { value: 'ps', label: 'Pashto' },
+  { value: 'prs', label: 'Dari' },
+  { value: 'ku', label: 'Kurdish' },
+  { value: 'uz', label: 'Uzbek' },
+  { value: 'kk', label: 'Kazakh' },
+  { value: 'ka', label: 'Georgian' },
+  { value: 'az', label: 'Azerbaijani' },
+  { value: 'sr', label: 'Serbian' },
+  { value: 'hr', label: 'Croatian' },
+  { value: 'bs', label: 'Bosnian' },
+  { value: 'sv', label: 'Swedish' },
+  { value: 'no', label: 'Norwegian' },
+  { value: 'da', label: 'Danish' },
+  { value: 'fi', label: 'Finnish' },
+  { value: 'yi', label: 'Yiddish' },
+  { value: 'yo', label: 'Yoruba' },
+  { value: 'ig', label: 'Igbo' },
+  { value: 'ha', label: 'Hausa' },
+  { value: 'tw', label: 'Twi' },
+  { value: 'wo', label: 'Wolof' },
+  { value: 'ti', label: 'Tigrinya' },
+  { value: 'om', label: 'Oromo' },
+  { value: 'ff', label: 'Fulani' },
+  { value: 'bm', label: 'Bambara' },
+  { value: 'ln', label: 'Lingala' },
+  { value: 'rw', label: 'Kinyarwanda' },
+  { value: 'kar', label: 'Karen' },
+  { value: 'rhg', label: 'Rohingya' },
+  { value: 'bo', label: 'Tibetan' },
+  { value: 'chk', label: 'Chuukese' },
+  { value: 'mh', label: 'Marshallese' },
+  { value: 'sm', label: 'Samoan' },
+  { value: 'to', label: 'Tongan' },
+  { value: 'ch', label: 'Chamorro' },
+  { value: 'haw', label: 'Hawaiian' },
+  { value: 'ilo', label: 'Ilocano' },
+  { value: 'ceb', label: 'Cebuano' },
+  { value: 'quc', label: 'K\'iche\'' },
+  { value: 'mam', label: 'Mam' },
+  { value: 'qu', label: 'Quechua' },
+  { value: 'mix', label: 'Mixtec' },
+  { value: 'zap', label: 'Zapotec' },
+]
+
+/** The full option list a `languages` question renders: LANGUAGES plus its extras. */
+export function languageOptionsFor(question: Question): QuestionOption[] {
+  return [...LANGUAGES, ...(question.options ?? [])]
+}
+
+/**
+ * The options a question actually renders, whatever its type.
+ *
+ * `states` and `languages` both keep their bulk list in a constant and use
+ * `options` for EXTRAS ONLY, so reading `question.options` directly on either
+ * yields just the extras — every state renders as a bare code, sorted after
+ * "Federal courts". That mistake was already written out three times (the
+ * review formatter, the policy assembler, the field itself) before `languages`
+ * existed, and adding a second such type would have made it six.
+ *
+ * One function, so a third list-backed type is a change in one place.
+ */
+export function optionsForQuestion(question: Question): QuestionOption[] {
+  if (question.type === 'states') return stateOptionsFor(question)
+  if (question.type === 'languages') return languageOptionsFor(question)
+  return question.options ?? []
+}
+
 
 
 // ---------------------------------------------------------------------------

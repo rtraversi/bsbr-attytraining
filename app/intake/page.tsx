@@ -6,6 +6,7 @@ import {
   latestSession,
   loadAnswers,
   seatsPurchased,
+  seedAutoAnswers,
 } from '@/lib/intake/session'
 import { buildReview, intakeStateOf } from '@/lib/intake/review'
 import { retentionOf } from '@/lib/intake/retention'
@@ -87,10 +88,21 @@ export default async function IntakePage() {
 
   // ── Open: the editable intake ────────────────────────────────────────────
   const session = await getOrCreateOpenSession(admin, auth.actor)
-  const [answers, seats] = await Promise.all([
+  const [loaded, seats] = await Promise.all([
     loadAnswers(admin, session.id),
     seatsPurchased(admin, auth.actor.firmId),
   ])
+
+  // 🔴 Question one is seeded as a REAL answer row, not as a display-only prop.
+  //
+  // It was a prop until 2026-09-02, and the bug that produced was reported from
+  // a browser: the field looked filled in, but the value was never in `answers`,
+  // so missingRequired() reported firm_name missing and Send refused until the
+  // firm RETYPED the name it had already given at the gate.
+  //
+  // Persisting it also means the submit route — which reads the database, not
+  // the client's state — sees it.
+  const answers = await seedAutoAnswers(admin, session.id, loaded, firmName)
 
   return (
     <ThemeProvider>

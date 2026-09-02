@@ -6,9 +6,10 @@ import {
   canReopen,
   isSensitiveKey,
   NEVER_SHOWN_TO_FIRM,
+  globalPositionOf,
 } from '@/lib/intake/review'
 import { getQuestion, NOTETAKER_NOT_PERMITTED, NO_DRAFTING } from '@/lib/intake/questions'
-import { missingRequired, reconcileToolGrid } from '@/lib/intake/branching'
+import { missingRequired, reconcileToolGrid, visibleQuestions } from '@/lib/intake/branching'
 import { otherValue, NOT_DECIDED_YET, type AnswerMap, type Question } from '@/lib/intake/types'
 
 /**
@@ -197,7 +198,7 @@ describe('formatting an answer back', () => {
       ],
     }
     expect(formatAnswer(q('roster'), answers)).toBe(
-      'Ada Byron — ada@firm.com — Attorney\nGrace H — grace@firm.com — Staff',
+      'Ada Byron, ada@firm.com, Attorney\nGrace H, grace@firm.com, Staff',
     )
   })
 
@@ -210,7 +211,7 @@ describe('formatting an answer back', () => {
       ],
     }
     expect(formatAnswer(q('tool_grid'), answers)).toBe(
-      'ChatGPT — no-training agreement signed\nPerplexity — not known',
+      'ChatGPT: no-training agreement signed\nPerplexity: not known',
     )
   })
 
@@ -229,6 +230,92 @@ describe('formatting an answer back', () => {
 
   it('answers null for a question that was asked and skipped', () => {
     expect(formatAnswer(q('prohibited_tools'), {})).toBeNull()
+  })
+})
+
+describe('🔴 question numbers carry the intake\'s own position', () => {
+  // Added 2026-09-01: buildReview emitted no number at all, so a firm answered
+  // question "7" and then read it back in an unnumbered list.
+  const answers: AnswerMap = {
+    firm_name: 'Chavez Law',
+    roster: [{ name: 'A', email: 'a@firm.test', isAttorney: true }],
+    jurisdictions: ['NC'],
+    prior_ai_error: 'no',
+    carrier_notified: 'yes',
+  }
+
+  it('numbers run 1..N across the whole intake, not per section', () => {
+    // Max, 2026-09-02, from a browser: "the count shouldnt be per section, but
+    // exactly like intake, have it be sequential, so 1-31 ish."
+    const all = buildReview(answers).flatMap((s) => s.items)
+    expect(all.length).toBeGreaterThan(1)
+    expect(all[0].number).toBe(1)
+
+    // Strictly ascending across section boundaries — the property that fails
+    // the moment anyone restores per-section numbering.
+    for (let i = 1; i < all.length; i += 1) {
+      expect(all[i].number).toBeGreaterThan(all[i - 1].number)
+    }
+
+    // A second section must not restart at 1.
+    const sections = buildReview(answers)
+    expect(sections.length).toBeGreaterThan(1)
+    expect(sections[1].items[0].number).toBeGreaterThan(1)
+
+    for (const item of all) expect(item.number).toBeLessThanOrEqual(item.totalQuestions)
+  })
+
+  it('agrees with the big numeral the intake itself renders', () => {
+    // The two screens must not disagree about which question was number 7.
+    // The intake's numeral is `index + 1` over visibleQuestions
+    // (intake-client.tsx:573); this pins the review to the same arithmetic.
+    const visible = visibleQuestions(answers)
+    for (const section of buildReview(answers)) {
+      for (const item of section.items) {
+        const intakeNumeral = visible.findIndex((q) => q.key === item.key) + 1
+        expect(item.number).toBe(intakeNumeral)
+        expect(item.totalQuestions).toBe(visible.length)
+        expect(globalPositionOf(visible[intakeNumeral - 1], visible)).toEqual({
+          at: item.number,
+          of: item.totalQuestions,
+        })
+      }
+    }
+  })
+
+  it('a filtered sensitive question still consumes its number', () => {
+    // Max: keep the existing behaviour where a sensitive question is dropped
+    // from display but still takes its number, so the sequence can skip.
+    const visible = visibleQuestions(answers)
+    const sensitiveShown = visible.filter((q) => q.sensitive).length
+    const rendered = buildReview(answers).flatMap((s) => s.items)
+
+    if (sensitiveShown > 0) {
+      // Rendered rows are fewer than the numbers span — that difference IS the skip.
+      expect(rendered.length).toBeLessThan(visible.length)
+      expect(rendered[rendered.length - 1].totalQuestions).toBe(visible.length)
+    }
+  })
+
+  it('🔴 the two sensitive questions take their whole section with them', () => {
+    // ⚠️ A FINDING, from a test written on a wrong assumption. This was going
+    // to assert that a filtered sensitive question leaves a GAP in the
+    // numbering. It cannot today: `history` holds prior_ai_error and
+    // carrier_notified and NOTHING ELSE, so buildReview drops every item and
+    // the section never renders at all.
+    //
+    // So the number and this list's index happen to agree in every section a
+    // firm currently sees. That is a property of where the questions sit, not
+    // of the numbering — put one sensitive question in a mixed section and the
+    // gap appears. The implementation carries the intake's position rather than
+    // counting rows precisely so that day needs no second fix, and the test
+    // above (agreement with the intake's big numeral) is what actually guards it.
+    expect(buildReview(answers).find((s) => s.section === 'history')).toBeUndefined()
+
+    // Nothing sensitive leaks anywhere.
+    for (const section of buildReview(answers)) {
+      for (const item of section.items) expect(NEVER_SHOWN_TO_FIRM).not.toContain(item.key)
+    }
   })
 })
 
@@ -298,5 +385,44 @@ describe('which screen a session gets', () => {
     // the screen is read-only either way and both offer a reopen now.
     const narrow = { status: 'submitted' } as unknown as Parameters<typeof intakeStateOf>[0]
     expect(intakeStateOf(narrow)).toBe('submitted')
+  })
+})
+
+/**
+ * Max, 2026-09-02, off a screenshot of the review screen: "lots of em dashes on
+ * screenshot.... we need to purgeeee".
+ *
+ * The ones in lib/intake/questions.ts were the obvious half. These two are the
+ * half a grep of the question set misses entirely: they are built by
+ * formatAnswer at render time, so they never appear as a literal beside a
+ * `prompt:` or `label:` and were still on the screen after that sweep.
+ */
+describe('no em dashes reach the review screen', () => {
+  it('the roster line', () => {
+    const answers: AnswerMap = {
+      roster: [{ name: 'Ada Byron', email: 'ada@example.com', isAttorney: true }] as never,
+    }
+    expect(formatAnswer(q('roster'), answers) ?? '').not.toContain('\u2014')
+  })
+
+  it('the tool grid line, including its unanswered fallback', () => {
+    const answers: AnswerMap = {
+      ai_tools: ['chatgpt'] as never,
+      tool_grid: [{ tool: 'chatgpt', noTraining: null }] as never,
+    }
+    // The fallback used to be a bare em dash, which read as a stray mark rather
+    // than an answer.
+    expect(formatAnswer(q('tool_grid'), answers) ?? '').not.toContain('\u2014')
+  })
+
+  it('nothing the firm is ASKED carries one either', () => {
+    // Prompts, help text and option labels across the whole question set.
+    for (const question of visibleQuestions({})) {
+      expect(question.prompt).not.toContain('\u2014')
+      if (question.help) expect(question.help).not.toContain('\u2014')
+      for (const option of question.options ?? []) {
+        expect(option.label).not.toContain('\u2014')
+      }
+    }
   })
 })

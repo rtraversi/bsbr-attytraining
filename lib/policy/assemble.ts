@@ -20,7 +20,7 @@
 // =============================================================================
 
 import { evaluateCondition } from '@/lib/intake/branching'
-import { getQuestion, stateOptionsFor } from '@/lib/intake/questions'
+import { getQuestion, optionsForQuestion } from '@/lib/intake/questions'
 import { isOtherValue, otherText, type RosterRow } from '@/lib/intake/types'
 import { assertActionItemInvariants, buildActionItems } from '@/lib/policy/action-items'
 import { platformBlocks } from '@/lib/policy/platform-block'
@@ -89,13 +89,9 @@ function renderAnswer(
   // ⚠️ A `states` question's `options` holds only the EXTRA entries appended to
   // US_STATES — for `jurisdictions` that is just "Federal courts". Reading it
   // directly would render every actual state as its bare code and sort it after
-  // the extras. stateOptionsFor() is the full list, and questions.ts is
+  // the extras. optionsForQuestion() is the full list, and questions.ts is
   // explicit that the field is extras-not-replacement.
-  const options = question
-    ? question.type === 'states'
-      ? stateOptionsFor(question)
-      : (question.options ?? [])
-    : []
+  const options = question ? optionsForQuestion(question) : []
   const labelFor = (v: string): string => {
     if (isOtherValue(v)) return otherText(v)?.trim() ?? v
     return options.find((o) => o.value === v)?.label ?? v

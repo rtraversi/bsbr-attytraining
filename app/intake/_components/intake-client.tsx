@@ -24,7 +24,8 @@ import {
   visibleQuestions,
   progressBySection,
 } from '@/lib/intake/branching'
-import { SECTION_LABELS } from '@/lib/intake/types'
+import { sectionPositionOf } from '@/lib/intake/review'
+import { AUTO_SEEDED_KEYS, SECTION_LABELS } from '@/lib/intake/types'
 import type { AnswerMap, AnswerValue, Question, RosterRow } from '@/lib/intake/types'
 
 /**
@@ -107,6 +108,9 @@ export function IntakeClient({
   firmName,
 }: IntakeClientProps) {
   const router = useRouter()
+  // initialAnswers already carries the auto-seeded firm name: page.tsx writes it
+  // as a real answer row (seedAutoAnswers) rather than handing it here as a
+  // display-only prop. That is what makes isComplete/missingRequired count it.
   const [answers, setAnswers] = useState<AnswerMap>(initialAnswers)
   // 🔴 A TRANSIENT STATE, not a screen. This component is only ever rendered
   // for an OPEN intake now — app/intake/page.tsx decides, and hands a submitted
@@ -136,7 +140,20 @@ export function IntakeClient({
   //
   // getOrCreateOpenSession inserts current_question as NULL, so an untouched
   // session is unambiguous.
-  const untouched = resumeAt === null && Object.keys(initialAnswers).length === 0
+  //
+  // 🔴 AUTO-SEEDED ANSWERS DO NOT COUNT AS HAVING BEEN HERE. The firm name is
+  // written into the session on the firm's behalf (page.tsx → seedAutoAnswers),
+  // so a plain `length === 0` would make every brand-new session look visited
+  // and the walkthrough would never render for anyone again.
+  //
+  // The pairing is what makes this safe: seedAutoAnswers deliberately does NOT
+  // touch the session, while every real answer goes through
+  // POST /api/intake/answer, which does. So resumeAt === null means the firm has
+  // saved nothing itself, and any auto-seeded key sitting beside it can only
+  // have come from the seed.
+  const untouched =
+    resumeAt === null &&
+    Object.keys(initialAnswers).every((key) => AUTO_SEEDED_KEYS.has(key))
   const [introOpen, setIntroOpen] = useState(untouched)
 
   // Shown once per visit to somebody who is returning, and cleared the moment
@@ -200,6 +217,20 @@ export function IntakeClient({
     // introOpen and sent gate whether the strip is mounted at all, so they are
     // what tells this to re-attach — not decoration on the dependency list.
   }, [labelsNeed, introOpen, sent])
+
+  // Which sections hold a question Send flagged. Same source as the red
+  // numeral, so a section cannot say "fine" while a question inside it is red.
+  // `missing` is cleared per key the moment that question is answered
+  // (see the persist handler), so a section's red clears as it is filled without
+  // any second bookkeeping here.
+  const missingSections = useMemo(() => {
+    if (missing.size === 0) return new Set<string>()
+    const found = new Set<string>()
+    for (const question of visible) {
+      if (missing.has(question.key)) found.add(question.section)
+    }
+    return found
+  }, [missing, visible])
 
   const sectionIndex = current ? progress.findIndex((s) => s.section === current.section) : -1
   const nextSection = sectionIndex >= 0 ? progress[sectionIndex + 1] : undefined
@@ -376,7 +407,7 @@ export function IntakeClient({
         */}
         {sent ? (
           <div className="rounded-xl border border-[#E5EEF5] bg-[#F6F9FB] px-5 py-4 dark:border-[#1F2429] dark:bg-[#131A20]">
-            <p className="text-sm font-semibold">Sent — thank you.</p>
+            <p className="text-sm font-semibold">Sent. Thank you.</p>
             <p className={`mt-1 max-w-[38rem] text-[13px] leading-relaxed ${MUTED}`}>
               Bringing up your answers…
             </p>
@@ -385,12 +416,10 @@ export function IntakeClient({
 
         {sent || !current ? null : introOpen ? (
           <IntakeIntro
-            firmName={firmName}
             /* Measured at the answers actually held, which on an untouched
-               session is none — so this is the unbranched set. "About" in the
+               session is none — so this is the unbranched set. "Around" in the
                copy is carrying the branching, which can only shorten it. */
             questionCount={visible.length}
-            sectionCount={progress.length}
             onStart={() => setIntroOpen(false)}
           />
         ) : (
@@ -404,7 +433,7 @@ export function IntakeClient({
             {showResume && (
               <p className={`mb-6 text-[13.5px] ${MUTED}`}>
                 <span className="font-semibold text-[var(--brand-emphasis)]">Welcome back.</span>{' '}
-                Picking up where you left off in {SECTION_LABELS[current.section]} — {answeredRequired}{' '}
+                Picking up where you left off in {SECTION_LABELS[current.section]}: {answeredRequired}{' '}
                 of {totalRequired} required questions answered. Everything saves as you go.
               </p>
             )}
@@ -443,14 +472,20 @@ export function IntakeClient({
               >
                 {progress.map((section) => {
                   const on = section.section === current.section
+                  // Red outranks current and complete alike: a section you are
+                  // standing in can still be the one with the gap, and that is
+                  // exactly when it most needs to say so.
+                  const gap = missingSections.has(section.section)
                   const bar = (
                     <span
                       className={`block h-[3px] rounded-sm transition-colors ${
-                        on
-                          ? 'bg-[var(--brand-emphasis)]'
-                          : section.complete
-                            ? 'bg-[var(--brand-primary)]'
-                            : 'bg-[#C7CDD3] dark:bg-[#2A3138]'
+                        gap
+                          ? 'bg-[#E4705F]'
+                          : on
+                            ? 'bg-[var(--brand-emphasis)]'
+                            : section.complete
+                              ? 'bg-[var(--brand-primary)]'
+                              : 'bg-[#C7CDD3] dark:bg-[#2A3138]'
                       }`}
                     />
                   )
@@ -467,9 +502,9 @@ export function IntakeClient({
                       >
                         {bar}
                         <span
-                          className={`mt-2 block whitespace-nowrap px-1 text-[11px] font-semibold text-[var(--brand-emphasis)] ${
-                            on ? '' : 'invisible'
-                          }`}
+                          className={`mt-2 block whitespace-nowrap px-1 text-[11px] font-semibold ${
+                            gap ? MISSING_TEXT : 'text-[var(--brand-emphasis)]'
+                          } ${on ? '' : 'invisible'}`}
                         >
                           {/* Held in the layout by every column, painted by one.
                               That is what keeps the label row's height steady as
@@ -491,7 +526,7 @@ export function IntakeClient({
                       {bar}
                       <span
                         className={`mt-2 block truncate text-[11px] font-semibold transition-opacity ${
-                          on ? 'text-[var(--brand-emphasis)]' : MUTED
+                          gap ? MISSING_TEXT : on ? 'text-[var(--brand-emphasis)]' : MUTED
                         } ${labelsFit === null ? 'opacity-0' : 'opacity-100'}`}
                       >
                         {/* Unmeasured, on the server and for one frame after:
@@ -660,13 +695,19 @@ function QuestionCard({
   )
 }
 
-/** Position within the SECTION. Never a running total across the whole intake. */
+/**
+ * Position within the SECTION. Never a running total across the whole intake.
+ *
+ * The arithmetic moved to sectionPositionOf() in lib/intake/review.ts so the
+ * read-back screen can print THE SAME NUMBER. It computed it inline here until
+ * 2026-09-01, and the review had no number at all — a firm saw "7" while
+ * answering and an unnumbered list afterwards.
+ */
 function SectionCounter({ question, visible }: { question: Question; visible: Question[] }) {
-  const inSection = visible.filter((q) => q.section === question.section)
-  const at = inSection.findIndex((q) => q.key === question.key) + 1
+  const { at, of } = sectionPositionOf(question, visible)
   return (
     <p className={`mt-4 text-[12px] font-semibold uppercase tracking-wider ${MUTED}`}>
-      {at} of {inSection.length}
+      {at} of {of}
     </p>
   )
 }
