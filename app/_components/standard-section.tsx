@@ -11,7 +11,7 @@ const PILLARS = [
   {
     n: "I",
     title: "A written firm policy",
-    body: "A governance document tailored to your firm — what your staff may use AI for, what they may not, and how client confidences are handled.",
+    body: "A governance document tailored to your firm: what your staff may use AI for, what they may not, and how client confidences are handled.",
   },
   {
     n: "II",
@@ -26,7 +26,7 @@ const PILLARS = [
   {
     n: "IV",
     title: "Ongoing monitoring",
-    body: "We track AI-related discipline decisions and sanctions nationwide, and update the training as the rules move — so your policy does not age out beneath you.",
+    body: "We track AI-related discipline decisions and sanctions nationwide, and update the training as the rules move, so your policy does not age out beneath you.",
   },
 ];
 
@@ -41,7 +41,7 @@ export function StandardSection() {
         />
 
         <p className="mb-16 max-w-[820px] text-[18px] leading-[1.7] text-ink-soft">
-          Built by a practicing attorney, from the ground up —{" "}
+          Built by a practicing attorney, from the ground up:{" "}
           <strong className="font-semibold text-ink">
             not a vendor, software engineer, or AI
           </strong>

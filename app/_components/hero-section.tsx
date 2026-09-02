@@ -81,7 +81,7 @@ export function HeroSection() {
           state bars expect ethical practices.
         </p>
         <p className="hero-rise mx-auto mt-4 max-w-[600px] text-[18px] leading-[1.62] text-mint [animation-delay:0.46s] md:text-[19px]">
-          Iurix Accreditation is how a firm shows it meets both — a written policy,
+          Iurix Accreditation is how a firm shows it meets both: a written policy,
           trained staff, and a signed record to prove it.
         </p>
 

@@ -17,7 +17,7 @@ interface AdminMagicLinkEmailProps {
 
 export function AdminMagicLinkEmail({ firmName, actionLink }: AdminMagicLinkEmailProps) {
   return (
-    <EmailShell preview="Your firm dashboard is ready — access it here">
+    <EmailShell preview="Your firm dashboard is ready. Access it here">
       <Text style={heading} className={EMAIL_CLASS.heading}>
         Your account is ready, {firmName}
       </Text>
@@ -28,7 +28,7 @@ export function AdminMagicLinkEmail({ firmName, actionLink }: AdminMagicLinkEmai
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        Click the button below to sign in — this link is valid for <strong>24 hours</strong> and
+        Click the button below to sign in. This link is valid for <strong>24 hours</strong> and
         works only once.
       </Text>
 

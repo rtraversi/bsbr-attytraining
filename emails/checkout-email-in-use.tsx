@@ -55,7 +55,7 @@ export function CheckoutEmailInUseEmail({ email, cancelled }: CheckoutEmailInUse
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
         Your payment went through, but we weren&apos;t able to create your firm&apos;s account.
-        The address you used — <strong>{email}</strong> — is already registered to an existing
+        The address you used, <strong>{email}</strong>, is already registered to an existing
         IURIX account as a staff member.
       </Text>
 
@@ -71,12 +71,12 @@ export function CheckoutEmailInUseEmail({ email, cancelled }: CheckoutEmailInUse
           <span style={bullet}>→</span>{' '}
           {cancelled ? (
             <>
-              <strong>You will not be charged again</strong> — we&apos;ve cancelled the
+              <strong>You will not be charged again</strong>: we&apos;ve cancelled the
               subscription. Please contact us so we can review the payment with you.
             </>
           ) : (
             <>
-              <strong>Your subscription needs attention</strong> — please get in touch so we can
+              <strong>Your subscription needs attention</strong>: please get in touch so we can
               stop it and review the payment with you
             </>
           )}

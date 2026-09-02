@@ -45,7 +45,7 @@ export function SiteHeader() {
       <div className="mx-auto flex max-w-[1140px] flex-nowrap items-center justify-between gap-5 px-6 py-2.5 md:px-8 lg:gap-8">
         <Link
           href="/"
-          aria-label="Iurix Accreditation — home"
+          aria-label="Iurix Accreditation home"
           className="shrink-0"
         >
           {/* Doubled from the 1.25rem default (Rob, 2026-08-04). The lockup scales

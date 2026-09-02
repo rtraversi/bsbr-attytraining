@@ -40,7 +40,7 @@ export function CertDeliveryEmail({
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        Your certificate is valid through <strong>{validUntil}</strong>. Download and save it — your
+        Your certificate is valid through <strong>{validUntil}</strong>. Download and save it. Your
         firm administrator also has access to it from the firm dashboard.
       </Text>
 

@@ -45,7 +45,7 @@ export function IncludedSection() {
           num="IV"
           label="The details"
           heading="The details"
-          intro="Iurix is built for small firms that don't have the resources to build formal AI governance in-house — no compliance officer, no risk committee, just attorneys and staff trying to use AI responsibly without a roadmap."
+          intro="Iurix is built for small firms that don't have the resources to build formal AI governance in-house: no compliance officer, no risk committee, just attorneys and staff trying to use AI responsibly without a roadmap."
         />
 
         <div className="grid gap-14 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20">
@@ -85,8 +85,8 @@ export function IncludedSection() {
                   ))}
                 </dl>
                 <p className="mt-4 text-[13px] leading-[1.55] text-silver">
-                  The rate drops as your headcount grows — every seat bills at the band
-                  you land in — and stays flat when you renew.
+                  The rate drops as your headcount grows, and every seat bills at the band
+                  you land in and stays flat when you renew.
                 </p>
 
                 <Link
@@ -102,7 +102,7 @@ export function IncludedSection() {
           {/* What's included */}
           <div>
             <p className="mb-9 text-[18px] leading-[1.7] text-ink-soft">
-              Every staff member is trained and certified on a per-seat basis — but{" "}
+              Every staff member is trained and certified on a per-seat basis, but{" "}
               <strong className="font-semibold text-ink">
                 the accreditation belongs to the firm
               </strong>

@@ -68,8 +68,8 @@ export function AutoRenewCancelledEmail({
       <Section style={calloutBox} className={EMAIL_CLASS.callout}>
         <Text style={calloutItem} className={EMAIL_CLASS.text}>
           <strong>Certificates your staff have already earned are permanent.</strong> They
-          remain valid and downloadable after this date — they are compliance records, and
-          ending a subscription does not revoke them.
+          remain valid and downloadable after this date. They are compliance records, and ending
+          a subscription does not revoke them.
         </Text>
         <Text style={calloutItem} className={EMAIL_CLASS.text}>
           <strong>

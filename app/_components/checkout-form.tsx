@@ -84,7 +84,7 @@ export default function CheckoutForm() {
         <span>
           My firm is based in the United States.{" "}
           <span className="text-gray-400">
-            IURIX is available to US firms only — all data is held in the US.
+            IURIX is available to US firms only. All data is held in the US.
           </span>
         </span>
       </label>

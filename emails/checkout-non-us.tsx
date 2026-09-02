@@ -53,7 +53,7 @@ export function CheckoutNonUsEmail({ email, cancelled }: CheckoutNonUsProps) {
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
         Your payment went through, but we weren&apos;t able to set up your account. The billing
-        address on this purchase — for <strong>{email}</strong> — is outside the United States.
+        address on this purchase, for <strong>{email}</strong>, is outside the United States.
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
@@ -75,12 +75,12 @@ export function CheckoutNonUsEmail({ email, cancelled }: CheckoutNonUsProps) {
                earlier version told the buyer their refund was already in
                motion, which nothing was making true. */
             <>
-              <strong>You will not be charged again</strong> — we&apos;ve cancelled the
+              <strong>You will not be charged again</strong>: we&apos;ve cancelled the
               subscription. The payment you already made has not been returned yet
             </>
           ) : (
             <>
-              <strong>We&apos;re sorting out your payment</strong> — please get in touch so we can
+              <strong>We&apos;re sorting out your payment</strong>: please get in touch so we can
               stop the subscription and refund you
             </>
           )}

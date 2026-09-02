@@ -101,7 +101,7 @@ export function PricingSlider() {
         */}
         <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-mute">
           Your seat count has to cover <strong className="text-ink-soft">every non-attorney on
-          staff</strong> — they are the ones who take the training. Attorneys are unlimited and
+          staff</strong>: they are the ones who take the training. Attorneys are unlimited and
           never use a seat.
         </p>
 
@@ -196,8 +196,8 @@ export function PricingSlider() {
           <span>
             My firm is based in the United States.{" "}
             <span className="text-ink-mute">
-              IURIX is available to US firms only — all training and certification data is
-              held in the US.
+              IURIX is available to US firms only. All training and certification data is held
+              in the US.
             </span>
           </span>
         </label>
@@ -269,8 +269,8 @@ export function PricingSlider() {
         </p>
 
         <p className="mt-3 text-xs leading-relaxed text-ink-mute">
-          Secure checkout via Stripe — you can fine-tune the seat count there, which will
-          change the amount above. Refunds available within 14 days of purchase and only
+          Secure checkout via Stripe. You can fine-tune the seat count there, which will change
+          the amount above. Refunds available within 14 days of purchase and only
           if no certificate has yet been issued. Once any certificate is issued, the
           purchase is non-refundable.
         </p>

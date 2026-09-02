@@ -36,7 +36,7 @@ export function EmailVerificationEmail({
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
-        {recipientName ? `${recipientName} — ` : ''}
+        {recipientName ? `${recipientName}. ` : ''}
         <strong>{firmName}</strong> listed this address for you on IURIX. Confirming it is how we
         know your training invitation and your certificate will actually reach you.
       </Text>
@@ -48,7 +48,7 @@ export function EmailVerificationEmail({
       </div>
 
       <Text style={mutedText} className={EMAIL_CLASS.muted}>
-        One click and you are done — there is nothing to fill in and no account to create here. If
+        One click and you are done. There is nothing to fill in and no account to create here. If
         you were not expecting this, you can ignore it; the link stops working once it is used.
       </Text>
     </EmailShell>

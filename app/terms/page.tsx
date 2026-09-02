@@ -8,7 +8,7 @@ import {
 } from '@/app/_components/legal-page'
 
 export const metadata = {
-  title: 'Terms of Service — Iurix Accreditation',
+  title: 'Terms of Service: Iurix Accreditation',
 }
 
 // Published 2026-08-24 from .planning/legal/terms-of-service.md. The prose is
@@ -228,8 +228,8 @@ export default function TermsPage() {
           applies.
         </p>
         <p>
-          You may manage your subscription — including cancellation and payment method
-          updates — through the billing portal accessible from your dashboard.
+          You may manage your subscription, including cancellation and payment method
+          updates, through the billing portal accessible from your dashboard.
         </p>
 
         <LegalSubheading>Refunds</LegalSubheading>
@@ -487,18 +487,18 @@ export default function TermsPage() {
           These Terms remain in effect for as long as you maintain an active account.
         </p>
         <p>
-          <strong>Termination by you</strong> — you may cancel at any time through the
+          <strong>Termination by you</strong>: you may cancel at any time through the
           billing portal. Cancellation takes effect at the end of the current annual term.
           Refunds are governed by Section 5.
         </p>
         <p>
-          <strong>Termination by us</strong> — we may suspend or terminate an account for
+          <strong>Termination by us</strong>: we may suspend or terminate an account for
           material breach, non-payment, a breach of Section 4 (assessment integrity), conduct
           posing a security risk, or as required by law. For non-material breaches we will
           give 30 days’ notice and an opportunity to cure.
         </p>
         <p>
-          <strong>Effect of termination</strong> — access to the Service ceases.{' '}
+          <strong>Effect of termination</strong>: access to the Service ceases.{' '}
           <strong>
             Certificates already issued remain valid for their stated term, and the
             underlying certification records are retained
@@ -526,28 +526,28 @@ export default function TermsPage() {
 
       <LegalSection title="17. General Provisions">
         <p>
-          <strong>Entire agreement</strong> — these Terms, with the Privacy Policy and any
+          <strong>Entire agreement</strong>: these Terms, with the Privacy Policy and any
           order form, constitute the entire agreement and supersede all prior agreements and
           representations.
         </p>
         <p>
-          <strong>Severability</strong> — if any provision is held invalid or unenforceable,
+          <strong>Severability</strong>: if any provision is held invalid or unenforceable,
           it will be limited to the minimum extent necessary and the remainder will continue
           in force.
         </p>
         <p>
-          <strong>No waiver</strong> — failure to enforce a provision is not a waiver of it.
+          <strong>No waiver</strong>: failure to enforce a provision is not a waiver of it.
         </p>
         <p>
-          <strong>Assignment</strong> — you may not assign these Terms without our written
+          <strong>Assignment</strong>: you may not assign these Terms without our written
           consent. We may assign in connection with a merger, acquisition, or sale of assets.
         </p>
         <p>
-          <strong>Force majeure</strong> — neither party is liable for delays or failures
+          <strong>Force majeure</strong>: neither party is liable for delays or failures
           caused by events beyond reasonable control.
         </p>
         <p>
-          <strong>Notices</strong> — legal notices to us must be sent to{' '}
+          <strong>Notices</strong>: legal notices to us must be sent to{' '}
           <a href="mailto:info@iurixaccreditation.com" className={LINK}>
             info@iurixaccreditation.com
           </a>

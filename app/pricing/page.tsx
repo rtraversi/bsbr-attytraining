@@ -4,7 +4,7 @@ import { Footer } from "@/app/_components/footer";
 import { PricingSlider } from "./_components/pricing-slider";
 
 export const metadata: Metadata = {
-  title: "Pricing — Iurix Accreditation",
+  title: "Pricing: Iurix Accreditation",
   description:
     "One annual fee per staff member. Volume pricing from $28/user. Flat on renewal.",
 };
@@ -27,7 +27,7 @@ export default function PricingPage() {
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-[18px] text-ink-soft">
             Pay once a year per staff member. The more of your team you certify, the
-            lower the per-seat rate — and it stays flat when you renew.
+            lower the per-seat rate. It stays flat when you renew.
           </p>
         </div>
 

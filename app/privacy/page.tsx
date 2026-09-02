@@ -8,7 +8,7 @@ import {
 } from '@/app/_components/legal-page'
 
 export const metadata = {
-  title: 'Privacy Policy — Iurix Accreditation',
+  title: 'Privacy Policy: Iurix Accreditation',
 }
 
 // Published 2026-08-24 from .planning/legal/privacy-policy.md. The prose is the
@@ -71,7 +71,7 @@ export default function PrivacyPage() {
           attorney-client privilege, because no privileged material ever enters the Service.
         </p>
         <p>
-          What we hold is a record of <em>training and certification</em> — who was enrolled,
+          What we hold is a record of <em>training and certification</em>: who was enrolled,
           what they completed, how they scored, and what certificate was issued. For that
           data, <strong>Iurix acts as a data controller</strong>: we determine what is
           collected and how it is used, because the integrity of a certification record is the
@@ -91,7 +91,7 @@ export default function PrivacyPage() {
             Billing information, processed by our payment processor.{' '}
             <strong>We never receive or store full payment card numbers</strong>
           </li>
-          <li>Subscription details — seat count, billing period, and renewal date</li>
+          <li>Subscription details: seat count, billing period, and renewal date</li>
           <li>
             <strong>A record of acceptance:</strong> which version of these terms the
             administrator accepted, and the date and time they accepted it. We store the
@@ -144,7 +144,7 @@ export default function PrivacyPage() {
           </li>
           <li>A session record tying each attempt to the sitting it belongs to</li>
           <li>
-            Certificate issuance — a unique certificate number, the issue date, and the expiry
+            Certificate issuance: a unique certificate number, the issue date, and the expiry
             date
           </li>
           <li>The generated PDF certificate itself</li>
@@ -157,7 +157,7 @@ export default function PrivacyPage() {
         </ul>
         <p>
           That last item deserves explanation. When a staff member submits the certifying
-          assessment, they make an identity attestation — a confirmation that they personally
+          assessment, they make an identity attestation: a confirmation that they personally
           completed the training. We record the IP address and user-agent alongside that
           attestation because a certificate that cannot be tied to a submission event is not
           credible evidence of supervision. This data exists to make your compliance record
@@ -202,7 +202,7 @@ export default function PrivacyPage() {
             certificate validity
           </li>
           <li>
-            Send transactional email — invitations, reminders, certificate delivery, and
+            Send transactional email: invitations, reminders, certificate delivery, and
             renewal notices
           </li>
           <li>Process payments and send billing correspondence</li>
@@ -281,7 +281,7 @@ export default function PrivacyPage() {
             your firm administrator can see your training status, your assessment scores, and
             your certificate.
           </strong>{' '}
-          This is the purpose of the Service — it exists so that a supervising attorney can
+          This is the purpose of the Service. It exists so that a supervising attorney can
           document that their staff have been trained. Staff members should understand that
           their results are visible to their employer.
         </p>
@@ -337,15 +337,15 @@ export default function PrivacyPage() {
         <p>Other retention periods:</p>
         <ul className={LIST}>
           <li>
-            <strong>Account and billing records</strong> — retained for the life of the
+            <strong>Account and billing records</strong>: retained for the life of the
             subscription and afterwards as required by applicable tax and accounting law
           </li>
           <li>
-            <strong>Operational logs</strong> — retained on a rolling short-term basis for
+            <strong>Operational logs</strong>: retained on a rolling short-term basis for
             security and troubleshooting
           </li>
           <li>
-            <strong>Support correspondence</strong> — retained for as long as needed to resolve
+            <strong>Support correspondence</strong>: retained for as long as needed to resolve
             and audit the issue
           </li>
         </ul>
@@ -353,9 +353,9 @@ export default function PrivacyPage() {
         <LegalSubheading>When a Staff Member Is Removed</LegalSubheading>
         <p>
           If a firm administrator deletes a staff member, we{' '}
-          <strong>redact that person’s directly identifying information</strong> — their email
+          <strong>redact that person’s directly identifying information</strong>: their email
           address is replaced with a non-routable placeholder value and their account is marked
-          deleted — while{' '}
+          deleted, while{' '}
           <strong>preserving the underlying training and certification record</strong>.
         </p>
         <p>
@@ -374,27 +374,27 @@ export default function PrivacyPage() {
         </p>
         <ul className={LIST}>
           <li>
-            <strong>Encryption in transit</strong> — all traffic is served over TLS
+            <strong>Encryption in transit</strong>: all traffic is served over TLS
           </li>
           <li>
-            <strong>Encryption at rest</strong> — data is encrypted at the storage layer by our
+            <strong>Encryption at rest</strong>: data is encrypted at the storage layer by our
             infrastructure providers
           </li>
           <li>
-            <strong>Tenant isolation enforced at the database layer</strong> — every firm’s
+            <strong>Tenant isolation enforced at the database layer</strong>: every firm’s
             records are separated by row-level security policies, so a query issued on behalf of
             one firm cannot return another firm’s rows
           </li>
           <li>
-            <strong>Role-based access</strong> — administrators and staff members see different
+            <strong>Role-based access</strong>: administrators and staff members see different
             data, enforced on the server rather than in the browser
           </li>
           <li>
-            <strong>Private certificate storage</strong> — certificate PDFs are held in private
+            <strong>Private certificate storage</strong>: certificate PDFs are held in private
             storage and are reachable only through short-lived signed links, not public URLs
           </li>
           <li>
-            <strong>Server-side scoring</strong> — assessments are scored on our servers. A score
+            <strong>Server-side scoring</strong>: assessments are scored on our servers. A score
             submitted by a browser is never trusted
           </li>
         </ul>
@@ -413,22 +413,22 @@ export default function PrivacyPage() {
         <p>You have the following rights in respect of your personal data:</p>
         <ul className={LIST}>
           <li>
-            <strong>Access</strong> — request a copy of the data associated with you
+            <strong>Access</strong>: request a copy of the data associated with you
           </li>
           <li>
-            <strong>Correction</strong> — correct inaccurate account information, through the
+            <strong>Correction</strong>: correct inaccurate account information, through the
             Service or by contacting us
           </li>
           <li>
-            <strong>Deletion</strong> — request deletion of your data, subject to the
+            <strong>Deletion</strong>: request deletion of your data, subject to the
             certification retention obligations described in Section 5
           </li>
           <li>
-            <strong>Portability</strong> — request your records in a structured,
+            <strong>Portability</strong>: request your records in a structured,
             machine-readable format
           </li>
           <li>
-            <strong>Objection and restriction</strong> — ask us to limit how we process your data
+            <strong>Objection and restriction</strong>: ask us to limit how we process your data
             in certain circumstances
           </li>
         </ul>
@@ -454,14 +454,14 @@ export default function PrivacyPage() {
         </p>
         <ul className={LIST}>
           <li>
-            <strong>Session cookies</strong> — maintain your signed-in state
+            <strong>Session cookies</strong>: maintain your signed-in state
           </li>
           <li>
-            <strong>Persistent sign-in</strong> — where you choose “remember me,” a longer-lived
+            <strong>Persistent sign-in</strong>: where you choose “remember me,” a longer-lived
             session cookie is set
           </li>
           <li>
-            <strong>Preference cookies</strong> — remember display settings such as your light or
+            <strong>Preference cookies</strong>: remember display settings such as your light or
             dark theme choice
           </li>
         </ul>

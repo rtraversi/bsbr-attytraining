@@ -49,23 +49,23 @@ interface PolicyDeliveredEmailProps {
 export function PolicyDeliveredEmail({ firmName, policyUrl }: PolicyDeliveredEmailProps) {
   return (
     // TODO(copy) — preview text, the line shown in the inbox list before opening.
-    <EmailShell preview="[TODO(copy) — preview line]">
+    <EmailShell preview="[TODO(copy): preview line]">
       <Text style={heading} className={EMAIL_CLASS.heading}>
         {/* TODO(copy) — subject-matching headline. */}
-        [TODO(copy) — headline]
+        [TODO(copy): headline]
       </Text>
 
       <Text style={paragraph} className={EMAIL_CLASS.text}>
         {/* TODO(copy) — the body. What has happened, what it is, what it is not.
             The firm name is interpolated so the placeholder still exercises the
             prop; the sentence around it is not real copy. */}
-        [TODO(copy) — body paragraph for <strong>{firmName}</strong>]
+        [TODO(copy): body paragraph for <strong>{firmName}</strong>]
       </Text>
 
       <Section style={buttonContainer}>
         <Button href={policyUrl} style={button}>
           {/* TODO(copy) — call to action label. */}
-          [TODO(copy) — button label]
+          [TODO(copy): button label]
         </Button>
       </Section>
 
@@ -73,7 +73,7 @@ export function PolicyDeliveredEmail({ firmName, policyUrl }: PolicyDeliveredEma
         {/* TODO(copy) — closing note. Worth covering that the firm can change
             its answers and have the policy rewritten, since that is the part
             nobody expects. */}
-        [TODO(copy) — closing note]
+        [TODO(copy): closing note]
       </Text>
     </EmailShell>
   )
