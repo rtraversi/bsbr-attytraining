@@ -732,7 +732,7 @@ describe('module D — drafting', () => {
       drafting_client_data: 'client_data',
       drafting_foreign_language: 'yes',
       foreign_language_content: 'client_data',
-      foreign_languages: 'Greek, Spanish',
+      foreign_languages: ['el', 'es'],
     }
     expect(orphanKeys(answers)).toEqual([])
 

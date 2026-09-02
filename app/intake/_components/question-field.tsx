@@ -16,6 +16,7 @@ import { ToolGridTable } from './tool-grid-table'
 import {
   EXCLUSIVE_OPTION_VALUES,
   NOT_DECIDED_QUESTIONS,
+  languageOptionsFor,
   stateOptionsFor,
 } from '@/lib/intake/questions'
 import {
@@ -26,6 +27,7 @@ import {
   type AnswerMap,
   type AnswerValue,
   type Question,
+  type QuestionOption,
   type RosterRow,
   type ToolGridRow,
   type UploadRef,
@@ -64,6 +66,8 @@ export function QuestionField(props: FieldProps) {
       return <MultiField {...props} />
     case 'states':
       return <StatesField {...props} />
+    case 'languages':
+      return <LanguagesField {...props} />
     case 'roster':
       return (
         <RosterTable
@@ -273,21 +277,52 @@ function MultiField({ question, answers, onChange }: FieldProps) {
  * at a glance, which matters because this is the switch that decides most of
  * the drafted policy.
  */
-function StatesField({ question, answers, onChange }: FieldProps) {
-  const options = useMemo(() => stateOptionsFor(question), [question])
+/**
+ * The filter-and-pick control, shared by `states` and `languages`.
+ *
+ * ── Why one component and not two ───────────────────────────────────────────
+ *
+ * `languages` was added on 2026-09-02 and is the same interaction as
+ * `jurisdictions`: a long list nobody scrolls, made usable by typing. Copying
+ * StatesField would have produced a near-duplicate that drifts — the two would
+ * disagree about empty-state copy or overflow the first time either was
+ * touched. The ONLY differences are the option source and two strings, so those
+ * are parameters and everything else is shared by construction.
+ *
+ * `allowOther` is the languages-only exception: a firm serving a language off
+ * the list must not be blocked. It writes an `other:`-prefixed value, the
+ * convention already used by ai_tools, so optionLabel() and the policy
+ * assembler resolve it with no further work.
+ */
+function FilterableMultiField({
+  question,
+  answers,
+  onChange,
+  options,
+  filterPlaceholder,
+  emptyLabel,
+  allowOther = false,
+  otherPlaceholder,
+}: FieldProps & {
+  options: QuestionOption[]
+  filterPlaceholder: string
+  emptyLabel: string
+  allowOther?: boolean
+  otherPlaceholder?: string
+}) {
   const selected = ((answers[question.key] as string[] | undefined) ?? [])
   const [filter, setFilter] = useState('')
 
-  // The extras (Federal courts, Outside the US) are pinned above the states —
-  // they are not states, and alphabetising them into the list buries them.
+  // The extras (Federal courts, Outside the US) are pinned above the list —
+  // they are not members of it, and alphabetising them in buries them.
   const extras = question.options ?? []
   const extraValues = new Set(extras.map((o) => o.value))
-  const states = options.filter((o) => !extraValues.has(o.value))
+  const listed = options.filter((o) => !extraValues.has(o.value))
 
   const q = filter.trim().toLowerCase()
   const shown = q
-    ? states.filter((o) => o.label.toLowerCase().includes(q) || o.value.toLowerCase() === q)
-    : states
+    ? listed.filter((o) => o.label.toLowerCase().includes(q) || o.value.toLowerCase() === q)
+    : listed
 
   const toggle = (value: string) => {
     const next = selected.includes(value)
@@ -295,6 +330,21 @@ function StatesField({ question, answers, onChange }: FieldProps) {
       : [...selected, value]
     onChange(next.length > 0 ? next : null)
   }
+
+  // Free-text entries live in the SAME array as the picked ones, so a policy
+  // clause naming the languages reads one list rather than stitching two.
+  const others = selected.filter(isOtherValue)
+  const otherDraft = otherText(others[0] ?? '') ?? ''
+
+  const setOther = (text: string) => {
+    const kept = selected.filter((v) => !isOtherValue(v))
+    const wrapped = otherValue(text)
+    const next = wrapped ? [...kept, wrapped] : kept
+    onChange(next.length > 0 ? next : null)
+  }
+
+  const labelOf = (v: string) =>
+    isOtherValue(v) ? (otherText(v) ?? v) : (options.find((o) => o.value === v)?.label ?? v)
 
   return (
     <div className="mt-5">
@@ -316,7 +366,7 @@ function StatesField({ question, answers, onChange }: FieldProps) {
       <input
         className={FIELD}
         value={filter}
-        placeholder="Filter states"
+        placeholder={filterPlaceholder}
         onChange={(e) => setFilter(e.target.value)}
       />
 
@@ -334,14 +384,56 @@ function StatesField({ question, answers, onChange }: FieldProps) {
         {shown.length === 0 && <p className={`text-[13px] ${MUTED}`}>No match.</p>}
       </div>
 
+      {allowOther && (
+        <div className="mt-4">
+          <label
+            htmlFor={`${question.key}-other`}
+            className={`mb-1.5 block text-[13px] font-semibold`}
+          >
+            Not listed?
+          </label>
+          <input
+            id={`${question.key}-other`}
+            className={FIELD}
+            value={otherDraft}
+            placeholder={otherPlaceholder ?? 'Type it here'}
+            onChange={(e) => setOther(e.target.value)}
+          />
+        </div>
+      )}
+
       <p className={`mt-3 text-[13px] ${MUTED}`}>
         {selected.length === 0
-          ? 'None selected yet.'
-          : `${selected.length} selected: ${selected
-              .map((v) => options.find((o) => o.value === v)?.label ?? v)
-              .join(', ')}`}
+          ? emptyLabel
+          : `${selected.length} selected: ${selected.map(labelOf).join(', ')}`}
       </p>
     </div>
+  )
+}
+
+function StatesField(props: FieldProps) {
+  const options = useMemo(() => stateOptionsFor(props.question), [props.question])
+  return (
+    <FilterableMultiField
+      {...props}
+      options={options}
+      filterPlaceholder="Filter states"
+      emptyLabel="None selected yet."
+    />
+  )
+}
+
+function LanguagesField(props: FieldProps) {
+  const options = useMemo(() => languageOptionsFor(props.question), [props.question])
+  return (
+    <FilterableMultiField
+      {...props}
+      options={options}
+      filterPlaceholder="Filter languages"
+      emptyLabel="None selected yet."
+      allowOther
+      otherPlaceholder="Another language"
+    />
   )
 }
 

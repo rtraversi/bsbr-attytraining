@@ -550,7 +550,9 @@ export const QUESTIONS: readonly Question[] = [
     section: 'drafting',
     module: 'D',
     prompt: 'Which languages?',
-    type: 'text',
+    help: 'Start typing to filter. Pick every language the firm produces output in.',
+    // Was `text` until 2026-09-02. See LANGUAGES for why.
+    type: 'languages',
     required: true,
     showIf: { key: 'drafting_foreign_language', is: 'yes' },
   },
@@ -924,6 +926,154 @@ export function getQuestion(key: string): Question | undefined {
 /** The full option list a `states` question renders: US_STATES plus its extras. */
 export function stateOptionsFor(question: Question): QuestionOption[] {
   return [...US_STATES, ...(question.options ?? [])]
+}
+
+/**
+ * The languages a firm can name for translation review.
+ *
+ * ── Why a list and not free text ────────────────────────────────────────────
+ *
+ * `foreign_languages` was `type: 'text'` until 2026-09-02. Max, walking the
+ * intake in a browser: "best to have a list and not free text ... bc they can
+ * 100 just type, idk lol, like i am going to do rn." The answer names the
+ * languages in a policy clause, so free text puts whatever someone types into a
+ * legal document.
+ *
+ * ── What is in it ───────────────────────────────────────────────────────────
+ *
+ * 95 entries: the languages with meaningful US speaker counts, ordered by US
+ * prevalence rather than alphabetically, so the ones a firm is most likely to
+ * want are the ones it sees before typing anything. Hardcoded rather than
+ * pulled from a package — it ships to a Worker, it does not change, and a
+ * dependency for 95 strings is not worth the bundle. Same call, and the same
+ * shape, as US_STATES above.
+ *
+ * Values are ISO 639 codes where one exists. They are stored, so DO NOT renumber
+ * or repurpose one: a stored answer would silently become a different language.
+ *
+ * A firm serving a language that is not here uses the "Other" write-in, which
+ * is a deliberate narrow exception rather than the default (Max, 2026-09-02:
+ * "95 fine. other with free text is fine.").
+ */
+export const LANGUAGES: readonly QuestionOption[] = [
+  { value: 'es', label: 'Spanish' },
+  { value: 'zh-cmn', label: 'Chinese, Mandarin' },
+  { value: 'zh-yue', label: 'Chinese, Cantonese' },
+  { value: 'tl', label: 'Tagalog' },
+  { value: 'vi', label: 'Vietnamese' },
+  { value: 'ar', label: 'Arabic' },
+  { value: 'fr', label: 'French' },
+  { value: 'ko', label: 'Korean' },
+  { value: 'ru', label: 'Russian' },
+  { value: 'ht', label: 'Haitian Creole' },
+  { value: 'de', label: 'German' },
+  { value: 'hi', label: 'Hindi' },
+  { value: 'pt', label: 'Portuguese' },
+  { value: 'it', label: 'Italian' },
+  { value: 'pl', label: 'Polish' },
+  { value: 'ur', label: 'Urdu' },
+  { value: 'ja', label: 'Japanese' },
+  { value: 'fa', label: 'Persian (Farsi)' },
+  { value: 'gu', label: 'Gujarati' },
+  { value: 'bn', label: 'Bengali' },
+  { value: 'te', label: 'Telugu' },
+  { value: 'ta', label: 'Tamil' },
+  { value: 'pa', label: 'Punjabi' },
+  { value: 'hy', label: 'Armenian' },
+  { value: 'he', label: 'Hebrew' },
+  { value: 'km', label: 'Khmer' },
+  { value: 'hmn', label: 'Hmong' },
+  { value: 'th', label: 'Thai' },
+  { value: 'lo', label: 'Lao' },
+  { value: 'nv', label: 'Navajo' },
+  { value: 'am', label: 'Amharic' },
+  { value: 'so', label: 'Somali' },
+  { value: 'ne', label: 'Nepali' },
+  { value: 'uk', label: 'Ukrainian' },
+  { value: 'ro', label: 'Romanian' },
+  { value: 'el', label: 'Greek' },
+  { value: 'nl', label: 'Dutch' },
+  { value: 'hu', label: 'Hungarian' },
+  { value: 'cs', label: 'Czech' },
+  { value: 'sk', label: 'Slovak' },
+  { value: 'bg', label: 'Bulgarian' },
+  { value: 'sq', label: 'Albanian' },
+  { value: 'lt', label: 'Lithuanian' },
+  { value: 'tr', label: 'Turkish' },
+  { value: 'sw', label: 'Swahili' },
+  { value: 'ml', label: 'Malayalam' },
+  { value: 'mr', label: 'Marathi' },
+  { value: 'kn', label: 'Kannada' },
+  { value: 'si', label: 'Sinhala' },
+  { value: 'my', label: 'Burmese' },
+  { value: 'id', label: 'Indonesian' },
+  { value: 'ms', label: 'Malay' },
+  { value: 'mn', label: 'Mongolian' },
+  { value: 'ps', label: 'Pashto' },
+  { value: 'prs', label: 'Dari' },
+  { value: 'ku', label: 'Kurdish' },
+  { value: 'uz', label: 'Uzbek' },
+  { value: 'kk', label: 'Kazakh' },
+  { value: 'ka', label: 'Georgian' },
+  { value: 'az', label: 'Azerbaijani' },
+  { value: 'sr', label: 'Serbian' },
+  { value: 'hr', label: 'Croatian' },
+  { value: 'bs', label: 'Bosnian' },
+  { value: 'sv', label: 'Swedish' },
+  { value: 'no', label: 'Norwegian' },
+  { value: 'da', label: 'Danish' },
+  { value: 'fi', label: 'Finnish' },
+  { value: 'yi', label: 'Yiddish' },
+  { value: 'yo', label: 'Yoruba' },
+  { value: 'ig', label: 'Igbo' },
+  { value: 'ha', label: 'Hausa' },
+  { value: 'tw', label: 'Twi' },
+  { value: 'wo', label: 'Wolof' },
+  { value: 'ti', label: 'Tigrinya' },
+  { value: 'om', label: 'Oromo' },
+  { value: 'ff', label: 'Fulani' },
+  { value: 'bm', label: 'Bambara' },
+  { value: 'ln', label: 'Lingala' },
+  { value: 'rw', label: 'Kinyarwanda' },
+  { value: 'kar', label: 'Karen' },
+  { value: 'rhg', label: 'Rohingya' },
+  { value: 'bo', label: 'Tibetan' },
+  { value: 'chk', label: 'Chuukese' },
+  { value: 'mh', label: 'Marshallese' },
+  { value: 'sm', label: 'Samoan' },
+  { value: 'to', label: 'Tongan' },
+  { value: 'ch', label: 'Chamorro' },
+  { value: 'haw', label: 'Hawaiian' },
+  { value: 'ilo', label: 'Ilocano' },
+  { value: 'ceb', label: 'Cebuano' },
+  { value: 'quc', label: 'K\'iche\'' },
+  { value: 'mam', label: 'Mam' },
+  { value: 'qu', label: 'Quechua' },
+  { value: 'mix', label: 'Mixtec' },
+  { value: 'zap', label: 'Zapotec' },
+]
+
+/** The full option list a `languages` question renders: LANGUAGES plus its extras. */
+export function languageOptionsFor(question: Question): QuestionOption[] {
+  return [...LANGUAGES, ...(question.options ?? [])]
+}
+
+/**
+ * The options a question actually renders, whatever its type.
+ *
+ * `states` and `languages` both keep their bulk list in a constant and use
+ * `options` for EXTRAS ONLY, so reading `question.options` directly on either
+ * yields just the extras — every state renders as a bare code, sorted after
+ * "Federal courts". That mistake was already written out three times (the
+ * review formatter, the policy assembler, the field itself) before `languages`
+ * existed, and adding a second such type would have made it six.
+ *
+ * One function, so a third list-backed type is a change in one place.
+ */
+export function optionsForQuestion(question: Question): QuestionOption[] {
+  if (question.type === 'states') return stateOptionsFor(question)
+  if (question.type === 'languages') return languageOptionsFor(question)
+  return question.options ?? []
 }
 
 
