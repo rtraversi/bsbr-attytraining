@@ -56,11 +56,32 @@ export function ToolGridTable({
 
   return (
     <div className="mt-5 overflow-x-auto">
-      {/* Narrower now the grid is two columns rather than three. */}
-      <table className="w-full min-w-[26rem] border-collapse text-sm">
+      {/*
+        ── The row uses its width (Max, from a browser run, 2026-09-01) ───────
+        The tool name sat in a 40% column with three small content-width pills
+        beside it, leaving roughly half of every row empty on a desktop
+        viewport — while each answer target stayed as narrow as its label, so
+        "No" was a third the size of "Don't know".
+
+        The name column now sizes to its content and the three options SHARE
+        the rest as equal thirds. That spends the space on the only part of the
+        row that is interactive, and it makes the three targets identical in
+        size, which is what they should have been anyway: they are equally
+        weighted answers, and "Don't know" is a real one (see AGREEMENT above),
+        not a lesser option that deserves a smaller button.
+
+        w-px on the name cell is the CSS table idiom for shrink-to-fit — a table
+        cell cannot be narrower than its content, so any tiny width collapses
+        the column onto its text and hands the remainder to the other cell.
+        whitespace-nowrap keeps a long tool name on one line rather than
+        wrapping to reclaim width the answers now use.
+
+        The copy, the options and the questions are untouched.
+      */}
+      <table className="w-full min-w-[30rem] border-collapse text-sm">
         <thead>
           <tr>
-            <th className={TABLE_HEAD} style={{ width: '40%' }}>Tool</th>
+            <th className={`${TABLE_HEAD} w-px whitespace-nowrap pr-6`}>Tool</th>
             <th className={TABLE_HEAD}>
               No-training agreement
               <span className={`ml-2 font-normal normal-case tracking-normal ${MUTED}`}>
@@ -74,9 +95,12 @@ export function ToolGridTable({
             const row = rows.find((r) => r.tool === tool.value)
             return (
               <tr key={tool.value} className="align-middle">
-                <td className="py-3 pr-4 font-semibold">{tool.label}</td>
+                <td className="w-px whitespace-nowrap py-3 pr-6 font-semibold">{tool.label}</td>
                 <td className="py-3">
-                  <div className="flex flex-wrap gap-1.5">
+                  {/* Equal thirds rather than flex-wrap: every option is the
+                      same target on every row, so the column reads as one
+                      control repeated and not as ragged text. */}
+                  <div className="grid grid-cols-3 gap-2">
                     {AGREEMENT.map((a) => (
                       <button
                         key={a.value}
