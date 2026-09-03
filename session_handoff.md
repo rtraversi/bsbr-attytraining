@@ -6,6 +6,27 @@
 
 ---
 
+## 🔴 Added 2026-09-03 (Max, desktop) — policy review in progress
+
+Max and desktop worked the policy document section by section against Katy's source.
+**Sections 1 to 5 are settled and approved; Section 6 is mid-discussion.** Every approved
+sentence is recorded in **`.planning/POLICY-REVIEW-2026-09-03.md`** with the reasoning and
+Max's own instruction quoted. **None of it is built** — the approved text still has to be
+written into `lib/policy/blocks/` by terminal.
+
+Katy's definitive intake list of 2026-09-02, which is the sole authority behind retiring 22
+intake questions, existed nowhere in the repo and was cited only in two code comments. It is
+now saved verbatim at **`.planning/KATY-INTAKE-LIST-2026-09-02.md`** with a gap analysis
+against what is built.
+
+**One open defect found during the pass, worth picking up first:** Katy's core no-training
+rule (`no-training-agreement`, her source line 356) renders for nobody. It gates on
+`tool_grid answered`, the `maximal` fixture answers `tool_grid`, and the clause still does not
+appear. A second block with the identical condition failed identically. See section 7 of the
+review document.
+
+---
+
 ## What this is
 
 **IURIX** — a self-serve platform where a small law firm pays once a year and

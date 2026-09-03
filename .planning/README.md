@@ -47,6 +47,11 @@ They have invented them before.
 **Reference and source material**
 - `DATA-INVENTORY.md`: every field, read out of the schema. Privacy, Cookies and the DPA are
   written from this so they cannot contradict each other.
+- `KATY-INTAKE-LIST-2026-09-02.md`: **Katy's definitive intake list.** She said it is the entire
+  universe of questions her policy needs, and it is the sole authority behind retiring 22 built
+  questions. **For what the intake asks, it outranks both `intake-spec.md` and the module
+  questions in the research doc below.** It carries a dated gap analysis against what is built.
+  It existed nowhere in the repo until 2026-09-03, cited only in two code comments.
 - `intake-spec.md`: the policy intake specification.
 - `AI-Policy-Research-2026-08-20.docx`: **Katy's research document, and the source of the policy
   template.** It carries the intake questions for all 23 modules (A to W), the drafted policy
