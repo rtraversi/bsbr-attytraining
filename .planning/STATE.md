@@ -13,6 +13,39 @@ on trust.
 
 ---
 
+## 🔴 Corrections added 2026-09-03 (Max, desktop) — this file is otherwise stamped 08-27
+
+Six days of work landed after the verification date above. Read these before trusting §2 or §5.
+
+**The migration gap is five, not two.** §2 below says PROD is missing `0028` and `0029`. The repo
+now carries migrations through **`0032`** (`0030_intake_reopen`, `0031_retention_not_purge`,
+`0032_policy_delivery`). PROD is recorded at `0027`, so the real gap is **`0028` through `0032`**,
+plus the `Intake-uploads` bucket, which no migration can create. ⚠️ *Source: `session_handoff.md`
+of 2026-09-02 and the migrations directory. PROD itself was **not** re-queried today — that needs
+relinking the CLI away from staging.*
+
+**§5's engineering list is out of date on two points.** `policy-intake` is merged; `main` carries
+it. The intake has been opened in a real browser, repeatedly, and the 2026-09-02 session found
+three defects that way that no code reading had caught.
+
+**A whole subsystem exists that this file never mentions:** the policy generator. `lib/policy/`
+now holds a 22-section spine, an assembler, a docx renderer, per-vendor generated blocks, a
+delivery flow and an action-items document. `node scripts/render-policy.mjs maximal` renders it.
+As of today: **54 clauses transcribed from Katy, 17 still unwritten.**
+
+**22 intake questions were retired on 2026-09-02** against a list from Katy that existed nowhere
+in the repo until today. It is now `.planning/KATY-INTAKE-LIST-2026-09-02.md`, and it outranks
+`intake-spec.md` for what the intake asks.
+
+**Still true, verified today with `gh run list --workflow=deploy.yml`:** production last shipped
+**2026-08-24T19:34:58Z** from `2efec949`. Nothing since. Everything built in September is
+unshipped.
+
+**Open defect, found today:** Katy's core no-training rule renders for no firm. See
+`.planning/sessions/20260903-max-summary.md` §4.
+
+---
+
 ## 0. Precedence: which document wins
 
 | Rank | Document | Authoritative for |

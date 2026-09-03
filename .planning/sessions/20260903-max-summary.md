@@ -1,0 +1,171 @@
+# Session summary — 2026-09-03 (Max, desktop)
+
+## Headline
+
+**The document that justified retiring 22 intake questions did not exist in the repo.** It
+was cited in two code comments and nowhere else. It is now saved verbatim, and reading it
+against the built intake produced a nine-row gap table, two of whose rows were desktop's own
+transcription errors.
+
+The rest of the day was a section-by-section pass over the policy itself. **Sections 1 to 5
+are approved. Nothing is built.**
+
+Desktop wrote documents and ran read-only renders. No product code was touched.
+
+---
+
+## 1 · Katy's definitive intake list was missing from the repo
+
+`lib/intake/branching.ts` retires 22 questions on the strength of "a definitive intake list"
+Katy supplied on 2026-09-02. That list lived in a chat message. It appeared in no file, and
+the only trace of it in the repo was two code comments referring to it.
+
+It is now `.planning/KATY-INTAKE-LIST-2026-09-02.md`, verbatim in a fenced block, her typos
+preserved (`Lexis+ AL`, `platfor`, `Assited`, `aquired`). `.planning/README.md` indexes it and
+states that for **what the intake asks** it outranks both `intake-spec.md` and the module
+questions in her August research doc.
+
+### The gap table, and two errors in it
+
+Nine differences between her list and the 29 live questions. The ones that matter:
+
+- **The tool tier is not collected.** She asks two things per tool, the tier (Enterprise,
+  consumer, Co-work) **and separately** a no-training agreement check. Only the agreement is
+  built, and `tool_grid`'s help string argues against the tier: *"The agreement decides this,
+  not the price tier."* The build contradicts her in customer-facing copy.
+- **Both "Unsure" escape hatches are missing.** Discipline is *"'Unsure' or free text"* in her
+  list; client-AI has an unsure branch. Both are required prose in the build. Her unsure is not
+  a hedge, it plants a reminder to settle the point when the policy is generated.
+- **Module I was retired without authority.** Her exclusion list is D, E, F, G, J, O, Q, R, U,
+  V. The code retired D, E, F, **I**, J, O, Q, R, U, V. Module I appears on neither her
+  exclusion list nor her question list.
+- **A contradiction in her own document:** she excludes module G from branching, then her own
+  question list asks the module G question (contract or of-counsel attorneys). The reading that
+  makes both true is that the exclusion means the *clauses* are unconditional, not that the
+  *questions* are dropped. The code took the second reading and retired 22 questions on it.
+- **Her case-management options are the research-tools list**, copy-pasted from the question
+  above it. She needs to resend that option set.
+
+🔴 **Two rows were desktop's errors, both caught by pulling the raw options rather than a
+parse.** `NOTETAKER_STANCE_OPTIONS` has three values, not the two reported, and `hiring_states`
+carries an `OUTSIDE_US_OPTION`, so non-US **can** be answered. Both claims were published in an
+artifact before being checked. The parse script had silently dropped entries.
+
+---
+
+## 2 · The policy pass — Sections 1 to 5 approved
+
+Full record with reasoning and Max's instruction quoted at each decision:
+**`.planning/POLICY-REVIEW-2026-09-03.md`**. Summary only here.
+
+| Section | What happened |
+|---|---|
+| 2 | New clause written for source line 268, the most-restrictive-regime rule, slot-filled from `regulatory_regimes` |
+| 3 | Two competency clauses merged into one, preserving both scopes (attorney/area and firm/matter) |
+| 4 | "risks or AI" fixed to "of AI"; the training/attestation overlap resolved by role rather than deletion |
+| 5 | Two new clauses (line 276 prohibited tools, line 278 personal devices), two blocks deleted, five typo corrections |
+
+**One substantive change, approved knowingly.** Katy scoped attestations to non-attorney staff.
+The product scopes them to everyone: the intake roster help text, Max's own copy, reads *"Non-
+attorney staff take the training; everyone signs the attestation."* The clause was widened to
+match the product. Training and certification stay scoped to non-attorney staff as she wrote
+them.
+
+**Two blocks deleted** under Max's rule, *"if it wasn't on Katy's policy and is not necessary
+from the intake questions, this is garbage and must be deleted"*: `gq8-tool-approval` and
+`gq6-vendor-diligence`. Both had `sourceLine: null`, no intake question, and no place on her
+2026-09-02 list. Neither loses substance: her Section 7 already names the firm admin as
+approver, and her line 359 already names security measures and termination handling as factors.
+
+**`country` → `company` at line 359 is applied but flagged for Katy.** Line 359 is the only
+place the word "country" appears in her 823-line document, and the same sentence says "company"
+twice more. One line to put to her: *"line 359, stability of the country or of the company?"*
+
+---
+
+## 3 · Section 6, and a proposal withdrawn
+
+The per-platform paragraphs in Sections 6 and 7 are **generated by us; Katy has never seen
+them**. Twenty vendors were researched on 2026-08-31 and for roughly fifteen the training
+question came back `unclear` — and for every unclear vendor the generator invents a duty out of
+our own uncertainty. Three defects: her standard is *express agreement* and the text says
+*written confirmation*; it bundles a DPA into the no-training sentence, and a DPA is not a
+no-training agreement; and it asserts what a vendor's terms said on a date, inside the firm's
+legal document, where it goes stale silently.
+
+**Desktop proposed moving all of it to the action list. Max rejected it** — *"seems bloated
+tho... legal does not mean cumbersome"* — and he was right. Two of the three defects are wording
+and fix in place. Stripping the vendor text drops Section 6 to two sentences and makes the
+policy generic, which is the opposite of what the product sells.
+
+Current direction, **not approved**: one sentence per platform, three shapes, using her
+"express agreement" standard, with no dated assertion and no DPA in the training sentence. It
+also makes her review tractable, three sentence patterns rather than twenty vendor paragraphs.
+
+---
+
+## 4 · 🔴 Open defect — Katy's core no-training rule reaches nobody
+
+`no-training-agreement` in `lib/policy/blocks/s05-approved-tools.ts`, her source line 356:
+
+> All AI tools, including third party tools, custom built tools, tools inside other tools, and
+> public tools must always be used under an express agreement that data will NOT be used for
+> training the models if there is ever any access to client data.
+
+Gated on `when: { key: 'tool_grid', answered: true }`. The `maximal` fixture **does** answer
+`tool_grid`, and the clause still does not render. The deleted `gq6` block carried the identical
+condition and failed identically — two for two, so the condition looks broken for grid-type
+answers rather than this being a data problem.
+
+Reproduce: `node scripts/render-policy.mjs maximal`, then grep the output for "custom built
+tools". Not investigated further; handed to terminal.
+
+---
+
+## 5 · The action list started
+
+The action items document already exists and renders separately from the policy (D2). Its three
+trigger rules all emit `[TODO]` placeholders instead of real text, and one fires on
+`carrier_notified`, retired 2026-09-02, so it is dead. We are filling a built container.
+
+Four items drafted so far: regulatory regimes read alongside, prohibited-tools scope, tool
+approval (replacing the deleted `gq8`), vendor terms review (replacing the deleted `gq6`).
+Max's standing instruction on wording: **"clearly, not obscurely."**
+
+---
+
+## 6 · Method notes worth keeping
+
+- **A parse is not a read.** Two published claims about the intake were wrong because a regex
+  parser dropped entries the source file plainly contained. Both were corrected only after
+  pulling the raw constants. When the claim is "the build does X", read the definition, do not
+  extract it.
+- **Verify the instruction before executing it.** Twice this session desktop delivered more than
+  was asked: a recommendation attached to a request for one sentence, and four unsolicited flags
+  on a section whose four instructions were complete. Max: *"what was the instruction i wrote?"*
+- **Push back with certainty, not caution.** The Section 6 proposal was over-engineered and Max
+  invited the correction. The honest answer was that desktop's own recommendation was heavier
+  than the problem.
+- **Katy's answer options are policy text.** Her P24 instruction prints the firm's chosen
+  notetaker stance directly into the document, so rewording an option rewrites a clause. Moving
+  to her five options means five clauses, not a relabelled dropdown.
+
+---
+
+## Commits
+
+```
+42d8ef7  docs(policy): the 2026-09-03 review — sections 1 to 5 approved
+```
+
+Pushed to `main`. Four files: the review record, Katy's list, the README index line, and a
+dated section at the top of `session_handoff.md`.
+
+## Verification
+
+| | |
+|---|---|
+| Deploy status | Checked with `gh run list --workflow=deploy.yml`. Last production `workflow_dispatch` **2026-08-24T19:34:58Z** from `2efec949`. Nothing since. |
+| Policy render | `node scripts/render-policy.mjs maximal` — 21 sections, 54 verbatim, 17 TODO. Writes to gitignored `out/`. |
+| Product code | **Untouched.** The 11 uncommitted files from 2026-09-02, including `PREVIEW_UNDELIVERED = true`, were left exactly as found. |
+| Built | ❌ Nothing. Every approved sentence still has to be written into `lib/policy/blocks/` by terminal. |
