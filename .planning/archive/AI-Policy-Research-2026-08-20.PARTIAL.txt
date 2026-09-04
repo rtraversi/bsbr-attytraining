@@ -1,3 +1,18 @@
+=============================================================================
+ARCHIVED 2026-09-04 — DO NOT USE. INCOMPLETE AND MISLEADING.
+
+This is a partial transcription of Katy's research document. It is MISSING her
+Part 1 policy clauses (VENDOR BREACH, RECORDKEEPING, CLIENT BILLING, MALPRACTICE
+INSURANCE and others). Grepping it for one of those returns nothing, which reads
+as "Katy never wrote this." She did.
+
+Its line numbers also do NOT match the `sourceLine` references in
+lib/policy/blocks/. Those all refer to the .md. Line 312 here is a footnote;
+line 312 in the .md is her notetaker instruction.
+
+USE: .planning/AI-Policy-Research-2026-08-20.md   (823 lines, matches sourceLine)
+=============================================================================
+
 Firm AI Policy — Research 
 NOTES FROM MEETING YESTERDAY:
 	•	Iurix remains the primary objective as we approach completion.
