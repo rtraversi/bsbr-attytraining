@@ -78,6 +78,13 @@ export const MAXIMAL: AnswerMap = {
   research_tools: ['cocounsel', 'general_llms'],
   case_mgmt: ['clio', 'smokeball'],
   comms_platforms: ['slack', 'teams'],
+  // ai_tools MUST be set alongside tool_grid. isAnswered() for a tool-grid
+  // derives its rows from ai_tools (toolGridTools), so a fixture that sets the
+  // grid without the tools it came from reports the grid UNANSWERED, and every
+  // block gated on it silently vanishes — including Katy's core no-training
+  // clause at source line 356. That state is unreachable in the real product,
+  // where the grid is only shown once ai_tools is answered.
+  ai_tools: ['chatgpt'],
   tool_grid: [{ tool: 'chatgpt', noTraining: 'yes' }],
   prohibited_tools: 'DeepSeek',
   personal_devices: 'yes',

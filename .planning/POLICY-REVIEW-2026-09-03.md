@@ -239,33 +239,23 @@ revisit properly."*
 
 ---
 
-## 7. 🔴 Open defect, not yet investigated
+## 7. ~~Open defect~~ — RESOLVED 2026-09-04; the diagnosis below was wrong
 
-**Katy's core no-training rule does not appear in any policy.**
+This section claimed the `answered` condition was broken for grid-type answers, because Katy's core
+no-training clause (source line 356) rendered for nobody.
 
-`no-training-agreement` (Section 5, her source line 356) is her central rule:
+**It was a broken fixture.** `isAnswered` for a `tool-grid` derives its rows from `ai_tools`. The
+`maximal` fixture set `tool_grid` without `ai_tools`, so the grid reported itself unanswered and
+every block gated on it disappeared from the render. A real firm cannot reach that state; the grid
+is only shown once `ai_tools` is answered. One line in `lib/policy/fixtures.ts`. Renderer now shows
+55 verbatim clauses, up from 54.
 
-> All AI tools, including third party tools, custom built tools, tools inside other tools,
-> and public tools must always be used under an express agreement that data will NOT be used
-> for training the models if there is ever any access to client data.
+**Still true from the original entry:**
 
-It is gated on `when: { key: 'tool_grid', answered: true }`. The `maximal` fixture **does**
-answer `tool_grid` (`[{ tool: 'chatgpt', noTraining: 'yes' }]`), and the clause still does not
-render. The deleted `gq6-vendor-diligence` carried the identical condition and failed
-identically. Two for two, so the condition looks broken for grid-type answers rather than this
-being a data problem.
-
-Verify with `node scripts/render-policy.mjs maximal` and grep the output for "custom built
-tools". Needs a terminal fix.
-
-**Two smaller flags from the same pass:**
-
-- `p12-general-llms` ends `(DEFINITIONS AT END)`, a pointer to Section 22 written as a
-  note-to-self in capitals. It prints exactly like that. No full stop on the clause either.
-- Section 5's typo list was compiled from the `maximal` render, which does not fire every
-  block. Any clause behind an unsatisfied condition was not reviewed for typos.
-
----
+- `p12-general-llms` ends `(DEFINITIONS AT END)`, a pointer to Section 22 written as a note-to-self
+  in capitals. It prints exactly like that, and the clause has no full stop.
+- The Section 5 typo list was compiled from the `maximal` render, which does not fire every block.
+  Any clause behind an unsatisfied condition was not reviewed for typos.
 
 ## 8. Standing instruction from this session
 

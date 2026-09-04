@@ -19,11 +19,11 @@ intake questions, existed nowhere in the repo and was cited only in two code com
 now saved verbatim at **`.planning/KATY-INTAKE-LIST-2026-09-02.md`** with a gap analysis
 against what is built.
 
-**One open defect found during the pass, worth picking up first:** Katy's core no-training
-rule (`no-training-agreement`, her source line 356) renders for nobody. It gates on
-`tool_grid answered`, the `maximal` fixture answers `tool_grid`, and the clause still does not
-appear. A second block with the identical condition failed identically. See section 7 of the
-review document.
+**The one defect from that pass is RESOLVED (2026-09-04) and was misdiagnosed.** Katy's core
+no-training rule was missing from the rendered policy, and 09-03 blamed the condition evaluator.
+The real cause was the `maximal` fixture setting `tool_grid` without `ai_tools`, which `isAnswered`
+derives the grid's rows from. A real firm could never reach that state. One line in
+`lib/policy/fixtures.ts`; the renderer now shows 55 verbatim clauses instead of 54.
 
 ---
 

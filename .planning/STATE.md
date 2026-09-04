@@ -41,8 +41,12 @@ in the repo until today. It is now `.planning/KATY-INTAKE-LIST-2026-09-02.md`, a
 **2026-08-24T19:34:58Z** from `2efec949`. Nothing since. Everything built in September is
 unshipped.
 
-**Open defect, found today:** Katy's core no-training rule renders for no firm. See
-`.planning/sessions/20260903-max-summary.md` §4.
+**~~Open defect, found today: Katy's core no-training rule renders for no firm.~~ RESOLVED
+2026-09-04, and the 09-03 diagnosis was wrong.** The condition evaluator is fine. The `maximal`
+fixture set `tool_grid` without setting `ai_tools`, and `isAnswered` for a tool grid derives its
+rows from `ai_tools`, so the grid reported itself unanswered and every block gated on it vanished.
+A real firm cannot reach that state, because the grid is only shown once `ai_tools` is answered.
+One line in `lib/policy/fixtures.ts`. The renderer now shows 55 verbatim clauses, up from 54.
 
 ---
 

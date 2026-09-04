@@ -104,23 +104,27 @@ also makes her review tractable, three sentence patterns rather than twenty vend
 
 ---
 
-## 4 · 🔴 Open defect — Katy's core no-training rule reaches nobody
+## 4 · ~~Open defect~~ — RESOLVED 2026-09-04, and this diagnosis was WRONG
 
-`no-training-agreement` in `lib/policy/blocks/s05-approved-tools.ts`, her source line 356:
+**What this section said on 09-03:** that `when: { key: 'tool_grid', answered: true }` looked
+broken for grid-type answers, because Katy's core no-training clause (her source line 356) did not
+render even though the `maximal` fixture answered `tool_grid`.
 
-> All AI tools, including third party tools, custom built tools, tools inside other tools, and
-> public tools must always be used under an express agreement that data will NOT be used for
-> training the models if there is ever any access to client data.
+**The real cause, found 2026-09-04: a broken fixture, not a broken engine.** `isAnswered` for a
+`tool-grid` question derives its rows from **`ai_tools`** via `toolGridTools()`. The `maximal`
+fixture set `tool_grid` but never set `ai_tools`, so the grid had zero rows to check and reported
+itself unanswered. Every block gated on it silently vanished.
 
-Gated on `when: { key: 'tool_grid', answered: true }`. The `maximal` fixture **does** answer
-`tool_grid`, and the clause still does not render. The deleted `gq6` block carried the identical
-condition and failed identically — two for two, so the condition looks broken for grid-type
-answers rather than this being a data problem.
+**A real firm could never reach that state**, because the grid is only shown once `ai_tools` is
+answered. The clause was reaching real firms the whole time. What was broken was the preview the
+renderer produced, which is the document Katy would have been shown.
 
-Reproduce: `node scripts/render-policy.mjs maximal`, then grep the output for "custom built
-tools". Not investigated further; handed to terminal.
+Fixed with one line in `lib/policy/fixtures.ts`, with a comment explaining why the two keys must
+move together. The renderer now shows **55 verbatim clauses, up from 54**.
 
----
+**The lesson, and it is the same one as the intake parse:** a preview built from a fixture is only
+as true as the fixture. Two claims in two days were wrong because the artefact was trusted over the
+thing it was supposed to represent.
 
 ## 5 · The action list started
 
