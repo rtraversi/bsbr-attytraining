@@ -114,6 +114,33 @@ link it to, **relink it to staging in the same session**.
   rather than its fallback. Deliberately left alone (a name is now always
   captured), but it is why `deliver-policy.mjs` needed fixing today.
 
+### 3.5 🔴 HOPSCOTCH — Max's one-word reset (added 2026-09-04)
+
+**If Max says the single word "hopscotch," he is resetting how you are working.** It means: run
+the whole output discipline, starting with verification.
+
+**The verification half, which is the new part.** Before asserting anything load-bearing, check
+yourself:
+
+- **Name the source.** File and line. If you cannot, you are recalling, not knowing.
+- **Check the source is still authoritative.** A document can be real, quoted correctly, and
+  superseded. Katy's 2026-09-02 list supersedes her August research doc for what the intake asks.
+- **Existence is not intent.** "She once wrote this" is not "she wants this."
+- **Say which is yours.** Mark inference as inference.
+
+*Why it exists:* on 2026-09-04 Claude proposed adding a clause and told Max "Katy's own design had
+two halves." It was in her August draft and had been **dropped** from her September list. Claude
+had already established that list as the authority an hour earlier. Same shape twice more that
+week: two intake claims published from a regex parse that had silently dropped entries, and a
+"broken condition evaluator" that was a broken test fixture. All confident, all wrong, all
+catchable by reading the source instead of the artefact.
+
+**The rest of what the word recalls:** concise bullets and lead with the answer, never walls of
+prose; Max does **not** read terminal output, so translate it rather than quoting it; propose
+changes in the form *what it says now, what I propose, why mine is better*; no spaced em dashes and
+no `§` in anything he reads; customer-facing copy is his to write, never yours; and answer the
+instruction he actually wrote rather than the adjacent thing you noticed.
+
 ### 4. 🔴 Max writes all user-facing copy
 
 Do not write, improve, soften or "clarify" any string a customer reads. Propose
