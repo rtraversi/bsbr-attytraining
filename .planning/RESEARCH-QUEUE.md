@@ -30,6 +30,22 @@ the research supports them.
 back **unclear for 15**, no for 4, yes for 1. So "we don't know" is the normal
 state, not the exception.
 
+## 1b. What the per-platform requirement actually says
+
+Katy's Q13/Q14 logic: selecting a case management platform triggers a requirement
+to check that training is not allowed, and answering **yes or unsure** on whether
+its built-in AI is switched on triggers *"the platform requirement specific to that
+software."*
+
+**The mechanism is approved for build now** (2026-09-04). What is NOT settled is the
+**content**: what the requirement says for Clio versus Smokeball versus MyCase. That
+depends entirely on item 1, the vendor terms research. Until that lands, the branch
+fires and names the firm's platforms using Katy's own "contractually bound" clause,
+which needs no per-vendor facts.
+
+Max, 2026-09-04: *"this item's information resolves when i do research ... but i do
+want the functionality to be built."*
+
 ## 2. Tool lists in the intake
 
 **Case management platforms.** All eleven were checked on 2026-09-04 and are real,
