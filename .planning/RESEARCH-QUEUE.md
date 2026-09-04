@@ -56,7 +56,19 @@ software, not a legal platform. Some small firms use it informally. Max's call
 whether it stays.
 
 **Communication platforms.** Microsoft Teams, Slack, Telegram, Signal, Email only.
-All five verified real on 2026-09-04. Nothing fabricated. **Closed.**
+All five verified real on 2026-09-04. Nothing fabricated.
+
+🔴 **OPEN: Signal.** Our vendor row has it as `hasAi: unclear, trains: unclear`, which
+is wrong in effect. Signal is end-to-end encrypted and cannot read message content,
+stores virtually no metadata (a court order yields account creation date and last
+connection time), and is an independent nonprofit with no data collection. Its
+founder's encrypted AI project, Confer, is a **separate product**, not a Signal
+feature. Max is verifying this himself before the row is changed.
+
+Why it matters: the Section 6 clause names the firm's platforms, so a firm using
+Signal is currently told to get **Signal** contractually bound not to train on their
+data. That is nonsense, and it is the kind of nonsense that makes an attorney
+distrust every other vendor entry in the document.
 
 **AI tools.** All twelve verified real on 2026-09-04. **Open question: Harvey.** It
 is real and major, but it is a BigLaw product (A&O Shearman, Latham, 1,300 firms).
