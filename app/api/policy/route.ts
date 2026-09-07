@@ -96,7 +96,7 @@ export async function GET(request: Request) {
   // ── .docx ───────────────────────────────────────────────────────────────
   const bytes = wantsActionItems
     ? docx(actionItemParagraphs(found.result.actionItems, found.firmName))
-    : docx(policyParagraphs(found.result.policy, found.firmName))
+    : docx(policyParagraphs(found.result.policy, found.firmName, { audience: 'firm' }))
 
   const filename = policyFilename(found.firmName, wantsActionItems ? 'action-items' : 'policy')
 

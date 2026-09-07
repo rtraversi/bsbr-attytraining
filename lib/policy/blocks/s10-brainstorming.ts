@@ -12,7 +12,7 @@ export const SECTION_10_BLOCKS: readonly Block[] = [
   {
     id: 'p30-brainstorming',
     clause: 'P30',
-    when: { key: 'brainstorming', is: 'yes' },
+    // Unbranched 2026-09-02 (Katy): always in every policy, no branching.
     text: {
       kind: 'verbatim',
       // Turns on “professional level security”, the term §22 must define (G-B4).
@@ -25,7 +25,7 @@ export const SECTION_10_BLOCKS: readonly Block[] = [
   {
     id: 'brainstorming-confidentiality',
     clause: 'Part 2 — Brainstorming',
-    when: { key: 'brainstorming', is: 'yes' },
+    // Unbranched 2026-09-02 (Katy): always in every policy, no branching.
     text: {
       kind: 'verbatim',
       // ⚠️ THE CITED LINE MOVED, 370 → 371. Line 370 is the bare heading

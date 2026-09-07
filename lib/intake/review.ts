@@ -24,7 +24,7 @@
 // one failure mode and no warning attached to it.
 // =============================================================================
 
-import { QUESTIONS, getQuestion, optionsForQuestion } from './questions'
+import { QUESTIONS, RETIRED_OPTIONS, getQuestion, optionsForQuestion } from './questions'
 import { visibleQuestions, isAnswered, toolGridTools } from './branching'
 import {
   SECTION_LABELS,
@@ -75,7 +75,13 @@ export interface ReviewSection {
 function optionLabel(question: Question, value: string): string {
   if (isOtherValue(value)) return otherText(value) ?? value
   const options = optionsForQuestion(question)
-  return options.find((o) => o.value === value)?.label ?? value
+  const offered = options.find((o) => o.value === value)
+  if (offered) return offered.label
+
+  // An option the intake has since withdrawn. The firm still answered it, so it
+  // still reads back as words rather than as a stored id.
+  const retired = RETIRED_OPTIONS[question.key]?.find((o) => o.value === value)
+  return retired?.label ?? value
 }
 
 /**
@@ -115,9 +121,9 @@ export function formatAnswer(question: Question, answers: AnswerMap): string | n
         .join('\n')
 
     case 'tool-grid': {
-      // Labelled off the ai_tools answer, the same way the grid itself is, so a
-      // free-text tool reads back as the firm typed it rather than as
-      // `other:Perplexity`.
+      // Labelled off the grid's source answers, the same way the grid itself
+      // is, so a free-text tool reads back as the firm typed it rather than as
+      // `other:Perplexity`, and a case management platform reads back at all.
       const labels = new Map(toolGridTools(answers).map((t) => [t.value, t.label]))
       const AGREEMENT: Record<string, string> = {
         yes: 'no-training agreement signed',

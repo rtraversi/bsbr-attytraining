@@ -201,7 +201,15 @@ export interface RosterRow {
  * migration.
  */
 export interface ToolGridRow {
-  /** An ai_tools answer value, including an `other:`-prefixed free-text entry. */
+  /**
+   * A value from one of the grid's SOURCE answers — ai_tools, case_mgmt or
+   * comms_platforms (TOOL_GRID_SOURCES in branching.ts) — including an
+   * `other:`-prefixed free-text entry.
+   *
+   * It was ai_tools alone until 2026-09-04. §6 tells a firm to make sure its
+   * case management platform is contractually bound not to train on client
+   * data, and the intake had never asked whether it is.
+   */
   tool: string
   /**
    * "Is there a signed agreement that the vendor will not train on your data?"
@@ -209,6 +217,21 @@ export interface ToolGridRow {
    * `unknown` is a real answer here and not a hedge: a firm that does not know
    * gets an instruction in the policy to go and find out, which is a different
    * clause from either yes or no.
+   *
+   * 🔴 THIS COMMENT IS THE SPEC, and as of 2026-09-04 it is also built. All
+   * three outcomes are read per row by lib/policy/action-items.ts:
+   *
+   *   yes      → nothing additional; the firm is already bound
+   *   no       → an action item to GET the agreement before the tool sees
+   *              client data
+   *   unknown  → an action item to FIND OUT, and to treat the tool as `no`
+   *              until it has
+   *
+   * The prohibition itself is NOT one of these. Katy's clause at source line
+   * 356 bars every tool from client data without an express no-training
+   * agreement, unconditionally, for every firm — see s05-approved-tools.ts.
+   * What branches per row is the follow-up, and a follow-up is homework, so it
+   * goes on the action list and never into the adopted policy (D2).
    */
   noTraining: 'yes' | 'no' | 'unknown' | null
 }

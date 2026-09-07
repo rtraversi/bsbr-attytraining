@@ -8,7 +8,7 @@ import {
   NEVER_SHOWN_TO_FIRM,
   globalPositionOf,
 } from '@/lib/intake/review'
-import { getQuestion, NOTETAKER_NOT_PERMITTED, NO_DRAFTING } from '@/lib/intake/questions'
+import { getQuestion, NOTETAKER_NOT_PERMITTED } from '@/lib/intake/questions'
 import { missingRequired, reconcileToolGrid, visibleQuestions } from '@/lib/intake/branching'
 import { otherValue, NOT_DECIDED_YET, type AnswerMap, type Question } from '@/lib/intake/types'
 
@@ -119,14 +119,15 @@ describe('what the firm sees', () => {
     // A branch never entered is not a question they skipped, and listing it
     // would read as an omission they need to go and fix.
     const answers = answerEverything({
-      drafting_uses: [NO_DRAFTING],
       notetaker_stance: NOTETAKER_NOT_PERMITTED,
       doc_review: 'no',
     })
     const keys = allKeys(answers)
-    expect(keys).toContain('drafting_uses')
-    expect(keys).not.toContain('drafting_client_data')
+    // The drafting chain was retired on 2026-09-02, so the branch it used to
+    // demonstrate is gone. Notetakers and document review still gate.
+    expect(keys).toContain('doc_review')
     expect(keys).not.toContain('notetaker_scope')
+    expect(keys).not.toContain('notetaker_tools')
     expect(keys).not.toContain('doc_review_scale')
   })
 
@@ -142,10 +143,11 @@ describe('what the firm sees', () => {
 
   it('groups into the same sections, in the same order, as the intake itself', () => {
     const sections = buildReview(answerEverything()).map((s) => s.section)
-    // history is absent — see the sensitive tests above.
+    // drafting, courts, records, marketing and history are all absent: every
+    // question they held was retired on 2026-09-02, so there is nothing to
+    // show the firm back.
     expect(sections).toEqual([
-      'firm', 'tools', 'systems', 'drafting', 'courts', 'data', 'records',
-      'meetings', 'clients', 'marketing', 'staff',
+      'firm', 'tools', 'systems', 'data', 'meetings', 'clients', 'staff',
     ])
     expect(new Set(sections).size).toBe(sections.length)
   })

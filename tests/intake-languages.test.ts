@@ -95,7 +95,12 @@ describe('the question itself', () => {
     expect(isAnswered(question, answers)).toBe(true)
   })
 
-  it('a firm that picks nothing is stopped at Send', () => {
+  // ⚠️ RETIRED 2026-09-02. foreign_languages, and the whole drafting chain that
+  // gated it, are no longer asked. The LANGUAGES list, the picker and the
+  // rendering below are all still live infrastructure — FilterableMultiField
+  // serves `jurisdictions` and `hiring_states` — so the rest of this file still
+  // earns its place. This one test asserted the question's own visibility.
+  it.skip('a firm that picks nothing is stopped at Send', () => {
     const base: AnswerMap = {
       drafting_uses: ['substantive'] as never,
       drafting_client_data: 'client_data',

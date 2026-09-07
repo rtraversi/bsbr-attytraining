@@ -72,7 +72,10 @@ describe('section order in the output', () => {
     // A policy may legitimately read §1, §2, §3, §5. Renumbering to be
     // contiguous would make two firms cite different numbers for one rule.
     const numbers = sectionNumbers(MINIMAL)
-    expect(numbers).not.toContain(10) // no brainstorming
+    // §13 automations is the omitted one now: it gates on the automations
+    // question, and the MINIMAL firm answers no. §10 stopped being optional on
+    // 2026-09-02 when the brainstorming question was retired.
+    expect(numbers).not.toContain(13)
     expect(numbers).toContain(15) // billing, always present
     expect(Math.max(...numbers)).toBe(22)
   })
@@ -118,7 +121,11 @@ describe('conditional exclusion', () => {
     // §9 is NOT in this list: P20 (local filing rules) is unconditional in the
     // ratified spine, so the section survives even for a firm that does no
     // AI drafting. See the next test.
-    for (const omitted of [6, 7, 10, 11, 13, 18]) {
+    //
+    // §10 and §18 left this list on 2026-09-02. Brainstorming and advertising
+    // were both gated on questions Katy retired, so their clauses are now
+    // unconditional — every firm receives them, which is what she asked for.
+    for (const omitted of [6, 7, 11, 13]) {
       expect(numbers).not.toContain(omitted)
     }
   })
@@ -127,13 +134,20 @@ describe('conditional exclusion', () => {
     // "P20 always" — a transactional firm files with nobody and the duty still
     // reads correctly with an empty court list (map §2.3). The drafting and
     // court-disclosure clauses around it do drop out.
+    //
+    // ⚠️ Since 2026-09-02 the drafting clauses no longer drop out either: the
+    // questions that gated them were retired, so §9 now carries its whole set
+    // for every firm. P20 remains the reason the SECTION cannot be omitted.
     const section9 = assemble(MINIMAL).policy.sections.find((s) => s.number === 9)
     expect(section9).toBeDefined()
-    expect(section9!.blocks.map((b) => b.id)).toEqual(['p20-local-filing-rules'])
+    expect(section9!.blocks.map((b) => b.id)).toContain('p20-local-filing-rules')
   })
 
-  it('drops P21 when the firm answered "no"', () => {
-    expect(blockIds(MINIMAL)).not.toContain('p21-court-ai-disclosure')
+  it('keeps P21 for every firm, because its gate was retired', () => {
+    // Until 2026-09-02 this dropped on court_ai_orders = 'no'. That question is
+    // retired, so the court-disclosure duty is now unconditional. Katy's
+    // instruction was that these clauses "will always be every policy".
+    expect(blockIds(MINIMAL)).toContain('p21-court-ai-disclosure')
   })
 
   it('drops TAR when the firm does document review but no TAR', () => {
@@ -389,6 +403,184 @@ describe('the action item list is a separate deliverable (D2)', () => {
       'case-mgmt-training-permission',
       'malpractice-carrier-notification',
     ])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// The tool grid — ONE answer, MANY outcomes
+//
+// Until 2026-09-04 nothing in lib/policy read tool_grid[].noTraining, so a firm
+// answering "no, we hold no agreement" received a document identical to one
+// answering "yes". Three files carried a comment saying the branch was owed.
+//
+// The constraint that made it interesting: an action item rule matched a whole
+// ANSWER (`fromKey` + `when`), and this answer is a list of rows that disagree
+// with each other — one firm can need a "get the agreement" item for Clio and a
+// "go and find out" item for Slack at the same time.
+// ---------------------------------------------------------------------------
+
+describe('per-tool action items from the grid', () => {
+  const grid = (rows: { tool: string; noTraining: 'yes' | 'no' | 'unknown' }[]): AnswerMap => ({
+    ...MINIMAL,
+    ai_tools: ['chatgpt', 'claude'],
+    case_mgmt: ['clio'],
+    comms_platforms: ['slack'],
+    tool_grid: rows,
+  })
+
+  it('raises nothing for a tool the firm HOLDS an agreement for', () => {
+    // The whole point of having asked. A firm that is already bound owes no
+    // homework, which is why there is no rule for `yes`.
+    const { actionItems } = assemble(
+      grid([
+        { tool: 'chatgpt', noTraining: 'yes' },
+        { tool: 'claude', noTraining: 'yes' },
+        { tool: 'clio', noTraining: 'yes' },
+        { tool: 'slack', noTraining: 'yes' },
+      ]),
+    )
+    expect(actionItems).toEqual([])
+  })
+
+  it('raises one item per row, and the three outcomes differ', () => {
+    const { actionItems } = assemble(
+      grid([
+        { tool: 'chatgpt', noTraining: 'yes' },
+        { tool: 'claude', noTraining: 'no' },
+        { tool: 'clio', noTraining: 'unknown' },
+        { tool: 'slack', noTraining: 'no' },
+      ]),
+    )
+    expect(actionItems.map((a) => a.id)).toEqual([
+      'tool-no-training-agreement-missing--claude',
+      'tool-no-training-agreement-missing--slack',
+      'tool-no-training-agreement-unknown--clio',
+    ])
+    // `unknown` is a real answer and not a hedge (Katy, ToolGridRow): the firm
+    // is told to go and find out, which is a different instruction from either.
+    const [missing, , unknown] = actionItems
+    expect(missing.text).not.toBe(unknown.text)
+  })
+
+  it('names the tool it is about, by LABEL and not by stored value', () => {
+    const { actionItems } = assemble(
+      grid([
+        { tool: 'chatgpt', noTraining: 'yes' },
+        { tool: 'claude', noTraining: 'yes' },
+        { tool: 'clio', noTraining: 'yes' },
+        { tool: 'slack', noTraining: 'no' },
+      ]),
+    )
+    expect(actionItems.map((a) => a.subject)).toEqual(['Slack'])
+    expect(actionItems[0].text).toContain('Slack')
+    expect(actionItems[0].fromKey).toBe('tool_grid')
+  })
+
+  it('carries a free-text tool through as the firm typed it', () => {
+    const answers: AnswerMap = {
+      ...MINIMAL,
+      ai_tools: ['other:Perplexity'],
+      case_mgmt: [NONE_VALUE],
+      comms_platforms: ['email_only'],
+      tool_grid: [
+        { tool: 'other:Perplexity', noTraining: 'no' },
+        { tool: 'email_only', noTraining: 'yes' },
+      ],
+    }
+    const { actionItems } = assemble(answers)
+    expect(actionItems.map((a) => a.subject)).toEqual(['Perplexity'])
+    expect(actionItems[0].id).toBe('tool-no-training-agreement-missing--other:Perplexity')
+  })
+
+  it('raises nothing for a stale row whose tool the firm has retracted', () => {
+    // The grid is DERIVED. A row left behind by an unticked tool must not
+    // produce homework about a tool the firm does not have.
+    const answers: AnswerMap = {
+      ...MINIMAL,
+      ai_tools: ['chatgpt'],
+      case_mgmt: [NONE_VALUE],
+      comms_platforms: ['email_only'],
+      tool_grid: [
+        { tool: 'chatgpt', noTraining: 'yes' },
+        { tool: 'email_only', noTraining: 'yes' },
+        { tool: 'otter_ai', noTraining: 'no' },
+      ],
+    }
+    expect(assemble(answers).actionItems).toEqual([])
+  })
+
+  it('groups the list by what the firm has to DO, then by source question', () => {
+    // Rules are the outer loop, so every tool the firm KNOWS is unbound comes
+    // first, then every tool it has to go and check. Within each, source order:
+    // ai_tools, then case_mgmt, then comms_platforms.
+    const { actionItems } = assemble(
+      grid([
+        { tool: 'chatgpt', noTraining: 'unknown' },
+        { tool: 'claude', noTraining: 'no' },
+        { tool: 'clio', noTraining: 'unknown' },
+        { tool: 'slack', noTraining: 'no' },
+      ]),
+    )
+    expect(actionItems.map((a) => a.subject)).toEqual(['Claude', 'Slack', 'ChatGPT', 'Clio'])
+  })
+
+  it('sorts the per-tool items ahead of the per-firm ones — §5 before §6', () => {
+    const answers = {
+      ...grid([
+        { tool: 'chatgpt', noTraining: 'yes' },
+        { tool: 'claude', noTraining: 'yes' },
+        { tool: 'clio', noTraining: 'no' },
+        { tool: 'slack', noTraining: 'yes' },
+      ]),
+      case_mgmt_ai: 'not_sure',
+      carrier_notified: 'not_sure',
+    }
+    expect(assemble(answers).actionItems.map((a) => a.id)).toEqual([
+      'tool-no-training-agreement-missing--clio',
+      'case-mgmt-training-permission',
+      'malpractice-carrier-notification',
+    ])
+  })
+
+  it('🔴 keeps every per-tool item OUT of the adopted policy — D2', () => {
+    // A firm's own policy must not carry a list of the tools it has not got an
+    // agreement for. The prohibition itself is unconditional and stays in §5;
+    // the per-tool follow-up is homework.
+    const { policy, actionItems } = assemble(
+      grid([
+        { tool: 'chatgpt', noTraining: 'no' },
+        { tool: 'claude', noTraining: 'unknown' },
+        { tool: 'clio', noTraining: 'no' },
+        { tool: 'slack', noTraining: 'unknown' },
+      ]),
+    )
+    expect(actionItems).toHaveLength(4)
+
+    const policyText = policy.sections.flatMap((s) => s.blocks).map((b) => b.text).join('\n')
+    for (const item of actionItems) {
+      expect(policyText).not.toContain(item.text)
+    }
+  })
+
+  it('still carries Katy\'s unconditional no-training clause for every firm', () => {
+    // Source line 356 covers EVERY tool and does not branch. This batch adds
+    // the per-tool follow-up, it does not add a prohibition.
+    for (const answers of [MINIMAL, MAXIMAL]) {
+      const ids = assemble(answers).policy.sections.flatMap((s) => s.blocks.map((b) => b.id))
+      expect(ids).toContain('no-training-agreement')
+    }
+  })
+
+  it('emits the same items whatever order the rows were stored in', () => {
+    const rows: { tool: string; noTraining: 'yes' | 'no' | 'unknown' }[] = [
+      { tool: 'chatgpt', noTraining: 'no' },
+      { tool: 'claude', noTraining: 'yes' },
+      { tool: 'clio', noTraining: 'unknown' },
+      { tool: 'slack', noTraining: 'no' },
+    ]
+    const forward = assemble(grid(rows)).actionItems
+    const reversed = assemble(grid([...rows].reverse())).actionItems
+    expect(forward).toEqual(reversed)
   })
 })
 

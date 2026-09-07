@@ -39,13 +39,44 @@ const SOURCE_PATH = join(
 
 const SOURCE_LINES = readFileSync(SOURCE_PATH, 'utf8').split('\n')
 
+/**
+ * Typos in Katy's source that ARE corrected in the delivered policy.
+ *
+ * Max, 2026-09-02, on finding them preserved in a sample document: *"wait WHAT
+ * haha noooo thats bad, come on fix that"*. Shipping a law firm a document
+ * containing its own attorney's spelling mistakes is worse than the fidelity
+ * this file otherwise protects.
+ *
+ * 🔴 THIS LIST IS THE ONLY LICENCE TO DIVERGE FROM THE SOURCE, and it is
+ * applied to the SOURCE side, not the block side. So every block is still
+ * compared against Katy's text character for character, except for these five
+ * substitutions, each of which is a spelling fix that changes no meaning. Any
+ * other rewording, paraphrase or "clarification" still fails this test.
+ *
+ * Adding an entry here is a deliberate, reviewable act. Do not add one to make
+ * a failing test pass: if the block says something the source does not, the
+ * block is wrong.
+ */
+const TYPO_CORRECTIONS: readonly (readonly [string, string])[] = [
+  ['if there is every any', 'if there is ever any'], // ever
+  ['the entrie license agreement', 'the entire license agreement'], // entire
+  ['are chatbox consumer versions', 'are chatbot consumer versions'], // chatbot
+  ['Consumer level pr pro level', 'Consumer level or pro level'], // or
+  ['professional lever data security', 'professional level data security'], // level
+]
+
 /** Strip markdown artefacts that are not policy language. */
 function normalise(text: string): string {
-  return text
+  const stripped = text
     .replace(/\*\*/g, '') // bold wrappers
     .replace(/\\/g, '') // escaped brackets and bullets: \[ \] \- \<
     .replace(/\t/g, '') // nested-list indentation
     .trim()
+
+  return TYPO_CORRECTIONS.reduce(
+    (acc, [wrong, right]) => acc.split(wrong).join(right),
+    stripped,
+  )
 }
 
 const verbatimBlocks = allBlocks().filter(

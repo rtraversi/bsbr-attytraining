@@ -127,24 +127,34 @@ function renderPolicy(fixtureName, result) {
   const lines = [`# Artificial Intelligence Policy for ${firmName}`, '']
 
   for (const section of sections) {
+    const blocks = firmMode ? section.blocks.filter((b) => b.status !== 'todo') : section.blocks
+
+    // A section whose only content was unwritten is a heading over nothing once
+    // the markers go. Omit it, as assemble() already omits a section the firm's
+    // answers never reached.
+    if (blocks.length === 0) continue
+
     // Spine numbers, not sequential ones. A firm that skips a section keeps the
     // gap, so two firms citing "§11" always mean the same rule — assemble()'s
-    // header makes the same point about renumbering.
-    lines.push(`## §${section.number} ${section.title}`, '')
-    for (const block of section.blocks) {
+    // header makes the same point about renumbering. A FIRM sees no number at
+    // all, because an unexplainable gap in its own document reads as a defect.
+    lines.push(firmMode ? `## ${section.title}` : `## §${section.number} ${section.title}`, '')
+    for (const block of blocks) {
       lines.push(renderBlock(block), '')
     }
   }
 
-  lines.push(
-    '---',
-    '',
-    footer(sections.length, verbatim, todo),
-    '',
-    `Rendered by \`scripts/render-policy.mjs\` from the \`${fixtureName}\` fixture. ` +
-      'Preview only — not a deliverable.',
-    '',
-  )
+  if (!firmMode) {
+    lines.push(
+      '---',
+      '',
+      footer(sections.length, verbatim, todo),
+      '',
+      `Rendered by \`scripts/render-policy.mjs\` from the \`${fixtureName}\` fixture. ` +
+        'Preview only — not a deliverable.',
+      '',
+    )
+  }
 
   return { markdown: lines.join('\n'), verbatim, todo, sectionCount: sections.length }
 }
@@ -185,13 +195,17 @@ function renderActionItems(fixtureName, result) {
 
   if (items.length === 0) {
     lines.push(
-      'No action items — this firm answered "not sure" to none of the three questions that',
-      'produce one (`case_mgmt_ai`, `notetaker_stance`, `carrier_notified`).',
+      'No action items. This firm answered "not sure" to none of the three questions that',
+      'produce one (`case_mgmt_ai`, `notetaker_stance`, `carrier_notified`), and every row',
+      'of its tool grid holds a signed no-training agreement.',
       '',
     )
   } else {
     for (const item of items) {
-      lines.push(`- ${renderTodo(item.text)}`, `  <sub>from \`${item.fromKey}\`</sub>`, '')
+      // The subject is what a per-row item is ABOUT — the tool — and without it
+      // four tool_grid items read as four copies of the same homework.
+      const from = item.subject ? `\`${item.fromKey}\` — ${item.subject}` : `\`${item.fromKey}\``
+      lines.push(`- ${renderTodo(item.text)}`, `  <sub>from ${from}</sub>`, '')
     }
   }
 
@@ -213,7 +227,12 @@ function renderActionItems(fixtureName, result) {
 // Entry point
 // ---------------------------------------------------------------------------
 
-const requested = process.argv.slice(2)
+// --firm renders the DELIVERABLE: what a firm would actually receive. Unwritten
+// clauses are omitted rather than shown, section headings lose the `§n`, and the
+// transcription footer goes away. Without it you get the internal preview, which
+// is the one that names every gap and is what the engine work is reviewed from.
+const firmMode = process.argv.includes('--firm')
+const requested = process.argv.slice(2).filter((arg) => !arg.startsWith('--'))
 const unknown = requested.filter((name) => !(name in FIXTURES))
 if (unknown.length > 0) {
   console.error(
@@ -240,7 +259,9 @@ for (const name of names) {
 
   // The deliverables. Two documents, never merged — D2, and the same split the
   // Markdown above makes, from the same assemble() call.
-  const documents = policyDocuments(result, firmName)
+  const documents = policyDocuments(result, firmName, {
+    audience: firmMode ? 'firm' : 'operator',
+  })
   const policyDocxPath = join(OUT_DIR, `policy-${name}.docx`)
   const actionsDocxPath = join(OUT_DIR, `policy-${name}-action-items.docx`)
   writeFileSync(policyDocxPath, documents.policy)

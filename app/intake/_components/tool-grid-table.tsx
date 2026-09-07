@@ -5,7 +5,11 @@ import { toolGridTools, reconcileToolGrid } from '@/lib/intake/branching'
 import type { AnswerMap, ToolGridRow } from '@/lib/intake/types'
 
 /**
- * The per-tool grid: one screen, one row per tool ticked in ai_tools.
+ * The per-tool grid: one screen, one row per tool or platform the firm named.
+ *
+ * Rows come from ai_tools, case_mgmt AND comms_platforms since 2026-09-04 —
+ * see TOOL_GRID_SOURCES in lib/intake/branching.ts for why, and the question's
+ * own note in questions.ts for why it now sits in the `data` section.
  *
  * An explicit exception to one-question-at-a-time, approved by Katy 2026-08-26.
  * Asking a question per tool one at a time would be a dozen screens for a firm
@@ -81,6 +85,8 @@ export function ToolGridTable({
       <table className="w-full min-w-[30rem] border-collapse text-sm">
         <thead>
           <tr>
+            {/* ⚠️ COPY, FLAGGED 2026-09-04: the column is headed "Tool" and now
+                lists platforms as well. Max's to reword, with the prompt. */}
             <th className={`${TABLE_HEAD} w-px whitespace-nowrap pr-6`}>Tool</th>
             <th className={TABLE_HEAD}>
               No-training agreement

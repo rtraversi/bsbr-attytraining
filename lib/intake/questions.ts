@@ -222,16 +222,25 @@ const DOC_REVIEW_SCALE_OPTIONS: QuestionOption[] = [
 // merged the consent regime and the meeting type into a single select, so its
 // options overlapped and its branch tested for a NO that did not exist among
 // them. This is the consent regime only.
+const NOTETAKER_NOT_SURE_LITERAL = 'not_sure'
+
+// Katy's OWN menu, restored 2026-09-04 (Max). The previous labels paraphrased
+// her statutory terms: "both party" and "single party" are what recording
+// statutes actually say, and an attorney reads them straight. `not_sure` is her
+// line 312, which routes an unsure firm to the action list and had no way to be
+// answered until now.
 const NOTETAKER_STANCE_OPTIONS: QuestionOption[] = [
-  { value: 'not_permitted', label: 'Not permitted at all' },
-  { value: 'all_consent', label: "Permitted only with everyone's consent, whatever the state allows" },
-  { value: 'state_law', label: 'Permitted per the consent law of the state involved' },
+  { value: 'not_permitted', label: 'No AI notetakers' },
+  { value: 'all_consent', label: 'Only allowed with both party consent' },
+  { value: 'state_law', label: 'Allowed only in states allowing single party' },
+  { value: NOTETAKER_NOT_SURE_LITERAL, label: 'Not sure' },
 ]
 
+// Her September list's venue wording and order.
 const NOTETAKER_SCOPE_OPTIONS: QuestionOption[] = [
-  { value: 'internal', label: 'Internal meetings' },
   { value: 'client', label: 'Client meetings' },
-  { value: 'proceedings', label: 'Depositions or hearings where permitted' },
+  { value: 'internal', label: 'Internal staff meetings' },
+  { value: 'proceedings', label: 'Hearings where permissible' },
 ]
 
 const YES_NO_NOT_SURE: QuestionOption[] = [
@@ -287,6 +296,37 @@ const BRAINSTORM_TIER_OPTIONS: QuestionOption[] = [
 // Module Q. No `none` — every firm bills somehow — so the escape on this
 // unconditional required multi-select is `allowOther`, for the models nobody
 // listed (subscription, hybrid-contingency, pro bono only).
+/**
+ * Where a firm's automations run. Katy's §13 clause requires that an automation
+ * "must run locally and send client information only through API, or using a
+ * commercial agreement insuring confidentiality" — an assertion about the
+ * firm's infrastructure that nothing asked about until 2026-09-04.
+ *
+ * Deliberately NO vendor examples in the labels (Max, 2026-09-04). A firm that
+ * does not recognise the named product answers no when the answer is yes.
+ */
+const AUTOMATION_LOCATION_OPTIONS: QuestionOption[] = [
+  { value: 'firm_systems', label: 'On firm systems' },
+  { value: 'third_party', label: 'Through a third-party service' },
+  { value: 'both', label: 'Both' },
+  { value: 'not_sure', label: 'Not sure' },
+]
+
+/**
+ * The third option is not AI-GENERATED content at all — it is influencing what
+ * an AI platform says about the firm to other people, which the firm never sees
+ * and cannot proofread. Katy's advertising clause reaches only "AI generated
+ * advertising", so it does not cover this today.
+ */
+const MARKETING_WAY_OPTIONS: QuestionOption[] = [
+  { value: 'artwork', label: 'Generating artwork or images' },
+  {
+    value: 'written',
+    label: 'Generating written content such as social posts, blog posts or website copy',
+  },
+  { value: 'ai_visibility', label: 'Trying to increase how often AI platforms recommend the firm' },
+]
+
 const BILLING_MODEL_OPTIONS: QuestionOption[] = [
   { value: 'hourly', label: 'Hourly' },
   { value: 'flat_fee', label: 'Flat fee' },
@@ -303,6 +343,14 @@ const FOREIGN_CONTENT_OPTIONS: QuestionOption[] = [
 
 /** The `not permitted` value, exported so the branch below and its tests agree. */
 export const NOTETAKER_NOT_PERMITTED = 'not_permitted'
+
+/**
+ * Katy's line 312: "or if marked UNSURE then add to action list at end to
+ * resaerrch and redo the intake in the near future". An unsure firm gets NO
+ * notetaker clause and an action item instead, so the follow-ups are hidden
+ * from it exactly as they are from a firm that prohibits notetakers.
+ */
+export const NOTETAKER_NOT_SURE = NOTETAKER_NOT_SURE_LITERAL
 
 /** "None yet" on ai_tools. Hides the tool grid; see that question's showIf. */
 export const NO_TOOLS_YET = 'none_yet'
@@ -363,6 +411,29 @@ export const QUESTIONS: readonly Question[] = [
     required: true,
   },
   {
+    // Added 2026-09-02 from Katy's definitive intake list, where it is question
+    // two and was the ONLY question on that list with nothing built behind it.
+    //
+    // ⚠️ NOTHING CONSUMES THIS ANSWER YET. Her research brief says firm size
+    // "drives whether STAFF COMPETENCY language needs to scale up to a training
+    // program vs. a single attestation" (2026-08-20, §1), so a §4 block should
+    // branch on it. That block does not exist and she has not written its text.
+    // The question is asked so the answer is on file; the clause is hers to
+    // write before it does anything.
+    key: 'firm_size',
+    section: 'firm',
+    module: '0',
+    prompt: 'What is the size of the firm?',
+    type: 'single',
+    required: true,
+    options: [
+      { value: 'solo', label: '1 attorney' },
+      { value: '2_5', label: '2 to 5 attorneys' },
+      { value: '6_20', label: '6 to 20 attorneys' },
+      { value: '20_plus', label: 'More than 20 attorneys' },
+    ],
+  },
+  {
     // One screen, not one question per person — the only place the intake shows
     // a table. The admin is row one, pre-filled from their account, and their
     // own attorney answer is what decides whether they occupy a seat.
@@ -382,16 +453,21 @@ export const QUESTIONS: readonly Question[] = [
     key: 'jurisdictions',
     section: 'firm',
     module: '0',
+    // FEDERAL_OPTION removed 2026-09-04 (Max). §2 already names "Federal Courts,
+    // Agencies and Circuits" unconditionally, and the §2 slot excluded Federal
+    // from the state list anyway, so the option was asking for something the
+    // clause never used. `allowOther` covers anything the 56 entries miss.
     prompt: "Every US jurisdiction where the firm's attorneys are licensed.",
     type: 'states',
-    options: [FEDERAL_OPTION],
+    options: [],
+    allowOther: true,
     required: true,
   },
   {
     key: 'contract_attorneys',
     section: 'firm',
     module: 'G',
-    prompt: 'Does the firm work with contract or of-counsel attorneys?',
+    prompt: 'Does the firm work with contract attorneys, of-counsel attorneys, or co-counsel?',
     type: 'yesno',
     required: true,
   },
@@ -427,27 +503,6 @@ export const QUESTIONS: readonly Question[] = [
     options: AI_TOOL_OPTIONS,
     allowOther: true,
     required: true,
-  },
-  {
-    key: 'tool_grid',
-    section: 'tools',
-    module: 'A',
-    prompt: 'For each tool, is there a signed agreement that the vendor will not train on your data?',
-    // Says why the tier question is gone, at the point somebody would expect to
-    // be asked it. The agreement is the fact; the tier was a guess at the fact.
-    help: 'The agreement decides this, not the price tier. A consumer plan with a signed addendum counts, and an enterprise plan without one does not.',
-    type: 'tool-grid',
-    required: true,
-    // Two conditions, not one. "Answered" alone would show an empty grid to a
-    // firm whose only answer is "None yet" — a table with no rows, required and
-    // unanswerable, which is a dead end on the screen after the one that caused
-    // it. toolGridTools() drops none_yet as well, so the two agree.
-    showIf: {
-      all: [
-        { key: 'ai_tools', answered: true },
-        { key: 'ai_tools', not: NO_TOOLS_YET },
-      ],
-    },
   },
   {
     key: 'prohibited_tools',
@@ -499,6 +554,27 @@ export const QUESTIONS: readonly Question[] = [
     options: YES_NO_NOT_SURE,
     required: true,
     showIf: { key: 'case_mgmt', not: NONE_VALUE },
+  },
+  {
+    // Katy's §13 AUTOMATIONS clause is fully transcribed and had NEVER appeared
+    // in a single policy: it gated on an `automations` answer that no question
+    // collected. Added 2026-09-04 (Max) so her own clause can reach a firm.
+    key: 'automations',
+    section: 'systems',
+    module: '0',
+    prompt: 'Does the firm use automations or workflows that move information between systems?',
+    type: 'yesno',
+    required: true,
+  },
+  {
+    key: 'automations_location',
+    section: 'systems',
+    module: '0',
+    prompt: 'Where do those automations run?',
+    type: 'single',
+    options: AUTOMATION_LOCATION_OPTIONS,
+    required: true,
+    showIf: { key: 'automations', is: 'yes' },
   },
 
   // ── Drafting (Module D) ───────────────────────────────────────────────────
@@ -615,6 +691,60 @@ export const QUESTIONS: readonly Question[] = [
     required: true,
   },
   {
+    // ── Moved here out of `tools` on 2026-09-04, and the move was forced ────
+    //
+    // The grid's rows now come from ai_tools, case_mgmt AND comms_platforms
+    // (TOOL_GRID_SOURCES in branching.ts), because §6 tells a firm to make sure
+    // its case management platform is contractually bound not to train on
+    // client data and the intake had never asked whether it is.
+    //
+    // Two of those three questions are asked AFTER the Tools section, and a
+    // showIf may only name an EARLIER question — assertQuestionSetInvariants()
+    // throws otherwise. So the grid has to sit after the last question it
+    // derives from, which is comms_platforms directly above.
+    //
+    // It also removes the flow bug the widening would otherwise have caused.
+    // Left in `tools`, a firm would fill the grid for its AI tools, name Clio
+    // three screens later, and be thrown back to a Tools question at Send
+    // because the grid had quietly grown a blank row behind them.
+    //
+    // `section` is display-only and never stored, so nothing migrates and no
+    // stored answer moves. And `data` is where this fact belongs anyway: it is
+    // module H's axis, which is what the section notes in types.ts say about
+    // why module J was filed under `data` too.
+    key: 'tool_grid',
+    section: 'data',
+    module: 'A',
+    // ⚠️ COPY, FLAGGED 2026-09-04 AND DELIBERATELY NOT CHANGED. This says "each
+    // tool" and the rows are now tools AND platforms — a firm will see a row
+    // for Clio and one for Slack under a prompt that calls them tools. The
+    // rewording is Max's; all customer-facing copy is.
+    prompt: 'For each tool, is there a signed agreement that the vendor will not train on your data?',
+    // Says why the tier question is gone, at the point somebody would expect to
+    // be asked it. The agreement is the fact; the tier was a guess at the fact.
+    help: 'The agreement decides this, not the price tier. A consumer plan with a signed addendum counts, and an enterprise plan without one does not.',
+    type: 'tool-grid',
+    required: true,
+    // ONE ROW IS ENOUGH TO SHOW THE GRID, and each arm is its own source's
+    // "and nothing else" sentinel. `answered` alone on any of them would show
+    // an empty grid to a firm whose only answer is "None yet" or "None" — a
+    // table with no rows, required and unanswerable, which is a dead end on the
+    // screen after the one that caused it. toolGridTools() drops the same
+    // sentinels, so the two agree.
+    //
+    // `{ key, not }` carries its own is-answered half (see Condition in
+    // types.ts), which is why the first two arms are one clause and not two.
+    // comms_platforms has no sentinel to exclude — `email_only` is a real
+    // answer — so any answer there yields a row.
+    showIf: {
+      any: [
+        { key: 'ai_tools', not: NO_TOOLS_YET },
+        { key: 'case_mgmt', not: NONE_VALUE },
+        { key: 'comms_platforms', answered: true },
+      ],
+    },
+  },
+  {
     key: 'regulatory_regimes',
     section: 'data',
     module: 'H',
@@ -674,7 +804,9 @@ export const QUESTIONS: readonly Question[] = [
     key: 'doc_review',
     section: 'data',
     module: 'K',
-    prompt: 'Does the firm use AI to review discovery or documents, or to summarise long records?',
+    prompt:
+      'Does the firm use AI for discovery review, document review, or to summarise long ' +
+      'records or videos?',
     type: 'yesno',
     required: true,
   },
@@ -739,7 +871,12 @@ export const QUESTIONS: readonly Question[] = [
     type: 'multi',
     options: NOTETAKER_SCOPE_OPTIONS,
     required: true,
-    showIf: { key: 'notetaker_stance', not: NOTETAKER_NOT_PERMITTED },
+    showIf: {
+      all: [
+        { key: 'notetaker_stance', not: NOTETAKER_NOT_PERMITTED },
+        { key: 'notetaker_stance', not: NOTETAKER_NOT_SURE_LITERAL },
+      ],
+    },
   },
   {
     key: 'notetaker_tools',
@@ -748,7 +885,12 @@ export const QUESTIONS: readonly Question[] = [
     prompt: 'Which notetaker is approved?',
     type: 'text',
     required: true,
-    showIf: { key: 'notetaker_stance', not: NOTETAKER_NOT_PERMITTED },
+    showIf: {
+      all: [
+        { key: 'notetaker_stance', not: NOTETAKER_NOT_PERMITTED },
+        { key: 'notetaker_stance', not: NOTETAKER_NOT_SURE_LITERAL },
+      ],
+    },
   },
 
   // ── Clients (Modules P, Q, T) ─────────────────────────────────────────────
@@ -799,6 +941,27 @@ export const QUESTIONS: readonly Question[] = [
     type: 'longtext',
     required: true,
     showIf: { key: 'client_ai', is: 'yes' },
+  },
+  {
+    // Added 2026-09-04 (Max). Her §18 clause covers "AI generated advertising";
+    // naming what the firm actually does makes the clause firm-specific and
+    // reaches the third way, which is not generated content at all.
+    key: 'marketing_use',
+    section: 'clients',
+    module: 'V',
+    prompt: 'Does the firm use AI in its marketing or advertising?',
+    type: 'yesno',
+    required: true,
+  },
+  {
+    key: 'marketing_ways',
+    section: 'clients',
+    module: 'V',
+    prompt: 'In what ways?',
+    type: 'multi',
+    options: MARKETING_WAY_OPTIONS,
+    required: true,
+    showIf: { key: 'marketing_use', is: 'yes' },
   },
 
   // ── Marketing (Module V) ──────────────────────────────────────────────────
@@ -858,7 +1021,9 @@ export const QUESTIONS: readonly Question[] = [
     key: 'hiring_ai',
     section: 'staff',
     module: 'N',
-    prompt: 'Does the firm use, or want to use, AI to screen job applicants?',
+    prompt:
+      'Does the firm use, or want to use, AI to screen out potential employment ' +
+      'applicants?',
     type: 'yesno',
     required: true,
   },
@@ -869,6 +1034,10 @@ export const QUESTIONS: readonly Question[] = [
     prompt: 'Where might applicants be based?',
     type: 'states',
     options: [OUTSIDE_US_OPTION],
+    // "Outside the US" says THAT, not WHERE, and the jurisdiction is the whole
+    // point of the question — the hiring rules differ by country as much as by
+    // state. The write-in is where they say which.
+    allowOther: true,
     required: true,
     showIf: { key: 'hiring_ai', is: 'yes' },
   },
@@ -876,8 +1045,20 @@ export const QUESTIONS: readonly Question[] = [
     key: 'discipline',
     section: 'staff',
     module: 'S',
-    prompt: 'How should violations of this policy be handled?',
+    prompt: 'What actions may the firm take when this policy is violated?',
     type: 'longtext',
+    required: true,
+  },
+  {
+    // Katy's §21 clause carries TWO slots: "[insert the discipline actions
+    // specified in the intake] [insert person at firm in charge of discipline
+    // decisions]". Only the first had a question. Added 2026-09-04 (Max).
+    key: 'discipline_owner',
+    section: 'staff',
+    module: 'S',
+    prompt: 'Who at the firm decides consequences when this policy is violated?',
+    help: 'A role is enough: "managing partner", "office administrator".',
+    type: 'text',
     required: true,
   },
 
@@ -1074,6 +1255,24 @@ export function optionsForQuestion(question: Question): QuestionOption[] {
   if (question.type === 'states') return stateOptionsFor(question)
   if (question.type === 'languages') return languageOptionsFor(question)
   return question.options ?? []
+}
+
+/**
+ * Options a question NO LONGER OFFERS but which stored answers may still hold.
+ *
+ * Withdrawing an option from the intake does not withdraw it from the firms who
+ * already picked it. Their answer stays in `intake_answers` and still has to
+ * render as a LABEL on the review screen — otherwise the firm reads the raw
+ * stored value, which is our database, not their answer.
+ *
+ * DISPLAY ONLY. Nothing here is offered, and nothing here should be branched on.
+ *
+ * `jurisdictions` lost FEDERAL on 2026-09-04 (Max): §2 already names the federal
+ * forums unconditionally, so the option asked for something the clause never
+ * used. The §2 slot's `exclude` stays for the same reason this map exists.
+ */
+export const RETIRED_OPTIONS: Readonly<Record<string, readonly QuestionOption[]>> = {
+  jurisdictions: [FEDERAL_OPTION],
 }
 
 

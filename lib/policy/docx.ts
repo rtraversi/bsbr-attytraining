@@ -162,6 +162,20 @@ function zip(entries: readonly ZipEntry[]): Uint8Array {
  */
 export type ParagraphStyle = 'Title' | 'SectionHeading' | 'Body' | 'Todo'
 
+/**
+ * Who the rendered document is for.
+ *
+ * `operator` is the internal read: every unwritten clause shows as a loud
+ * marker and sections carry their spine number, because the people reading it
+ * are deciding what is left to write.
+ *
+ * `firm` is the deliverable. Unwritten clauses are omitted rather than
+ * displayed, and the § numbering goes with them. A firm must never read the
+ * scaffolding, and a document that shows a customer what it does not yet say
+ * is not a document you can hand over.
+ */
+export type PolicyAudience = 'operator' | 'firm'
+
 export interface Paragraph {
   style: ParagraphStyle
   text: string
@@ -277,14 +291,34 @@ export function docx(paragraphs: readonly Paragraph[]): Uint8Array {
  * keeps the gap, so two firms citing "§11" always mean the same rule. See
  * assemble()'s header, which makes the same point about renumbering.
  */
-export function policyParagraphs(policy: AssembledPolicy, firmName: string): Paragraph[] {
+export function policyParagraphs(
+  policy: AssembledPolicy,
+  firmName: string,
+  { audience = 'operator' }: { audience?: PolicyAudience } = {},
+): Paragraph[] {
   const out: Paragraph[] = [
     { style: 'Title', text: `Artificial Intelligence Policy for ${firmName}` },
   ]
 
   for (const section of policy.sections) {
-    out.push({ style: 'SectionHeading', text: `§${section.number} ${section.title}` })
-    for (const block of section.blocks) {
+    const blocks =
+      audience === 'firm' ? section.blocks.filter((b) => b.status !== 'todo') : section.blocks
+
+    // A section whose only content was unwritten becomes a heading over
+    // nothing once the markers are dropped. Omit it, the same way assemble()
+    // already omits a section a firm's answers never reached.
+    if (blocks.length === 0) continue
+
+    out.push({
+      style: 'SectionHeading',
+      // No `§n` for a firm. The number is the SPINE's and is deliberately not
+      // contiguous, so a firm reading its own document sees gaps it cannot
+      // explain. Operators keep the number, because citing "§11" across two
+      // firms is the whole reason the spine does not renumber.
+      text: audience === 'firm' ? section.title : `§${section.number} ${section.title}`,
+    })
+
+    for (const block of blocks) {
       out.push({ style: block.status === 'todo' ? 'Todo' : 'Body', text: block.text })
     }
   }
@@ -338,9 +372,13 @@ export interface PolicyDocuments {
  * Two files, never one — D2. The caller decides where they go; this module does
  * no I/O, which is what lets it run unchanged in a Worker and in a script.
  */
-export function policyDocuments(result: AssembleResult, firmName: string): PolicyDocuments {
+export function policyDocuments(
+  result: AssembleResult,
+  firmName: string,
+  { audience = 'operator' }: { audience?: PolicyAudience } = {},
+): PolicyDocuments {
   return {
-    policy: docx(policyParagraphs(result.policy, firmName)),
+    policy: docx(policyParagraphs(result.policy, firmName, { audience })),
     actionItems: docx(actionItemParagraphs(result.actionItems, firmName)),
   }
 }

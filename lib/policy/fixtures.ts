@@ -52,6 +52,20 @@ export const MINIMAL: AnswerMap = {
   research_tools: [NONE_VALUE],
   case_mgmt: [NONE_VALUE],
   comms_platforms: ['email_only'],
+  // ── Why the FLOOR firm has a grid at all (2026-09-04) ──────────────────────
+  //
+  // The grid derives its rows from ai_tools + case_mgmt + comms_platforms, and
+  // comms_platforms is required with NO "none" option — `email_only` is a real
+  // answer. So every firm that finishes the intake has at least one grid row,
+  // and a MINIMAL that set none would be a fixture in a state no real firm can
+  // submit. That is the exact trap that hid Katy's core no-training clause for
+  // a day; see the note above ai_tools on MAXIMAL.
+  //
+  // `yes` because MINIMAL is the floor: whatever survives it is in EVERY
+  // policy. A firm that HOLDS the agreement owes no follow-up, so this fixture
+  // still proves an empty action item list, and every per-tool outcome is
+  // exercised on MAXIMAL instead.
+  tool_grid: [{ tool: 'email_only', noTraining: 'yes' }],
   regulatory_regimes: [NONE_VALUE],
   drafting_uses: [NO_DRAFTING],
   court_ai_orders: 'no',
@@ -78,14 +92,28 @@ export const MAXIMAL: AnswerMap = {
   research_tools: ['cocounsel', 'general_llms'],
   case_mgmt: ['clio', 'smokeball'],
   comms_platforms: ['slack', 'teams'],
-  // ai_tools MUST be set alongside tool_grid. isAnswered() for a tool-grid
-  // derives its rows from ai_tools (toolGridTools), so a fixture that sets the
-  // grid without the tools it came from reports the grid UNANSWERED, and every
-  // block gated on it silently vanishes — including Katy's core no-training
-  // clause at source line 356. That state is unreachable in the real product,
-  // where the grid is only shown once ai_tools is answered.
+  // 🔴 EVERY SOURCE QUESTION MUST BE SET ALONGSIDE tool_grid, AND THE GRID MUST
+  // COVER ALL OF THEM. isAnswered() for a tool-grid derives its rows from
+  // ai_tools + case_mgmt + comms_platforms (TOOL_GRID_SOURCES in
+  // lib/intake/branching.ts) and requires EVERY derived row to be filled. A
+  // fixture that misses one reports the grid UNANSWERED, and every block gated
+  // on it silently vanishes — including Katy's core no-training clause at
+  // source line 356. That cost a day on 2026-09-03, when the grid was set
+  // without ai_tools and the empty preview was blamed on the condition
+  // evaluator. A real firm cannot reach that state; a fixture can.
+  //
+  // So: case_mgmt above contributes clio and smokeball, comms_platforms
+  // contributes slack and teams, and ai_tools contributes chatgpt. Five rows,
+  // and all three outcomes are exercised — `yes` owes nothing, `no` and
+  // `unknown` each raise their own per-tool action item.
   ai_tools: ['chatgpt'],
-  tool_grid: [{ tool: 'chatgpt', noTraining: 'yes' }],
+  tool_grid: [
+    { tool: 'chatgpt', noTraining: 'yes' },
+    { tool: 'clio', noTraining: 'no' },
+    { tool: 'smokeball', noTraining: 'unknown' },
+    { tool: 'slack', noTraining: 'no' },
+    { tool: 'teams', noTraining: 'unknown' },
+  ],
   prohibited_tools: 'DeepSeek',
   personal_devices: 'yes',
   drafting_uses: ['form', 'substantive'],

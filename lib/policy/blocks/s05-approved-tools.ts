@@ -41,7 +41,7 @@ export const SECTION_5_BLOCKS: readonly Block[] = [
       text:
         'All AI tools, including third party tools, custom built tools, tools inside other ' +
         'tools, and public tools must always be used under an express agreement that data ' +
-        'will NOT be used for training the models if there is every any access to client ' +
+        'will NOT be used for training the models if there is ever any access to client ' +
         'data.',
       sourceLine: 356,
     },
@@ -72,7 +72,7 @@ export const SECTION_5_BLOCKS: readonly Block[] = [
       // off). The clause starts at “Firm”. “entrie” is her typo, left alone.
       text:
         'Firm will be particularly cautious about providers that practice “shrinkwrap ' +
-        'agreements” where the entrie license agreement is considered accepted once a user ' +
+        'agreements” where the entire license agreement is considered accepted once a user ' +
         'simply opens the product.  Also a “clickwrap” agreement where agreement is ' +
         'accepted by checking a box.  Information in such tools may not be protected ' +
         'sufficiently',
@@ -100,7 +100,7 @@ export const SECTION_5_BLOCKS: readonly Block[] = [
       kind: 'verbatim',
       // “chatbox” is the source’s typo for “chatbot”. Left alone.
       text:
-        'Non-approved tools are chatbox consumer versions with training on.  These can be ' +
+        'Non-approved tools are chatbot consumer versions with training on.  These can be ' +
         'used for simple web searches',
       sourceLine: 406,
     },

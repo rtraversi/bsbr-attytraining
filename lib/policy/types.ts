@@ -223,18 +223,33 @@ export interface AssembledPolicy {
 /**
  * One entry on the separate action item list.
  *
- * Fed by the three "not sure" answers Katy routes out of the policy:
- * case_mgmt_ai, notetaker_stance and carrier_notified
- * (POLICY-ENGINE-MAP.md §11.2, closing note).
+ * Fed by the three "not sure" answers Katy routes out of the policy —
+ * case_mgmt_ai, notetaker_stance and carrier_notified (POLICY-ENGINE-MAP.md
+ * §11.2, closing note) — and, since 2026-09-04, by the tool grid, which is the
+ * first source that can raise SEVERAL items from ONE answer. See `subject`.
  *
- * ⚠️ `text` is a `todo` in this batch for all three. Katy's brackets describe
- * what the action item should tell the firm to do; they are not the sentence
- * the firm reads. Writing that sentence here would be inventing it.
+ * ⚠️ `text` is a `todo` for every source. Katy's brackets describe what the
+ * action item should tell the firm to do; they are not the sentence the firm
+ * reads. Writing that sentence here would be inventing it, and the per-tool
+ * wording is Max's to write.
  */
 export interface ActionItem {
   id: string
   /** The intake question whose "not sure" produced this. */
   fromKey: string
+  /**
+   * WHAT this item is about, when one answer can raise several.
+   *
+   * The tool grid is the case this exists for: it holds one row per tool, each
+   * with its own yes / no / unknown, so a single `tool_grid` answer can owe a
+   * "get the agreement" item for Clio and a "go and find out" item for Slack.
+   * `fromKey` alone cannot tell those two apart on the page.
+   *
+   * Carries the tool's LABEL, not its stored value — "Microsoft Teams", and
+   * for a free-text entry the words the firm typed. Absent on an item that is
+   * about the firm as a whole, which is the three original rules.
+   */
+  subject?: string
   text: string
   status: 'verbatim' | 'todo'
   sourceLine: number | null

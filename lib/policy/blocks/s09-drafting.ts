@@ -13,14 +13,13 @@
 // plus examples, and rewrite P17/P18 to branch on tool_grid[].noTraining. Until
 // that rewrite these two carry the tier language they were written with.
 
-import { NO_COURT_AI_ORDERS, NO_DRAFTING } from '@/lib/intake/questions'
 import type { Block } from '@/lib/policy/types'
 
 export const SECTION_9_BLOCKS: readonly Block[] = [
   {
     id: 'drafting-categories',
     clause: 'Part 2 — Drafting',
-    when: { key: 'drafting_uses', not: NO_DRAFTING },
+    // Unbranched 2026-09-02 (Katy): module D is always in every policy.
     text: {
       kind: 'todo',
       reason:
@@ -33,7 +32,7 @@ export const SECTION_9_BLOCKS: readonly Block[] = [
   {
     id: 'p17-template-drafting',
     clause: 'P17',
-    when: { key: 'drafting_uses', not: NO_DRAFTING },
+    // Unbranched 2026-09-02 (Katy): module D is always in every policy.
     text: {
       kind: 'verbatim',
       // “pr” is the source’s typo for “or”. Left alone.
@@ -41,7 +40,7 @@ export const SECTION_9_BLOCKS: readonly Block[] = [
       // collecting on 2026-08-28; per D7 §12.1 the BRANCH must be rewritten onto
       // tool_grid[].noTraining. Katy’s words do not change when it is.
       text:
-        'Consumer level pr pro level may be used for drafting of templates as long as no ' +
+        'Consumer level or pro level may be used for drafting of templates as long as no ' +
         'personally identifiable case or client information is used and it is strictly for ' +
         'form and not content',
       sourceLine: 298,
@@ -50,7 +49,7 @@ export const SECTION_9_BLOCKS: readonly Block[] = [
   {
     id: 'p18-client-data-drafting',
     clause: 'P18',
-    when: { key: 'drafting_client_data', is: 'client_data' },
+    // Unbranched 2026-09-02 (Katy): module D is always in every policy.
     text: {
       kind: 'verbatim',
       // Turns on “Professional level security”, the term §22 must define (G-B4).
@@ -64,7 +63,7 @@ export const SECTION_9_BLOCKS: readonly Block[] = [
   {
     id: 'p19-translations',
     clause: 'P19',
-    when: { key: 'drafting_foreign_language', is: 'yes' },
+    // Unbranched 2026-09-02 (Katy): module D is always in every policy.
     text: {
       kind: 'verbatim',
       // “professional lever” is the source’s typo for “professional level”.
@@ -72,7 +71,7 @@ export const SECTION_9_BLOCKS: readonly Block[] = [
       // one of the two is canonical and that is still open.
       text:
         'Translations shall be independently reviewed by a person competent to do so and ' +
-        'will always be done with professional lever data security since it will handle ' +
+        'will always be done with professional level data security since it will handle ' +
         'client data.',
       sourceLine: 302,
     },
@@ -97,7 +96,7 @@ export const SECTION_9_BLOCKS: readonly Block[] = [
     clause: 'P21',
     // `not: 'no'` opens on BOTH "yes" and "not sure" — Katy's instruction, and
     // the reason NO_COURT_AI_ORDERS is exported from questions.ts.
-    when: { key: 'court_ai_orders', not: NO_COURT_AI_ORDERS },
+    // Unbranched 2026-09-02 (Katy): module E is always in every policy.
     text: {
       kind: 'verbatim',
       // The opening quote before “AI was used for X” is never closed in the

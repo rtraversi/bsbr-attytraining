@@ -10,7 +10,7 @@ export const SECTION_18_BLOCKS: readonly Block[] = [
   {
     id: 'p37-advertising',
     clause: 'P37',
-    when: { key: 'ai_marketing', is: 'yes' },
+    // Unbranched 2026-09-02 (Katy): module R is always in every policy.
     text: {
       kind: 'verbatim',
       text:
@@ -22,7 +22,7 @@ export const SECTION_18_BLOCKS: readonly Block[] = [
   {
     id: 'advertising-and-marketing',
     clause: 'Part 2 — Advertising and Marketing',
-    when: { key: 'ai_marketing', is: 'yes' },
+    // Unbranched 2026-09-02 (Katy): module R is always in every policy.
     text: {
       kind: 'todo',
       reason:

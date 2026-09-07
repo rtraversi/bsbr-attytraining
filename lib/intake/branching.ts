@@ -30,7 +30,13 @@
 // forward and no explanation, which is a support call and a refund.
 // =============================================================================
 
-import { QUESTIONS, getQuestion, NO_TOOLS_YET } from './questions'
+import {
+  QUESTIONS,
+  getQuestion,
+  optionsForQuestion,
+  NO_TOOLS_YET,
+  NONE_VALUE,
+} from './questions'
 import {
   SECTION_ORDER,
   SECTION_LABELS,
@@ -183,6 +189,7 @@ export function visibleQuestions(answers: AnswerMap): Question[] {
   const effective: AnswerMap = {}
 
   for (const q of QUESTIONS) {
+    if (RETIRED_KEYS.has(q.key)) continue
     if (q.showIf && !evaluate(q.showIf, effective)) continue
     visible.push(q)
     const value = answers[q.key]
@@ -191,6 +198,60 @@ export function visibleQuestions(answers: AnswerMap): Question[] {
 
   return visible
 }
+
+/**
+ * Questions the intake no longer asks — Katy, 2026-09-02.
+ *
+ * She supplied a definitive intake list and said it is the entire universe of
+ * questions her policy needs. These 23 were built and are not on it. They are
+ * RETIRED, not deleted: the definitions stay in QUESTIONS so that answers
+ * already stored against these keys still resolve on the review screen and in
+ * the assembler, and so restoring one is a single line rather than a rewrite.
+ *
+ * 🔴 EIGHT OF THESE GATED REAL POLICY CLAUSES. Retiring the question without
+ * touching the clause would have silently dropped 13 blocks from every policy.
+ * Those `when:` conditions were removed in the same change, which is what
+ * Katy's own instruction asks for: "MODULES D, E, F, G, J, O, Q, R, U, V:
+ * leave these out because all of these will always be every policy. No
+ * branching." The clauses are now unconditional. The affected keys were
+ * ai_marketing, brainstorming, carrier_notified, court_ai_orders,
+ * drafting_client_data, drafting_foreign_language, drafting_uses and
+ * vendor_security_contact.
+ */
+// 🔴 `billing_models` and `ai_time_adjustment` were RESTORED on 2026-09-04 (Max)
+// and are deliberately NOT in this set. Katy's §15 clause is written entirely in
+// hourly language and a comment in s15-billing.ts records that it was always
+// meant to branch on the billing model; without the question every firm receives
+// hourly text, contingency-only practices included. They were re-added to
+// QUESTIONS but left in this set, so they existed and were invisible.
+const RETIRED_KEYS: ReadonlySet<string> = new Set([
+  'ai_marketing',
+  'ai_practice_expansion',
+  'brainstorming',
+  'brainstorming_tier',
+  'carrier_notified',
+  'cle_process',
+  'court_ai_orders',
+  'court_cert_template',
+  'drafting_client_data',
+  'drafting_foreign_language',
+  'drafting_uses',
+  'filing_courts',
+  'foreign_language_content',
+  'foreign_languages',
+  'marketing_review',
+  'prior_ai_error',
+  'retain_prompts',
+  'retention_schedule',
+  'standing_order_check',
+  'vendor_incident_protocol',
+  // 🔴 vendor_security_contact is NOT retired, and it is not on Katy's list.
+  // Her own vendor-breach clause has a slot in it — "{STAFF IDENTIFIED IN
+  // INTAKE] shall be notified of the breach immediately" — and that slot is
+  // filled from this answer. Retiring the question leaves the raw placeholder
+  // sitting in the delivered document. Either the question stays or the clause
+  // needs rewording. Katy's call, flagged 2026-09-02.
+])
 
 /** Whether one question is currently visible. */
 export function isVisible(question: Question, answers: AnswerMap): boolean {
@@ -287,36 +348,103 @@ export function progressBySection(answers: AnswerMap): SectionProgress[] {
 // ---------------------------------------------------------------------------
 
 export interface ToolGridTool {
-  /** The ai_tools answer value — a listed option, or `other:`-prefixed free text. */
+  /**
+   * The source answer value — a listed option on one of TOOL_GRID_SOURCES, or
+   * an `other:`-prefixed free-text entry.
+   */
   value: string
   /** What to print in the row header. */
   label: string
 }
 
 /**
- * The rows the tool grid should have, derived from the ai_tools answer.
+ * The questions the grid's rows are derived from, and the values in each that
+ * are NOT a tool.
+ *
+ * ── Widened beyond ai_tools on 2026-09-04 (approved by Max) ─────────────────
+ *
+ * It read `ai_tools` alone, so the firm was never asked whether it holds a
+ * no-training agreement for its CASE MANAGEMENT platform or its INTEROFFICE
+ * COMMUNICATION platform — while the policy makes claims about exactly those.
+ * §6 tells a firm to make sure Clio is contractually bound not to train on
+ * client data, and the intake had never asked whether it is. The claim was
+ * being made about a fact nobody collected.
+ *
+ * ONE GRID, NOT THREE. A firm answers the same question about Clio and Slack
+ * that it answers about ChatGPT, and Katy reads one table rather than three.
+ *
+ * ⚠️ THE SENTINELS ARE PER QUESTION AND ARE NOT INTERCHANGEABLE. `ai_tools`
+ * ends its list with `none_yet`; `case_mgmt` uses the shared `none`. And
+ * `comms_platforms` has NO none option at all — `email_only` is a REAL answer
+ * there and not a sentinel, because a firm whose internal comms are email only
+ * still has a mail provider that is either bound or not. It gets a row like
+ * anything else.
+ *
+ * 🔴 `research_tools` IS DELIBERATELY NOT HERE. Its list carries CoCounsel,
+ * Lexis+ AI and general-purpose LLMs, which do touch client data, so the same
+ * argument arguably reaches it. Max scoped this change to three questions and
+ * that scope is kept; flagged for him rather than assumed.
+ */
+const TOOL_GRID_SOURCES: readonly { key: string; sentinels: readonly string[] }[] = [
+  { key: 'ai_tools', sentinels: [NO_TOOLS_YET] },
+  { key: 'case_mgmt', sentinels: [NONE_VALUE] },
+  { key: 'comms_platforms', sentinels: [] },
+]
+
+/** The answer keys the grid derives its rows from, in the order it derives them. */
+export const TOOL_GRID_SOURCE_KEYS: readonly string[] = TOOL_GRID_SOURCES.map((s) => s.key)
+
+/**
+ * The rows the tool grid should have, derived from every source question.
  *
  * Free-text `other:` entries get a row exactly like a listed tool does. A firm
- * that types "Perplexity" needs the same two columns answered about it as one
- * that ticked ChatGPT, and Katy needs the same two facts to draft from.
+ * that types "Perplexity" needs the same column answered about it as one that
+ * ticked ChatGPT, and Katy needs the same fact to draft from.
+ *
+ * Order is source order then the order within each answer, which is stable for
+ * a given AnswerMap — the assembler's determinism rule is about the same
+ * answers producing the same document, and it does.
  */
 export function toolGridTools(answers: AnswerMap): ToolGridTool[] {
-  const selected = answers['ai_tools']
-  if (!Array.isArray(selected)) return []
+  const out: ToolGridTool[] = []
+  const seen = new Set<string>()
 
-  const options = getQuestion('ai_tools')?.options ?? []
-  const labels = new Map(options.map((o) => [o.value, o.label]))
+  for (const source of TOOL_GRID_SOURCES) {
+    const selected = answers[source.key]
+    if (!Array.isArray(selected)) continue
 
-  return (selected as string[])
-    // "None yet" is not a tool and cannot have a training agreement.
-    // The grid's showIf hides the whole question in that case; this keeps the
-    // two from disagreeing if a firm somehow holds none_yet alongside a real
-    // tool (the multi-select treats it as exclusive, so they should not).
-    .filter((value) => value !== NO_TOOLS_YET)
-    .map((value) => ({
-    value,
-    label: isOtherValue(value) ? (otherText(value) ?? value) : (labels.get(value) ?? value),
-  }))
+    const question = getQuestion(source.key)
+    // optionsForQuestion, not `question.options` — every source is a `multi`
+    // today, where the two agree, but the extras-not-replacement trap on
+    // `states` and `languages` has already been written out three times in this
+    // repo and this is not the fourth.
+    const labels = new Map(
+      (question ? optionsForQuestion(question) : []).map((o) => [o.value, o.label]),
+    )
+
+    for (const value of selected as unknown[]) {
+      if (typeof value !== 'string') continue
+      // A none-sentinel is not a tool and cannot have a training agreement. The
+      // grid's showIf drops the source in that case; this keeps the two from
+      // disagreeing if a firm somehow holds `none` alongside a real answer (the
+      // multi-select treats both sentinels as exclusive, so they should not).
+      if (source.sentinels.includes(value)) continue
+      // One tool, one row. A firm can type the same free text on two of the
+      // source questions — "other:Notion" as a case management platform and
+      // again as a comms platform — and two rows carrying the same `tool` key
+      // would look independent on the screen while reconcileToolGrid wrote one
+      // answer into both.
+      if (seen.has(value)) continue
+      seen.add(value)
+
+      out.push({
+        value,
+        label: isOtherValue(value) ? (otherText(value) ?? value) : (labels.get(value) ?? value),
+      })
+    }
+  }
+
+  return out
 }
 
 /**
