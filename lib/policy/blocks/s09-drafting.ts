@@ -21,11 +21,27 @@ export const SECTION_9_BLOCKS: readonly Block[] = [
     clause: 'Part 2 — Drafting',
     // Unbranched 2026-09-02 (Katy): module D is always in every policy.
     text: {
-      kind: 'todo',
-      reason:
-        'Katy wrote a three-item list (form / content / boilerplate) at lines 363-366, ' +
-        'not a clause. The list maps onto drafting_uses. Line 367 (local filing rules) ' +
-        'is P20 below; line 368 is carried by §3.',
+      kind: 'drafted',
+      approved: 'Max, 2026-09-04',
+      // Her lines 363-366 are a heading and three bullets, not a clause: "For
+      // form, such as email / For content, such as complaints / For boilerplate,
+      // such as deeds and trusts".
+      //
+      // 🔴 IT CANNOT SIMPLY BE DELETED. The two clauses below turn on "form" and
+      // "content" as if they were defined terms — "strictly for form and not
+      // content" — and this list is the only place either is explained. Delete
+      // it and the rule below becomes unusable.
+      //
+      // The second sentence is Max's, not hers, and answers the gap her own list
+      // leaves: "boilerplate" appears in her categories and in NEITHER of the
+      // clauses that use them, so a firm drafting a deed cannot tell which side
+      // of the line it is on. It follows her own rule, which tests for
+      // personally identifiable information rather than document type.
+      text:
+        'This policy applies to drafting for form, such as email, for content, ' +
+        'such as complaints, and for boilerplate, such as deeds and trusts. ' +
+        'Whether drafting is treated as form or as content is decided by the ' +
+        'data used in it, not by the type of document.',
       sourceLine: 363,
     },
   },

@@ -123,6 +123,15 @@ function fakeAdmin(db: FakeDb): AdminClient {
 const ANSWERS = [
   { question_key: 'firm_name', value: 'Chavez Law' },
   { question_key: 'jurisdictions', value: ['NC'] },
+  // 🔴 client_ai = yes is what still produces UNWRITTEN clauses, and this file
+  // needs at least one to test the refusal at all.
+  //
+  // Until 2026-09-04 almost every policy carried unwritten clauses, so any firm
+  // exercised the guard. They are now written except three in §14 — Katy's lines
+  // 330, 318 and 403, deliberately left for her — and all three hang off this
+  // answer. Take it away and this fixture produces a COMPLETE policy, the guard
+  // never fires, and the two tests below silently stop testing anything.
+  { question_key: 'client_ai', value: 'yes' },
 ]
 
 const db = (over: Partial<SessionRow> = {}): FakeDb => ({

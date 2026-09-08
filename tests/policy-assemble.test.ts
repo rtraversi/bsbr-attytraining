@@ -16,7 +16,6 @@ import { NONE_VALUE } from '@/lib/intake/questions'
 import { ACTION_ITEM_IDS } from '@/lib/policy/action-items'
 import { assemble } from '@/lib/policy/assemble'
 import { ATTORNEY, MAXIMAL, MINIMAL, PARALEGAL } from '@/lib/policy/fixtures'
-import { genericPlatformText } from '@/lib/policy/platform-block'
 import { assertSpineInvariants, SPINE } from '@/lib/policy/spine'
 import type { AnswerMap } from '@/lib/policy/types'
 
@@ -96,8 +95,16 @@ describe('conditional inclusion', () => {
   it('includes the always-on sections for the most minimal firm', () => {
     const numbers = sectionNumbers(MINIMAL)
     // Preamble, Application, Competency, Verification, Billing, Records,
-    // Employment, Malpractice, Vendor incidents, Discipline, Definitions.
-    expect(numbers).toEqual(expect.arrayContaining([1, 2, 3, 8, 15, 16, 17, 19, 20, 21, 22]))
+    // Employment, Malpractice, Vendor incidents, Definitions.
+    //
+    // §6 joined this list on 2026-09-04: comms_platforms is required and has no
+    // "none" option, so EVERY firm names an interoffice arrangement and gets a
+    // clause about it. `email_only` gets its own.
+    //
+    // §21 LEFT it: the discipline clause now requires a real answer, and MINIMAL
+    // does not give one. A firm that answers "Unsure" gets an action item
+    // instead of a clause, which is what Max chose.
+    expect(numbers).toEqual(expect.arrayContaining([1, 2, 3, 6, 8, 15, 16, 17, 19, 20, 22]))
   })
 
   it('opens each optional section when its trigger is answered', () => {
@@ -125,7 +132,8 @@ describe('conditional exclusion', () => {
     // §10 and §18 left this list on 2026-09-02. Brainstorming and advertising
     // were both gated on questions Katy retired, so their clauses are now
     // unconditional — every firm receives them, which is what she asked for.
-    for (const omitted of [6, 7, 11, 13]) {
+    // §6 is no longer here: see the always-on test above.
+    for (const omitted of [7, 11, 13]) {
       expect(numbers).not.toContain(omitted)
     }
   })
@@ -156,12 +164,13 @@ describe('conditional exclusion', () => {
     expect(ids).not.toContain('p32-tar')
   })
 
-  it('never emits §13 Automations, because G-Q7 does not exist yet', () => {
-    // The section is declared with its real trigger so it starts working the
-    // day the question lands. Until then `automations` is unanswerable and the
-    // condition cannot be satisfied.
+  it('emits §13 Automations now that the question exists', () => {
+    // 🔴 This test used to assert the opposite, and was right to: the section
+    // was declared with a trigger no question could satisfy, so Katy's fully
+    // written automations clause had NEVER appeared in a single policy. The
+    // question landed on 2026-09-04 and the clause now reaches a firm.
     expect(sectionNumbers(MINIMAL)).not.toContain(13)
-    expect(sectionNumbers(MAXIMAL)).not.toContain(13)
+    expect(sectionNumbers(MAXIMAL)).toContain(13)
   })
 
   it('does not satisfy a `not` condition from an unanswered question', () => {
@@ -260,95 +269,44 @@ describe('slot filling', () => {
   })
 })
 
-describe('the platform fallback', () => {
-  it('emits the named generic block for every selected case management platform', () => {
-    const ids = blockIds(MAXIMAL)
-    expect(ids).toContain('p14-case-mgmt-per-platform--clio')
-    expect(ids).toContain('p14-case-mgmt-per-platform--smokeball')
+describe('the vendor paragraphs are OUT of the policy', () => {
+  // 🔴 Removed 2026-09-04 (Max). §6 and §7 used to emit one composed paragraph
+  // per selected platform, from lib/policy/vendor-block.ts. They are gone from
+  // the POLICY. The reasons are set out in full at the top of
+  // lib/policy/blocks/s06-platforms.ts; the decisive one is that Katy had never
+  // read a word of them and they were the text a firm was most likely to act on.
+  //
+  // THE COMPOSITION ITSELF IS STILL COVERED, by tests/policy-vendor-block.test.ts
+  // (44 tests). What is asserted here is only that the policy no longer carries
+  // it. The research moves to the action items, where going out of date is a
+  // stale to-do rather than a policy that misstates a vendor's terms.
+  it('emits no per-platform block anywhere in the policy', () => {
+    for (const answers of [MINIMAL, MAXIMAL, { ...MINIMAL, case_mgmt: ['other:Leap'] }]) {
+      const ids = blockIds(answers)
+      expect(ids.some((id) => id.includes('per-platform--'))).toBe(false)
+      expect(ids.some((id) => id.includes('per-tool--'))).toBe(false)
+    }
   })
 
-  it('gives a researched vendor its composed block, not the generic one', () => {
-    // All 20 CSV rows are now filled, so Clio reaches the composed block from
-    // lib/policy/vendor-block.ts. See tests/policy-vendor-block.test.ts for the
-    // composition itself.
-    const clio = assemble(MAXIMAL)
-      .policy.sections.find((s) => s.number === 6)!
-      .blocks.find((b) => b.id === 'p14-case-mgmt-per-platform--clio')!
+  it('never asserts what a named vendor’s terms say', () => {
+    const text = assemble(MAXIMAL)
+      .policy.sections.flatMap((section) => section.blocks)
+      .map((block) => block.text)
+      .join('\n')
 
-    expect(clio.text).toContain('Clio provides AI features: Manage AI (formerly Clio Duo).')
-    expect(clio.text).not.toBe(genericPlatformText('Clio'))
+    // The three shapes the generated paragraphs used. None may survive.
+    expect(text).not.toContain('provides AI features:')
+    expect(text).not.toContain('published terms do not address')
+    expect(text).not.toContain('obtain written confirmation')
   })
 
-  it('uses the exact text from POLICY-BLOCKS-RESEARCH.md §7 where no row exists', () => {
-    // The generic block is still load-bearing for an `other:` platform the firm
-    // typed, which can never have a CSV row.
-    const leap = assemble({ ...MINIMAL, case_mgmt: ['other:Leap'] })
-      .policy.sections.find((s) => s.number === 6)!
-      .blocks.find((b) => b.id === 'p14-case-mgmt-per-platform--other:Leap')!
-
-    expect(leap.text).toBe(genericPlatformText('Leap'))
-    expect(leap.text).toBe(
-      "The firm uses Leap. The firm shall confirm whether Leap's AI features are enabled, " +
-        "review Leap's terms of service for data-training language, and record the result.",
-    )
-  })
-
-  it('is what makes an unresearched vendor harmless — no empty section', () => {
-    // A platform the firm typed itself has no CSV row and never will. It must
-    // still produce a true instruction, not silence.
-    const section6 = assemble({
-      ...MINIMAL,
-      case_mgmt: ['other:Acme Legal'],
-    }).policy.sections.find((s) => s.number === 6)
-
-    expect(section6).toBeDefined()
-    expect(section6!.blocks.some((b) => b.text.includes('Acme Legal'))).toBe(true)
-  })
-
-  it('gives a researched vendor real facts rather than an instruction to go and look', () => {
-    const section6 = assemble({ ...MINIMAL, case_mgmt: ['smokeball'] }).policy.sections.find(
-      (s) => s.number === 6,
-    )!
-    const smokeball = section6.blocks.find(
-      (b) => b.id === 'p14-case-mgmt-per-platform--smokeball',
-    )!
-    expect(smokeball.text).toContain('Smokeball provides AI features: Smokeball AI; Archie AI.')
-  })
-
-  it('names platforms with their intake labels', () => {
-    const ids = blockIds({ ...MINIMAL, case_mgmt: ['monday'] })
-    expect(ids).toContain('p14-case-mgmt-per-platform--monday')
-    const text = assemble({ ...MINIMAL, case_mgmt: ['monday'] })
-      .policy.sections.find((s) => s.number === 6)!
-      .blocks.find((b) => b.id === 'p14-case-mgmt-per-platform--monday')!.text
-    expect(text).toContain('Monday.com')
-  })
-
-  it('emits no platform block for non-vendor values', () => {
-    // `none`, `email_only` and `general_llms` are not vendors — research brief §8.
-    expect(blockIds({ ...MINIMAL, case_mgmt: [NONE_VALUE] })).not.toContain(
-      'p14-case-mgmt-per-platform--none',
-    )
-    expect(blockIds(MINIMAL).some((id) => id.startsWith('p16-comms-per-platform--'))).toBe(false)
-    expect(blockIds(MAXIMAL)).not.toContain('p9-research-per-tool--general_llms')
-  })
-
-  it('still emits a research block for a real research tool alongside general_llms', () => {
-    expect(blockIds(MAXIMAL)).toContain('p9-research-per-tool--cocounsel')
-  })
-
-  it('handles a free-text "other:" platform', () => {
-    const answers = { ...MINIMAL, case_mgmt: ['other:Leap'] }
-    const text = assemble(answers)
-      .policy.sections.find((s) => s.number === 6)!
-      .blocks.find((b) => b.id === 'p14-case-mgmt-per-platform--other:Leap')!.text
-    expect(text).toBe(genericPlatformText('Leap'))
-  })
-
-  it('orders platform blocks by option order, not selection order', () => {
-    const a = blockIds({ ...MINIMAL, case_mgmt: ['clio', 'neos'] })
-    const b = blockIds({ ...MINIMAL, case_mgmt: ['neos', 'clio'] })
-    expect(a).toEqual(b)
+  it('still names the firm’s own platforms, so the clause stays firm-specific', () => {
+    // The point of removing the paragraphs was not to make §6 generic. Max
+    // rejected that: "seems bloated tho... legal does not mean cumbersome".
+    const section6 = assemble(MAXIMAL).policy.sections.find((s) => s.number === 6)!
+    const text = section6.blocks.map((b) => b.text).join('\n')
+    expect(text).toContain('Clio')
+    expect(text).toContain('Smokeball')
   })
 })
 
@@ -605,20 +563,24 @@ describe('determinism', () => {
 
 describe('TODO blocks', () => {
   it('render loudly rather than silently vanishing', () => {
-    const definitions = assemble(MINIMAL).policy.sections.find((s) => s.number === 22)!
-    const p38 = definitions.blocks[0]
-    expect(p38.status).toBe('todo')
-    expect(p38.text).toContain('[TODO')
-    expect(p38.text).toContain('AI-Policy-Research-2026-08-20.md:342')
+    // §22 was written on 2026-09-04, so the three remaining TODOs are all in
+    // §14 — Katy's lines 330, 318 and 403, deliberately left for her.
+    const disclosure = assemble(MAXIMAL).policy.sections.find((s) => s.number === 14)!
+    const todos = disclosure.blocks.filter((b) => b.status === 'todo')
+    expect(todos.length).toBe(3)
+    for (const block of todos) {
+      expect(block.text).toContain('[TODO')
+      expect(block.text).toContain('AI-Policy-Research-2026-08-20.md:')
+    }
   })
 
-  it('says so explicitly when Katy wrote no text at all', () => {
-    const staff = assemble({ ...MINIMAL, roster: [ATTORNEY, PARALEGAL] }).policy.sections.find(
-      (s) => s.number === 4,
-    )!
-    const gq9 = staff.blocks.find((b) => b.id === 'gq9-training-owner')!
-    expect(gq9.sourceLine).toBeNull()
-    expect(gq9.text).toContain('no source line')
+  it('leaves NO block without a source line, now that the three G-Q placeholders are gone', () => {
+    // gq6, gq8 and gq9 all carried `sourceLine: null` — Katy had written nothing
+    // for any of them, and none was on her 2026-09-02 list. All three were
+    // deleted on 2026-09-04 under Max's rule: "if it wasn't on Katy's policy and
+    // is not necessary from the intake questions, this is garbage".
+    const blocks = assemble(MAXIMAL).policy.sections.flatMap((s) => s.blocks)
+    expect(blocks.filter((b) => b.sourceLine === null)).toEqual([])
   })
 
   it('marks §1-§4 transcribed and leaves the rest TODO, per this batch', () => {

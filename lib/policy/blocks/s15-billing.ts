@@ -13,10 +13,15 @@ export const SECTION_15_BLOCKS: readonly Block[] = [
     clause: 'P28',
     when: { key: 'bill_ai_costs', is: 'yes' },
     text: {
-      kind: 'todo',
-      reason:
-        'Katy wrote an instruction, though it dictates the substance: mandatory ' +
-        'disclosure of the scope and cost of AI, made at hiring.',
+      kind: 'drafted',
+      approved: 'Max, 2026-09-04',
+      // Her line 320 is the whole spec: "{if intake indicated that clients will
+      // be billed then add that mandatory disclosure of scope and cost of AI
+      // will be made at hiring". Her September list agrees — "Yes-triggers
+      // disclosure duty". One sentence, on yes only.
+      text:
+        'Mandatory disclosure of the scope and cost of AI will be made to the ' +
+        'client at hiring.',
       sourceLine: 320,
     },
   },

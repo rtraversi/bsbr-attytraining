@@ -122,6 +122,7 @@ function renderPolicy(fixtureName, result) {
   const firmName = FIXTURES[fixtureName].firm_name ?? '(no firm name answered)'
   const blocks = sections.flatMap((section) => section.blocks)
   const verbatim = blocks.filter((b) => b.status === 'verbatim').length
+  const drafted = blocks.filter((b) => b.status === 'drafted').length
   const todo = blocks.filter((b) => b.status === 'todo').length
 
   const lines = [`# Artificial Intelligence Policy for ${firmName}`, '']
@@ -148,7 +149,7 @@ function renderPolicy(fixtureName, result) {
     lines.push(
       '---',
       '',
-      footer(sections.length, verbatim, todo),
+      footer(sections.length, verbatim, drafted, todo),
       '',
       `Rendered by \`scripts/render-policy.mjs\` from the \`${fixtureName}\` fixture. ` +
         'Preview only — not a deliverable.',
@@ -156,7 +157,7 @@ function renderPolicy(fixtureName, result) {
     )
   }
 
-  return { markdown: lines.join('\n'), verbatim, todo, sectionCount: sections.length }
+  return { markdown: lines.join('\n'), verbatim, drafted, todo, sectionCount: sections.length }
 }
 
 /**
@@ -166,12 +167,12 @@ function renderPolicy(fixtureName, result) {
  * and a reader scrolling a long document will not tally the blockquotes — so the
  * ratio is stated outright at the bottom of every render.
  */
-function footer(sectionCount, verbatim, todo) {
-  const total = verbatim + todo
-  const pct = total === 0 ? 0 : Math.round((verbatim / total) * 100)
+function footer(sectionCount, verbatim, drafted, todo) {
+  const total = verbatim + drafted + todo
+  const pct = total === 0 ? 0 : Math.round(((verbatim + drafted) / total) * 100)
   return (
-    `**${sectionCount} sections · ${total} blocks — ${verbatim} verbatim, ${todo} TODO ` +
-    `(${pct}% transcribed).**`
+    `**${sectionCount} sections · ${total} blocks — ${verbatim} verbatim, ` +
+    `${drafted} drafted, ${todo} TODO (${pct}% written).**`
   )
 }
 
@@ -269,7 +270,7 @@ for (const name of names) {
 
   console.log(
     `${name}: ${relative(ROOT, policyPath)} — ${policy.sectionCount} sections, ` +
-      `${policy.verbatim} verbatim, ${policy.todo} TODO`,
+      `${policy.verbatim} verbatim, ${policy.drafted} drafted, ${policy.todo} TODO`,
   )
   console.log(`${pad} ${relative(ROOT, policyDocxPath)} — ${documents.policy.length} bytes`)
   console.log(

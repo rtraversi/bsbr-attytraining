@@ -88,9 +88,14 @@ export const MAXIMAL: AnswerMap = {
   jurisdictions: ['NC', 'FEDERAL'],
   contract_attorneys: 'yes',
   existing_policy: 'yes',
-  regulatory_regimes: ['hipaa'],
+  regulatory_regimes: ['hipaa', 'gdpr'],
   research_tools: ['cocounsel', 'general_llms'],
   case_mgmt: ['clio', 'smokeball'],
+  // Required since 2026-09-04: §6's platform clause follows Katy's Q13/Q14
+  // logic and fires on yes OR not sure, not merely on having a platform. An
+  // unanswered case_mgmt_ai fails the `not` condition (see the "is answered"
+  // rule in lib/intake/types.ts) and the clause silently vanishes.
+  case_mgmt_ai: 'yes',
   comms_platforms: ['slack', 'teams'],
   // 🔴 EVERY SOURCE QUESTION MUST BE SET ALONGSIDE tool_grid, AND THE GRID MUST
   // COVER ALL OF THEM. isAnswered() for a tool-grid derives its rows from
@@ -127,6 +132,26 @@ export const MAXIMAL: AnswerMap = {
   ai_marketing: 'yes',
   hiring_ai: 'yes',
   bill_ai_costs: 'yes',
+  // Added 2026-09-07 with the questions themselves. MAXIMAL exists to take
+  // nearly every branch, so a new question that nobody answers here silently
+  // removes its whole section from the preview — which is exactly how §21 and
+  // §13 came to be invisible.
+  billing_models: ['hourly', 'flat_fee'],
+  ai_time_adjustment: 'no',
+  automations: 'yes',
+  automations_location: 'third_party',
+  marketing_use: 'yes',
+  marketing_ways: ['artwork', 'written'],
+  notetaker_stance: 'state_law',
+  notetaker_scope: ['client', 'internal'],
+  notetaker_tools: 'Otter.ai',
+  vendor_security_contact: 'the office administrator',
+  discipline:
+    'a verbal warning for a first violation, a written warning for a second, and ' +
+    'suspension of AI tool access or termination for repeated or serious violations',
+  discipline_owner: 'The managing partner',
+  hiring_states: ['NC', 'CA', 'OUTSIDE_US'],
+  doc_review_scale: 'regular',
 }
 
 /**

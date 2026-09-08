@@ -110,11 +110,19 @@ export const SECTION_5_BLOCKS: readonly Block[] = [
     clause: 'P7',
     when: { key: 'prohibited_tools', answered: true },
     text: {
-      kind: 'todo',
-      reason:
-        'Katy wrote an instruction, not a clause. Needs prepared text naming the ' +
-        'tools the firm prohibited, filled from the prohibited_tools free text.',
+      kind: 'drafted',
+      approved: 'Max, 2026-09-04',
+      // Deliberately GENERAL. Max, 2026-09-04: "we have to make it vague so they
+      // take the time to make it specific, per the action list that will remind
+      // of this." An earlier draft said "prohibited entirely... including simple
+      // web searches" and was rejected as too absolute: a firm may prohibit a
+      // tool for translation and allow it for everything else. The firm's own
+      // free text sets the scope; the action list asks them to sharpen it.
+      text:
+        'The firm prohibits the use of the following, whether entirely or for ' +
+        'the specific purposes stated: [PROHIBITED TOOLS].',
       sourceLine: 276,
+      slots: [{ placeholder: '[PROHIBITED TOOLS]', key: 'prohibited_tools' }],
     },
   },
   {
@@ -122,10 +130,16 @@ export const SECTION_5_BLOCKS: readonly Block[] = [
     clause: 'P8',
     when: { key: 'personal_devices', is: 'yes' },
     text: {
-      kind: 'todo',
-      reason:
-        'Katy wrote an instruction, not a clause, though it dictates the substance: ' +
-        'strict compliance, and never personally identifiable client or case information.',
+      kind: 'drafted',
+      approved: 'Max, 2026-09-04',
+      // Her instruction dictates the substance: "state that such usage must
+      // comply strictly and shall never include personally Identifiable client
+      // or case information". Her wording is kept; "comply strictly" gains the
+      // object it was missing, and her stray capital is fixed.
+      text:
+        'Where the firm permits the use of personal devices or personal AI ' +
+        'accounts, that use must comply strictly with this policy and shall ' +
+        'never include personally identifiable client or case information.',
       sourceLine: 278,
     },
   },
@@ -143,29 +157,6 @@ export const SECTION_5_BLOCKS: readonly Block[] = [
         'a client’s case cannot be determined from the prompt, or that the data shall only ' +
         'go through a professional level of data protection (DEFINITIONS AT END)',
       sourceLine: 286,
-    },
-  },
-  {
-    id: 'gq8-tool-approval',
-    clause: 'G-Q8',
-    text: {
-      kind: 'todo',
-      reason:
-        'G-Q8 — who may approve a new tool, and by what process. Approved for build ' +
-        '(D3); the intake question does not exist yet. Out of scope this batch.',
-      sourceLine: null,
-    },
-  },
-  {
-    id: 'gq6-vendor-diligence',
-    clause: 'G-Q6',
-    when: { key: 'tool_grid', answered: true },
-    text: {
-      kind: 'todo',
-      reason:
-        'G-Q6 — vendor TOS reviewed for security certifications and for data handling ' +
-        'on termination. Approved for build (D3); question does not exist yet.',
-      sourceLine: null,
     },
   },
 ]

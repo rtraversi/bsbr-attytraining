@@ -43,24 +43,4 @@ export const SECTION_4_BLOCKS: readonly Block[] = [
       sourceLine: 352,
     },
   },
-  {
-    id: 'gq9-training-owner',
-    clause: 'G-Q9',
-    // Carries P4's condition, not its own: this is P4's DETAIL, so it applies
-    // exactly where P4 does. Without this a solo with no staff gets a §4
-    // containing nothing but a placeholder for a question that does not exist.
-    when: { hasNonAttorneyStaff: true },
-    text: {
-      kind: 'todo',
-      // G-Q9 is one of the nine approved questions (D3) and is OUT OF SCOPE for
-      // this batch. Katy specified it in Module G; only `contract_attorneys` was
-      // ever built from that module.
-      reason:
-        'G-Q9 — who trains staff and collects attestations, and on what renewal ' +
-        'cadence. Approved for build (D3) but the intake question does not exist ' +
-        'yet, so there is no answer to fill a slot from. Katy wrote no clause text ' +
-        'for it either.',
-      sourceLine: null,
-    },
-  },
 ]

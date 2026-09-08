@@ -144,6 +144,29 @@ export type BlockText =
       sourceLine: number | null
     }
   | {
+      /**
+       * Text APPROVED BY MAX that is not a transcription of Katy's document.
+       *
+       * 🔴 A separate kind on purpose. `verbatim` claims to be her words and
+       * tests/policy-transcription.test.ts opens her file and checks that claim
+       * character for character. Drafted text would fail that check, and the
+       * wrong fix would be to weaken the check. So drafted text says what it is
+       * instead, and carries who approved it and when.
+       *
+       * Every one of these fills a place where Katy wrote an INSTRUCTION rather
+       * than a clause — "[insert the firm's choice about AI notetaking]" — or
+       * merged two of her clauses that said one rule twice. `sourceLine` points
+       * at her instruction where she wrote one, and is null where she wrote
+       * nothing at all.
+       */
+      kind: 'drafted'
+      text: string
+      sourceLine: number | null
+      /** Who approved this wording, and when. Never blank. */
+      approved: string
+      slots?: readonly Slot[]
+    }
+  | {
       kind: 'perPlatform'
       /** Intake question key holding the selected platforms. */
       answerKey: string
@@ -196,7 +219,7 @@ export interface AssembledBlock {
    */
   text: string
   /** Whether `text` is real policy language or a placeholder. */
-  status: 'verbatim' | 'todo'
+  status: 'verbatim' | 'drafted' | 'todo'
   /** Line in the policy source, where there is one. */
   sourceLine: number | null
 }
@@ -251,7 +274,7 @@ export interface ActionItem {
    */
   subject?: string
   text: string
-  status: 'verbatim' | 'todo'
+  status: 'verbatim' | 'drafted' | 'todo'
   sourceLine: number | null
 }
 

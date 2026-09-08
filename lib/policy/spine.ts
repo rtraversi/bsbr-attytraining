@@ -216,7 +216,7 @@ export function assertSpineInvariants(sections: readonly Section[] = SPINE): voi
 
       // 5. Every slot's placeholder must actually occur in the text it fills,
       //    and name a real question.
-      if (block.text.kind === 'verbatim' && block.text.slots) {
+      if ((block.text.kind === 'verbatim' || block.text.kind === 'drafted') && block.text.slots) {
         for (const slot of block.text.slots as readonly Slot[]) {
           if (!block.text.text.includes(slot.placeholder)) {
             throw new Error(

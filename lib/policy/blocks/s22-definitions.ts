@@ -27,16 +27,27 @@ import type { Block } from '@/lib/policy/types'
 
 export const SECTION_22_BLOCKS: readonly Block[] = [
   {
-    id: 'p38-professional-data-protection',
-    clause: 'P38',
+    id: 'g-b4-professional-level',
+    clause: 'Part 2 — DEFINITIONS',
+    // Katy left this unfinished mid-sentence: "Professional level of data
+    // protection:  API, Claude Enterpirse, ..[finish this list]".
+    //
+    // 🔴 HER TWO EXAMPLES WERE CUT, deliberately (Max, 2026-09-04). We have no
+    // evidence for either: Claude appears nowhere in .planning/policy-blocks.csv,
+    // and nothing has checked whether API access carries a no-training
+    // commitment by default at the providers this product actually lists. Of the
+    // 20 vendors that WERE researched, 15 came back "unclear". Naming an example
+    // we cannot stand behind, inside the definition the whole policy turns on,
+    // is worse than naming none. See .planning/RESEARCH-QUEUE.md §1 — they come
+    // back if the research supports them.
+    //
+    // The rule half is her own words from line 356.
     text: {
-      kind: 'todo',
-      reason:
-        'G-B4 — Katy left this unfinished in the source: "Professional level of data ' +
-        'protection:  API, Claude Enterpirse, ..[finish this list]". Per Max the ' +
-        'finished entry is the RULE (an express no-training agreement) plus EXAMPLES, ' +
-        'explicitly not an authoritative list. Wording beyond that shape is out of ' +
-        'scope for this batch. P12, P17, P18, P19 and P30 all depend on it.',
+      kind: 'drafted',
+      approved: 'Max, 2026-09-04',
+      text:
+        'Professional level of data protection: an express agreement that the ' +
+        "firm's data will not be used to train the provider's models.",
       sourceLine: 342,
     },
   },

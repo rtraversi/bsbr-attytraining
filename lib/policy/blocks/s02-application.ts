@@ -68,15 +68,22 @@ export const SECTION_2_BLOCKS: readonly Block[] = [
     // so an unanswered intake does not emit this clause vacuously.
     when: { key: 'regulatory_regimes', not: NONE_VALUE },
     text: {
-      kind: 'todo',
+      kind: 'drafted',
+      approved: 'Max, 2026-09-04',
       // Line 268 is an instruction to a drafter, not a clause: "[IF FIRM STATES
       // THAT IT IS SUBJECT TO ADDITIONAL REGULATORY REGIMES LIKE HIPAA< STATE
-      // THAT IT WILL COMPLY WITH THE MOST RESTRICTIVE REGIME]". There is no
-      // sentence in the source to transcribe.
-      reason:
-        'Katy wrote an instruction, not a clause. Needs prepared text stating ' +
-        'compliance with the most restrictive regime, naming the regimes the firm selected.',
+      // THAT IT WILL COMPLY WITH THE MOST RESTRICTIVE REGIME]".
+      //
+      // "or from one another" is load-bearing and reads correctly at any count:
+      // a firm under both HIPAA and GDPR needs the tiebreak between them, and a
+      // firm under one still has that regime's own requirements to reconcile.
+      text:
+        'The firm handles client or personal data subject to the following: ' +
+        '[REGIMES]. Where those requirements differ from this policy, or from ' +
+        'one another, the firm and its staff shall comply with the most ' +
+        'restrictive requirement that applies.',
       sourceLine: 268,
+      slots: [{ placeholder: '[REGIMES]', key: 'regulatory_regimes' }],
     },
   },
   {
