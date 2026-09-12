@@ -6,6 +6,56 @@
 
 ---
 
+## 🔴 Added 2026-09-11 (Rob, terminal-Claude) — Katy's billing/Stripe punch list, scoped for Max
+
+**What was done.** Rob walked through several billing/Stripe issues Katy raised. Each was verified
+against the actual code (not guessed) and, where it needed one, a design was agreed with Rob.
+**Nothing has been coded.** This is scoping only — Max is picking up the build.
+
+**Full detail lives in `.planning/OPEN-ISSUES.md`, items #15–20 (added 2026-09-10/11).** One line
+each:
+
+- **#15/#17 Firm name asked twice at signup.** Root cause confirmed (Stripe's optional Tax ID field
+  vs. `/onboarding`'s own ask). Design agreed: capture firm name on `/pricing` before Stripe, carry
+  it via Checkout Session `metadata.firm_name`, have the webhook write it into `firms.name`
+  directly, `/onboarding` shows it read-only instead of asking again.
+- **#16 "Keep credit cards on our side" — rejected, nothing to build.** Katy's ask would move IURIX
+  from PCI SAQ A into SAQ D — real ongoing compliance cost and real breach liability, wildly
+  disproportionate at this scale. The actual need (client changes their card) is **already built**:
+  `/dashboard/billing` → "Update payment method" → `/api/portal` → Stripe Customer Portal. Likely
+  just needs demoing to Katy, since nothing's deployed to prod since 2026-08-24.
+- **#18 Mid-year seat additions — billing model agreed, currently has zero mechanism.**
+  Today, inviting staff past the purchased seat count is a hard 409
+  (`app/api/invite/route.ts:53-58`), and the UI's own "Add seats in Billing" pointers
+  (`invite-form.tsx`, `csv-upload-form.tsx`, `intake-client.tsx`) lead to a page with no add-seats
+  control. Agreed model: mid-year add = one-time full-year charge at the firm's *current* per-seat
+  rate (no band recalculation at add-time); annual renewal recomputes headcount, applies the new
+  band to everyone, and credits any seat still inside its mid-year-paid window. Needs a new
+  seat-ledger table (`seats` today is one aggregate row per firm, no per-seat date/rate) and moves
+  the annual renewal from passive Stripe auto-billing to an app-controlled step. **Flagged for
+  Katy:** this modifies the standing "flat on renewal, no discount" pricing rule in `CLAUDE.md` —
+  should be a conscious sign-off, not a silent contradiction.
+- **#19 Change payment method mid-year — already built, no work needed.** Same mechanism as #16.
+- **#20 Cancellation is four separate mechanisms, not one.** Auto-renewal cancel and single-staff
+  removal are both already built and need no change. Two gaps agreed for Max to build: (a) a
+  self-serve "Cancel" action that checks 14-day + no-certificate-issued eligibility in-app and, if
+  eligible, emails the operator to review and manually issue the refund via the existing
+  `alertOperator` helper (`app/api/webhooks/stripe/route.ts:186-214`) — no auto-refund; (b) wire
+  that same `alertOperator` pattern into `handlePaymentFailed`
+  (`app/api/webhooks/stripe/route.ts:881-890`), which today silently flips a firm to
+  `payment_failed` with no notification to anyone. Full account/data deletion is **pinned** —
+  Rob needs to talk to Katy first, since it conflicts with the evidentiary retention rule on
+  `training_events` (kept indefinitely, identifiers stripped, as the record behind a certificate).
+
+**Status:** all six items above are scoped, none are built. **Next step is Max's** — pick these up
+against `main` (currently at whatever commit this handoff was pushed with; check `git log` for the
+real tip, per trap #1 below about not trusting dates).
+
+**Open question for Katy, not Max:** the full-account-deletion policy (item #5/pinned above) needs
+her input before it can even be designed, let alone built.
+
+---
+
 ## 🔴 Added 2026-09-03 (Max, desktop) — policy review in progress
 
 Max and desktop worked the policy document section by section against Katy's source.

@@ -345,3 +345,113 @@ promise is now more prominent, and the screen it sits on is the one every buyer 
 > **`STATE.md` §5 → "Engineering, verified in the tree today"**. Recorded here because that is
 > where it was asked for; flagged rather than moved silently. Move it and delete this block if you
 > agree.
+
+---
+
+# 🟠 Added 2026-09-10 — Katy's billing/Stripe punch list, logged for a batched fix
+
+**Not yet fixed. Rob's call: gather the rest of Katy's billing feedback first, fix everything in
+one pass.** Two items confirmed today by reading the code, not guessed.
+
+### 15. Firm name is asked twice at signup — confirmed, has a real fix
+`app/api/checkout/route.ts:197` turns on `tax_id_collection: { enabled: true }`. Per Stripe's docs,
+when a buyer chooses to enter a Tax ID at Checkout, Stripe also prompts for the **legal business
+name** to validate it, and saves that name onto the Stripe **Customer** object (`name` /
+`business_name`). Separately, `firms.name` is created **empty on purpose** at webhook time
+(`app/api/webhooks/stripe/route.ts:486`), and `/onboarding/firm-name`
+(`app/onboarding/firm-name/_components/firm-name-form.tsx`) asks for the firm name again from
+scratch before the middleware gate opens.
+
+So the double-ask only bites a buyer who bothers to fill in the optional Tax ID field at Checkout —
+not everyone — but for those buyers it is real and it is exactly what Katy hit.
+
+**Proposed fix (not applied):** in the webhook's firm-creation path, read the name Stripe already
+captured (`session.customer_details.name`, or fetch the Customer's `business_name`) and use it to
+pre-fill `firms.name` instead of `''`. That satisfies the `/onboarding/firm-name` gate automatically
+for anyone who already gave Stripe the name, and changes nothing for anyone who didn't (they still
+get asked exactly once).
+
+### 16. "Keep the card on our side" — rejected, and the actual need is already built
+Katy's ask was to store the card locally so a firm can change it. **Don't build this.** Today,
+IURIX never touches a card number — Checkout and the Stripe Customer Portal hold it, which keeps
+this product in PCI DSS **SAQ A** (the lightest self-assessment tier). Storing cards ourselves moves
+it to **SAQ D** — quarterly ASV scans, network segmentation, in many cases a QSA-led on-site
+assessment — a permanent compliance program, plus real breach liability (card-network fines,
+mandatory forensic investigation, breach-notification obligations in every state a customer lives
+in) that is wildly disproportionate to a $100–300k/yr small-firm SaaS. For a product whose pitch is
+governance and risk reduction, a card breach would be closer to fatal than embarrassing.
+
+**The good news: the feature Katy actually wants already exists.** `/dashboard/billing`
+(`app/dashboard/billing/_components/billing-client.tsx:184-196`) has an "Update payment method"
+button wired to `/api/portal`, which opens a Stripe-hosted Customer Portal session — card changes
+happen entirely on Stripe's page. The copy next to the button already reads *"Card details are held
+by Stripe, never by IURIX."* Nothing since 2026-08-24 has deployed to prod, so Katy likely hasn't
+seen this screen yet. Action item is a demo, not a build.
+
+---
+
+# 🟠 Added 2026-09-11 — the rest of Katy's punch list, design agreed, not yet built
+
+Continuation of the 2026-09-10 block above. Rob signed off on the designs below; nothing listed
+here has been touched in code yet.
+
+### 17. Firm name — capture pre-checkout, carry it to Stripe · design agreed
+Add a "Firm name" field to `/pricing` before the buyer ever reaches Stripe. Carry it on the Checkout
+Session as `metadata.firm_name` (same pattern already used for `terms_accepted_at` /
+`terms_version` at `app/api/checkout/route.ts:192-195`). The webhook writes it straight into
+`firms.name` instead of the deliberate `''` it creates today
+(`app/api/webhooks/stripe/route.ts:486`). `/onboarding` (`onboarding-client.tsx:329-348`) drops the
+firm-name input and shows it read-only, same treatment as email and seat count. Resolves #15.
+
+### 18. Mid-year seat additions — billing model agreed, resolves #3
+No proration at add-time, no band lookup at add-time:
+- **Mid-year add** → one-time charge, full year, at the firm's *current* per-seat rate (whatever
+  they're already paying). Deliberately not re-rated even if the addition would cross into a
+  cheaper band — that's temporary and self-corrects at renewal, and erring toward charging slightly
+  more mid-year is the conservative direction.
+- **Annual renewal** → recompute headcount → look up the band that headcount falls into → apply
+  that rate to every seat → subtract a true-up credit for any seat still inside its mid-year-paid
+  window. Credit = `(days remaining on that seat's paid year / 365) × (rate that seat was charged)`.
+
+**Needs, none of which exist today:**
+- A seat-ledger table (`firm_id`, `added_at`, `rate_paid_cents`, `covers_until`) — `seats`
+  (`supabase/migrations/0001_initial_schema.sql:88-95`) is one aggregate row per firm, max/used
+  only, no per-seat purchase date or rate.
+- Mid-year adds as a **one-time charge**, not a bump to the live subscription's `quantity` —
+  bumping `quantity` would make Stripe auto-bill that count going forward on the wrong cadence.
+- The annual renewal stops being passive (Stripe auto-charging the stored quantity) and becomes an
+  app-controlled step: recompute quantity, apply ledger credits, then invoice.
+- 🟠 **Flag for Katy:** this reverses "**FLAT on renewal, no renewal discount**"
+  (`CLAUDE.md` pricing constraints). A true-up credit is a discount, just an earned one — probably
+  fine, but should be a conscious call, not a silent contradiction of a documented rule.
+
+### 19. Change payment method — confirmed already built, no work needed
+`/dashboard/billing`'s "Update payment method" button → `/api/portal` → Stripe Customer Portal.
+Nothing to build. Resolves #4 from yesterday's list (the "what if they want to change their card"
+question) alongside #16.
+
+### 20. Cancellation is four different mechanisms, not one — clarified 2026-09-11
+- **Cancel auto-renewal** — built, `/dashboard/billing`. Soft: stays active to period end, no
+  refund, certs remain valid forever. **No change.**
+- **Remove one staff member** — built, `app/api/firm/member/delete/route.ts`. Soft-deletes the
+  member and frees their seat via the `sync_used_seats` trigger. Not billing-related at all — a
+  roster action, not a cancellation. **No change.**
+- 🔴 **Immediate cancel + refund — needs building.** `/pricing` promises a refund "within 14 days
+  of purchase and only if no certificate has yet been issued," but `refunds.create` appears **zero
+  times** in the codebase — today this only happens if Rob does it by hand in the Stripe dashboard.
+  **Agreed design:** add a self-serve "Cancel" action in the dashboard that checks eligibility
+  (purchase date ≤ 14 days ago AND no certificate issued for this firm) entirely in-app, does
+  **not** auto-refund, and instead emails the operator to review and issue the refund manually via
+  the existing `alertOperator` pattern (`app/api/webhooks/stripe/route.ts:186-214`, already used for
+  provisioning collisions, duplicate purchases, non-US billing, etc.). Ineligible requests should
+  say why (past 14 days, or a cert already issued) rather than silently doing nothing.
+- 🟠 **Involuntary cancellation (payment failure) — needs one addition.** `handlePaymentFailed`
+  (`app/api/webhooks/stripe/route.ts:881-890`) already flips `firms.status` to `payment_failed` on
+  Stripe's final retry, but calls `alertOperator` **nowhere** in that function — unlike every other
+  branch in this file. Add the same operator-alert pattern here so Rob is notified when a firm goes
+  into `payment_failed`, not just the firm's own staff.
+- 📌 **Full account/data deletion — pinned, not designed.** Rob to discuss with Katy before this
+  gets a design. Tension already on record: `training_events` rows are kept indefinitely with
+  identifiers stripped, as the evidentiary record behind a certificate (`STATE.md` §6) — "delete
+  everything" and "keep proof the certificate is real" are in direct conflict and need a policy
+  answer, not a code answer, first.
