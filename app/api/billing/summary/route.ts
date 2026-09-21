@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { decideCancelEligibility, type CancelIneligibilityReason } from '@/lib/cancel-refund-eligibility'
 
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
@@ -54,6 +55,14 @@ export interface BillingSummary {
    */
   cancelAtPeriodEnd: boolean
   invoices: BillingInvoice[]
+  /**
+   * ix-cancelrefund (OPEN-ISSUES.md #20). Whether this firm can use the
+   * self-serve "cancel + request refund" action right now — computed the same
+   * way the route that acts on it recomputes and re-checks server-side before
+   * doing anything. This copy is for display only.
+   */
+  cancelRefundEligible: boolean
+  cancelRefundReasons: CancelIneligibilityReason[]
 }
 
 export async function GET() {
@@ -74,7 +83,7 @@ export async function GET() {
   const admin = createAdminClient()
   const { data: firm } = await admin
     .from('firms')
-    .select('stripe_customer_id, stripe_subscription_id')
+    .select('stripe_customer_id, stripe_subscription_id, created_at')
     .eq('id', firmId)
     .single()
 
@@ -90,9 +99,21 @@ export async function GET() {
       status: null,
       cancelAtPeriodEnd: false,
       invoices: [],
+      cancelRefundEligible: false,
+      cancelRefundReasons: [],
     }
     return NextResponse.json(empty)
   }
+
+  const { count: certCount } = await admin
+    .from('certificates')
+    .select('id', { count: 'exact', head: true })
+    .eq('firm_id', firmId)
+
+  const cancelRefund = decideCancelEligibility({
+    purchasedAt: firm.created_at,
+    certificateIssued: (certCount ?? 0) > 0,
+  })
 
   const stripe = getStripe()
 
@@ -124,6 +145,8 @@ export async function GET() {
         hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
         invoicePdf: inv.invoice_pdf ?? null,
       })),
+      cancelRefundEligible: cancelRefund.eligible,
+      cancelRefundReasons: cancelRefund.reasons,
     }
 
     return NextResponse.json(summary)

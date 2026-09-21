@@ -35,12 +35,22 @@ function fmtAmount(minor: number, currency: string): string {
   }).format(minor / 100)
 }
 
+const CANCEL_REFUND_REASON_COPY: Record<string, string> = {
+  too_late: 'It has been more than 14 days since you purchased.',
+  certificate_issued: 'A certificate has already been issued to your staff.',
+}
+
 export function BillingClient() {
   const [data, setData] = useState<BillingSummary | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [saving, setSaving] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+
+  const [confirmingCancelRefund, setConfirmingCancelRefund] = useState(false)
+  const [cancelRefundSaving, setCancelRefundSaving] = useState(false)
+  const [cancelRefundError, setCancelRefundError] = useState<string | null>(null)
+  const [cancelRefundRequested, setCancelRefundRequested] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -93,6 +103,33 @@ export function BillingClient() {
       setActionError('Network error. Please try again.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function requestCancelRefund() {
+    setCancelRefundSaving(true)
+    setCancelRefundError(null)
+    try {
+      const res = await fetch('/api/billing/cancel-refund', { method: 'POST' })
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as
+          | { error?: string; reasons?: string[] }
+          | null
+        const reasonText = (body?.reasons ?? [])
+          .map(r => CANCEL_REFUND_REASON_COPY[r])
+          .filter(Boolean)
+          .join(' ')
+        setCancelRefundError(
+          body?.error || reasonText || 'This purchase is no longer eligible for a refund.'
+        )
+        return
+      }
+      setCancelRefundRequested(true)
+      setConfirmingCancelRefund(false)
+    } catch {
+      setCancelRefundError('Network error. Please try again.')
+    } finally {
+      setCancelRefundSaving(false)
     }
   }
 
@@ -345,6 +382,80 @@ export function BillingClient() {
 
               {actionError && !confirming && (
                 <p className="mt-4 text-sm font-medium text-red-500">{actionError}</p>
+              )}
+            </div>
+          </section>
+
+          {/* ── Cancel + refund — ix-cancelrefund ─────────────────────────────
+              Distinct from "Cancel auto-renewal" above: that schedules an end
+              date and keeps everything paid-for until then. This is the
+              14-day, no-certificate-issued refund /pricing promises, and it
+              is immediate rather than scheduled. Copy here is a first draft —
+              Max's to revise before this ships. */}
+          <section>
+            <h2 className={SECTION_HEADING}>Cancel and request a refund</h2>
+            <div className={CARD}>
+              {cancelRefundRequested ? (
+                <p className={`text-sm ${MUTED}`}>
+                  Your request has been sent to our team for review. We will follow up by email.
+                </p>
+              ) : !data.cancelRefundEligible ? (
+                <div>
+                  <span className={LABEL}>Not eligible for a refund</span>
+                  <p className={`mt-1 text-sm ${MUTED}`}>
+                    {(data.cancelRefundReasons.map(r => CANCEL_REFUND_REASON_COPY[r]).filter(Boolean).join(' ')) ||
+                      'This purchase is outside the refund window.'}
+                    {' '}To cancel auto-renewal instead, use the section above.
+                  </p>
+                </div>
+              ) : !confirmingCancelRefund ? (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+                  <div>
+                    <span className={LABEL}>Cancel and request a refund</span>
+                    <p className={`text-sm ${MUTED}`}>
+                      You are within 14 days of purchase and no certificate has been issued yet.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingCancelRefund(true)}
+                    className={BTN_QUIET}
+                  >
+                    Cancel and request a refund
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <span className={LABEL}>Cancel and request a refund?</span>
+                  <p className={`mt-3 text-sm leading-relaxed ${MUTED}`}>
+                    This sends your cancellation and refund request to our team for review. It
+                    does not cancel your subscription automatically — we will follow up by email
+                    once it is processed.
+                  </p>
+
+                  {cancelRefundError && (
+                    <p className="mt-4 text-sm font-medium text-red-500">{cancelRefundError}</p>
+                  )}
+
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void requestCancelRefund()}
+                      disabled={cancelRefundSaving}
+                      className={BTN_DANGER}
+                    >
+                      {cancelRefundSaving ? 'Sending…' : 'Yes, request cancellation and refund'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingCancelRefund(false)}
+                      disabled={cancelRefundSaving}
+                      className={BTN_QUIET}
+                    >
+                      Never mind
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </section>
