@@ -6,6 +6,47 @@
 
 ---
 
+## 🔴 Added 2026-09-21 (Rob, terminal-Claude) — built four of the six items from the 09-11 punch list below
+
+Max hadn't picked up the punch list ten days later, so Rob had terminal-Claude build the four
+items with agreed designs and no open questions. Full detail in `.planning/OPEN-ISSUES.md`
+items #17, #18, #20 (updated in place, not duplicated here). One line each:
+
+- **#17 firm name asked twice** — ✅ built. `/pricing` collects it, carries it via Checkout
+  metadata, webhook pre-fills `firms.name`, `/onboarding` shows it read-only when pre-filled.
+- **#20 payment-failure alert** — ✅ built. `handlePaymentFailed` now calls `alertOperator`
+  (extracted to `lib/operator-alert.ts` so more than the webhook route can use it).
+- **#20 self-serve cancel + refund request** — ✅ built. New eligibility rule
+  (`lib/cancel-refund-eligibility.ts`), new `/api/billing/cancel-refund` route, new section on
+  `/dashboard/billing`. Never calls Stripe's refund or cancel APIs — alerts the operator instead,
+  by design. **UI copy is a first draft and needs Max's pass before this ships.**
+- **#18 mid-year seat additions** — 🟡 half built. The add side is done and charges real money
+  through Stripe today: `app/api/billing/add-seats/route.ts`, `/dashboard/billing`'s "Add seats"
+  control, `lib/seat-ledger.ts`'s credit math (matches Rob's own worked example, unit-tested).
+  **The renewal side — actually making Stripe charge the true-up amount automatically at
+  renewal — was deliberately NOT built.** That's real Stripe-timing design work of its own and
+  was flagged rather than rushed. `CLAUDE.md`'s flat-on-renewal pricing rule now has a dated,
+  explicit exception recorded for this.
+
+**🔴 Migration not applied.** `supabase/migrations/0033_seat_ledger.sql` exists but was never run
+against staging or prod — this session had no Docker/linked Supabase project available.
+`types/supabase.ts` was hand-patched to match it well enough to typecheck; that patch is a
+stopgap, not a substitute for actually running the migration and then `supabase gen types` for
+real. **Someone needs to `supabase link --project-ref ndmzvtuywcufvkxtkjhg` (staging) and `db
+push` this before `/api/billing/add-seats` can work against anything but a hand-patched type
+file** — right now the route would fail at runtime against a real database that doesn't have the
+table yet.
+
+**Verification done:** `npx tsc --noEmit` clean, `pnpm lint` clean on every changed file,
+`pnpm test` — 476 passed, same 15 pre-existing failures as baseline (`git stash` confirmed
+identical failures exist on `main` before this session's changes — unrelated to this work).
+21 new tests added across `tests/cancel-refund-eligibility.test.ts` and `tests/seat-ledger.test.ts`,
+plus one existing test (`tests/firm-name-gate.test.ts`) updated to match the new webhook source.
+No browser verification — Playwright/manual click-through of `/pricing`, `/onboarding` and
+`/dashboard/billing` still needs doing before this ships.
+
+---
+
 ## 🔴 Added 2026-09-11 (Rob, terminal-Claude) — Katy's billing/Stripe punch list, scoped for Max
 
 **What was done.** Rob walked through several billing/Stripe issues Katy raised. Each was verified

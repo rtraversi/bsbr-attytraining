@@ -395,35 +395,47 @@ seen this screen yet. Action item is a demo, not a build.
 Continuation of the 2026-09-10 block above. Rob signed off on the designs below; nothing listed
 here has been touched in code yet.
 
-### 17. Firm name — capture pre-checkout, carry it to Stripe · design agreed
-Add a "Firm name" field to `/pricing` before the buyer ever reaches Stripe. Carry it on the Checkout
-Session as `metadata.firm_name` (same pattern already used for `terms_accepted_at` /
-`terms_version` at `app/api/checkout/route.ts:192-195`). The webhook writes it straight into
-`firms.name` instead of the deliberate `''` it creates today
-(`app/api/webhooks/stripe/route.ts:486`). `/onboarding` (`onboarding-client.tsx:329-348`) drops the
-firm-name input and shows it read-only, same treatment as email and seat count. Resolves #15.
+### 17. ~~Firm name — capture pre-checkout, carry it to Stripe~~ — ✅ **BUILT 2026-09-21**
+`/pricing`'s slider now collects "Firm name" before checkout and sends it as
+`metadata.firm_name` (`app/api/checkout/route.ts`, optional — a caller that omits it falls back to
+the pre-existing behavior). The webhook pre-fills `firms.name` from it instead of `''`
+(`app/api/webhooks/stripe/route.ts`, via `normalizeFirmName`). `/onboarding` shows it read-only
+when pre-filled, same CONFIRMS-not-CHOOSES treatment as the email field, and still asks once for
+anyone who skipped it (`onboarding-client.tsx`). Typecheck, lint and `pnpm test` clean; the one
+source-scanning test that asserted the old literal (`tests/firm-name-gate.test.ts`) was updated to
+match. Resolves #15.
 
-### 18. Mid-year seat additions — billing model agreed, resolves #3
-No proration at add-time, no band lookup at add-time:
-- **Mid-year add** → one-time charge, full year, at the firm's *current* per-seat rate (whatever
-  they're already paying). Deliberately not re-rated even if the addition would cross into a
-  cheaper band — that's temporary and self-corrects at renewal, and erring toward charging slightly
-  more mid-year is the conservative direction.
-- **Annual renewal** → recompute headcount → look up the band that headcount falls into → apply
-  that rate to every seat → subtract a true-up credit for any seat still inside its mid-year-paid
-  window. Credit = `(days remaining on that seat's paid year / 365) × (rate that seat was charged)`.
+### 18. Mid-year seat additions — 🟡 **PARTLY BUILT 2026-09-21** (the safe half); renewal charging deferred
+No proration at add-time, no band lookup at add-time. Rob confirmed the design with a worked
+example (3 seats Jan 1, +1 seat June 1 at $35, renewal next Jan 1 → that seat's renewal line is
+$35 − 5/12×$35 ≈ $20.42) and it's now recorded in `CLAUDE.md` as the one deliberate exception to
+flat-on-renewal.
 
-**Needs, none of which exist today:**
-- A seat-ledger table (`firm_id`, `added_at`, `rate_paid_cents`, `covers_until`) — `seats`
-  (`supabase/migrations/0001_initial_schema.sql:88-95`) is one aggregate row per firm, max/used
-  only, no per-seat purchase date or rate.
-- Mid-year adds as a **one-time charge**, not a bump to the live subscription's `quantity` —
-  bumping `quantity` would make Stripe auto-bill that count going forward on the wrong cadence.
-- The annual renewal stops being passive (Stripe auto-charging the stored quantity) and becomes an
-  app-controlled step: recompute quantity, apply ledger credits, then invoice.
-- 🟠 **Flag for Katy:** this reverses "**FLAT on renewal, no renewal discount**"
-  (`CLAUDE.md` pricing constraints). A true-up credit is a discount, just an earned one — probably
-  fine, but should be a conscious call, not a silent contradiction of a documented rule.
+**Built and tested:**
+- `supabase/migrations/0033_seat_ledger.sql` — `seat_ledger(firm_id, seat_count, rate_paid_cents,
+  added_at, covers_until, credited_at)`. **Not yet applied to staging or prod** — needs `supabase
+  db push` against staging first (this session had no Docker/linked project available, so it
+  wasn't run); `types/supabase.ts` was hand-patched to match so the build typechecks, but that
+  patch should be replaced by a real `supabase gen types` once the migration is actually applied.
+- `lib/pricing.ts` (band rate lookup) and `lib/seat-ledger.ts` (`computeMidYearChargeCents`,
+  `computeRenewalTrueUp` — pure functions, unit-tested against Rob's own numbers in
+  `tests/seat-ledger.test.ts`).
+- `app/api/billing/add-seats/route.ts` — the one-time charge. Firm admin only; charges a Stripe
+  Invoice (invoice item + finalize + pay) at the firm's *current* per-seat rate, **never** bumps
+  the subscription's `quantity`, updates `firms.max_seats` / `seats.max_seats` only after the
+  charge is confirmed paid, and writes the `seat_ledger` row.
+- `/dashboard/billing` — "Add seats" control on the Current plan card. The two dead
+  `href="/api/portal"` "Add seats in Billing" links (`invite-form.tsx`, `csv-upload-form.tsx`) now
+  point at `/dashboard/billing#add-seats`.
+
+**Deliberately NOT built — flagged rather than rushed:** making the annual renewal itself
+app-controlled (recompute headcount, look up the new band, apply `computeRenewalTrueUp`'s credit,
+and actually get Stripe to charge that exact amount on the right day without misfiring proration
+or double-charging) is real design and testing work of its own — timing an app-driven charge
+against Stripe's own invoice/collection cycle needs a dedicated pass with Stripe sandbox testing,
+not a same-session addition. `lib/seat-ledger.ts` has the credit math ready; nothing calls it
+against a live Stripe invoice yet. #3 (the original "no mechanism at all" complaint) is resolved
+for the add side; the renewal side is where #3 partially remains.
 
 ### 19. Change payment method — confirmed already built, no work needed
 `/dashboard/billing`'s "Update payment method" button → `/api/portal` → Stripe Customer Portal.
@@ -436,20 +448,20 @@ question) alongside #16.
 - **Remove one staff member** — built, `app/api/firm/member/delete/route.ts`. Soft-deletes the
   member and frees their seat via the `sync_used_seats` trigger. Not billing-related at all — a
   roster action, not a cancellation. **No change.**
-- 🔴 **Immediate cancel + refund — needs building.** `/pricing` promises a refund "within 14 days
-  of purchase and only if no certificate has yet been issued," but `refunds.create` appears **zero
-  times** in the codebase — today this only happens if Rob does it by hand in the Stripe dashboard.
-  **Agreed design:** add a self-serve "Cancel" action in the dashboard that checks eligibility
-  (purchase date ≤ 14 days ago AND no certificate issued for this firm) entirely in-app, does
-  **not** auto-refund, and instead emails the operator to review and issue the refund manually via
-  the existing `alertOperator` pattern (`app/api/webhooks/stripe/route.ts:186-214`, already used for
-  provisioning collisions, duplicate purchases, non-US billing, etc.). Ineligible requests should
-  say why (past 14 days, or a cert already issued) rather than silently doing nothing.
-- 🟠 **Involuntary cancellation (payment failure) — needs one addition.** `handlePaymentFailed`
-  (`app/api/webhooks/stripe/route.ts:881-890`) already flips `firms.status` to `payment_failed` on
-  Stripe's final retry, but calls `alertOperator` **nowhere** in that function — unlike every other
-  branch in this file. Add the same operator-alert pattern here so Rob is notified when a firm goes
-  into `payment_failed`, not just the firm's own staff.
+- ✅ **Immediate cancel + refund — BUILT 2026-09-21.** New eligibility rule
+  `lib/cancel-refund-eligibility.ts` (purchase date ≤ 14 days ago AND no certificate issued for
+  this firm — unit-tested in `tests/cancel-refund-eligibility.test.ts`), exposed on
+  `/api/billing/summary` so the dashboard can show/hide the action, and enforced again
+  server-side in the new `POST /api/billing/cancel-refund` before anything happens. On eligible,
+  it alerts the operator (via the newly-extracted `lib/operator-alert.ts` — same pattern, pulled
+  out of the webhook route so this route could use it too) with everything needed to act by hand;
+  it does **not** call `refunds.create` or cancel the Stripe subscription itself — both stay
+  Rob's own action, per the agreed design. Ineligible requests return why (`too_late` /
+  `certificate_issued`), surfaced in the new "Cancel and request a refund" section on
+  `/dashboard/billing`. UI copy there is a first draft, Max's to revise before shipping.
+- ✅ **Involuntary cancellation (payment failure) — BUILT 2026-09-21.** `handlePaymentFailed` now
+  calls `alertOperator` with the firm, customer email, subscription and invoice link, same as
+  every other branch in that file.
 - 📌 **Full account/data deletion — pinned, not designed.** Rob to discuss with Katy before this
   gets a design. Tension already on record: `training_events` rows are kept indefinitely with
   identifiers stripped, as the evidentiary record behind a certificate (`STATE.md` §6) — "delete
