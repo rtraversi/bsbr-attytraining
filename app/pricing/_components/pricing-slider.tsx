@@ -38,6 +38,12 @@ export function PricingSlider() {
   // Checkout Session metadata.firm_name (app/api/checkout/route.ts).
   const [firmName, setFirmName] = useState("");
   const trimmedFirmName = normalizeFirmName(firmName);
+  // ix-dupcheck. Required, unlike firmName above — this is what lets
+  // /api/checkout ask "does someone already own an active subscription under
+  // this email" BEFORE creating a Stripe session, instead of only finding out
+  // after a card is charged. Pre-fills Stripe's own email field too, so it is
+  // one entry, not two.
+  const [email, setEmail] = useState("");
   // ix-termsaccept. Unticked by default and never pre-checked: a pre-ticked box
   // is not acceptance. The server refuses the request without it, so this is a
   // real gate rather than a cosmetic one.
@@ -63,6 +69,7 @@ export function PricingSlider() {
           termsAccepted,
           termsVersion: CURRENT_TERMS_VERSION,
           firmName: trimmedFirmName,
+          email: email.trim(),
         }),
       });
       // Surface the server's own message rather than a generic retry prompt.
@@ -186,6 +193,29 @@ export function PricingSlider() {
           </div>
         </div>
 
+        {/* Email — ix-dupcheck. Required: lets /api/checkout check for an
+            existing active subscription under this email BEFORE creating a
+            Stripe session, and pre-fills Stripe's own email field so it is
+            one entry, not two. */}
+        <div className="mt-8 flex flex-col gap-2.5">
+          <label htmlFor="pricing-email" className="text-sm font-medium text-ink">
+            Email
+          </label>
+          <input
+            id="pricing-email"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@yourfirm.com"
+            className="w-full rounded-[1px] border border-silver bg-white px-4 py-3 text-base text-ink placeholder:text-ink-mute/60 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-teal-mid"
+          />
+          <p className="text-xs text-ink-mute">
+            You&apos;ll use this to sign in. If your firm already has an IURIX account, we&apos;ll let you know here instead of charging you twice.
+          </p>
+        </div>
+
         {/* Firm name — ix-firmnametwice. Collected here so it can ride the
             Checkout Session to the webhook and pre-fill firms.name, instead of
             asking again at /onboarding. Label/placeholder/helper text reused
@@ -265,7 +295,7 @@ export function PricingSlider() {
         {/* CTA */}
         <button
           onClick={startCheckout}
-          disabled={loading || !isUsFirm || !termsAccepted}
+          disabled={loading || !isUsFirm || !termsAccepted || !email.includes("@")}
           className="mt-5 w-full rounded-[1px] bg-teal-ink px-8 py-4 text-base font-medium text-marble transition-colors hover:bg-ink disabled:opacity-60"
         >
           {loading ? "Redirecting to checkout…" : "Get started"}

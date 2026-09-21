@@ -7,6 +7,7 @@ import { sendEmail } from '@/lib/resend'
 import { SEAT_OCCUPYING_STATUSES } from '@/lib/seats'
 import { normalizeFirmName } from '@/lib/firm-name'
 import { alertOperator } from '@/lib/operator-alert'
+import { resolveBuyer, type BuyerIdentity } from '@/lib/buyer-identity'
 import { CheckoutEmailInUseEmail } from '@/emails/checkout-email-in-use'
 import { CheckoutNonUsEmail } from '@/emails/checkout-non-us'
 
@@ -121,22 +122,11 @@ type ProvisioningFailureReason = 'duplicate' | 'email_in_use' | 'unresolved' | '
  */
 const ALLOWED_BILLING_COUNTRY = 'US'
 
-/**
- * Who is this buyer? Resolved before anything is provisioned, cancelled or
- * refused. Resolution order is owner before member (Max's ruling, 2026-08-03),
- * and among owned firms active beats non-active.
- */
-type BuyerIdentity =
-  /** Owns a firm that is currently active — this payment is a genuine duplicate. */
-  | { kind: 'duplicate'; userId: string; firmId: string; firmSubscriptionId: string | null }
-  /** Owns a firm that lapsed or was cancelled — reattach their history. */
-  | { kind: 'returning'; userId: string; firmId: string; firmStatus: string }
-  /** Owns nothing, but is staff at somebody else's active firm. */
-  | { kind: 'email_in_use'; userId: string }
-  /** Has a login but owns nothing and belongs to nothing active — give them a firm. */
-  | { kind: 'existing_user_no_firm'; userId: string }
-  /** Reported as already registered, but no user row matches. Should be unreachable. */
-  | { kind: 'unresolved' }
+// BuyerIdentity and resolveBuyer moved to lib/buyer-identity.ts (ix-dupcheck)
+// so app/api/checkout/route.ts can ask the same question BEFORE a session is
+// created, not only here after a charge has already happened. Behavior
+// unchanged — same resolution order (owner before member, active before
+// non-active), same RPC.
 
 /**
  * True when createUser failed because the address is already taken, as opposed
@@ -189,81 +179,6 @@ async function recordProvisioningFailure(
 // app/api/billing/cancel-refund/route.ts can use the identical pattern without
 // importing a route handler module. The fallback address, OPERATOR_ALERT_EMAIL
 // unset behavior, and multi-address support are unchanged — see that file.
-
-/**
- * Ask who the buyer is, rather than inferring it from whether account creation
- * happened to fail. Only called once createUser has reported the address taken.
- */
-async function resolveBuyer(supabase: AdminClient, email: string): Promise<BuyerIdentity> {
-  const { data: userId, error: lookupError } = await supabase.rpc('find_user_id_by_email', {
-    p_email: email,
-  })
-
-  // A lookup fault is transient, not an identity answer — surface it rather
-  // than guessing at someone's billing.
-  if (lookupError) throw lookupError
-
-  // The generated signature says `Returns: string`, but a SQL function that
-  // matches no rows resolves to null. Trust the runtime, not the type.
-  if (!userId) return { kind: 'unresolved' }
-
-  // Owner before member. Among owned firms, active beats non-active — a buyer
-  // who owns both an active and a dead firm is duplicating, not returning.
-  const { data: ownedFirms, error: firmsError } = await supabase
-    .from('firms')
-    .select('id, status, stripe_subscription_id')
-    .eq('owner_id', userId)
-
-  if (firmsError) throw firmsError
-
-  const activeOwned = ownedFirms?.find((f) => f.status === 'active')
-  if (activeOwned) {
-    return {
-      kind: 'duplicate',
-      userId,
-      firmId: activeOwned.id,
-      firmSubscriptionId: activeOwned.stripe_subscription_id,
-    }
-  }
-
-  // firms.status is CHECK-constrained to ('active','payment_failed','cancelled')
-  // (0001:45-46), so anything not active is revivable by definition.
-  const revivableOwned = ownedFirms?.[0]
-  if (revivableOwned) {
-    return {
-      kind: 'returning',
-      userId,
-      firmId: revivableOwned.id,
-      firmStatus: revivableOwned.status,
-    }
-  }
-
-  // Owns nothing. Are they staff somewhere? app_metadata.firm_id is the right
-  // signal rather than a firm_members lookup: reassign and delete both clear it
-  // (member/delete/route.ts:64, and the 07-30 revoke-on-reassign work), so a
-  // departed employee correctly reads as belonging to nothing and gets their
-  // own firm instead of being refused.
-  const { data: userRecord, error: userError } = await supabase.auth.admin.getUserById(userId)
-  if (userError) throw userError
-
-  const memberFirmId = userRecord.user?.app_metadata?.firm_id as string | undefined
-
-  if (memberFirmId) {
-    const { data: memberFirm, error: memberFirmError } = await supabase
-      .from('firms')
-      .select('status')
-      .eq('id', memberFirmId)
-      .maybeSingle()
-
-    if (memberFirmError) throw memberFirmError
-
-    // Only an *active* employer blocks the purchase. Staff at a lapsed firm are
-    // free to buy their own.
-    if (memberFirm?.status === 'active') return { kind: 'email_in_use', userId }
-  }
-
-  return { kind: 'existing_user_no_firm', userId }
-}
 
 // ─── checkout.session.completed — provision new firm ─────────────────────────
 

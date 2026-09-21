@@ -15,6 +15,10 @@ export default function CheckoutForm() {
   // Without it the server refuses with terms_not_accepted and the form simply
   // breaks the moment anyone wires it up.
   const [termsAccepted, setTermsAccepted] = useState(false);
+  // ix-dupcheck. Same reasoning as the terms-accepted comment above: dead
+  // code today, but /api/checkout now hard-requires email, so this stays
+  // working the moment anyone wires this component up.
+  const [email, setEmail] = useState("");
 
   const pricePerSeat = seats >= 25 ? 28 : seats >= 10 ? 32 : 35;
   const total = seats * pricePerSeat;
@@ -33,6 +37,7 @@ export default function CheckoutForm() {
           billingCountry: isUsFirm ? "US" : "",
           termsAccepted,
           termsVersion: CURRENT_TERMS_VERSION,
+          email: email.trim(),
         }),
       });
 
@@ -51,6 +56,20 @@ export default function CheckoutForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col items-center gap-4">
+      <div className="flex items-center gap-4">
+        <label htmlFor="checkout-email" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+          Email
+        </label>
+        <input
+          id="checkout-email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
       <div className="flex items-center gap-4">
         <label
           htmlFor="seats"
@@ -111,7 +130,7 @@ export default function CheckoutForm() {
 
       <button
         type="submit"
-        disabled={loading || !isUsFirm || !termsAccepted}
+        disabled={loading || !isUsFirm || !termsAccepted || !email.includes("@")}
         className="mt-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl px-8 py-3 text-base transition-colors"
       >
         {loading ? "Redirecting…" : "Get Started"}

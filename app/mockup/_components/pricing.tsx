@@ -36,6 +36,9 @@ export function Pricing() {
   // a design surface, but it posts to the REAL /api/checkout, so it carries the
   // real gate rather than a decorative copy of one.
   const [termsAccepted, setTermsAccepted] = useState(false)
+  // ix-dupcheck. Same reasoning as the US-only/terms gates above: this posts
+  // to the REAL /api/checkout, which now hard-requires email.
+  const [email, setEmail] = useState("")
 
   const rate = perSeatRate(seats)
   const total = seats * rate
@@ -56,6 +59,7 @@ export function Pricing() {
           billingCountry: isUsFirm ? "US" : "",
           termsAccepted,
           termsVersion: CURRENT_TERMS_VERSION,
+          email: email.trim(),
         }),
       })
       const data = (await res.json()) as { url?: string; error?: string }
@@ -201,6 +205,21 @@ export function Pricing() {
                 </div>
               </div>
 
+              {/* Email — ix-dupcheck. Same reasoning as the checkboxes below:
+                  a design surface that posts to the real /api/checkout. */}
+              <label htmlFor="mockup-pricing-email" className="mt-6 block text-sm font-medium text-foreground">
+                Email
+              </label>
+              <input
+                id="mockup-pricing-email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@yourfirm.com"
+                className="mt-2 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+
               {/* US-only declaration. /mockup is a design surface but it posts
                   to the REAL /api/checkout and can take real money, so it
                   carries the same gate as /pricing rather than a decorative
@@ -246,7 +265,7 @@ export function Pricing() {
                 size="lg"
                 className="mt-4 h-12 w-full rounded-xl text-[0.95rem]"
                 onClick={handleCheckout}
-                disabled={loading || !isUsFirm || !termsAccepted}
+                disabled={loading || !isUsFirm || !termsAccepted || !email.includes("@")}
               >
                 {loading ? (
                   <>
