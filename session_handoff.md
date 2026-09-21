@@ -154,9 +154,29 @@ live:
 gh workflow run deploy.yml --ref main -f target=production
 ```
 
-**Nothing has reached production since 2026-08-24T19:34:58Z.** Do not infer
-otherwise from commit dates, branch names or a green checkmark — every one of
-those has misled a previous session.
+> ✅ **Closed 2026-09-21 (Rob, terminal-Claude).** The month-long gap above is over —
+> `workflow_dispatch` run `35608044732` deployed `main` at `c014ca0` to production, confirmed
+> `success` on every step including "Deploy to production" and "Smoke-test production", and
+> `headSha` in `gh run view` matched local `HEAD` exactly. Live-checked afterward: `x-opennext: 1`
+> on the apex, and `/pricing`'s new email field (`pricing-email`, added this session) present in
+> the served HTML — not just a green checkmark, the actual new code.
+>
+> 🔴 **One real mistake in getting there, worth remembering.** The first deploy attempt
+> (`35607540104`) reported `success` and looked identical to the real one — but its `headSha` was
+> `d12501c`, eight commits behind. **The 8 commits from this session had never been pushed** —
+> `gh workflow run --ref main` checks out `origin/main`, not the local branch, and `git push` had
+> simply been skipped. The workflow ships whatever is on the remote, correctly, even when that's
+> stale — it is not a bug in the deploy, it's a step that's easy to forget. **Always check `gh run
+> view <run-id> --json headSha` against local `git log -1` after triggering a deploy, not just the
+> conclusion.** A green run with the wrong SHA is a deploy that did nothing.
+>
+> Production now carries the entire policy intake system, the policy generator, and everything
+> from this session (firm-name dedupe, payment-failure alerts, self-serve cancel+refund, mid-year
+> seats add-side, the pre-Stripe duplicate-purchase check) — all of it live for the first time.
+
+Historically true and worth keeping for the pattern, even though the specific gap above is closed:
+**do not infer deploy status from commit dates, branch names or a green checkmark** — every one of
+those has misled a previous session, including this one, until the `headSha` was checked.
 
 ### 2. Staging and production are different databases
 

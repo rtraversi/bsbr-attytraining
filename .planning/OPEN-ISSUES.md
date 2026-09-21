@@ -390,8 +390,8 @@ governance and risk reduction, a card breach would be closer to fatal than embar
 (`app/dashboard/billing/_components/billing-client.tsx:184-196`) has an "Update payment method"
 button wired to `/api/portal`, which opens a Stripe-hosted Customer Portal session — card changes
 happen entirely on Stripe's page. The copy next to the button already reads *"Card details are held
-by Stripe, never by IURIX."* Nothing since 2026-08-24 has deployed to prod, so Katy likely hasn't
-seen this screen yet. Action item is a demo, not a build.
+by Stripe, never by IURIX."* ~~Nothing since 2026-08-24 has deployed to prod~~ — **that changed
+2026-09-21**, see `session_handoff.md` §1. This screen is live now; Katy can be shown it for real.
 
 ---
 
