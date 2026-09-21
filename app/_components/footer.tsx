@@ -10,7 +10,8 @@ import { IurixLockup } from "./iurix-lockup";
 // The DPA was pulled 2026-08-24, and linking to a page of placeholders from
 // the footer of a live product was worse than not offering it. As of Katy,
 // 2026-09-21: it is not coming back — DPA is permanently out of scope, not
-// merely unwritten. See CLAUDE.md's session-handoff record (ix-dparetired).
+// merely unwritten (ix-dparetired). If that ever reverses, OPEN-ISSUES.md #4
+// has the exact list of every spot this needs restoring, not just this one.
 const LEGAL_LINKS: { label: string; href: string }[] = [
   { label: "Privacy Policy", href: "/privacy" },
   { label: "Terms of Service", href: "/terms" },

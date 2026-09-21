@@ -85,6 +85,27 @@ _components/email-shell.tsx` — real recipients were linked to a dead page), an
 checkbox. `.planning/POLICY-DECISIONS.md` (Max, 08-05) still records the underlying decisions for
 `/terms` and `/privacy` so those drafts can be traced.
 
+📌 **"Permanently" means until Katy says otherwise — keep this note in case she reverses it.**
+Reinstating is not a full rebuild; the plumbing was already built once and only needs unwinding.
+Every spot below is tagged `ix-dparetired` in a code comment for exact grep. If she asks for it
+back:
+1. Draft real content in `app/dpa/page.tsx`, replacing the `[ATTORNEY TO COMPLETE]` placeholders
+   (Katy/Rob approve, same as `/terms` and `/privacy` were).
+2. Remove the guard: `if (process.env.NODE_ENV === 'production') notFound()` in that same file.
+3. Add `{ label: "Data Processing Addendum", href: "/dpa" }` back to `LEGAL_LINKS` in
+   `app/_components/footer.tsx`.
+4. Add the link back to `app/dashboard/_components/dashboard-footer.tsx`, where the `ix-dparetired`
+   comment marker sits.
+5. Restore the footer link in `emails/_components/email-shell.tsx` (a `footerDot` separator plus a
+   `Link` to `https://iurixaccreditation.com/dpa`, same shape as the Privacy/Terms links beside it)
+   — every transactional email picks this up automatically via the shared shell.
+6. Restore "and Data Processing Addendum" to the `terms_not_accepted` error message in
+   `app/api/checkout/route.ts`, **and** add a real DPA checkbox (or fold it into the existing terms
+   checkbox text) on `/pricing`'s actual form (`pricing-slider.tsx`) — the error message must never
+   again ask for acceptance of something the real checkbox doesn't offer. Update `checkout-form.tsx`
+   too for consistency (dead code today, but see its own comment on why it stays in sync).
+7. Optionally restore `/mockup`'s checkbox mention (cosmetic, unreachable in prod either way).
+
 **One constraint from the retention decision:** `training_events` rows are kept and their
 identifiers stripped, because the row is the Rule 5.3 evidence the certificate rests on. That makes
 training activity **retained indefinitely**, and the Privacy Policy must say so.
