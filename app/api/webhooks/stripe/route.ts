@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/resend'
 import { SEAT_OCCUPYING_STATUSES } from '@/lib/seats'
 import { normalizeFirmName } from '@/lib/firm-name'
+import { alertOperator } from '@/lib/operator-alert'
 import { CheckoutEmailInUseEmail } from '@/emails/checkout-email-in-use'
 import { CheckoutNonUsEmail } from '@/emails/checkout-non-us'
 
@@ -184,37 +185,10 @@ async function recordProvisioningFailure(
   }
 }
 
-/** Best-effort operator alert. A mail failure is logged and swallowed. */
-async function alertOperator(subject: string, lines: string[]) {
-  // The fallback once pointed at info@aistaffcompliance.com, a RETIRED domain,
-  // so whenever OPERATOR_ALERT_EMAIL was unset this alert was mailed into a void
-  // — and it HAS been unset since the domain move, which made the whole safety
-  // net of the 07-09 collision fix inert. It is now Rob's real business address
-  // (cutover item C4, ix-supportdest), the same inbox the in-app support form
-  // delivers to (app/api/support/contact/route.ts). A misconfigured env must
-  // still not silently mail a dead domain. Set the real secret as well — the
-  // fallback is a floor, not the configuration.
-  //
-  // May hold SEVERAL addresses, comma-separated. sendEmail splits them (see
-  // parseRecipients in lib/resend.ts), so an alert that a customer paid and got
-  // nothing can reach more than one person — a single address is a single point
-  // of failure for exactly the message that must not be missed.
-  const operatorEmail = process.env.OPERATOR_ALERT_EMAIL ?? 'info@iurixaccreditation.com'
-
-  const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
-<ul style="font-size:14px">
-${lines.map((l) => `  <li>${l}</li>`).join('\n')}
-</ul>
-<hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
-<p style="font-size:12px;color:#6b7280">IURIX</p>
-</body></html>`
-
-  try {
-    await sendEmail({ to: operatorEmail, subject, html })
-  } catch (mailErr) {
-    console.error('[stripe-webhook] operator alert email failed:', mailErr)
-  }
-}
+// alertOperator moved to lib/operator-alert.ts (ix-cancelrefund) so
+// app/api/billing/cancel-refund/route.ts can use the identical pattern without
+// importing a route handler module. The fallback address, OPERATOR_ALERT_EMAIL
+// unset behavior, and multi-address support are unchanged — see that file.
 
 /**
  * Ask who the buyer is, rather than inferring it from whether account creation
@@ -893,10 +867,24 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   if (!subscriptionId) return
   const supabase = createAdminClient()
 
-  await supabase
+  const { data: firm } = await supabase
     .from('firms')
     .update({ status: 'payment_failed' })
     .eq('stripe_subscription_id', subscriptionId)
+    .select('id, name')
+    .single()
+
+  if (!firm) return
+
+  await alertOperator('🔴 Stripe — payment failed, firm marked payment_failed', [
+    `<strong>Firm:</strong> ${firm.name || '(no name)'} (${firm.id})`,
+    `<strong>Customer email:</strong> ${invoice.customer_email ?? '(unknown)'}`,
+    `<strong>Subscription:</strong> ${subscriptionId}`,
+    `<strong>Invoice:</strong> ${invoice.id}`,
+    ...(invoice.hosted_invoice_url
+      ? [`<strong>Invoice link:</strong> <a href="${invoice.hosted_invoice_url}">${invoice.hosted_invoice_url}</a>`]
+      : []),
+  ])
 }
 
 // ─── invoice.payment_succeeded — mark active, handle renewal re-enrollment ────
