@@ -321,7 +321,7 @@ Dana Whitfield,dana@yourfirm.com,false`}
                 </span>{' '}
                 —{' '}
                 <a
-                  href="/api/portal"
+                  href="/dashboard/billing#add-seats"
                   className="font-semibold underline underline-offset-2 hover:opacity-80"
                 >
                   add seats in Billing

@@ -727,6 +727,47 @@ export type Database = {
           },
         ]
       }
+      seat_ledger: {
+        Row: {
+          added_at: string
+          covers_until: string
+          created_at: string
+          credited_at: string | null
+          firm_id: string
+          id: string
+          rate_paid_cents: number
+          seat_count: number
+        }
+        Insert: {
+          added_at?: string
+          covers_until: string
+          created_at?: string
+          credited_at?: string | null
+          firm_id: string
+          id?: string
+          rate_paid_cents: number
+          seat_count: number
+        }
+        Update: {
+          added_at?: string
+          covers_until?: string
+          created_at?: string
+          credited_at?: string | null
+          firm_id?: string
+          id?: string
+          rate_paid_cents?: number
+          seat_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seat_ledger_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seats: {
         Row: {
           firm_id: string

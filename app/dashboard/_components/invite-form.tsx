@@ -205,7 +205,7 @@ function InviteKindDialog({
                   Your staff seats are full.
                 </span>{' '}
                 <a
-                  href="/api/portal"
+                  href="/dashboard/billing#add-seats"
                   className="font-semibold underline underline-offset-2 hover:opacity-80"
                 >
                   Add seats in Billing

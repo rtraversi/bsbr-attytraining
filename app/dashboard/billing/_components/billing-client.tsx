@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import type { BillingSummary } from '@/app/api/billing/summary/route'
+import { rateForSeatCount } from '@/lib/pricing'
 
 /* ── Tokens — same values app/dashboard/settings/page.tsx uses ─────────────── */
 const CARD = 'rounded-3xl bg-white p-6 xl:p-8 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
@@ -51,6 +52,12 @@ export function BillingClient() {
   const [cancelRefundSaving, setCancelRefundSaving] = useState(false)
   const [cancelRefundError, setCancelRefundError] = useState<string | null>(null)
   const [cancelRefundRequested, setCancelRefundRequested] = useState(false)
+
+  const [addSeatsOpen, setAddSeatsOpen] = useState(false)
+  const [seatsToAdd, setSeatsToAdd] = useState(1)
+  const [addSeatsSaving, setAddSeatsSaving] = useState(false)
+  const [addSeatsError, setAddSeatsError] = useState<string | null>(null)
+  const [addSeatsResult, setAddSeatsResult] = useState<{ seatsAdded: number; chargedCents: number } | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -103,6 +110,36 @@ export function BillingClient() {
       setActionError('Network error. Please try again.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function addSeats() {
+    setAddSeatsSaving(true)
+    setAddSeatsError(null)
+    try {
+      const res = await fetch('/api/billing/add-seats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seats: seatsToAdd }),
+      })
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null
+        setAddSeatsError(body?.error ?? 'Could not add seats. Please try again.')
+        return
+      }
+      const result = (await res.json()) as {
+        seatsAdded: number
+        newMaxSeats: number
+        chargedCents: number
+        ratePerSeat: number
+      }
+      setAddSeatsResult({ seatsAdded: result.seatsAdded, chargedCents: result.chargedCents })
+      setAddSeatsOpen(false)
+      setData(d => (d ? { ...d, seats: result.newMaxSeats } : d))
+    } catch {
+      setAddSeatsError('Network error. Please try again.')
+    } finally {
+      setAddSeatsSaving(false)
     }
   }
 
@@ -179,10 +216,76 @@ export function BillingClient() {
               <dl className="flex flex-col gap-5">
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
                   <dt className={LABEL}>Seats</dt>
-                  <dd className={`text-sm ${MUTED}`}>
+                  <dd className={`flex items-center gap-3 text-sm ${MUTED}`}>
                     {data.seats ?? '—'} {data.seats === 1 ? 'seat' : 'seats'}
+                    {!addSeatsOpen && (
+                      <button
+                        type="button"
+                        id="add-seats"
+                        onClick={() => {
+                          setAddSeatsOpen(true)
+                          setAddSeatsResult(null)
+                        }}
+                        className="text-sm font-bold text-[var(--brand-emphasis)] hover:underline"
+                      >
+                        Add seats
+                      </button>
+                    )}
                   </dd>
                 </div>
+
+                {addSeatsOpen && data.seats != null && (
+                  <div className="rounded-xl border border-[#E5EEF5] bg-[#F5F7FA] p-4 dark:border-[#1F2429] dark:bg-[#0D0F12]">
+                    <p className={`text-sm ${MUTED}`}>
+                      Adds seats for the rest of your current year, at your current rate of{' '}
+                      <strong className="text-[#0A0A0A] dark:text-[#F5F7FA]">
+                        ${rateForSeatCount(data.seats)}/seat
+                      </strong>
+                      . This does not change your renewal date or your other seats&apos; rate.
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <input
+                        type="number"
+                        min={1}
+                        max={500}
+                        value={seatsToAdd}
+                        onChange={e => setSeatsToAdd(Math.max(1, parseInt(e.target.value) || 1))}
+                        disabled={addSeatsSaving}
+                        className="w-24 rounded-xl border border-[#E5EEF5] bg-white px-3 py-2 text-center text-sm text-[#0A0A0A] focus:outline-none focus:ring-2 focus:ring-[var(--brand-emphasis)] disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#0D0F12] dark:text-[#F5F7FA]"
+                      />
+                      <span className={`text-sm ${MUTED}`}>
+                        = ${(seatsToAdd * rateForSeatCount(data.seats)).toLocaleString()} charged today
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => void addSeats()}
+                        disabled={addSeatsSaving}
+                        className={BTN_PRIMARY}
+                      >
+                        {addSeatsSaving ? 'Charging…' : 'Add seats'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAddSeatsOpen(false)}
+                        disabled={addSeatsSaving}
+                        className={BTN_QUIET}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    {addSeatsError && (
+                      <p className="mt-3 text-sm font-medium text-red-500">{addSeatsError}</p>
+                    )}
+                  </div>
+                )}
+
+                {addSeatsResult && (
+                  <p className="text-sm text-[var(--brand-emphasis)]">
+                    Added {addSeatsResult.seatsAdded}{' '}
+                    {addSeatsResult.seatsAdded === 1 ? 'seat' : 'seats'} — charged{' '}
+                    ${(addSeatsResult.chargedCents / 100).toLocaleString()}.
+                  </p>
+                )}
 
                 {/* The line that justifies this page: "renews on X" and "access
                     ends X" are the same date and opposite meanings, and

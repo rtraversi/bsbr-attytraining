@@ -16,10 +16,30 @@ A self-serve web platform where solo and small-firm attorneys (1–15 staff) pay
 - **Tech stack — certification quiz:** Custom React component (~150–200 lines) rendered after the Rise content iframe. This is the **certifiable layer** — server-side scoring, identity attestation, results written to Supabase. No score reporting from Rise. No H5P. No SCORM LRS.
 - **Tech stack — payments:** Stripe — standard for self-serve SaaS checkout; supports tiered pricing + webhooks
 - **Tech stack — API/automation:** Cloudflare Workers for all serverless functions, cert generation, email, and scheduled jobs; no n8n, no VPS
-- **Pricing constraint:** $35/user/yr for 1–9 users, $32/user/yr for 10–24 users, $28/user/yr for 25+ users — billed annually per enrolled user; volume bands (all seats billed at the band rate the firm's headcount lands in); FLAT on renewal — no renewal discount (course substantially updated each year).
+- **Pricing constraint:** $35/user/yr for 1–9 users, $32/user/yr for 10–24 users, $28/user/yr for 25+ users — billed annually per enrolled user; volume bands (all seats billed at the band rate the firm's headcount lands in); FLAT on renewal — no renewal discount (course substantially updated each year). **One narrow, deliberate exception** — see the 2026-09-21 note below on mid-year seat additions.
 - **Target market constraint:** Solo and small firms (1–15 staff) — UX, marketing, and pricing tiers reflect this; product is self-serve only
 - **Framing:** The firm's personalized written AI policy is the product and the thesis; the training, attestations and certificates are the evidence of adherence to it. ABA Model Rule 5.3 / Formal Opinion 512 are background context and at most a supporting citation — never the pitch (see the framing correction below). Generic national framing; no state-specific accreditation claims in v1
 - **Operator burden:** Self-run platform — operator (Rob) should not be in the loop for normal customer flows (purchase, invite, certify, renew); all of that is automated end-to-end
+
+### ⚠️ Mid-year seat additions — 2026-09-21 (Rob) — a narrow exception to "flat on renewal"
+
+**Confirmed by Rob with a worked example, 2026-09-21.** A seat added mid-year is charged in
+full at the firm's current per-seat rate — no proration, no discount, on the day it's added
+(`app/api/billing/add-seats/route.ts`). At the firm's **next annual renewal**, every seat
+(including that one) is re-rated to whatever band the firm's new headcount falls into, same as
+always — but that mid-year seat also receives a **true-up credit** for the days remaining on the
+year it already paid for, valued at the rate it was originally charged
+(`lib/seat-ledger.ts:computeRenewalTrueUp`). Example: 1 seat added 2026-06-01 at $35, credited at
+the 2027-01-01 renewal — 5 of its paid 12 months remain, so its renewal line is
+$35 − (5/12 × $35) ≈ $20.42, and from the 2028 renewal on it is billed the ordinary flat rate like
+every other seat.
+
+This is technically a discount — an earned one, against money already collected for time not yet
+consumed — and is the only case in which one applies. It does not reopen renewal pricing to
+discounting generally. `lib/seat-ledger.ts` computes the credit; **nothing in the codebase yet
+wires it into an automatic renewal charge** — that integration (timing it against Stripe's own
+invoice/collection cycle without misfiring proration) is real remaining work, flagged rather than
+built in the same pass. See `.planning/OPEN-ISSUES.md` #18.
 
 ### ⚠️ Framing correction — 2026-08-24 (Katy, via Max)
 
