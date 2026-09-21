@@ -28,14 +28,14 @@ items #17, #18, #20 (updated in place, not duplicated here). One line each:
   was flagged rather than rushed. `CLAUDE.md`'s flat-on-renewal pricing rule now has a dated,
   explicit exception recorded for this.
 
-**🔴 Migration not applied.** `supabase/migrations/0033_seat_ledger.sql` exists but was never run
-against staging or prod — this session had no Docker/linked Supabase project available.
-`types/supabase.ts` was hand-patched to match it well enough to typecheck; that patch is a
-stopgap, not a substitute for actually running the migration and then `supabase gen types` for
-real. **Someone needs to `supabase link --project-ref ndmzvtuywcufvkxtkjhg` (staging) and `db
-push` this before `/api/billing/add-seats` can work against anything but a hand-patched type
-file** — right now the route would fail at runtime against a real database that doesn't have the
-table yet.
+**✅ Migration applied, same day, later in the session (Rob, via the Supabase MCP).** Rob ran
+`0033_seat_ledger.sql` against staging himself, and this picked up from there: confirmed the table
+matched the file exactly, registered it properly in `supabase_migrations.schema_migrations`
+(Rob's apply hadn't gone through the CLI so it wasn't tracked), then applied it — and the five
+other migrations prod was still missing — to **production** too. See §2 above, now closed.
+`types/supabase.ts` is still the hand-patched version, not a real `supabase gen types` output —
+low risk since it was checked column-by-column against the live table, but worth regenerating for
+real next time someone has the CLI linked.
 
 **Verification done:** `npx tsc --noEmit` clean, `pnpm lint` clean on every changed file,
 `pnpm test` — 476 passed, same 15 pre-existing failures as baseline (`git stash` confirmed
@@ -158,18 +158,35 @@ gh workflow run deploy.yml --ref main -f target=production
 otherwise from commit dates, branch names or a green checkmark — every one of
 those has misled a previous session.
 
-### 2. Staging and production are different databases, and production is behind
+### 2. Staging and production are different databases
+
+> ✅ **Closed 2026-09-21 (Rob, terminal-Claude, via the Supabase MCP).** Production was missing
+> `0028`–`0033` as of this morning — confirmed by querying both projects' migration history
+> directly, not inferred. All six were read from the repo and applied to prod in order
+> (`apply_migration`), each verified to land before the next ran. The `Intake-uploads` bucket
+> **already existed on prod** (private, correct capitalization) — that half of the old blocker had
+> already been resolved by someone before this session; only the schema gap was real.
+>
+> One thing worth knowing for next time: `apply_migration` registers its own timestamp-based
+> version string (e.g. `20260921125758`), not the migration's own `0028`-style prefix. Left alone,
+> that would make `supabase db push`/`db diff` think these were never applied and try to rerun
+> them against objects that already exist. Corrected by hand — `update
+> supabase_migrations.schema_migrations set version = '0028' where name = 'policy_intake'` (and
+> so on for each) — so prod's history now reads `0001`...`0033` exactly like staging's. **If you
+> ever use `apply_migration` again, check `select version, name from
+> supabase_migrations.schema_migrations order by version` afterward and fix the version string if
+> it doesn't match the filename.**
+>
+> `get_advisors` (security) run on both projects post-migration: identical warning set on prod and
+> staging, all pre-existing, nothing new from today's tables.
 
 | | Project ref | State |
 |---|---|---|
-| **STAGING** | `ndmzvtuywcufvkxtkjhg` | migrations current; 21 test firms; **this is what `.env.local` points at** |
-| **PRODUCTION** | `ttqthtzdjacrhjtrcmmy` | **missing `0028`–`0032`**; 0 firms |
+| **STAGING** | `ndmzvtuywcufvkxtkjhg` | migrations current through `0033`; 22 firms; **this is what `.env.local` points at** |
+| **PRODUCTION** | `ttqthtzdjacrhjtrcmmy` | migrations current through `0033`; 0 firms |
 
-**Production cannot run the policy intake today.** It is missing the schema
-(`0028`–`0032`) *and* the **`Intake-uploads`** storage bucket — capital I,
-case-sensitive, cannot be renamed, and **no migration can create it** (it is a
-Storage dashboard action). Code reaches production through CI; the database it
-lands on does not follow automatically.
+Code reaches production through CI; the database it lands on does not follow automatically — that
+is still true and still worth checking each time, it just isn't a live gap right now.
 
 Before any migration work:
 
@@ -353,8 +370,10 @@ One defect handed back to Codex, not fixed here:
    four DNS records are present and correct — someone with Resend dashboard access
    has to click verify, possibly in **Max's** account. **Money is live**, so a firm
    can pay tonight, invite staff, and no invite email is ever delivered.
-6. **`0028`–`0032` are not on production, and `Intake-uploads` does not exist
-   there.** See trap #2. This is the real blocker on shipping the intake.
+6. ~~`0028`–`0032` are not on production, and `Intake-uploads` does not exist there.~~ —
+   ✅ **Closed 2026-09-21.** See trap #2 above. Prod now has the schema and the bucket was
+   already there. Resend's 403 (item 5, still open) is the real remaining blocker on the intake
+   actually reaching anyone.
 7. **The delivery email is locked twice.** Resend's 403 is one. The other, and the
    important one, is `POLICY_EMAIL_COPY_APPROVED = false` in
    `lib/policy/delivery-email.ts:41`, pinned by a test. Without it, the day
