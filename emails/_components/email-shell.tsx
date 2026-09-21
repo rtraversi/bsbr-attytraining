@@ -104,6 +104,10 @@ export function EmailShell({ preview, children }: EmailShellProps) {
               This certificate documents completion of training. It is not legal advice and does not
               constitute accreditation by the ABA or any state bar.
             </Text>
+            {/* ix-dparetired (Katy, 2026-09-21): the DPA is permanently out
+                of scope, not just unwritten yet — /dpa 404s in production on
+                purpose. Every transactional email this shell wraps was
+                linking real recipients to a dead page. */}
             <Text style={footerLinksRow}>
               <Link href="https://iurixaccreditation.com/privacy" style={footerLink}>
                 Privacy Policy
@@ -111,10 +115,6 @@ export function EmailShell({ preview, children }: EmailShellProps) {
               <span style={footerDot}> · </span>
               <Link href="https://iurixaccreditation.com/terms" style={footerLink}>
                 Terms of Service
-              </Link>
-              <span style={footerDot}> · </span>
-              <Link href="https://iurixaccreditation.com/dpa" style={footerLink}>
-                Data Processing Addendum
               </Link>
             </Text>
             <Hr style={footerHr} />

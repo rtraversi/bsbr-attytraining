@@ -248,14 +248,10 @@ export function Pricing() {
                   I have read and agree to the{" "}
                   <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline">
                     Terms of Service
-                  </a>
-                  ,{" "}
-                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">
-                    Privacy Policy
                   </a>{" "}
                   and{" "}
-                  <a href="/dpa" target="_blank" rel="noopener noreferrer" className="underline">
-                    Data Processing Addendum
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">
+                    Privacy Policy
                   </a>
                   , and I am authorised to accept them on behalf of my firm.
                 </span>

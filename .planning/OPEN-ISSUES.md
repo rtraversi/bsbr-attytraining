@@ -74,9 +74,16 @@ is not bound to the Worker, so Cloudflare accepts the request and has no origin.
 to the redesign; promoting did not fix it and never would have.
 
 ### 4. `[ATTORNEY TO COMPLETE]` is live on `/privacy`, `/terms`, `/dpa` · **Max drafts, Katy/Rob approve**
-Not a regression — it was already live before the redesign. Still unfinished legal copy on a paid
-compliance product. `.planning/POLICY-DECISIONS.md` (Max, 08-05) now records the underlying
-decisions so the drafts can be traced rather than invented.
+**Narrowed 2026-09-21.** `/terms` and `/privacy` are both fully drafted — verified by grep, zero
+`[ATTORNEY TO COMPLETE]` remaining in either. Only `/dpa` still has it, and per Katy 2026-09-21 it
+stays that way permanently: **the DPA is retired as a blocker, not going to be written.** It is
+already 404-guarded in production and unlinked from the footer, dashboard and both real checkout
+forms (2026-08-24) — but that 08-24 cleanup missed three live spots, all fixed 2026-09-21
+(ix-dparetired): the checkout API's own `terms_not_accepted` error message (was asking a buyer to
+accept a document the checkbox never offered), every transactional email's footer (`emails/
+_components/email-shell.tsx` — real recipients were linked to a dead page), and the `/mockup`
+checkbox. `.planning/POLICY-DECISIONS.md` (Max, 08-05) still records the underlying decisions for
+`/terms` and `/privacy` so those drafts can be traced.
 
 **One constraint from the retention decision:** `training_events` rows are kept and their
 identifiers stripped, because the row is the Rule 5.3 evidence the certificate rests on. That makes

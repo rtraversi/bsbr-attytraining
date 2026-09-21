@@ -6,14 +6,17 @@ export const metadata = {
 }
 
 // STRUCTURE ONLY — every section below is still an [ATTORNEY TO COMPLETE]
-// placeholder. This is the one legal document that has never been drafted.
+// placeholder, and per Katy 2026-09-21 it stays that way: the DPA is
+// permanently out of scope, not merely unwritten. Do not lift this guard.
 //
 // Unlinked and guarded 2026-08-24, at the same time Terms and Privacy were
 // published for real. Until then this page was reachable AND named in both
 // checkout acceptance checkboxes, so a paying customer was being asked to
-// accept a document made of placeholders. The links were removed from the
-// footer, the dashboard, and both checkout forms in the same commit — check
-// those before lifting this guard, and lift it only when the copy exists.
+// accept a document made of placeholders. That 08-24 cleanup was incomplete —
+// it missed the checkout API's own error message, every transactional
+// email's footer link, and the /mockup checkbox, all fixed 2026-09-21
+// (ix-dparetired). This file itself is left in place, dormant, rather than
+// deleted, since removing it entirely wasn't asked for.
 export default function DpaPage() {
   if (process.env.NODE_ENV === 'production') notFound()
 

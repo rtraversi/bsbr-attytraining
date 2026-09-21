@@ -143,9 +143,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Please review and accept the Terms of Service, Privacy Policy and Data " +
-          "Processing Addendum before continuing. If you already ticked the box, " +
-          "reload the page — our terms may have been updated since you opened it.",
+          // ix-dparetired (Katy, 2026-09-21): the DPA is permanently out of
+          // scope, not just unwritten yet. This message must not ask for
+          // acceptance of a document /pricing's own checkbox doesn't offer.
+          "Please review and accept the Terms of Service and Privacy Policy " +
+          "before continuing. If you already ticked the box, reload the page " +
+          "— our terms may have been updated since you opened it.",
         code: "terms_not_accepted",
       },
       { status: 400 }

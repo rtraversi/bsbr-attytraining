@@ -14,8 +14,9 @@ export function DashboardFooter() {
             Terms
           </Link>
           {/* A DPA link stood here until 2026-08-24, mislabelled "Cookies".
-              Removed rather than relabelled: /dpa has never been drafted and is
-              now 404-guarded. Restore it when the document exists. */}
+              Removed rather than relabelled: /dpa has never been drafted, is
+              404-guarded, and per Katy 2026-09-21 stays that way permanently
+              (ix-dparetired). Not coming back. */}
         </nav>
         <p className="text-xs text-[#8A8A8A] dark:text-[#7A8189]">
           © {new Date().getFullYear()} IURIX. All rights reserved.

@@ -5,11 +5,12 @@ import { IurixLockup } from "./iurix-lockup";
 // marketing page and on a long-form document. Marble ground, hairline rules.
 //
 // The legal links are grouped under a heading because the set is in flux:
-// four at launch, five once /accessibility lands, three if the DPA is retired
-// (03-copy.md). A column reads fine at any of those counts.
-// The DPA was pulled 2026-08-24: it is the one legal document that has never
-// been drafted, and linking to a page of placeholders from the footer of a live
-// product is worse than not offering it. It comes back when it is written.
+// four at launch, five once /accessibility lands (03-copy.md). A column reads
+// fine at any of those counts.
+// The DPA was pulled 2026-08-24, and linking to a page of placeholders from
+// the footer of a live product was worse than not offering it. As of Katy,
+// 2026-09-21: it is not coming back — DPA is permanently out of scope, not
+// merely unwritten. See CLAUDE.md's session-handoff record (ix-dparetired).
 const LEGAL_LINKS: { label: string; href: string }[] = [
   { label: "Privacy Policy", href: "/privacy" },
   { label: "Terms of Service", href: "/terms" },
