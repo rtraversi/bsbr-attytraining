@@ -128,10 +128,10 @@ All four are resolved. `tax_behavior` → `exclusive` (one-way; cannot be change
 Only cosmetic remnant: product `metadata` is still empty (`pricing_model=per_seat_volume` was never
 set). Nothing reads it.
 
-🟠 **One new item created by the entity change:** the **statement descriptor** became
-`BSBR HOLDINGS LLC`, where it read `IURIX ACCREDITATION`. Customers recognise the brand, not the
-holding company; unrecognised descriptors drive chargebacks. **Set it back** — Settings →
-Business → Statement descriptor. · **Rob**, dashboard
+~~🟠 One new item created by the entity change: the statement descriptor became
+`BSBR HOLDINGS LLC`.~~ — **Rob's call, 2026-09-21: not worth changing.** BSBR Holdings, LLC is the
+parent company for Iurix and Rob is not concerned about customers recognizing it on a statement.
+No action needed.
 
 ### 7b. Entity is now BSBR HOLDINGS LLC · **Rob**, dashboard — mostly done
 Business type Company / **multi-member LLC** (Rob and Katy), legal name `BSBR HOLDINGS LLC`, EIN on
@@ -190,15 +190,20 @@ launch)"*. `BACKLOG.md` wants **24–32** and lists it under "Blocked on Rob";
 This is the **certifiable layer** — the thing the certificate attests to, and the only graded
 component in the product. Everything else on this list is infrastructure; this is the substance.
 
-### 9c. Pre-Stripe duplicate purchase check is still open · **either**
-`/api/checkout` performs no identity check, so a customer who already has an account can reach
-Stripe and be charged before anything stops them. `BACKLOG.md` #1.
+### 9c. ~~Pre-Stripe duplicate purchase check is still open~~ — ✅ **BUILT 2026-09-21**
+`/pricing` now collects an email up front (required) and `/api/checkout` calls the same
+`resolveBuyer()` the webhook always used post-charge — extracted to `lib/buyer-identity.ts` so both
+call sites share one implementation — and refuses `duplicate` / `email_in_use` with a clear message
+**before a Stripe session is ever created.** Self-declared and therefore defeatable by editing the
+email on Stripe's own hosted page, same shape as the US-only rule; the webhook's existing post-charge
+check remains the authoritative layer 2 for anyone who does. Verified against real staging data
+(`tests/buyer-identity.test.ts`): owner of an active firm → duplicate, owner of a cancelled firm →
+returning (allowed through), staff at an active firm → email_in_use, staff at a lapsed firm → allowed,
+case-insensitive matching.
 
-**The safety net (#2) IS built** — contrary to what this list said before. The webhook resolves
-identity via `find_user_id_by_email` (`0018`), classifies the case as
-duplicate / email_in_use / unresolved / non_us_billing, cancels the duplicate subscription and files
-a `provisioning_failures` row. So the money stops billing; it is not automatically returned (see
-6b). The remaining gap is that the buyer is charged at all.
+The safety net (#2, the webhook's post-charge handling) was already built and is unchanged — cancels
+the duplicate subscription and files a `provisioning_failures` row. It is not automatically refunded
+(see 6b) — that stays a human decision.
 
 ---
 
