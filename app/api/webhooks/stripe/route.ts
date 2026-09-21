@@ -5,6 +5,7 @@ import { render } from '@react-email/render'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/resend'
 import { SEAT_OCCUPYING_STATUSES } from '@/lib/seats'
+import { normalizeFirmName } from '@/lib/firm-name'
 import { CheckoutEmailInUseEmail } from '@/emails/checkout-email-in-use'
 import { CheckoutNonUsEmail } from '@/emails/checkout-non-us'
 
@@ -483,7 +484,16 @@ async function provisionFirm(
       //
       // The real name arrives at question one of the intake, which now writes
       // it through immediately (app/api/intake/answer/route.ts).
-      name: '',
+      //
+      // ix-firmnametwice. /pricing's slider now sends metadata.firm_name for
+      // anyone who fills it in before checkout; when present it pre-fills the
+      // firm row instead of leaving it '', which is what satisfies the
+      // /onboarding/firm-name gate automatically and stops the double-ask.
+      // Re-normalized rather than trusted verbatim, even though the only writer
+      // is our own /api/checkout — metadata is a flat string map, not a
+      // validated column, and this keeps the same "trim, reject whitespace-
+      // only" rule as every other writer of this field (lib/firm-name.ts).
+      name: normalizeFirmName(session.metadata?.firm_name) ?? '',
       owner_id: userId,
       stripe_customer_id: session.customer as string,
       stripe_subscription_id: sub.id,

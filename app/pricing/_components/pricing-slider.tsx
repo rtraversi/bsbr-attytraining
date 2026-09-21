@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { CURRENT_TERMS_VERSION } from "@/lib/legal/terms";
+import { normalizeFirmName } from "@/lib/firm-name";
 
 // Cofounder.co mechanism (brief §3.4): drag the seat slider → live cost breakdown
 // → big monospace total. Volume pricing — ALL seats bill at the band rate the
@@ -32,6 +33,11 @@ export function PricingSlider() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUsFirm, setIsUsFirm] = useState(false);
+  // ix-firmnametwice. Captured here, before Stripe, so a buyer who reaches
+  // /onboarding never has to type it a second time. Carried to the webhook via
+  // Checkout Session metadata.firm_name (app/api/checkout/route.ts).
+  const [firmName, setFirmName] = useState("");
+  const trimmedFirmName = normalizeFirmName(firmName);
   // ix-termsaccept. Unticked by default and never pre-checked: a pre-ticked box
   // is not acceptance. The server refuses the request without it, so this is a
   // real gate rather than a cosmetic one.
@@ -56,6 +62,7 @@ export function PricingSlider() {
           billingCountry: isUsFirm ? "US" : "",
           termsAccepted,
           termsVersion: CURRENT_TERMS_VERSION,
+          firmName: trimmedFirmName,
         }),
       });
       // Surface the server's own message rather than a generic retry prompt.
@@ -177,6 +184,29 @@ export function PricingSlider() {
             </span>
             <span className="ml-1 text-sm text-ink-mute">/yr</span>
           </div>
+        </div>
+
+        {/* Firm name — ix-firmnametwice. Collected here so it can ride the
+            Checkout Session to the webhook and pre-fill firms.name, instead of
+            asking again at /onboarding. Label/placeholder/helper text reused
+            verbatim from the existing /onboarding field (onboarding-client.tsx)
+            rather than invented here. */}
+        <div className="mt-8 flex flex-col gap-2.5">
+          <label htmlFor="firm-name" className="text-sm font-medium text-ink">
+            Firm name
+          </label>
+          <input
+            id="firm-name"
+            type="text"
+            autoComplete="organization"
+            value={firmName}
+            onChange={(e) => setFirmName(e.target.value)}
+            placeholder="Chavez Law"
+            className="w-full rounded-[1px] border border-silver bg-white px-4 py-3 text-base text-ink placeholder:text-ink-mute/60 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-teal-mid"
+          />
+          <p className="text-xs text-ink-mute">
+            This is the name on your policy and on every certificate. You can change it later.
+          </p>
         </div>
 
         {/* US-only declaration — REQUIRED BEFORE CHECKOUT.

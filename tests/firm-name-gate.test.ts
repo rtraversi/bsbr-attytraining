@@ -270,9 +270,12 @@ describe('deliver-policy refuses a blank name', () => {
 })
 
 describe('the webhook does not fabricate a name', () => {
-  it('inserts an empty name, not a placeholder', () => {
+  it('falls back to an empty name, not a placeholder', () => {
+    // ix-firmnametwice: the webhook now pre-fills from Checkout metadata when
+    // /pricing collected a name, but the fallback for a session that didn't
+    // send one must still be '' — never a fabricated 'My Firm'.
     const src = readFileSync(join(ROOT, 'app/api/webhooks/stripe/route.ts'), 'utf8')
     expect(src).not.toContain("name: 'My Firm'")
-    expect(src).toContain("name: ''")
+    expect(src).toContain("normalizeFirmName(session.metadata?.firm_name) ?? ''")
   })
 })

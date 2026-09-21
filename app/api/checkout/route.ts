@@ -8,6 +8,7 @@ import {
   PriceResolutionError,
 } from "@/lib/stripe-price";
 import { CURRENT_TERMS_VERSION, isCurrentTermsVersion } from "@/lib/legal/terms";
+import { normalizeFirmName } from "@/lib/firm-name";
 
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest) {
   let billingCountry: string;
   let termsAccepted: boolean;
   let termsVersion: unknown;
+  let firmName: string | null;
 
   try {
     const body = (await req.json()) as {
@@ -99,6 +101,7 @@ export async function POST(req: NextRequest) {
       billingCountry?: unknown;
       termsAccepted?: unknown;
       termsVersion?: unknown;
+      firmName?: unknown;
     };
     seats = typeof body.seats === "number" ? Math.floor(body.seats) : 1;
     if (seats < 1 || seats > 500) seats = Math.max(1, Math.min(500, seats));
@@ -106,6 +109,11 @@ export async function POST(req: NextRequest) {
       typeof body.billingCountry === "string" ? body.billingCountry.trim().toUpperCase() : "";
     termsAccepted = body.termsAccepted === true;
     termsVersion = body.termsVersion;
+    // Optional. Only /pricing's slider collects this today (ix-firmnametwice);
+    // a caller that doesn't send it falls straight back to the pre-existing
+    // behavior — the webhook creates the firm with name: '' and /onboarding
+    // asks once, same as before this field existed.
+    firmName = normalizeFirmName(body.firmName);
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
@@ -192,6 +200,12 @@ export async function POST(req: NextRequest) {
       metadata: {
         terms_accepted_at: termsAcceptedAt,
         terms_version: CURRENT_TERMS_VERSION,
+        // ix-firmnametwice. Read by provisionFirm() in the webhook, which uses
+        // it to pre-fill firms.name instead of the deliberate ''. Only set when
+        // the caller actually sent a usable name — omitted entirely rather than
+        // written as an empty string, so the webhook's own fallback stays in
+        // charge of what "no name given" means.
+        ...(firmName ? { firm_name: firmName } : {}),
       },
       automatic_tax: { enabled: true },
       tax_id_collection: { enabled: true },

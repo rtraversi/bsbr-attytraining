@@ -17,6 +17,8 @@ interface StatusResponse {
   provisioned: boolean
   email?: string
   seats?: number
+  /** Set when the buyer already gave a name at /pricing (ix-firmnametwice) — pre-fills the field below. */
+  firmName?: string
   /** Set when setup stopped deliberately and waiting cannot help. */
   blocked?: boolean
   reason?: BlockedReason
@@ -85,6 +87,11 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
   // and this is where it stops being empty. Still question one of the intake as
   // well (Katy, 2026-08-25 11:04) — asked once here, editable there.
   const [firmName, setFirmName] = useState('')
+  // ix-firmnametwice. True when /pricing already collected the name and the
+  // webhook pre-filled firms.name with it — this screen then CONFIRMS it,
+  // read-only, same treatment as the email field below, instead of asking
+  // again. False (the pre-existing behavior) for anyone who skipped that field.
+  const [firmNamePrefilled, setFirmNamePrefilled] = useState(false)
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
@@ -103,6 +110,10 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
           if (data.provisioned) {
             setEmail(data.email ?? '')
             setSeats(data.seats ?? 1)
+            if (data.firmName) {
+              setFirmName(data.firmName)
+              setFirmNamePrefilled(true)
+            }
             setPhase('ready')
             return
           }
@@ -322,26 +333,40 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
           </div>
 
           {/*
-            Required, and the only editable identity field on this screen — the
-            email above CONFIRMS, this one CHOOSES. It is what the policy and
-            every certificate are made out to, which is why the helper says so.
+            ix-firmnametwice. Read-only when /pricing already collected the name
+            (firmNamePrefilled) — same CONFIRMS-not-CHOOSES treatment as the
+            email field above, so a buyer who already typed it once is never
+            asked again. Otherwise unchanged: the only editable identity field
+            on this screen, required.
           */}
           <div className="flex flex-col gap-2.5">
             <label htmlFor="firm-name" className="text-base font-medium text-zinc-900">
               Firm name
             </label>
-            <input
-              id="firm-name"
-              type="text"
-              required
-              autoComplete="organization"
-              autoFocus
-              value={firmName}
-              onChange={(e) => setFirmName(e.target.value)}
-              disabled={phase === 'submitting'}
-              placeholder="Chavez Law"
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
-            />
+            {firmNamePrefilled ? (
+              <input
+                id="firm-name"
+                type="text"
+                value={firmName}
+                readOnly
+                aria-readonly
+                tabIndex={-1}
+                className="cursor-default rounded-xl border border-zinc-200 bg-zinc-100 px-5 py-4 text-base text-zinc-500"
+              />
+            ) : (
+              <input
+                id="firm-name"
+                type="text"
+                required
+                autoComplete="organization"
+                autoFocus
+                value={firmName}
+                onChange={(e) => setFirmName(e.target.value)}
+                disabled={phase === 'submitting'}
+                placeholder="Chavez Law"
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
+              />
+            )}
             <p className="text-sm font-extralight text-zinc-500">
               This is the name on your policy and on every certificate. You can change it later.
             </p>
