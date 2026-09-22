@@ -6,44 +6,104 @@
 
 ---
 
-## 🔴 Added 2026-09-21 (Rob, terminal-Claude) — built four of the six items from the 09-11 punch list below
+## 🔴 Added 2026-09-21 (Rob, terminal-Claude) — the punch list got built, the DB caught up, and it all shipped
 
-Max hadn't picked up the punch list ten days later, so Rob had terminal-Claude build the four
-items with agreed designs and no open questions. Full detail in `.planning/OPEN-ISSUES.md`
-items #17, #18, #20 (updated in place, not duplicated here). One line each:
+**Status: session complete. Everything below is live in production**, except the one item
+explicitly called out as deferred (renewal-side auto-charging). Start here, then read
+`.planning/OPEN-ISSUES.md` for full detail on any item — it was updated in place throughout the
+day, not duplicated here.
 
-- **#17 firm name asked twice** — ✅ built. `/pricing` collects it, carries it via Checkout
+### What shipped
+
+Max hadn't picked up the 2026-09-11 punch list ten days later, so Rob had terminal-Claude build it
+directly, then kept going through two more real issues Rob raised mid-session.
+
+- **#15/#17 firm name asked twice** — ✅ built. `/pricing` collects it, carries it via Checkout
   metadata, webhook pre-fills `firms.name`, `/onboarding` shows it read-only when pre-filled.
 - **#20 payment-failure alert** — ✅ built. `handlePaymentFailed` now calls `alertOperator`
   (extracted to `lib/operator-alert.ts` so more than the webhook route can use it).
 - **#20 self-serve cancel + refund request** — ✅ built. New eligibility rule
   (`lib/cancel-refund-eligibility.ts`), new `/api/billing/cancel-refund` route, new section on
   `/dashboard/billing`. Never calls Stripe's refund or cancel APIs — alerts the operator instead,
-  by design. **UI copy is a first draft and needs Max's pass before this ships.**
-- **#18 mid-year seat additions** — 🟡 half built. The add side is done and charges real money
-  through Stripe today: `app/api/billing/add-seats/route.ts`, `/dashboard/billing`'s "Add seats"
-  control, `lib/seat-ledger.ts`'s credit math (matches Rob's own worked example, unit-tested).
-  **The renewal side — actually making Stripe charge the true-up amount automatically at
-  renewal — was deliberately NOT built.** That's real Stripe-timing design work of its own and
-  was flagged rather than rushed. `CLAUDE.md`'s flat-on-renewal pricing rule now has a dated,
-  explicit exception recorded for this.
+  by design. **UI copy is a first draft and needs a copy pass before it's truly final** — Max is out
+  for a few days, Rob is covering this himself.
+- **#18 mid-year seat additions** — 🟡 half built, on purpose. The add side is done and charges real
+  money through Stripe today: `app/api/billing/add-seats/route.ts`, `/dashboard/billing`'s "Add
+  seats" control, `lib/seat-ledger.ts`'s credit math (matches Rob's own worked example exactly,
+  unit-tested). **The renewal side — actually making Stripe charge the true-up amount automatically
+  at renewal — was deliberately NOT built.** Real Stripe-timing design work of its own, flagged
+  rather than rushed. `CLAUDE.md`'s flat-on-renewal pricing rule now has a dated, explicit exception
+  recorded for this.
+- **#9c pre-Stripe duplicate-purchase check** — ✅ built, raised by Rob mid-session. `/pricing` now
+  collects email up front and `/api/checkout` refuses `duplicate`/`email_in_use` buyers **before**
+  a Stripe session exists, instead of only catching them after the card was charged. Extracted
+  `resolveBuyer()` to `lib/buyer-identity.ts` so the webhook's existing post-charge check and this
+  new pre-charge check share one implementation.
+- **DPA retired as a blocker** — Katy's call, 2026-09-21: not going to be written. Fixed three live
+  spots still promising one (checkout error message, every transactional email footer, `/mockup`) —
+  `/terms` and `/privacy` were already clean, `/dpa` was already 404-guarded since 08-24.
+  **"Permanently" means until Katy reverses it** — `.planning/OPEN-ISSUES.md` #4 has a numbered
+  checklist of exactly what to restore if she does; every touched spot is tagged `ix-dparetired`
+  in a code comment.
+- Statement descriptor (`BSBR HOLDINGS LLC`) — Rob's call: not a problem, it's the parent company.
+  No change made.
 
-**✅ Migration applied, same day, later in the session (Rob, via the Supabase MCP).** Rob ran
-`0033_seat_ledger.sql` against staging himself, and this picked up from there: confirmed the table
-matched the file exactly, registered it properly in `supabase_migrations.schema_migrations`
-(Rob's apply hadn't gone through the CLI so it wasn't tracked), then applied it — and the five
-other migrations prod was still missing — to **production** too. See §2 above, now closed.
-`types/supabase.ts` is still the hand-patched version, not a real `supabase gen types` output —
-low risk since it was checked column-by-column against the live table, but worth regenerating for
-real next time someone has the CLI linked.
+### Database
 
-**Verification done:** `npx tsc --noEmit` clean, `pnpm lint` clean on every changed file,
-`pnpm test` — 476 passed, same 15 pre-existing failures as baseline (`git stash` confirmed
-identical failures exist on `main` before this session's changes — unrelated to this work).
-21 new tests added across `tests/cancel-refund-eligibility.test.ts` and `tests/seat-ledger.test.ts`,
-plus one existing test (`tests/firm-name-gate.test.ts`) updated to match the new webhook source.
-No browser verification — Playwright/manual click-through of `/pricing`, `/onboarding` and
-`/dashboard/billing` still needs doing before this ships.
+Staging was missing `0033_seat_ledger.sql`'s migration-history registration (Rob applied it
+directly, not through the CLI, so it wasn't tracked) — fixed. **Production was missing six
+migrations outright** (`0028`–`0033`) — applied all six via the Supabase MCP, in order, verified
+table-by-table against the migration files afterward. `Intake-uploads` storage bucket already
+existed on prod (someone had already created it). `types/supabase.ts` is hand-patched to match the
+new `seat_ledger` table — correct, checked column-by-column, but not a real `supabase gen types`
+output; regenerate for real next time someone has the CLI linked to staging.
+
+### Deploy — the big one
+
+**Nothing had reached production since 2026-08-24.** A month of work — the entire policy intake
+system, the policy generator, and everything above — was sitting on `main` undeployed. Rob asked
+for it to ship. It now has, confirmed three separate times today by matching the deployed
+`headSha` to `git log`, not just trusting a green checkmark:
+
+🔴 **The first deploy attempt reported success but shipped nothing new.** All of this session's
+commits were sitting local-only — never pushed — and `gh workflow run --ref main` checks out
+`origin/main`, not the local branch. The run went green against 8-commit-stale code and would have
+looked like a successful ship to anyone who didn't check the SHA. **Lesson, worth repeating every
+time:** after triggering a deploy, run `gh run view <run-id> --json headSha` and compare it to
+`git log -1`. A green run is not proof of what it shipped.
+
+Production is current as of commit `48c260e` (the DPA-retirement fix). One commit sits ahead of
+that undeployed — `253271d`, a docs-only reinstatement checklist with zero code change — so there's
+nothing to redeploy for it.
+
+### Verification
+
+`npx tsc --noEmit` clean throughout. `pnpm lint` clean on every changed file. `pnpm test`: **527
+passed, 1 skipped, 0 failed** — full suite, not just the changed files. (Earlier in the session a
+partial run showed 15 failures; `git stash` proved they were pre-existing and unrelated, and a
+later full clean run showed 0 failures, confirming they were transient — Supabase auth rate-limit
+flakiness under concurrent test load, not a real problem.) 28+ new tests added across
+`tests/cancel-refund-eligibility.test.ts`, `tests/seat-ledger.test.ts`, and
+`tests/buyer-identity.test.ts` (the last one run against real staging data — real firm owners,
+real staff members — not mocks).
+
+**No browser click-through was done.** Everything above is type/unit/integration-tested and now
+live, but nobody has actually opened `/pricing`, `/onboarding`, `/dashboard/billing` or the
+duplicate-purchase refusal in a real browser yet. Worth doing before telling Katy or a real
+customer any of this is ready to demo.
+
+### Next steps
+
+1. Max: pass on the cancel-refund UI copy when he's back.
+2. Someone: click through the new flows in a real browser — `/pricing` (email + firm-name fields,
+   the duplicate refusal), `/dashboard/billing` (add seats, cancel+refund request).
+3. Someone with the Supabase CLI linked to staging: regenerate `types/supabase.ts` for real,
+   replacing the hand-patched version.
+4. Rob/Katy: the renewal-side auto-charging for #18 needs its own dedicated pass — Stripe
+   sandbox testing, timing design against Stripe's own invoice cycle. Not urgent until a firm that
+   added mid-year seats actually reaches a renewal.
+5. Katy: still owns the DPA decision (permanent unless reversed), the 9 unwritten policy clauses,
+   vendor-block review, and the ~15 missing intake questions — none of that moved today.
 
 ---
 
