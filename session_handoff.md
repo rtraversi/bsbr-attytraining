@@ -1,8 +1,34 @@
 # Session Handoff
 
-**Date:** 2026-09-02
-**Who:** Max, with terminal-Claude and Codex
+**Date:** 2026-09-24 (latest section; older sections kept below)
+**Who:** Rob, with terminal-Claude (earlier sections: Max, Rob)
 **Written for:** someone who has never seen this repository
+
+---
+
+## 🔴 Added 2026-09-24 (Rob, terminal-Claude) — Resend works; test runs were bouncing real mail
+
+**Resend is verified and sending.** `scripts/test-resend.mjs` (Rob's, not yet committed) delivered
+to `delivered@resend.dev`. The 403 "domain is not verified" blocker (item 5 under "Blocked on
+infrastructure" below) is **closed** — invite and certificate emails now actually reach people.
+
+**That immediately exposed a new problem, now fixed and live.** Test users are seeded at
+`@test.invalid` (`tests/quiz-session.test.ts` and four other files) and drive the real pipeline, so
+a quiz pass sent real cert emails that bounced. A sustained bounce rate can get the Resend account
+suspended — the same account that delivers customer invites. Fix `b7a78ca`: `sendEmail` in
+`lib/resend.ts` and in `workers/cert-worker/src/index.ts` now drops `.invalid` recipients
+(`isUndeliverable()`) and skips the send if none remain; an empty list still throws. 5 new tests in
+`tests/resend-recipients.test.ts`. **Deployed to production** — run `36037312575`, success,
+`headSha` verified = `b7a78ca`.
+
+**Not done:** the cert worker (`bsbr-cert-worker`, cron reminders only) was not redeployed, so it
+still has the old send. It did not cause the bounces; redeploy next time it's touched.
+
+**🔴 Max — this moves your delivery-email copy to the top of the list.** With Resend live, the
+only thing between a firm and its policy email is `POLICY_EMAIL_COPY_APPROVED = false` in
+`lib/policy/delivery-email.ts:41` (item 7 below). It's safe as-is — nothing sends a `[TODO(copy)]`
+email — but no firm gets its policy emailed until that copy lands. Cancel-refund copy on
+`/dashboard/billing` is next after that.
 
 ---
 
