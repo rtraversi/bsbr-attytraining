@@ -390,11 +390,9 @@ export function IntakeClient({
       subtitle={
         introOpen ? null : (
           /* Suppressed while the introduction is open — it says the same thing
-             at length two inches lower, and twice reads as a stutter. */
-          <p>
-            Tell us how your firm uses AI. Your policy is assembled from these answers and
-            reviewed by an attorney.
-          </p>
+             at length two inches lower, and twice reads as a stutter.
+             Copy is Max's, verbatim (2026-09-24): no per-policy attorney review. */
+          <p>With your questions your policy is assembled. Come back to change them at anytime.</p>
         )
       }
     >

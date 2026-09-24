@@ -34,7 +34,7 @@ export function ClosingCta() {
         />
 
         <p className="font-gyrotrope mx-auto max-w-[860px] text-[clamp(24px,3.2vw,38px)] font-normal leading-[1.35] tracking-[-0.01em] text-marble">
-          Built by an attorney. Reviewed by an attorney.{" "}
+          Every clause written by an attorney.{" "}
           <em className="font-serif-italic not-italic text-gold-soft">
             Held to the standard attorneys should meet.
           </em>
