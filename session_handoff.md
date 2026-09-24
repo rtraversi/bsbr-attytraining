@@ -6,6 +6,28 @@
 
 ---
 
+## 🔴 Added 2026-09-24 (Max, terminal) — no approval gate, the policy is a draft, a real action list
+
+**All of it is on the LOCAL branch `intake-ui-0924` (7 commits off `b7a78ca`). Not pushed, not
+merged, not deployed.** Max is checking on localhost:3000 against staging.
+
+- Firms read and download their policy **as soon as they submit**. The 2026-09-01 attorney
+  approval gate is gone (Katy 08-26: "It is a template"; Max 09-24: nobody reviews it). The
+  delivery path (`delivery.ts`, `deliver-policy.mjs`, the delivery email, `policy_delivered_at`)
+  is left in place, unused, for Max to decide on.
+- The policy is presented as a **draft**: "(Draft)" title, `…-AI-Policy-DRAFT.docx`, no red
+  "not finished" warning, unwritten clauses hidden on screen and in the file alike, no § numbers.
+- The **action list** is built from `POLICY-BUILD-SPEC-2026-09-04.md` §3 plus Katy's 3 parked
+  §14 clauses. 14 possible items, **all draft wording pending Max**. Zero `[TODO` in any download.
+- Intake: firm size derived from the roster, research tools take "Other", attorney-review
+  claims removed from the intro, subtitle and homepage.
+- 544 tests pass. Full record: **`.planning/sessions/20260924-max-summary.md`**.
+
+**Next:** Max finishes the browser check and revises the action item wording, then push, merge,
+and a production `workflow_dispatch` (check `headSha` afterwards, trap #1).
+
+---
+
 ## 🔴 Added 2026-09-21 (Rob, terminal-Claude) — the punch list got built, the DB caught up, and it all shipped
 
 **Status: session complete. Everything below is live in production**, except the one item
