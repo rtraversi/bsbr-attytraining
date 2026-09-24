@@ -8,6 +8,8 @@
 
 ## 🔴 Added 2026-09-24 (Rob, terminal-Claude) — Resend works; test runs were bouncing real mail
 
+**Session complete** — full record in `.planning/sessions/20260924-rob-summary.md`.
+
 **Resend is verified and sending.** `scripts/test-resend.mjs` (Rob's; run `dotenv -e .env.prod -- node scripts/test-resend.mjs`) delivered
 to `delivered@resend.dev`. The 403 "domain is not verified" blocker (item 5 under "Blocked on
 infrastructure" below) is **closed** — invite and certificate emails now actually reach people.
