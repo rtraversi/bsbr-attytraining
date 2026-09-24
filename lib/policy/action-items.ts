@@ -66,7 +66,8 @@
 // change `draft` to an `approved` note in the same shape as a `drafted` block.
 //
 // Three rules fire ALWAYS (malpractice carrier, tool terms, who approves a new
-// tool), so no firm gets an empty list any more. The malpractice one replaces
+// tool), so no firm gets an empty list any more. Three more joined them on
+// 2026-09-24: Katy's parked §14 clauses (lines 330, 318, 403). The malpractice one replaces
 // the old `carrier_notified = not_sure` rule; that question is retired and is
 // not deleted.
 //
@@ -86,6 +87,9 @@ const NOT_SURE = 'not_sure'
 
 /** Every rule's wording is the spec's draft until Max passes it. */
 const SPEC_DRAFT = 'POLICY-BUILD-SPEC-2026-09-04.md §3, draft wording pending Max'
+
+/** Katy's parked §14 clauses as items: Max's draft of 2026-09-24, pending his pass. */
+const SPEC_DRAFT_0924 = 'Max, 2026-09-24 (Katy lines 318/330/403), draft wording pending Max'
 
 interface RuleBase {
   id: string
@@ -136,7 +140,7 @@ type ActionItemRule = AnswerRule | AlwaysRule | ToolGridRule
 
 /**
  * In SPINE order, so the list reads in the same sequence as the policy it
- * accompanies: §2, §5, §6, §12, §13, §15, §19.
+ * accompanies: §2, §5, §6, §12, §13, §14, §15, §19.
  */
 const ACTION_ITEM_RULES: readonly ActionItemRule[] = [
   // ── §2 ────────────────────────────────────────────────────────────────────
@@ -257,6 +261,40 @@ const ACTION_ITEM_RULES: readonly ActionItemRule[] = [
       'handle client matters.',
     draft: SPEC_DRAFT,
     sourceLine: null,
+  },
+
+  // ── §14 ───────────────────────────────────────────────────────────────────
+  //
+  // Katy's three parked §14 clauses (POLICY-BUILD-SPEC-2026-09-04.md §4). The
+  // `todo` blocks stay in s14-client-disclosure.ts and render nothing to a
+  // firm; what the firm has to decide instead lands here (Max, 2026-09-24).
+  // Same order as the blocks in §14.
+  {
+    kind: 'always',
+    id: 'client-disclosure-situations',
+    text:
+      'List the situations where the firm will tell clients it used AI, for example ' +
+      'substantive drafting.',
+    draft: SPEC_DRAFT_0924,
+    sourceLine: 330,
+  },
+  {
+    kind: 'always',
+    id: 'client-ai-output-discussion',
+    text:
+      'Decide how the firm responds when a client wants to discuss what an AI tool said ' +
+      'about their case.',
+    draft: SPEC_DRAFT_0924,
+    sourceLine: 318,
+  },
+  {
+    kind: 'always',
+    id: 'client-ai-double-check',
+    text:
+      'Decide how the firm responds when a client uses AI to double-check the ' +
+      'attorney\'s work.',
+    draft: SPEC_DRAFT_0924,
+    sourceLine: 403,
   },
 
   // ── §15 ───────────────────────────────────────────────────────────────────

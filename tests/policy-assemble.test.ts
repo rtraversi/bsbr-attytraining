@@ -353,6 +353,23 @@ describe('the vendor paragraphs are OUT of the policy', () => {
 })
 
 describe('the action item list is a separate deliverable (D2)', () => {
+  it('🔴 Katy\'s three parked §14 clauses reach the firm as action items, never as clauses', () => {
+    // 2026-09-24. The todo blocks stay in the spine for the operator; the firm
+    // gets what it has to decide on the action list instead.
+    const parked = ['p33-disclosure-situations', 'p27-client-use-of-ai', 'client-use-of-ai-stance']
+    for (const answers of [MINIMAL, MAXIMAL]) {
+      const { policy, actionItems } = assemble(answers)
+      const s14 = policy.sections.find((s) => s.number === 14)!
+      expect(s14.blocks.filter((b) => parked.includes(b.id)).every((b) => b.status === 'todo')).toBe(true)
+      expect(actionItems.filter((i) => i.sourceLine !== null && [330, 318, 403].includes(i.sourceLine))
+        .map((i) => i.id)).toEqual([
+        'client-disclosure-situations',
+        'client-ai-output-discussion',
+        'client-ai-double-check',
+      ])
+    }
+  })
+
   it('routes "not sure" out of the policy, not into it', () => {
     const answers = { ...MINIMAL, case_mgmt: ['clio'], case_mgmt_ai: 'not_sure' }
     const { policy, actionItems } = assemble(answers)
@@ -368,13 +385,16 @@ describe('the action item list is a separate deliverable (D2)', () => {
     }
   })
 
-  it('emits only the three always-items when nothing is unsure', () => {
-    // Was "emits no action items". Since 2026-09-24 (spec 2026-09-04 §3) three
-    // items go to every firm: who approves a new tool, the tools' terms, and the
-    // malpractice carrier.
+  it('emits only the always-items when nothing is unsure', () => {
+    // Was "emits no action items". Since 2026-09-24 (spec 2026-09-04 §3) these
+    // go to every firm: who approves a new tool, the tools' terms, Katy's three
+    // parked §14 clauses, and the malpractice carrier.
     expect(assemble(MINIMAL).actionItems.map((a) => a.id)).toEqual([
       'new-tool-approval',
       'vendor-terms-review',
+      'client-disclosure-situations',
+      'client-ai-output-discussion',
+      'client-ai-double-check',
       'malpractice-carrier-notification',
     ])
   })
@@ -418,6 +438,9 @@ describe('the action item list is a separate deliverable (D2)', () => {
       'case-mgmt-training-permission',              // §6
       'notetaker-stance-undecided',                 // §12
       'automations-confidentiality-agreement',      // §13
+      'client-disclosure-situations',               // §14, Katy's parked clauses
+      'client-ai-output-discussion',
+      'client-ai-double-check',
       'ai-time-adjustment-process',                 // §15
       'malpractice-carrier-notification',           // §19
     ])
