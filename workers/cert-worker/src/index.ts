@@ -189,13 +189,19 @@ async function sendEmail(env: Env, to: string, subject: string, html: string): P
   // secret indistinguishable from a healthy run with nothing to report.
   if (recipients.length === 0) throw new Error('sendEmail: no valid recipients')
 
+  // Reserved `.invalid` TLD (RFC 2606) never receives mail — test users and
+  // redacted members live there, and bouncing them risks the Resend account.
+  // Duplicate of isUndeliverable in lib/resend.ts; if one changes, change both.
+  const deliverable = recipients.filter((address) => !/\.invalid>?$/i.test(address))
+  if (deliverable.length === 0) return
+
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: FROM, to: recipients, subject, html }),
+    body: JSON.stringify({ from: FROM, to: deliverable, subject, html }),
   })
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`)
 }

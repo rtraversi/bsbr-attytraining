@@ -41,6 +41,22 @@ export function parseRecipients(to: string): string[] {
     .filter(Boolean)
 }
 
+/**
+ * True for an address on the reserved `.invalid` TLD (RFC 2606), which can
+ * never receive mail.
+ *
+ * The test suite seeds its users at `@test.invalid` and drives real pipelines
+ * — a quiz pass fires the real cert email. While Resend was answering 403 that
+ * was invisible; once it verified (2026-09-24) every test run bounced real
+ * sends, and a sustained bounce rate is what gets a Resend account suspended —
+ * the same account that delivers customers' invites. Deleted members are also
+ * rewritten to `@redacted.invalid`; callers already skip those, this is the
+ * backstop.
+ */
+export function isUndeliverable(address: string): boolean {
+  return /\.invalid>?$/i.test(address.trim())
+}
+
 export async function sendEmail({
   to,
   subject,
@@ -60,13 +76,18 @@ export async function sendEmail({
   // site here already treats a send failure as loggable.
   if (recipients.length === 0) throw new Error('sendEmail: no valid recipients')
 
+  // Skipped, not thrown — unlike an empty list above, a `.invalid` recipient
+  // is a known test or redacted address, not a misconfiguration.
+  const deliverable = recipients.filter((address) => !isUndeliverable(address))
+  if (deliverable.length === 0) return
+
   const res = await fetch(RESEND_API_URL, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from: FROM_ADDRESS, to: recipients, subject, html }),
+    body: JSON.stringify({ from: FROM_ADDRESS, to: deliverable, subject, html }),
   })
 
   if (!res.ok) {
