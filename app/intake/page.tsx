@@ -74,10 +74,8 @@ export default async function IntakePage() {
         <ThemeScript />
         <IntakeShell firmName={firmName}>
           <IntakeReview
-            state={state}
             sections={buildReview(answers)}
             submittedAt={latest.submitted_at}
-            deliveredAt={latest.policy_delivered_at}
             reopenedCount={latest.reopened_count ?? 0}
             retention={retentionOf(firmRow.data)}
           />

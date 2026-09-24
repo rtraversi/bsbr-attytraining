@@ -127,41 +127,14 @@ export default async function PolicyPage() {
 }
 
 /**
- * The three reasons there is no policy to show, each said as the firm should
- * hear it.
+ * The two reasons there is no policy to show: no intake yet, or one open for
+ * editing.
  *
- * 🔴 `intake-submitted` IS A WAITING ROOM, NOT AN ERROR. It is the state most
- * firms will sit in, and until 2026-09-01 it did not exist here at all — a
- * submitted intake rendered the assembled draft, so a firm saw its own
- * unreviewed policy with every unwritten clause marked in red. What it says now
- * is the truth: the answers are in, an attorney has them, and the document
- * arrives when they have read it.
- *
- * There is deliberately no download and no preview on this screen. A firm that
- * could read the draft while waiting would be reading the thing the review
- * exists to catch.
+ * The third, `intake-submitted`, was a waiting screen ("Your answers are with
+ * the attorney...") and was removed 2026-09-24 with the approval gate. A
+ * submitted intake IS the firm's policy now; see lib/policy/for-firm.ts.
  */
 function Unavailable({ found }: { found: Extract<PolicyForFirm, { ok: false }> }) {
-  if (found.reason === 'intake-submitted') {
-    return (
-      <Shell>
-        <section className={CARD}>
-          <p className="text-[15px] leading-relaxed">
-            Your answers are with the attorney
-            {found.submittedAt ? <> since {date(found.submittedAt)}</> : null}. Your policy will
-            appear here once it has been reviewed, and we will email you when it does.
-          </p>
-          <p className={`mt-4 text-[14px] leading-relaxed ${MUTED}`}>
-            You can still change any answer in the meantime. Doing so sends it back for review.
-          </p>
-          <Link href="/intake" className={`mt-5 ${BTN_SECONDARY}`}>
-            Review your answers
-          </Link>
-        </section>
-      </Shell>
-    )
-  }
-
   return (
     <Shell>
       <section className={CARD}>
@@ -182,20 +155,6 @@ function Unavailable({ found }: { found: Extract<PolicyForFirm, { ok: false }> }
     </Shell>
   )
 }
-
-/**
- * 🔴 FORMATTED IN UTC, for the same reason app/intake/_components/intake-review.tsx
- * is — see that file's note. Formatting a midnight-UTC date in local time west
- * of Greenwich prints the day before, and the two screens must not disagree
- * about when a firm submitted.
- */
-const date = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC',
-  })
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (

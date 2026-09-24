@@ -152,18 +152,15 @@ const db = (over: Partial<SessionRow> = {}): FakeDb => ({
 
 // ---------------------------------------------------------------------------
 
-describe('🔴 the gate — a firm must not read an unreviewed policy', () => {
-  it('refuses a submitted session', async () => {
-    // THE BUG THIS BATCH FIXES. Until 2026-09-01 this returned ok:true, so
-    // /dashboard/policy showed a firm its own unreviewed draft — every
-    // unwritten clause marked in red — before any attorney had seen it.
+describe('🔴 no gate — a firm reads its policy on submit (2026-09-24)', () => {
+  // ⚠️ INVERTED BACK ON 2026-09-24. From 09-01 this block pinned an approval
+  // gate: a submitted session was refused until delivered. Nobody reviews a
+  // firm's policy (Katy, 2026-08-26: "It is a template"), so Max removed the
+  // gate. Delivery still writes its row, it just no longer decides access.
+  it('allows a submitted session', async () => {
     const found = await policyForFirm(fakeAdmin(db()), 'f1')
-    expect(found.ok).toBe(false)
-    if (!found.ok) {
-      expect(found.reason).toBe('intake-submitted')
-      // The waiting screen says "with the attorney since <date>".
-      expect(found.submittedAt).toBe('2026-08-01T00:00:00Z')
-    }
+    expect(found.ok).toBe(true)
+    if (found.ok) expect(found.state).toBe('submitted')
   })
 
   it('allows a delivered session', async () => {
@@ -174,25 +171,18 @@ describe('🔴 the gate — a firm must not read an unreviewed policy', () => {
     expect(found.ok).toBe(true)
   })
 
-  it('🔴 allowUndelivered opens the SAME document to the operator', async () => {
-    // One code path, two callers — the reason lib/policy/for-firm.ts exists.
-    // An operator script that assembled the policy its own way could approve a
-    // document the firm never receives.
-    const firmView = await policyForFirm(
+  it('🔴 delivery does not change the document', async () => {
+    // Was "allowUndelivered opens the SAME document to the operator". The
+    // parameter is gone; what survives is the property that mattered: the
+    // same answers give the same document whether or not a delivery happened.
+    const delivered = await policyForFirm(
       fakeAdmin(db({ policy_delivered_at: '2026-08-10T00:00:00Z' })),
       'f1',
     )
-    const operatorView = await policyForFirm(fakeAdmin(db()), 'f1', { allowUndelivered: true })
-    expect(operatorView.ok).toBe(true)
-    if (!operatorView.ok || !firmView.ok) return
-    expect(operatorView.result).toEqual(firmView.result)
-  })
-
-  it('defaults to closed', async () => {
-    // The parameter must never become opt-out. Passing nothing, and passing an
-    // empty options object, both refuse.
-    expect((await policyForFirm(fakeAdmin(db()), 'f1')).ok).toBe(false)
-    expect((await policyForFirm(fakeAdmin(db()), 'f1', {})).ok).toBe(false)
+    const submitted = await policyForFirm(fakeAdmin(db()), 'f1')
+    expect(submitted.ok && delivered.ok).toBe(true)
+    if (!submitted.ok || !delivered.ok) return
+    expect(submitted.result).toEqual(delivered.result)
   })
 })
 

@@ -44,12 +44,6 @@ const UNAVAILABLE: Record<PolicyUnavailable, { status: 404 | 409; error: string 
       'Your intake is open for editing. Send it again to have your policy assembled from the ' +
       'answers as they now stand.',
   },
-  'intake-submitted': {
-    status: 409,
-    error:
-      'Your intake is with the attorney. Your policy will be available here once it has been ' +
-      'reviewed.',
-  },
 }
 
 export async function GET(request: Request) {
@@ -64,17 +58,16 @@ export async function GET(request: Request) {
   const wantsActionItems = url.searchParams.get('document') === 'action-items'
 
   if (!found.ok) {
-    // 🔴 A DOWNLOAD REFUSES WITH 404, NOT WITH THE STATE. The JSON view is a
-    // screen talking to itself and can say "with the attorney"; a file endpoint
-    // should not confirm that a document exists but is being withheld. 404 is
-    // the non-disclosing answer, and it is what a firm's browser gets if they
-    // guess the URL of a policy that has not been approved.
+    // A download refuses with a bare 404 rather than the state: a file endpoint
+    // answers "there is no file", and the JSON view is where a screen asks why.
+    // (Since 2026-09-24 there is no approval gate; the two refusals left are an
+    // intake that does not exist and one that is open for editing.)
     if (format === 'docx') {
       return NextResponse.json({ error: 'Not found.' }, { status: 404 })
     }
     const { status, error } = UNAVAILABLE[found.reason]
     return NextResponse.json(
-      { error, reason: found.reason, submittedAt: found.submittedAt ?? null },
+      { error, reason: found.reason },
       { status },
     )
   }

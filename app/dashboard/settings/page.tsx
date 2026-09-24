@@ -57,7 +57,6 @@ export default async function SettingsPage() {
   let intakeState: IntakeState = 'editable'
   let intakeSections: ReviewSection[] = []
   let intakeSubmittedAt: string | null = null
-  let intakeDeliveredAt: string | null = null
   let intakeReopenedCount = 0
   // D8-3. Defaults to the safe direction — no date, nothing deleted — for the
   // non-admin path, where no firm row is read at all.
@@ -79,7 +78,6 @@ export default async function SettingsPage() {
     intakeState = intakeStateOf(session)
     if (session) {
       intakeSubmittedAt = session.submitted_at
-      intakeDeliveredAt = session.policy_delivered_at
       intakeReopenedCount = session.reopened_count ?? 0
       // An OPEN intake is not read back here: it belongs on /intake, where it
       // can still be answered.
@@ -183,10 +181,8 @@ export default async function SettingsPage() {
               <h2 className={SECTION_HEADING}>Your intake</h2>
               <section className={CARD}>
                 <IntakeReview
-                  state={intakeState as 'submitted' | 'delivered'}
                   sections={intakeSections}
                   submittedAt={intakeSubmittedAt}
-                  deliveredAt={intakeDeliveredAt}
                   reopenedCount={intakeReopenedCount}
                   retention={intakeRetention}
                 />

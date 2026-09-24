@@ -20,7 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const firmId = user?.app_metadata?.firm_id as string | undefined
   let firmName: string | null = null
   let setup: SetupState | null = null
-  let policyDelivered = false
+  let policyReady = false
 
   if (firmId) {
     const admin = createAdminClient()
@@ -31,14 +31,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
     if (role === 'admin') {
       setup = await resolveSetupState(firmId)
 
-      // The Policy nav link, gated on the policy actually being delivered — a
-      // link to a waiting screen teaches people to ignore the nav. One indexed
-      // single-row read, admin only, and it reuses intakeStateOf() rather than
-      // asking its own question so the nav and the page cannot disagree about
-      // whether a policy exists. That matters for the D8-2 case: a firm that
-      // resubmitted after delivery is back to `submitted`, and the link goes
-      // away again until the revision is released.
-      policyDelivered = intakeStateOf(await latestSession(admin, firmId)) === 'delivered'
+      // The Policy nav link, shown once the intake is SUBMITTED (submitted or
+      // delivered). Before 2026-09-24 it waited for `delivered`, because a
+      // submitted policy sat behind an approval gate; that gate is gone (see
+      // lib/policy/for-firm.ts). Still one indexed single-row read, and still
+      // intakeStateOf() so the nav and the page cannot disagree: a firm that
+      // reopens its intake to edit is back to `editable`, and the link goes away
+      // until it sends again, exactly when the page would refuse.
+      const state = intakeStateOf(await latestSession(admin, firmId))
+      policyReady = state === 'submitted' || state === 'delivered'
     }
   }
 
@@ -47,7 +48,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       firmName={firmName}
       role={role}
       setup={setup}
-      policyDelivered={policyDelivered}
+      policyReady={policyReady}
     />
   )
 

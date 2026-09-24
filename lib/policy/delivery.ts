@@ -1,4 +1,12 @@
 // =============================================================================
+// ⚠️ 2026-09-24 (Max): THE FIRM-FACING GATE THIS FILE FED WAS REMOVED. A firm
+// now reads and downloads its policy as soon as its intake is submitted (see
+// lib/policy/for-firm.ts), so delivery no longer controls access to anything.
+// This file, scripts/deliver-policy.mjs, delivery-email.ts, the
+// policy_delivered_at column and migration 0032 are left in place, unused by
+// the firm's path, until someone decides whether to delete them. The comments
+// below describe the gate as it was.
+// =============================================================================
 // Delivering a policy — the write path, and the counterpart to for-firm.ts.
 //
 // for-firm.ts answers "what is this firm's policy". This answers "which firms

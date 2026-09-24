@@ -76,28 +76,15 @@ const ANSWERS = [
 const DELIVERED = { ...SUBMITTED, policy_delivered_at: '2026-08-10T00:00:00Z' }
 
 describe('which sessions produce a policy', () => {
-  it('🔴 a submitted intake does NOT — it has not been reviewed', async () => {
-    // ⚠️ THIS ASSERTION WAS INVERTED ON 2026-09-01, and the version it replaces
-    // was pinning a bug. It read "a submitted intake does", which is how
-    // /dashboard/policy came to show a firm its own unreviewed draft — every
-    // unwritten clause, marked in red — before any attorney had seen it.
-    //
-    // Delivery is an approval (lib/policy/delivery.ts). `delivered` is the only
-    // state a firm may read.
+  it('🔴 a SUBMITTED intake does — there is no approval step (2026-09-24)', async () => {
+    // ⚠️ INVERTED BACK ON 2026-09-24. From 09-01 this asserted the opposite: a
+    // submitted intake was refused until an operator "delivered" it, on the
+    // theory that an attorney reviewed each policy. Nobody does. Katy,
+    // 2026-08-26: "It is a template. things are inserted as needed based on the
+    // answers automatically". Max, 2026-09-24: the gate goes.
     const found = await policyForFirm(
       fakeAdmin({ session: SUBMITTED, answers: ANSWERS, firmName: 'Chavez Law LLC' }),
       'firm-1',
-    )
-    expect(found.ok).toBe(false)
-    if (found.ok) return
-    expect(found.reason).toBe('intake-submitted')
-  })
-
-  it('…but the operator reads exactly that document, through the same function', async () => {
-    const found = await policyForFirm(
-      fakeAdmin({ session: SUBMITTED, answers: ANSWERS, firmName: 'Chavez Law LLC' }),
-      'firm-1',
-      { allowUndelivered: true },
     )
     expect(found.ok).toBe(true)
     if (!found.ok) return
@@ -135,14 +122,10 @@ describe('which sessions produce a policy', () => {
     expect(found).toEqual({ ok: false, reason: 'intake-open' })
   })
 
-  it('🔴 D8-2: reopened and resubmitted after delivery goes BACK to waiting', async () => {
-    // ⚠️ ALSO INVERTED ON 2026-09-01. It used to assert that this "still
-    // produces a policy" — which would have shown the firm a REVISED document
-    // nobody had reviewed, on the strength of an approval given to the previous
-    // version of it. The old policy was approved; this one is not.
-    //
-    // intakeStateOf reads it as `submitted`, so the firm waits and the session
-    // reappears in pendingDeliveries(). See tests/policy-delivery.test.ts.
+  it('🔴 D8-2: reopened and resubmitted after delivery produces the REVISED policy', async () => {
+    // ⚠️ INVERTED BACK ON 2026-09-24. From 09-01 this asserted the firm went back
+    // to waiting for a second approval. With no approval step the revision is
+    // simply the firm's policy, assembled from the answers as they now stand.
     const resubmitted = {
       ...SUBMITTED,
       policy_delivered_at: '2026-08-10T00:00:00Z',
@@ -152,16 +135,8 @@ describe('which sessions produce a policy', () => {
       fakeAdmin({ session: resubmitted, answers: ANSWERS, firmName: 'X' }),
       'f',
     )
-    expect(found.ok).toBe(false)
-    if (!found.ok) expect(found.reason).toBe('intake-submitted')
-
-    // And the operator can review the revision.
-    const operator = await policyForFirm(
-      fakeAdmin({ session: resubmitted, answers: ANSWERS, firmName: 'X' }),
-      'f',
-      { allowUndelivered: true },
-    )
-    expect(operator.ok).toBe(true)
+    expect(found.ok).toBe(true)
+    if (found.ok) expect(found.state).toBe('submitted')
   })
 })
 

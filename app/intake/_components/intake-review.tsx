@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { BTN, MUTED, NOTICE } from './intake-styles'
+import { BTN, BTN_PRIMARY, MUTED, NOTICE } from './intake-styles'
 import type { ReviewSection } from '@/lib/intake/review'
 import type { Retention } from '@/lib/intake/retention'
 
@@ -22,8 +22,11 @@ import type { Retention } from '@/lib/intake/retention'
  * ── The states ──────────────────────────────────────────────────────────────
  *
  *   editable   not this component's job — the page renders IntakeClient.
- *   submitted  read-only, plus Reopen. Sent, and no policy has come back yet.
- *   delivered  read-only, plus Reopen. D8-2.
+ *   submitted  } ONE screen for both since 2026-09-24. The firm's policy is
+ *   delivered  } assembled the moment it sends (no approval gate, see
+ *                lib/policy/for-firm.ts), so "delivered" no longer means
+ *                anything the firm needs to be told. Callers only mount this
+ *                for one of the two, which is all the state it needs.
  *
  * 🔴 THERE IS NO `purged` STATE. It existed until 2026-09-01 and told firms
  * "Your answers were deleted after your policy was delivered". Katy reversed
@@ -31,13 +34,9 @@ import type { Retention } from '@/lib/intake/retention'
  * `retention` prop below is where the firm reads that — out loud, because
  * D8-4 makes it a reason to renew.
  */
-export type ReviewState = 'submitted' | 'delivered'
-
 export interface IntakeReviewProps {
-  state: ReviewState
   sections: ReviewSection[]
   submittedAt: string | null
-  deliveredAt: string | null
   reopenedCount: number
   /** D8-3/D8-4. How long these answers are kept, said out loud. */
   retention: Retention
@@ -48,8 +47,8 @@ export interface IntakeReviewProps {
 /**
  * 🔴 FORMATTED IN UTC, DELIBERATELY.
  *
- * `policy_delivered_at` is set by hand when Katy says the policy has gone out,
- * so it arrives as a calendar date at midnight UTC. Formatted in local time west
+ * `policy_delivered_at` was set by hand as a calendar date at midnight UTC (it
+ * is no longer shown here, but the retention date below has the same shape). Formatted in local time west
  * of Greenwich that renders as THE DAY BEFORE — a stored 2026-09-01T00:00:00Z
  * printed "August 31, 2026" on this screen before this line existed.
  *
@@ -74,10 +73,8 @@ const date = (iso: string | null) =>
     : null
 
 export function IntakeReview({
-  state,
   sections,
   submittedAt,
-  deliveredAt,
   reopenedCount,
   retention,
   heading,
@@ -110,67 +107,57 @@ export function IntakeReview({
     <section>
       {heading && <h2 className="mb-2 text-lg font-semibold">{heading}</h2>}
 
+      {/* ⚠️ APPROVED COPY, VERBATIM (Max, 2026-09-24). Do not edit, polish or
+          re-punctuate it, and do not add an em dash. Same sentence for
+          `submitted` and `delivered`: there is no approval step any more. */}
       <p className={`text-[14.5px] leading-relaxed ${MUTED}`}>
-        {state === 'delivered' ? (
-          <>
-            Your policy was delivered{deliveredAt ? ` on ${date(deliveredAt)}` : ''}. These are the
-            answers it was written from.
-          </>
-        ) : (
-          <>
-            Submitted{submittedAt ? ` on ${date(submittedAt)}` : ''} and with the attorney drafting
-            your policy. These are the answers as you gave them.
-          </>
-        )}
+        Submitted{submittedAt ? ` on ${date(submittedAt)}` : ''}. Your policy was assembled from the
+        answers below.
+      </p>
+      <p className={`mt-1 text-[14.5px] leading-relaxed ${MUTED}`}>
+        Your policy, action list and answers are always under Settings in your dashboard.
       </p>
 
       {/*
-        🔴 THE EXPLANATORY PARAGRAPH THAT SAT HERE IS GONE, AND IT WAS A LIE.
-        It said "the attorney is told it changed", in both branches. Nothing
-        notifies anyone: markDelivered writes a row, and the only email in the
-        whole delivery path is pinned shut behind POLICY_EMAIL_COPY_APPROVED
-        (lib/policy/delivery-email.ts:41) on top of Resend's standing 403.
-        Max, 2026-09-02, from a browser: "lies. in fact delete that whole
-        paragraph."
+        🔴 A PARAGRAPH THAT SAT HERE UNTIL 2026-09-02 WAS A LIE. It said "the
+        attorney is told it changed". Nothing notifies anyone. Max: "lies. in
+        fact delete that whole paragraph." Do not reinstate any version of it.
 
-        Do not reinstate any version of it until something actually sends.
+        🔴 THE WAY OUT, AND THE DOWNLOADS. This screen once had no Link at all,
+        so a firm that submitted was stranded on it (Max, 2026-09-02: "user is
+        stuck on this page foreve.r again. never fixed."). The row sits directly
+        under the status lines, ABOVE the answers, because the answers are long
+        and a way out at the bottom of a scroll is one the firm never finds.
 
-        The Reopen button moved out of this row and up beside the first section
-        heading, so it reads as an action ON the answers rather than a footnote
-        under a paragraph.
+        Order and labels are Max's, 2026-09-24. "Edit answers" replaced "Reopen to
+        make changes", which used to sit on the first section heading.
+
+        The downloads are plain links, not fetch + blob: /api/policy sets
+        Content-Disposition, so the browser saves the file itself. Same pattern
+        as app/dashboard/policy/page.tsx.
+
+        390px: flex-wrap lets the four buttons fall onto as many rows as they
+        need; the action list note stays with its button because they share one
+        wrapper.
       */}
-
-      {/*
-        🔴 THE WAY OUT. This screen had no Link and no href of any kind, so a
-        firm that submitted its intake was stranded on it — Max, 2026-09-02:
-        "user is stuck on this page foreve.r again. never fixed." Same shape as
-        the delivery gap found on 09-01, on the firm's side of it.
-
-        Placed directly under the status line, ABOVE the answers, because the
-        answers are long and a way out at the bottom of a scroll is a way out
-        the stranded firm never finds.
-
-        In the delivered state the policy link leads, because that is the thing
-        they bought and the reason they came back. /dashboard/policy is the
-        route the nav pill already reveals on delivery, so this agrees with the
-        nav rather than inventing a second destination.
-      */}
-      <div className="mt-5 flex flex-wrap items-center gap-3">
-        {state === 'delivered' && (
-          <Link href="/dashboard/policy" className={BTN}>
-            Read your policy
-          </Link>
-        )}
-        <Link
-          href="/dashboard"
-          className={
-            state === 'delivered'
-              ? `text-[13.5px] font-semibold text-[var(--brand-emphasis)] underline underline-offset-4`
-              : BTN
-          }
-        >
-          Back to your dashboard
+      <div className="mt-5 flex flex-wrap items-start gap-3">
+        <Link href="/dashboard" className={BTN}>
+          Back to dashboard
         </Link>
+        <button type="button" className={BTN} onClick={() => void reopen()} disabled={busy}>
+          Edit answers
+        </button>
+        <a href="/api/policy?format=docx" download className={BTN_PRIMARY}>
+          Download policy
+        </a>
+        <div className="flex max-w-[16rem] flex-col gap-1.5">
+          <a href="/api/policy?format=docx&document=action-items" download className={BTN}>
+            Download action list
+          </a>
+          <p className={`px-2 text-[12.5px] leading-snug ${MUTED}`}>
+            The action list shows items missing to complete this policy.
+          </p>
+        </div>
       </div>
 
       <RetentionNote retention={retention} />
@@ -184,30 +171,11 @@ export function IntakeReview({
       )}
 
       <div className="mt-8 space-y-8">
-        {sections.map((section, sectionIndex) => (
+        {sections.map((section) => (
           <div key={section.section}>
-            {/* D8-2: reopening is offered in BOTH states. A delivered policy
-                used to be the end of the road.
-
-                It sits on the FIRST section heading and nowhere else — Max:
-                "have the button be on over where it says 'firm'". Baseline-
-                aligned with the heading so the two read as one row rather than
-                a button floating beside a label. */}
-            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-              <h3 className="text-[11px] font-bold uppercase tracking-wide text-[var(--brand-emphasis)]">
-                {section.label}
-              </h3>
-              {sectionIndex === 0 && (
-                <button
-                  type="button"
-                  className={BTN}
-                  onClick={() => void reopen()}
-                  disabled={busy}
-                >
-                  {busy ? 'Reopening…' : 'Reopen to make changes'}
-                </button>
-              )}
-            </div>
+            <h3 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[var(--brand-emphasis)]">
+              {section.label}
+            </h3>
             <dl className="space-y-4">
               {section.items.map((item) => (
                 <div key={item.key} className="border-b border-[#E5EEF5] pb-4 last:border-0 dark:border-[#1F2429]">

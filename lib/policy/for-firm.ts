@@ -35,17 +35,6 @@ export type PolicyUnavailable =
   | 'no-intake'
   /** There is an intake, but it is open — mid-answer, so there is nothing settled to assemble. */
   | 'intake-open'
-  /**
-   * Submitted, and NOT YET APPROVED BY AN ATTORNEY.
-   *
-   * 🔴 THIS IS THE CORRECTNESS FIX, AND IT IS WHY THIS TYPE GREW A THIRD
-   * MEMBER. Until 2026-09-01 a submitted session returned ok:true, so
-   * /dashboard/policy showed a firm its own unreviewed draft — every
-   * untranscribed clause, red TODO markers and all — before any attorney had
-   * looked at it. A firm reading that could reasonably believe it was their
-   * policy, and it is not: it is the engine's output pending review.
-   */
-  | 'intake-submitted'
 
 export type PolicyForFirm =
   | {
@@ -60,27 +49,26 @@ export type PolicyForFirm =
   | {
       ok: false
       reason: PolicyUnavailable
-      /** Present on 'intake-submitted', so the waiting screen can say since when. */
-      submittedAt?: string | null
     }
 
 /**
  * Assemble the policy for one firm from its latest intake.
  *
- * ── 🔴 Why a SUBMITTED intake is refused, unless the caller says otherwise ──
- * A submitted intake has settled answers, so it assembles perfectly well. What
- * it has not had is an attorney reading the result. Delivery is the act of
- * approving it (see lib/policy/delivery.ts), and `policy_delivered_at` is the
- * record of that act — so `delivered` is the only state a FIRM may read.
+ * ── 🔴 A SUBMITTED intake is the firm's policy. There is no approval step ───
+ * From 2026-09-01 to 2026-09-24 a submitted intake was refused here until an
+ * operator ran scripts/deliver-policy.mjs and set `policy_delivered_at`, on the
+ * theory that an attorney reviews each policy before the firm may read it.
+ * Nobody does, and the product was never meant to work that way. Katy,
+ * 2026-08-26: "I can't write personalized policies" / "It is a template.
+ * things are inserted as needed based on the answers automatically" / "I would
+ * have to charge $200 an HOUR not $100 a YEAR if I had to draft them
+ * individually". Max, 2026-09-24: firms build their own policy, nobody reviews
+ * it, so the gate goes.
  *
- * `allowUndelivered` is how the operator reads exactly the same document before
- * approving it. One code path, two callers, which is the reason this module
- * exists at all — an operator script that assembled the policy its own way
- * could approve a document the firm never receives.
- *
- * ⚠️ It defaults to FALSE, and every firm-facing caller must leave it that way.
- * The parameter is deliberately not a string option or a config object: it is
- * one boolean, at one call site, in a script that is never deployed.
+ * So `submitted` and `delivered` both assemble, and the firm reads the result
+ * the moment it sends the intake. The review a firm gets is the template's,
+ * written once by Katy for every firm, not a per-firm read. The delivery
+ * machinery (lib/policy/delivery.ts) still exists but no longer controls access.
  *
  * ── Why an OPEN intake is refused ───────────────────────────────────────────
  * D8-2 lets a firm reopen its intake at any time, including after the policy
@@ -90,8 +78,8 @@ export type PolicyForFirm =
  * and it would carry the authority of a finished one. So this refuses, and the
  * page says why and points back at /intake.
  *
- * Note that this is NOT the old delivery lock. A delivered intake assembles
- * happily — that is the ordinary case.
+ * Note that this is NOT the old delivery lock. A submitted or delivered intake
+ * assembles happily; that is the ordinary case.
  *
  * ── The firm name ───────────────────────────────────────────────────────────
  * Taken from the `firm_name` ANSWER first, and only then from firms.name. The
@@ -99,19 +87,12 @@ export type PolicyForFirm =
  * document whose heading and whose body disagreed about the firm's name would
  * be worse than one that used a slightly stale name consistently.
  */
-export async function policyForFirm(
-  admin: AdminClient,
-  firmId: string,
-  { allowUndelivered = false }: { allowUndelivered?: boolean } = {},
-): Promise<PolicyForFirm> {
+export async function policyForFirm(admin: AdminClient, firmId: string): Promise<PolicyForFirm> {
   const session = await latestSession(admin, firmId)
   if (!session) return { ok: false, reason: 'no-intake' }
 
   const state = intakeStateOf(session)
   if (state === 'editable') return { ok: false, reason: 'intake-open' }
-  if (state === 'submitted' && !allowUndelivered) {
-    return { ok: false, reason: 'intake-submitted', submittedAt: session.submitted_at }
-  }
 
   const [answers, firm] = await Promise.all([
     loadAnswers(admin, session.id),

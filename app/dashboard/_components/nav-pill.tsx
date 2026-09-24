@@ -23,17 +23,17 @@ interface NavPillProps {
    */
   setup?: SetupState | null
   /**
-   * Whether this firm's policy has been approved and released.
+   * Whether this firm has a policy to read: its intake is submitted.
    *
-   * 🔴 GATED ON `delivered`, NOT ON "an intake exists". A link to
-   * /dashboard/policy before delivery leads to a waiting screen, and a nav item
-   * that reliably goes nowhere teaches people to ignore it. It appears the day
-   * the document does — which also makes its appearance the signal.
+   * Gated on submission, not on "an intake exists". An open intake has no
+   * policy, and a nav item that leads to "not yet" teaches people to ignore it.
+   * Until 2026-09-24 this waited for an approval (`delivered`) that no longer
+   * exists; see lib/policy/for-firm.ts.
    *
    * Resolved in the LAYOUT, not here: it needs the session row, and the layout
    * is already reading intake state for the setup chips.
    */
-  policyDelivered?: boolean
+  policyReady?: boolean
 }
 
 export interface SetupState {
@@ -238,7 +238,7 @@ function ThemeToggle() {
  * Separate from EmployeeTabBar: this switches app sections, that one navigates
  * within the training area.
  */
-export function NavPill({ firmName, role, setup = null, policyDelivered = false }: NavPillProps) {
+export function NavPill({ firmName, role, setup = null, policyReady = false }: NavPillProps) {
   const pathname = usePathname()
   const isAdmin = role === 'admin'
   const isDashboardActive = pathname === '/dashboard'
@@ -254,11 +254,11 @@ export function NavPill({ firmName, role, setup = null, policyDelivered = false 
       icon: <TrainingIcon />,
       active: isTrainingRoute(pathname),
     },
-    // Admin-only and delivered-only. The policy carries the firm's disclosures,
+    // Admin-only, and only once the intake is submitted. The policy carries the firm's disclosures,
     // its tool inventory and its vendor positions; staff have no business in it,
     // which is the same rule /dashboard/policy enforces server-side. This is
     // the affordance, not the gate.
-    ...(isAdmin && policyDelivered
+    ...(isAdmin && policyReady
       ? [
           {
             href: '/dashboard/policy',
