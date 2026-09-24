@@ -15,6 +15,8 @@ import {
   rosterTrainingSeats,
   rosterOverSeats,
   canAddTrainingSeat,
+  deriveFirmSize,
+  withDerivedAnswers,
 } from '@/lib/intake/branching'
 import {
   QUESTIONS,
@@ -575,7 +577,9 @@ describe('nextUnanswered', () => {
   })
 
   it('walks past answered questions', () => {
-    expect(nextUnanswered({ firm_name: 'Byron LLP' })?.key).toBe('firm_size')
+    // firm_size was question two until 2026-09-24; it is derived from the
+    // roster now, so the roster follows the firm name directly.
+    expect(nextUnanswered({ firm_name: 'Byron LLP' })?.key).toBe('roster')
   })
 
   it('never returns a hidden question', () => {
@@ -633,10 +637,10 @@ describe('progressBySection', () => {
       jurisdictions: ['NC'],
       contract_attorneys: 'no',
       existing_policy: 'no',
-      firm_size: '2_5',
     }
     const firm = progressBySection(answers).find((p) => p.section === 'firm')!
-    expect(firm).toMatchObject({ total: 6, answered: 6, complete: true })
+    // 5, not 6: firm_size stopped being asked on 2026-09-24 (derived from roster).
+    expect(firm).toMatchObject({ total: 5, answered: 5, complete: true })
   })
 
   it('shrinks a section total when a branch hides one of its questions', () => {
@@ -882,4 +886,43 @@ describe('the gates, taken together', () => {
   //
   // The behaviour they covered — a gate turning back on reopens submission — is
   // still covered by the module tests above that use LIVE gates.
+})
+
+describe('firm_size, derived from the roster (2026-09-24)', () => {
+  const row = (isAttorney: boolean, i: number) => ({ name: `P${i}`, email: `p${i}@firm.com`, isAttorney })
+  const roster = (attorneys: number, staff = 0) => [
+    ...Array.from({ length: attorneys }, (_, i) => row(true, i)),
+    ...Array.from({ length: staff }, (_, i) => row(false, 100 + i)),
+  ]
+
+  it('is never asked', () => {
+    expect(visibleQuestions({}).map((x) => x.key)).not.toContain('firm_size')
+    expect(visibleQuestions(answerEverything()).map((x) => x.key)).not.toContain('firm_size')
+  })
+
+  it('counts attorney rows only, onto the existing option values', () => {
+    expect(deriveFirmSize({ roster: roster(0, 4) })).toBe('solo')
+    expect(deriveFirmSize({ roster: roster(1, 9) })).toBe('solo')
+    expect(deriveFirmSize({ roster: roster(2) })).toBe('2_5')
+    expect(deriveFirmSize({ roster: roster(5, 3) })).toBe('2_5')
+    expect(deriveFirmSize({ roster: roster(6) })).toBe('6_20')
+    expect(deriveFirmSize({ roster: roster(20) })).toBe('6_20')
+    expect(deriveFirmSize({ roster: roster(21) })).toBe('20_plus')
+    // Every derived value is a real option, so a slot resolves its label.
+    const values = (getQuestion('firm_size')?.options ?? []).map((o) => o.value)
+    for (const n of [0, 2, 6, 21]) expect(values).toContain(deriveFirmSize({ roster: roster(n) }))
+  })
+
+  it('is null with no roster, and leaves the answers alone', () => {
+    expect(deriveFirmSize({})).toBeNull()
+    const answers: AnswerMap = { firm_size: '6_20' }
+    expect(withDerivedAnswers(answers)).toBe(answers)
+  })
+
+  it('overrides a stored answer from before the question was dropped', () => {
+    const answers: AnswerMap = { firm_size: '20_plus', roster: roster(3) }
+    expect(withDerivedAnswers(answers)['firm_size']).toBe('2_5')
+    // Pure: the input is not mutated.
+    expect(answers['firm_size']).toBe('20_plus')
+  })
 })

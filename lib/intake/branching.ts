@@ -190,6 +190,7 @@ export function visibleQuestions(answers: AnswerMap): Question[] {
 
   for (const q of QUESTIONS) {
     if (RETIRED_KEYS.has(q.key)) continue
+    if (DERIVED_KEYS.has(q.key)) continue
     if (q.showIf && !evaluate(q.showIf, effective)) continue
     visible.push(q)
     const value = answers[q.key]
@@ -252,6 +253,50 @@ const RETIRED_KEYS: ReadonlySet<string> = new Set([
   // sitting in the delivered document. Either the question stays or the clause
   // needs rewording. Katy's call, flagged 2026-09-02.
 ])
+
+/**
+ * Questions the intake no longer ASKS because the answer can be worked out from
+ * another one. Not retired: the answer still exists, it is computed by
+ * withDerivedAnswers() instead of typed.
+ *
+ * `firm_size` — Max, 2026-09-24. The roster, the very next question, already
+ * says who is an attorney, so asking the firm to count them first was asking
+ * the same thing twice. The definition stays in QUESTIONS for its option labels,
+ * which is what a slot resolves the derived value against.
+ */
+const DERIVED_KEYS: ReadonlySet<string> = new Set(['firm_size'])
+
+/**
+ * The firm_size option a roster maps to, counting attorney rows: 0 or 1 is
+ * `solo`, then `2_5`, `6_20`, `20_plus`. Null when there is no roster to count.
+ *
+ * 0 maps to solo rather than to nothing: a roster of staff only still has an
+ * attorney somewhere (the buyer may simply not have ticked themselves), and a
+ * clause keyed on size should get the smallest answer, not none.
+ */
+export function deriveFirmSize(answers: AnswerMap): string | null {
+  const roster = answers['roster']
+  if (!Array.isArray(roster)) return null
+  const attorneys = (roster as RosterRow[]).filter((r) => r?.isAttorney === true).length
+  if (attorneys <= 1) return 'solo'
+  if (attorneys <= 5) return '2_5'
+  if (attorneys <= 20) return '6_20'
+  return '20_plus'
+}
+
+/**
+ * The answers with every DERIVED_KEYS value filled in from what it derives
+ * from. Anything that reads a derived key (the assembler, today) must read it
+ * through this, so a stored answer from before the question was dropped can
+ * never disagree with the roster it describes.
+ *
+ * Pure; returns a new map. With no roster, a stored value is left as it is.
+ */
+export function withDerivedAnswers(answers: AnswerMap): AnswerMap {
+  const firmSize = deriveFirmSize(answers)
+  if (firmSize === null) return answers
+  return { ...answers, firm_size: firmSize }
+}
 
 /** Whether one question is currently visible. */
 export function isVisible(question: Question, answers: AnswerMap): boolean {

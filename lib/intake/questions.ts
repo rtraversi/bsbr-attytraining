@@ -420,6 +420,10 @@ export const QUESTIONS: readonly Question[] = [
     // branch on it. That block does not exist and she has not written its text.
     // The question is asked so the answer is on file; the clause is hers to
     // write before it does anything.
+    //
+    // 🔴 NO LONGER ASKED (Max, 2026-09-24). It is DERIVED from the roster's
+    // attorney count (deriveFirmSize in branching.ts) and filled in for the
+    // assembler by withDerivedAnswers(). Kept here for its option labels.
     key: 'firm_size',
     section: 'firm',
     module: '0',
@@ -529,6 +533,10 @@ export const QUESTIONS: readonly Question[] = [
     prompt: 'Which AI-assisted legal research tools does the firm use?',
     type: 'multi',
     options: RESEARCH_TOOL_OPTIONS,
+    // Added 2026-09-24 (Max), as case_mgmt and ai_tools have it. Per Katy's
+    // rule a typed tool is only ever INSERTED AS TYPED: it is listed where the
+    // named tools are and switches no clause on.
+    allowOther: true,
     required: true,
   },
   {
@@ -1072,12 +1080,14 @@ export const QUESTIONS: readonly Question[] = [
   // Known and accepted (raised with Katy 2026-08-26, she kept both): restricting
   // who can READ these does not make them privileged and does not put them
   // beyond a subpoena.
+  //
+  // Their help text ("Seen only by the attorney drafting your policy") was
+  // deleted 2026-09-24 (Max) because it is false: no attorney drafts the policy.
   {
     key: 'prior_ai_error',
     section: 'history',
     module: 'O',
     prompt: 'Has the firm had an incident involving AI-generated error in a filing?',
-    help: 'Seen only by the attorney drafting your policy. It is never shown in your dashboard and never included in anything sent to your staff.',
     type: 'yesno',
     required: true,
     sensitive: true,
@@ -1087,7 +1097,6 @@ export const QUESTIONS: readonly Question[] = [
     section: 'history',
     module: 'R',
     prompt: 'Has the malpractice carrier been told the firm uses AI tools, where the application asks?',
-    help: 'Seen only by the attorney drafting your policy.',
     type: 'single',
     options: YES_NO_NOT_SURE,
     required: true,

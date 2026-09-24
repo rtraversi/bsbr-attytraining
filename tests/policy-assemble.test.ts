@@ -269,6 +269,40 @@ describe('slot filling', () => {
   })
 })
 
+describe('a typed research tool (research_tools "Other", 2026-09-24)', () => {
+  const p9 = (answers: AnswerMap): string =>
+    assemble(answers).policy.sections.flatMap((s) => s.blocks).find((b) => b.id === 'p9-research-tools-named')!.text
+
+  it('is listed as typed, after the named tools, in P9', () => {
+    const text = p9({ ...MAXIMAL, research_tools: ['other:Casetext Classic', 'cocounsel'] })
+    expect(text).toBe('The following are approved as the firm\'s legal research tools: CoCounsel and Casetext Classic.')
+    expect(text).not.toContain('other:')
+  })
+
+  it('switches no clause on that the named tools had not', () => {
+    // Katy, 2026-08-26: free text is inserted as typed, never a trigger.
+    const named = { ...MAXIMAL, research_tools: ['cocounsel'] }
+    const typed = { ...MAXIMAL, research_tools: ['cocounsel', 'other:Casetext Classic'] }
+    expect(blockIds(typed)).toEqual(blockIds(named))
+    expect(assemble(typed).actionItems.map((i) => i.id)).toEqual(assemble(named).actionItems.map((i) => i.id))
+  })
+})
+
+describe('firm_size reaches the assembler, derived from the roster', () => {
+  it('is available to a condition even though the intake never asks it', () => {
+    // No clause reads firm_size yet (Katy's is unwritten). This proves the value
+    // is there for when one does: a spine block gated on it fires.
+    const probe = [{
+      number: 99, title: 'Probe', blocks: [{
+        id: 'probe', clause: 'test', when: { key: 'firm_size', is: 'solo' },
+        text: { kind: 'drafted' as const, approved: 'test', text: 'solo', sourceLine: null },
+      }],
+    }]
+    const solo = assemble({ roster: [ATTORNEY, PARALEGAL] }, probe as never)
+    expect(solo.policy.sections.flatMap((s) => s.blocks.map((b) => b.id))).toEqual(['probe'])
+  })
+})
+
 describe('the vendor paragraphs are OUT of the policy', () => {
   // 🔴 Removed 2026-09-04 (Max). §6 and §7 used to emit one composed paragraph
   // per selected platform, from lib/policy/vendor-block.ts. They are gone from

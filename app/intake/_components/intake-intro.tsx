@@ -44,16 +44,19 @@ export function IntakeIntro({
 }) {
   return (
     <div className={CARD}>
-      <p className={`text-[12px] font-bold tracking-normal ${MUTED}`}>
-        What happens next
-      </p>
+      {/*
+        Same scale as the intake's h1 (intake-shell.tsx), deliberately not bold.
+        Max, 2026-09-24: "there is no reason why this should be small".
+      */}
+      <h2 className="text-[1.9rem] font-normal leading-tight tracking-tight">Up next</h2>
 
       {/*
         Two steps, not three. Max dropped the staff/training step deliberately
         on 2026-09-02 — this screen is about the policy, and the roster inside
         the intake is where staff actually get set up.
 
-        Copy on this screen is Max's, verbatim. Do not "improve" it.
+        Copy on this screen is Max's, verbatim (step 2 and the heading revised
+        2026-09-24). Do not "improve" it.
       */}
       <ol className={`mt-6 divide-y ${LINE} border-y ${LINE}`}>
         <Step
@@ -63,8 +66,8 @@ export function IntakeIntro({
         />
         <Step
           n={2}
-          title="Our team assembles and reviews your policy"
-          body="Your written AI use policy is assembled from these answers. We email you when it is ready."
+          title="Download your policy"
+          body="Your written AI use policy is built from your answers, ready to download as soon as you finish, with an action list for anything your firm still needs to decide."
         />
       </ol>
 

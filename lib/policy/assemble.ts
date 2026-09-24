@@ -19,7 +19,7 @@
 // substantive rather than tidiness.
 // =============================================================================
 
-import { evaluateCondition } from '@/lib/intake/branching'
+import { evaluateCondition, withDerivedAnswers } from '@/lib/intake/branching'
 import { getQuestion, optionsForQuestion } from '@/lib/intake/questions'
 import { isOtherValue, otherText, type RosterRow } from '@/lib/intake/types'
 import { assertActionItemInvariants, buildActionItems } from '@/lib/policy/action-items'
@@ -265,7 +265,11 @@ function assembleSection(section: Section, answers: AnswerMap): AssembledSection
  * omitted — a policy can run §1, §2, §3, §5. Renumbering them to be contiguous
  * would make two firms' documents cite different numbers for the same rule.
  */
-export function assemble(answers: AnswerMap, spine: readonly Section[] = SPINE): AssembleResult {
+export function assemble(stored: AnswerMap, spine: readonly Section[] = SPINE): AssembleResult {
+  // Derived answers (firm_size, from the roster) are filled in here, once, so
+  // every condition and slot below sees them exactly as if the firm had typed
+  // them. See DERIVED_KEYS in lib/intake/branching.ts.
+  const answers = withDerivedAnswers(stored)
   const sections = spine
     .map((section) => assembleSection(section, answers))
     .filter((s): s is AssembledSection => s !== null)
