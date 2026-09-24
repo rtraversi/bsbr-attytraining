@@ -22,19 +22,16 @@ suspended — the same account that delivers customer invites. Fix `b7a78ca`: `s
 `headSha` verified = `b7a78ca`.
 
 **Cert worker also deployed** (`bsbr-cert-worker`, version `7126c9ab-34e6-44aa-8788-cc4ab558c309`,
-both crons, prod `SUPABASE_URL`/`APP_URL`). Deploying it from Windows has two traps — the command
-that actually works, from `workers/cert-worker`:
+both crons, prod `SUPABASE_URL`/`APP_URL`). **To redeploy it: `pnpm run deploy` from
+`workers/cert-worker`.** That now works as-is; two traps hit on the way were fixed in config:
 
-```
-$env:CLOUDFLARE_ACCOUNT_ID = "4b2a402334decc9259d7317aaf9782f0"
-npx wrangler deploy --config wrangler.toml --env=""
-```
-
-1. **Without `--config wrangler.toml`, wrangler picks up the ROOT `wrangler.jsonc`** (the main app)
-   and fails on missing `.open-next/worker.js`. So `pnpm run deploy` in that folder is broken as
-   written. Never let it get past that error — the main app must only deploy via GitHub Actions.
-2. **Without `CLOUDFLARE_ACCOUNT_ID`, wrangler targets the stale account `2809122619…`** and fails
-   `Authentication error [code: 10000]` — same trap as 2026-08-27. Workers live in `4b2a4023…`.
+1. **Bare `wrangler deploy` there picks up the ROOT `wrangler.jsonc`** (the main app) and fails on
+   missing `.open-next/worker.js`. Fixed: the worker's `deploy` / `deploy:staging` scripts now pass
+   `--config wrangler.toml` (and `--env=""` for prod). Never run bare `wrangler deploy` there —
+   the main app must only deploy via GitHub Actions.
+2. **Wrangler targeted the stale account `2809122619…`** → `Authentication error [code: 10000]`,
+   same trap as 2026-08-27. Fixed: `account_id = "4b2a402334decc9259d7317aaf9782f0"` is now in the
+   worker's `wrangler.toml` (Rob).
 
 **🔴 Max — this moves your delivery-email copy to the top of the list.** With Resend live, the
 only thing between a firm and its policy email is `POLICY_EMAIL_COPY_APPROVED = false` in
