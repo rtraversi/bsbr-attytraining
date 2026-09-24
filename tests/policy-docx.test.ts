@@ -199,3 +199,36 @@ describe('the action item list is a SEPARATE document (D2)', () => {
     expect(documents.policy.length).not.toBe(documents.actionItems.length)
   })
 })
+
+// ---------------------------------------------------------------------------
+// 2026-09-24: no TODO marker reaches a firm, in either download.
+//
+// The action list used to be nothing BUT markers, and the /intake screen now
+// offers both files the moment a firm submits. The entries are STORED, not
+// deflated (see docx.ts), so the document text is searchable in the raw bytes,
+// which is what a firm actually receives.
+// ---------------------------------------------------------------------------
+
+describe('🔴 what a firm downloads carries no [TODO marker', () => {
+  const text = (bytes: Uint8Array) => new TextDecoder().decode(bytes)
+
+  for (const [name, answers] of [['MINIMAL', MINIMAL], ['MAXIMAL', MAXIMAL]] as const) {
+    it(`the action list, ${name}`, () => {
+      const result = assemble(answers)
+      const { actionItems } = policyDocuments(result, 'Chavez Law', { audience: 'firm' })
+      expect(result.actionItems.length).toBeGreaterThan(0)
+      expect(text(actionItems)).not.toContain('[TODO')
+      // Real sentences, set as body text, not the red Todo style.
+      const paragraphs = actionItemParagraphs(result.actionItems, 'Chavez Law')
+      expect(paragraphs.filter((p) => p.style === 'Todo')).toEqual([])
+      expect(result.actionItems.every((i) => i.status === 'draft')).toBe(true)
+    })
+
+    it(`the policy, ${name}`, () => {
+      // Includes the three §14 clauses parked with Katy (lines 330, 318, 403):
+      // the firm's copy drops them rather than printing their markers.
+      const { policy } = policyDocuments(assemble(answers), 'Chavez Law', { audience: 'firm' })
+      expect(text(policy)).not.toContain('[TODO')
+    })
+  }
+})

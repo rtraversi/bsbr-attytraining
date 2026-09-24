@@ -13,7 +13,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { NONE_VALUE } from '@/lib/intake/questions'
-import { ACTION_ITEM_IDS } from '@/lib/policy/action-items'
+import { ACTION_ITEM_IDS, ALWAYS_ACTION_ITEM_IDS } from '@/lib/policy/action-items'
 import { assemble } from '@/lib/policy/assemble'
 import { ATTORNEY, MAXIMAL, MINIMAL, PARALEGAL } from '@/lib/policy/fixtures'
 import { assertSpineInvariants, SPINE } from '@/lib/policy/spine'
@@ -30,6 +30,14 @@ import type { AnswerMap } from '@/lib/policy/types'
 
 const blockIds = (answers: AnswerMap): string[] =>
   assemble(answers).policy.sections.flatMap((s) => s.blocks.map((b) => b.id))
+
+/**
+ * The action items this firm's ANSWERS raised, without the three every firm
+ * gets (2026-09-24). Tests about what an answer triggers use this, so they keep
+ * asserting exactly what they did before the always-items existed.
+ */
+const conditionalItemsOf = (answers: AnswerMap) =>
+  assemble(answers).actionItems.filter((i) => !ALWAYS_ACTION_ITEM_IDS.includes(i.id))
 
 const sectionNumbers = (answers: AnswerMap): number[] =>
   assemble(answers).policy.sections.map((s) => s.number)
@@ -360,20 +368,31 @@ describe('the action item list is a separate deliverable (D2)', () => {
     }
   })
 
-  it('emits no action items when nothing is unsure', () => {
-    expect(assemble(MINIMAL).actionItems).toEqual([])
+  it('emits only the three always-items when nothing is unsure', () => {
+    // Was "emits no action items". Since 2026-09-24 (spec 2026-09-04 §3) three
+    // items go to every firm: who approves a new tool, the tools' terms, and the
+    // malpractice carrier.
+    expect(assemble(MINIMAL).actionItems.map((a) => a.id)).toEqual([
+      'new-tool-approval',
+      'vendor-terms-review',
+      'malpractice-carrier-notification',
+    ])
   })
 
-  it('fires the malpractice item on carrier_notified = not_sure', () => {
-    const { actionItems } = assemble({ ...MINIMAL, carrier_notified: 'not_sure' })
-    expect(actionItems.map((a) => a.id)).toEqual(['malpractice-carrier-notification'])
+  it('fires the malpractice item for every firm, whatever carrier_notified says', () => {
+    // Was gated on carrier_notified = not_sure, a question retired on 09-02, so
+    // it could never fire. The spec makes it "always".
+    for (const carrier of ['yes', 'no', 'not_sure', undefined]) {
+      const ids = assemble({ ...MINIMAL, carrier_notified: carrier }).actionItems.map((a) => a.id)
+      expect(ids).toContain('malpractice-carrier-notification')
+    }
   })
 
-  it('keeps §19 in the policy even when it also raises an action item', () => {
+  it('keeps §19 in the policy even though the malpractice item is always raised', () => {
     // Katy's bracket puts the CHECK on the action list; the clause still applies.
-    const { policy, actionItems } = assemble({ ...MINIMAL, carrier_notified: 'not_sure' })
+    const { policy, actionItems } = assemble(MINIMAL)
     expect(policy.sections.map((s) => s.number)).toContain(19)
-    expect(actionItems).toHaveLength(1)
+    expect(actionItems.map((a) => a.id)).toContain('malpractice-carrier-notification')
   })
 
   it('wires the notetaker branch even though G-Q2 has not landed', () => {
@@ -385,15 +404,22 @@ describe('the action item list is a separate deliverable (D2)', () => {
   })
 
   it('emits action items in spine order', () => {
-    const { actionItems } = assemble({
-      ...MINIMAL,
-      case_mgmt: ['clio'],
-      case_mgmt_ai: 'not_sure',
-      carrier_notified: 'not_sure',
-    })
-    expect(actionItems.map((a) => a.id)).toEqual([
-      'case-mgmt-training-permission',
-      'malpractice-carrier-notification',
+    // MAXIMAL raises every conditional item it can, plus the three always ones.
+    expect(assemble({ ...MAXIMAL, case_mgmt_ai: 'not_sure', notetaker_stance: 'not_sure' })
+      .actionItems.map((a) => a.id)).toEqual([
+      'regulatory-regimes-read-alongside',          // §2
+      'tool-no-training-agreement-missing--clio',   // §5, per tool
+      'tool-no-training-agreement-missing--slack',
+      'tool-no-training-agreement-unknown--smokeball',
+      'tool-no-training-agreement-unknown--teams',
+      'prohibited-tools-scope',                     // §5, per firm
+      'new-tool-approval',
+      'vendor-terms-review',
+      'case-mgmt-training-permission',              // §6
+      'notetaker-stance-undecided',                 // §12
+      'automations-confidentiality-agreement',      // §13
+      'ai-time-adjustment-process',                 // §15
+      'malpractice-carrier-notification',           // §19
     ])
   })
 })
@@ -423,7 +449,7 @@ describe('per-tool action items from the grid', () => {
   it('raises nothing for a tool the firm HOLDS an agreement for', () => {
     // The whole point of having asked. A firm that is already bound owes no
     // homework, which is why there is no rule for `yes`.
-    const { actionItems } = assemble(
+    const actionItems = conditionalItemsOf(
       grid([
         { tool: 'chatgpt', noTraining: 'yes' },
         { tool: 'claude', noTraining: 'yes' },
@@ -435,7 +461,7 @@ describe('per-tool action items from the grid', () => {
   })
 
   it('raises one item per row, and the three outcomes differ', () => {
-    const { actionItems } = assemble(
+    const actionItems = conditionalItemsOf(
       grid([
         { tool: 'chatgpt', noTraining: 'yes' },
         { tool: 'claude', noTraining: 'no' },
@@ -455,7 +481,7 @@ describe('per-tool action items from the grid', () => {
   })
 
   it('names the tool it is about, by LABEL and not by stored value', () => {
-    const { actionItems } = assemble(
+    const actionItems = conditionalItemsOf(
       grid([
         { tool: 'chatgpt', noTraining: 'yes' },
         { tool: 'claude', noTraining: 'yes' },
@@ -479,7 +505,7 @@ describe('per-tool action items from the grid', () => {
         { tool: 'email_only', noTraining: 'yes' },
       ],
     }
-    const { actionItems } = assemble(answers)
+    const actionItems = conditionalItemsOf(answers)
     expect(actionItems.map((a) => a.subject)).toEqual(['Perplexity'])
     expect(actionItems[0].id).toBe('tool-no-training-agreement-missing--other:Perplexity')
   })
@@ -498,14 +524,14 @@ describe('per-tool action items from the grid', () => {
         { tool: 'otter_ai', noTraining: 'no' },
       ],
     }
-    expect(assemble(answers).actionItems).toEqual([])
+    expect(conditionalItemsOf(answers)).toEqual([])
   })
 
   it('groups the list by what the firm has to DO, then by source question', () => {
     // Rules are the outer loop, so every tool the firm KNOWS is unbound comes
     // first, then every tool it has to go and check. Within each, source order:
     // ai_tools, then case_mgmt, then comms_platforms.
-    const { actionItems } = assemble(
+    const actionItems = conditionalItemsOf(
       grid([
         { tool: 'chatgpt', noTraining: 'unknown' },
         { tool: 'claude', noTraining: 'no' },
@@ -525,12 +551,12 @@ describe('per-tool action items from the grid', () => {
         { tool: 'slack', noTraining: 'yes' },
       ]),
       case_mgmt_ai: 'not_sure',
-      carrier_notified: 'not_sure',
     }
-    expect(assemble(answers).actionItems.map((a) => a.id)).toEqual([
+    // malpractice-carrier-notification left this list on 2026-09-24: it is an
+    // always-item now, and conditionalItemsOf() leaves those out.
+    expect(conditionalItemsOf(answers).map((a) => a.id)).toEqual([
       'tool-no-training-agreement-missing--clio',
       'case-mgmt-training-permission',
-      'malpractice-carrier-notification',
     ])
   })
 
@@ -538,14 +564,14 @@ describe('per-tool action items from the grid', () => {
     // A firm's own policy must not carry a list of the tools it has not got an
     // agreement for. The prohibition itself is unconditional and stays in §5;
     // the per-tool follow-up is homework.
-    const { policy, actionItems } = assemble(
-      grid([
-        { tool: 'chatgpt', noTraining: 'no' },
-        { tool: 'claude', noTraining: 'unknown' },
-        { tool: 'clio', noTraining: 'no' },
-        { tool: 'slack', noTraining: 'unknown' },
-      ]),
-    )
+    const answers = grid([
+      { tool: 'chatgpt', noTraining: 'no' },
+      { tool: 'claude', noTraining: 'unknown' },
+      { tool: 'clio', noTraining: 'no' },
+      { tool: 'slack', noTraining: 'unknown' },
+    ])
+    const { policy } = assemble(answers)
+    const actionItems = conditionalItemsOf(answers)
     expect(actionItems).toHaveLength(4)
 
     const policyText = policy.sections.flatMap((s) => s.blocks).map((b) => b.text).join('\n')

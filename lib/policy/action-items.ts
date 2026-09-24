@@ -52,45 +52,67 @@
 // FOLLOW-UP: which of this firm's tools fail that rule today, and what it has
 // to go and do about each one. That is homework, so it belongs on the action
 // list and not in the adopted policy — D2, argued above.
+// ── The contents — POLICY-BUILD-SPEC-2026-09-04.md §3, built 2026-09-24 ───────
+//
+// Until 2026-09-24 every item rendered as a `[TODO — …]` marker, so the action
+// list a firm downloaded was a page of notes to ourselves. The rules below are
+// the spec's table, and each item's TEXT is the spec's sentence.
+//
+// 🔴 THE WORDING IS A DRAFT, NOT APPROVED COPY. The spec says so outright:
+// "Wording below is Max's to finalise; build the mechanism and use these as
+// drafts." So every rule carries `draft` (who wrote it and that it is pending
+// Max's pass), and the items it produces have status `draft`, which renders as
+// ordinary body text rather than a Todo marker. When Max approves a sentence,
+// change `draft` to an `approved` note in the same shape as a `drafted` block.
+//
+// Three rules fire ALWAYS (malpractice carrier, tool terms, who approves a new
+// tool), so no firm gets an empty list any more. The malpractice one replaces
+// the old `carrier_notified = not_sure` rule; that question is retired and is
+// not deleted.
+//
+// ⚠️ ONE SPEC ROW IS NOT BUILT: "discipline = unsure". `discipline` is a
+// longtext with no unsure option, so the trigger cannot happen. Adding an
+// option or inventing a trigger is a decision, not a build step (Max, 09-24).
 // =============================================================================
 
 import { evaluateCondition, toolGridTools } from '@/lib/intake/branching'
-import { getQuestion } from '@/lib/intake/questions'
+import { getQuestion, optionsForQuestion, NONE_VALUE, NOTETAKER_NOT_SURE } from '@/lib/intake/questions'
 import type { Condition, ToolGridRow } from '@/lib/intake/types'
+import { joinForProse } from '@/lib/policy/prose'
 import type { ActionItem, AnswerMap } from '@/lib/policy/types'
 
-/** The "not sure" option value, shared by all three triggers (YES_NO_NOT_SURE). */
+/** The "not sure" option value on case_mgmt_ai (YES_NO_NOT_SURE). */
 const NOT_SURE = 'not_sure'
 
-/**
- * ⚠️ `reason` IS NOT THE SENTENCE THE FIRM READS, on any rule.
- *
- * Katy's brackets describe what the action item should make the firm DO; they
- * are not prose. Writing that prose here would be inventing policy-adjacent
- * text, which the transcription rule forbids — and for the tool-grid rules the
- * wording is Max's, because all customer-facing copy is. `reason` is the note
- * to whoever writes it, and it renders inside a loud `[TODO…]` marker until
- * they do.
- */
+/** Every rule's wording is the spec's draft until Max passes it. */
+const SPEC_DRAFT = 'POLICY-BUILD-SPEC-2026-09-04.md §3, draft wording pending Max'
+
 interface RuleBase {
   id: string
-  /** The intake question this rule reads. */
-  fromKey: string
-  reason: string
-  /**
-   * Line in AI-Policy-Research-2026-08-20.md carrying Katy's instruction.
-   *
-   * The tool grid's three outcomes are Katy's design too, recorded in the
-   * ToolGridRow comment in lib/intake/types.ts rather than in her policy
-   * document, so those rules carry `source` as well as this line.
-   */
+  /** The sentence the firm reads. Draft wording: see `draft`. */
+  text: string
+  /** Where the wording came from and that it is not yet approved. Never blank. */
+  draft: string
+  /** Line in AI-Policy-Research-2026-08-20.md behind the item, where there is one. */
   sourceLine: number | null
 }
 
-/** One answer, one outcome: the original three. */
+/** One answer, one outcome. */
 interface AnswerRule extends RuleBase {
   kind: 'answer'
+  /** The intake question this rule reads. */
+  fromKey: string
   when: Condition
+  /**
+   * A placeholder in `text` filled with the labels of this answer, joined as
+   * prose, minus `exclude`. Used by the regimes item.
+   */
+  slot?: { placeholder: string; key: string; exclude?: readonly string[] }
+}
+
+/** Every firm gets this item, whatever it answered. */
+interface AlwaysRule extends RuleBase {
+  kind: 'always'
 }
 
 /**
@@ -101,40 +123,54 @@ interface AnswerRule extends RuleBase {
  * do, which is the whole point of having asked. `null` is a row the firm never
  * filled in, and it cannot reach the assembler — isAnswered() refuses the grid
  * until every derived row has a value, so the intake will not submit.
+ *
+ * `[Tool]` in `text` is replaced with the row's LABEL.
  */
 interface ToolGridRule extends RuleBase {
   kind: 'perToolGridRow'
   fromKey: 'tool_grid'
   noTraining: 'no' | 'unknown'
-  /** Where the instruction lives, for a rule Katy wrote outside the source doc. */
-  source: string
 }
 
-type ActionItemRule = AnswerRule | ToolGridRule
+type ActionItemRule = AnswerRule | AlwaysRule | ToolGridRule
 
+/**
+ * In SPINE order, so the list reads in the same sequence as the policy it
+ * accompanies: §2, §5, §6, §12, §13, §15, §19.
+ */
 const ACTION_ITEM_RULES: readonly ActionItemRule[] = [
+  // ── §2 ────────────────────────────────────────────────────────────────────
+  {
+    kind: 'answer',
+    id: 'regulatory-regimes-read-alongside',
+    fromKey: 'regulatory_regimes',
+    // Any regime except None. `not` also requires an answer, and None is
+    // exclusive in the multi-select, so this is "any real regime".
+    when: { key: 'regulatory_regimes', not: NONE_VALUE },
+    text:
+      'This policy does not replace the firm\'s obligations under [regimes] and should be ' +
+      'read alongside them.',
+    slot: { placeholder: '[regimes]', key: 'regulatory_regimes', exclude: [NONE_VALUE] },
+    draft: SPEC_DRAFT,
+    sourceLine: 268,
+  },
+
   // ── §5, per tool ──────────────────────────────────────────────────────────
   //
   // Katy's design, from the ToolGridRow comment in lib/intake/types.ts:
-  // "`unknown` is a real answer here and not a hedge: a firm that does not know
-  // gets an instruction in the policy to go and find out, which is a different
-  // clause from either yes or no."
-  //
-  // Two rules and not three, and `no` is listed before `unknown` on purpose:
-  // rules are the outer loop, so the list reads as every tool the firm KNOWS is
-  // unbound, then every tool it has to go and check. That groups the homework
-  // by what the firm has to do about it, which is how someone works through it.
+  // "`unknown` is a real answer here and not a hedge". `no` is listed before
+  // `unknown` on purpose: rules are the outer loop, so the list reads as every
+  // tool the firm KNOWS is unbound, then every tool it has to go and check.
+  // Her standard is an EXPRESS AGREEMENT (source line 356).
   {
     kind: 'perToolGridRow',
     id: 'tool-no-training-agreement-missing',
     fromKey: 'tool_grid',
     noTraining: 'no',
-    reason:
-      'The firm answered NO for this tool: no signed agreement that the vendor will not ' +
-      'train on its data. The item tells the firm to get that agreement before the tool ' +
-      'touches client data. Katy\'s standard is an EXPRESS AGREEMENT (source line 356), ' +
-      'not written confirmation and not a DPA — see the 2026-09-03 review of §6.',
-    source: 'lib/intake/types.ts ToolGridRow',
+    text:
+      '[Tool]: you answered that there is no agreement preventing training on your data. ' +
+      'Do not use it with client confidential information until you have one.',
+    draft: SPEC_DRAFT,
     sourceLine: 356,
   },
   {
@@ -142,79 +178,141 @@ const ACTION_ITEM_RULES: readonly ActionItemRule[] = [
     id: 'tool-no-training-agreement-unknown',
     fromKey: 'tool_grid',
     noTraining: 'unknown',
-    reason:
-      'The firm answered DO NOT KNOW for this tool. The item tells the firm to go and find ' +
-      'out, and to treat the tool as having NO agreement — so client data stays out of it — ' +
-      'until it has. A different instruction from either yes or no, which is why the third ' +
-      'option is a real answer and not a hedge.',
-    source: 'lib/intake/types.ts ToolGridRow',
+    text:
+      '[Tool]: you answered that you do not know whether an agreement is in place. Find out, ' +
+      'and record what you find.',
+    draft: SPEC_DRAFT,
     sourceLine: 356,
   },
 
-  // ── §6 onward, per firm ───────────────────────────────────────────────────
+  // ── §5, per firm ──────────────────────────────────────────────────────────
+  {
+    kind: 'answer',
+    id: 'prohibited-tools-scope',
+    fromKey: 'prohibited_tools',
+    // A free-text question: fires when anything non-blank was typed.
+    when: { key: 'prohibited_tools', answered: true },
+    text:
+      'Review the prohibited tools list and state, for each tool, whether the prohibition ' +
+      'covers all uses or only particular tasks, for example drafting, translation, image ' +
+      'generation, or client communication.',
+    draft: SPEC_DRAFT,
+    sourceLine: 276,
+  },
+  {
+    // Replaces the deleted gq8 block.
+    kind: 'always',
+    id: 'new-tool-approval',
+    text:
+      'Name the person or role who must approve a new AI tool before anyone uses it, and ' +
+      'what they check before saying yes.',
+    draft: SPEC_DRAFT,
+    sourceLine: null,
+  },
+  {
+    // Replaces the deleted gq6 block.
+    kind: 'always',
+    id: 'vendor-terms-review',
+    text:
+      'Review each tool\'s terms of service for its security certifications and what happens ' +
+      'to your data if you cancel or the vendor closes, and record what you find.',
+    draft: SPEC_DRAFT,
+    sourceLine: 359,
+  },
+
+  // ── §6 ────────────────────────────────────────────────────────────────────
   {
     kind: 'answer',
     id: 'case-mgmt-training-permission',
     fromKey: 'case_mgmt_ai',
     when: { key: 'case_mgmt_ai', is: NOT_SURE },
-    reason:
-      'Katy: research whether the case management platform permits training on firm ' +
-      'data, and give instructions specific to the platform the firm named. The ' +
-      'platform-specific half is what .planning/policy-blocks.csv is being filled in ' +
-      'to supply.',
+    text: 'Confirm whether your platform\'s AI features are switched on, and record it.',
+    draft: SPEC_DRAFT,
     sourceLine: 284,
   },
+
+  // ── §12 ───────────────────────────────────────────────────────────────────
   {
     kind: 'answer',
     id: 'notetaker-stance-undecided',
     fromKey: 'notetaker_stance',
-    // 🔴 THIS NEVER FIRES TODAY, and that is expected rather than broken.
-    // notetaker_stance offers not_permitted / all_consent / state_law only —
-    // there is no `not_sure` option, which is gap G-Q2 (approved under D3, a
-    // later batch). Katy's P24 bracket routes an unsure firm here, so the
-    // branch is wired now and starts working the day the option lands.
-    when: { key: 'notetaker_stance', is: NOT_SURE },
-    reason:
-      'Katy: research the firm\'s notetaker position and redo the intake in the near ' +
-      'future. Unreachable until G-Q2 adds `not_sure` to notetaker_stance.',
+    // Reachable since 2026-09-04, when Katy's "Not sure" became a real option.
+    when: { key: 'notetaker_stance', is: NOTETAKER_NOT_SURE },
+    text:
+      'Research the consent rules for AI notetakers in the states where you hold meetings, ' +
+      'decide the firm\'s position, and update your intake.',
+    draft: SPEC_DRAFT,
     sourceLine: 312,
   },
+
+  // ── §13 ───────────────────────────────────────────────────────────────────
   {
     kind: 'answer',
+    id: 'automations-confidentiality-agreement',
+    fromKey: 'automations_location',
+    when: { key: 'automations_location', includesAny: ['third_party', 'both'] },
+    text:
+      'Confirm you hold a commercial agreement ensuring confidentiality with each automation ' +
+      'service that touches client information. If you do not, that automation may not ' +
+      'handle client matters.',
+    draft: SPEC_DRAFT,
+    sourceLine: null,
+  },
+
+  // ── §15 ───────────────────────────────────────────────────────────────────
+  {
+    kind: 'answer',
+    id: 'ai-time-adjustment-process',
+    fromKey: 'ai_time_adjustment',
+    when: { key: 'ai_time_adjustment', is: 'no' },
+    text:
+      'The firm has no process for reducing a bill when AI completes a task faster. This ' +
+      'needs a decision from the firm.',
+    draft: SPEC_DRAFT,
+    sourceLine: null,
+  },
+
+  // ── §19 ───────────────────────────────────────────────────────────────────
+  {
+    // Katy's line 334, an instruction the transcription dropped. Was gated on
+    // carrier_notified = not_sure, a question retired on 2026-09-02, so it
+    // could not fire. Now always.
+    kind: 'always',
     id: 'malpractice-carrier-notification',
-    fromKey: 'carrier_notified',
-    when: { key: 'carrier_notified', is: NOT_SURE },
-    reason:
-      'Katy: check whether the malpractice carrier requires notification of AI tools. ' +
-      'G-Q5 would additionally ask about AI-specific exclusions or riders.',
+    text:
+      'Check whether your malpractice insurance requires you to notify the carrier that the ' +
+      'firm uses AI tools.',
+    draft: SPEC_DRAFT,
     sourceLine: 334,
   },
 ]
 
-/**
- * How an unwritten action item renders. Deliberately loud, and never silence —
- * the same argument as todoMarker() in lib/policy/assemble.ts.
- *
- * `TODO(copy)` rather than a bare `TODO` on the per-tool items, because that is
- * what this repo already marks a slot waiting on Max's wording with — see
- * POLICY_EMAIL_COPY_APPROVED in lib/policy/delivery-email.ts.
- */
-function marker(source: string, subject: string | null, reason: string): string {
-  const tag = subject === null ? 'TODO' : `TODO(copy) — ${subject}`
-  return `[${tag} — ${source} — ${reason}]`
+/** Labels of an answer's values, in option order, joined as prose. */
+function slotText(key: string, answers: AnswerMap, exclude: readonly string[] = []): string | null {
+  const value = answers[key]
+  const values = Array.isArray(value) ? (value as unknown[]) : typeof value === 'string' ? [value] : []
+  const question = getQuestion(key)
+  const options = question ? optionsForQuestion(question) : []
+  const labels = options
+    .filter((o) => values.includes(o.value) && !exclude.includes(o.value))
+    .map((o) => o.label)
+  return labels.length > 0 ? joinForProse(labels) : null
 }
 
 function answerItems(rule: AnswerRule, answers: AnswerMap): ActionItem[] {
   if (!evaluateCondition(rule.when, answers)) return []
-  return [
-    {
-      id: rule.id,
-      fromKey: rule.fromKey,
-      status: 'todo',
-      text: marker(`AI-Policy-Research-2026-08-20.md:${rule.sourceLine}`, null, rule.reason),
-      sourceLine: rule.sourceLine,
-    },
-  ]
+  let text = rule.text
+  if (rule.slot) {
+    const filled = slotText(rule.slot.key, answers, rule.slot.exclude)
+    // Unreachable while `when` requires a real answer; refuse to ship a bracket.
+    if (filled === null) return []
+    text = text.replace(rule.slot.placeholder, filled)
+  }
+  return [{ id: rule.id, fromKey: rule.fromKey, status: 'draft', text, sourceLine: rule.sourceLine }]
+}
+
+function alwaysItems(rule: AlwaysRule): ActionItem[] {
+  return [{ id: rule.id, fromKey: null, status: 'draft', text: rule.text, sourceLine: rule.sourceLine }]
 }
 
 /**
@@ -228,7 +326,7 @@ function answerItems(rule: AnswerRule, answers: AnswerMap): ActionItem[] {
  *     about a tool the firm does not have;
  *   - the output order is the source questions' order rather than the order a
  *     firm happened to click checkboxes in;
- *   - the LABEL is available, so `subject` reads "Microsoft Teams" and not
+ *   - the LABEL is available, so `[Tool]` reads "Microsoft Teams" and not
  *     `teams` — and for a free-text entry, the words the firm typed.
  *
  * The id carries the tool's stored value, `${rule.id}--${tool.value}`, exactly
@@ -252,8 +350,8 @@ function toolGridItems(rule: ToolGridRule, answers: AnswerMap): ActionItem[] {
       id: `${rule.id}--${tool.value}`,
       fromKey: rule.fromKey,
       subject: tool.label,
-      status: 'todo' as const,
-      text: marker(rule.source, tool.label, rule.reason),
+      status: 'draft' as const,
+      text: rule.text.replace('[Tool]', tool.label),
       sourceLine: rule.sourceLine,
     }))
 }
@@ -262,27 +360,36 @@ function toolGridItems(rule: ToolGridRule, answers: AnswerMap): ActionItem[] {
  * Build the action item list for one set of intake answers.
  *
  * Order is the order of ACTION_ITEM_RULES above, which follows the policy
- * spine (§5, §6, §12, §19) — so the list reads in the same sequence as the
- * document it accompanies. A rule that expands emits its items in a block,
- * which is what groups the per-tool homework by what has to be done about it.
+ * spine — so the list reads in the same sequence as the document it
+ * accompanies. A rule that expands emits its items in a block, which is what
+ * groups the per-tool homework by what has to be done about it.
  */
 export function buildActionItems(answers: AnswerMap): ActionItem[] {
-  return ACTION_ITEM_RULES.flatMap((rule) =>
-    rule.kind === 'answer' ? answerItems(rule, answers) : toolGridItems(rule, answers),
-  )
+  return ACTION_ITEM_RULES.flatMap((rule) => {
+    if (rule.kind === 'always') return alwaysItems(rule)
+    if (rule.kind === 'answer') return answerItems(rule, answers)
+    return toolGridItems(rule, answers)
+  })
 }
 
-/**
- * Checks that every rule above is wired to something real.
- *
- * `notetaker_stance` is expected to have NO `not_sure` option — see G-Q2 — so
- * this asserts the KEY exists without requiring the option to. If a future
- * batch adds the option, nothing here needs to change.
- */
+/** Checks that every rule above is wired to something real. */
 export function assertActionItemInvariants(): void {
   const ids = new Set<string>()
 
   for (const rule of ACTION_ITEM_RULES) {
+    if (ids.has(rule.id)) throw new Error(`Action item id "${rule.id}" is declared twice.`)
+    ids.add(rule.id)
+
+    if (!rule.text.trim() || !rule.draft.trim()) {
+      throw new Error(`Action item "${rule.id}" has no text, or no note of where its wording came from.`)
+    }
+    // The whole point of 2026-09-24: no marker ever reaches the firm again.
+    if (rule.text.includes('[TODO')) {
+      throw new Error(`Action item "${rule.id}" carries a TODO marker.`)
+    }
+
+    if (rule.kind === 'always') continue
+
     const question = getQuestion(rule.fromKey)
     if (!question) {
       throw new Error(
@@ -294,17 +401,28 @@ export function assertActionItemInvariants(): void {
     // An expanding rule reads ToolGridRow[]. Pointed at anything else it would
     // silently emit nothing, which is the failure mode this whole batch exists
     // to close — a per-tool outcome that quietly never fires.
-    if (rule.kind === 'perToolGridRow' && question.type !== 'tool-grid') {
-      throw new Error(
-        `Action item "${rule.id}" expands per grid row but "${rule.fromKey}" is a ` +
-          `"${question.type}" question, not a tool-grid.`,
-      )
+    if (rule.kind === 'perToolGridRow') {
+      if (question.type !== 'tool-grid') {
+        throw new Error(
+          `Action item "${rule.id}" expands per grid row but "${rule.fromKey}" is a ` +
+            `"${question.type}" question, not a tool-grid.`,
+        )
+      }
+      if (!rule.text.includes('[Tool]')) {
+        throw new Error(`Action item "${rule.id}" expands per tool but never names the tool.`)
+      }
     }
 
-    if (ids.has(rule.id)) throw new Error(`Action item id "${rule.id}" is declared twice.`)
-    ids.add(rule.id)
+    if (rule.kind === 'answer' && rule.slot && !rule.text.includes(rule.slot.placeholder)) {
+      throw new Error(`Action item "${rule.id}" declares slot ${rule.slot.placeholder} it never uses.`)
+    }
   }
 }
 
 /** Exposed for tests, so they assert against the real rules rather than a copy. */
 export const ACTION_ITEM_IDS: readonly string[] = ACTION_ITEM_RULES.map((r) => r.id)
+
+/** The items every firm gets, whatever it answered. Exposed for tests. */
+export const ALWAYS_ACTION_ITEM_IDS: readonly string[] = ACTION_ITEM_RULES.filter(
+  (r) => r.kind === 'always',
+).map((r) => r.id)

@@ -258,8 +258,11 @@ export interface AssembledPolicy {
  */
 export interface ActionItem {
   id: string
-  /** The intake question whose "not sure" produced this. */
-  fromKey: string
+  /**
+   * The intake question that produced this. Null for an item every firm gets
+   * whatever it answered (see the `always` rules in lib/policy/action-items.ts).
+   */
+  fromKey: string | null
   /**
    * WHAT this item is about, when one answer can raise several.
    *
@@ -274,7 +277,13 @@ export interface ActionItem {
    */
   subject?: string
   text: string
-  status: 'verbatim' | 'drafted' | 'todo'
+  /**
+   * `draft` — real sentences, wording from POLICY-BUILD-SPEC-2026-09-04.md §3
+   * pending Max's pass (2026-09-24). Renders as body text, not a Todo marker.
+   * The others are the block statuses, kept so an item can be promoted to
+   * `drafted` (approved) once Max signs the wording off.
+   */
+  status: 'verbatim' | 'drafted' | 'draft' | 'todo'
   sourceLine: number | null
 }
 

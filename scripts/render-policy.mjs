@@ -195,18 +195,17 @@ function renderActionItems(fixtureName, result) {
   ]
 
   if (items.length === 0) {
-    lines.push(
-      'No action items. This firm answered "not sure" to none of the three questions that',
-      'produce one (`case_mgmt_ai`, `notetaker_stance`, `carrier_notified`), and every row',
-      'of its tool grid holds a signed no-training agreement.',
-      '',
-    )
+    // Unreachable since 2026-09-24: three items fire for every firm.
+    lines.push('No action items.', '')
   } else {
     for (const item of items) {
       // The subject is what a per-row item is ABOUT — the tool — and without it
       // four tool_grid items read as four copies of the same homework.
-      const from = item.subject ? `\`${item.fromKey}\` — ${item.subject}` : `\`${item.fromKey}\``
-      lines.push(`- ${renderTodo(item.text)}`, `  <sub>from ${from}</sub>`, '')
+      // fromKey is null on an item every firm gets (the `always` rules).
+      const key = item.fromKey === null ? 'every firm' : `\`${item.fromKey}\``
+      const from = item.subject ? `${key} — ${item.subject}` : key
+      const text = item.status === 'todo' ? renderTodo(item.text) : item.text
+      lines.push(`- ${text}${item.status === 'draft' ? ' _(draft wording)_' : ''}`, `  <sub>from ${from}</sub>`, '')
     }
   }
 
@@ -214,7 +213,7 @@ function renderActionItems(fixtureName, result) {
   lines.push(
     '---',
     '',
-    `**${items.length} action items — ${items.length - todo} verbatim, ${todo} TODO.**`,
+    `**${items.length} action items — ${items.filter((i) => i.status === 'draft').length} draft wording, ${todo} TODO.**`,
     '',
     `Rendered by \`scripts/render-policy.mjs\` from the \`${fixtureName}\` fixture. ` +
       'Preview only — not a deliverable.',
