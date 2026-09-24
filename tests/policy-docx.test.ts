@@ -141,19 +141,16 @@ describe('the policy document', () => {
     expect(body.map((p) => p.text)).toEqual(blocks.map((b) => b.text))
   })
 
-  it('gives each section one heading, on the SPINE number', () => {
-    // Not sequential. A firm that skips a section keeps the gap, so two firms
-    // citing "§11" always mean the same rule.
+  it('gives each section one heading, its title only, with no § number', () => {
+    // Was "on the SPINE number", which printed "§11 …" for the operator. Max,
+    // 2026-09-24: no § numbers in section headings for any audience. The
+    // spine number still exists on the section; it is not printed.
     const headings = paragraphs.filter((p) => p.style === 'SectionHeading')
     expect(headings).toHaveLength(result.policy.sections.length)
-    expect(headings.map((h) => h.text)).toEqual(
-      result.policy.sections.map((s) => `§${s.number} ${s.title}`),
-    )
-    // MINIMAL omits §4, §6, §7 … so the numbers are not 1..n.
-    const minimal = policyParagraphs(assemble(MINIMAL).policy, 'Chavez Law')
-      .filter((p) => p.style === 'SectionHeading')
-      .map((h) => Number(h.text.match(/§(\d+)/)![1]))
-    expect(minimal).not.toEqual(minimal.map((_, i) => i + 1))
+    expect(headings.map((h) => h.text)).toEqual(result.policy.sections.map((s) => s.title))
+    expect(headings.some((h) => h.text.includes('§'))).toBe(false)
+    const firm = policyParagraphs(assemble(MINIMAL).policy, 'Chavez Law', { audience: 'firm' })
+    expect(firm.filter((p) => p.style === 'SectionHeading').some((h) => h.text.includes('§'))).toBe(false)
   })
 
   it('🔴 keeps every TODO visible, and marked', () => {

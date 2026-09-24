@@ -335,11 +335,11 @@ export function policyParagraphs(
 
     out.push({
       style: 'SectionHeading',
-      // No `§n` for a firm. The number is the SPINE's and is deliberately not
-      // contiguous, so a firm reading its own document sees gaps it cannot
-      // explain. Operators keep the number, because citing "§11" across two
-      // firms is the whole reason the spine does not renumber.
-      text: audience === 'firm' ? section.title : `§${section.number} ${section.title}`,
+      // Title only, for every audience (Max, 2026-09-24). The number is the
+      // SPINE's and deliberately not contiguous, so printed it shows gaps a
+      // reader cannot explain. It still exists on AssembledSection for anyone
+      // who needs to cite "§11" across firms; it is just not printed.
+      text: section.title,
     })
 
     for (const block of blocks) {

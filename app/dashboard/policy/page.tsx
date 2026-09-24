@@ -171,17 +171,17 @@ function Shell({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * One section, on its SPINE number.
+ * One section, headed by its title only (Max, 2026-09-24).
  *
- * Not renumbered to be contiguous. A firm that does no document review has no
- * §11, and closing the gap would make two firms cite different numbers for the
- * same rule — see the note on section numbering in lib/policy/assemble.ts.
+ * The spine number is not printed: it is deliberately not contiguous (a firm
+ * that does no document review has no §11), so shown it reads as gaps. Same
+ * rule as the .docx in lib/policy/docx.ts.
  */
 function PolicySection({ section }: { section: AssembledSection }) {
   return (
     <div className="mt-8 first:mt-0">
       <h3 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[var(--brand-emphasis)]">
-        §{section.number} {section.title}
+        {section.title}
       </h3>
       <div className="space-y-4">
         {section.blocks.map((block) =>

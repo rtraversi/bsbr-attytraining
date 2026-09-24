@@ -135,11 +135,9 @@ function renderPolicy(fixtureName, result) {
     // answers never reached.
     if (blocks.length === 0) continue
 
-    // Spine numbers, not sequential ones. A firm that skips a section keeps the
-    // gap, so two firms citing "§11" always mean the same rule — assemble()'s
-    // header makes the same point about renumbering. A FIRM sees no number at
-    // all, because an unexplainable gap in its own document reads as a defect.
-    lines.push(firmMode ? `## ${section.title}` : `## §${section.number} ${section.title}`, '')
+    // Title only, in every mode (Max, 2026-09-24): no § numbers in section
+    // headings anywhere they render. Same rule as lib/policy/docx.ts.
+    lines.push(`## ${section.title}`, '')
     for (const block of blocks) {
       lines.push(renderBlock(block), '')
     }
