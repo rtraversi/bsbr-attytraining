@@ -171,7 +171,7 @@ describe('the firm name', () => {
 
 describe('the download filename', () => {
   it('names the firm and the document', () => {
-    expect(policyFilename('Chavez Law', 'policy')).toBe('Chavez-Law-AI-Policy.docx')
+    expect(policyFilename('Chavez Law', 'policy')).toBe('Chavez-Law-AI-Policy-DRAFT.docx')
     expect(policyFilename('Chavez Law', 'action-items')).toBe('Chavez-Law-AI-Action-Items.docx')
   })
 
@@ -180,11 +180,11 @@ describe('the download filename', () => {
     // name would be a header-injection bug, not a cosmetic one.
     const nasty = policyFilename('Ev"il\r\nX-Injected: 1', 'policy')
     expect(nasty).not.toMatch(/["\r\n]/)
-    expect(nasty).toBe('Ev-il-X-Injected-1-AI-Policy.docx')
+    expect(nasty).toBe('Ev-il-X-Injected-1-AI-Policy-DRAFT.docx')
   })
 
   it('never produces a nameless file', () => {
-    expect(policyFilename('！！！', 'policy')).toBe('firm-AI-Policy.docx')
+    expect(policyFilename('！！！', 'policy')).toBe('firm-AI-Policy-DRAFT.docx')
     expect(policyFilename('', 'action-items')).toBe('firm-AI-Action-Items.docx')
   })
 })

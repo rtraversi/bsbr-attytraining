@@ -20,6 +20,7 @@ import { assemble } from '@/lib/policy/assemble'
 import {
   actionItemParagraphs,
   docx,
+  firmVisibleSections,
   documentXml,
   policyDocuments,
   policyParagraphs,
@@ -161,6 +162,30 @@ describe('the policy document', () => {
       .filter((b) => b.status === 'todo')
     expect(todos.length).toBeGreaterThan(0)
     expect(paragraphs.filter((p) => p.style === 'Todo')).toHaveLength(todos.length)
+  })
+})
+
+describe('the FIRM\'s policy is a draft, and matches the screen (2026-09-24)', () => {
+  const result = assemble(MAXIMAL)
+  const firm = policyParagraphs(result.policy, 'Chavez Law', { audience: 'firm' })
+
+  it('says (Draft) in the title, for the firm only', () => {
+    expect(firm[0]).toEqual({ style: 'Title', text: 'Artificial Intelligence Policy for Chavez Law (Draft)' })
+    // The operator audience keeps the plain title.
+    expect(policyParagraphs(result.policy, 'Chavez Law')[0].text).toBe(
+      'Artificial Intelligence Policy for Chavez Law',
+    )
+  })
+
+  it('carries exactly the clauses /dashboard/policy shows, and no todo', () => {
+    // /dashboard/policy renders firmVisibleSections(); the download must agree.
+    const onScreen = firmVisibleSections(result.policy)
+    expect(onScreen.flatMap((s) => s.blocks).some((b) => b.status === 'todo')).toBe(false)
+    expect(firm.filter((p) => p.style === 'Body').map((p) => p.text)).toEqual(
+      onScreen.flatMap((s) => s.blocks).map((b) => b.text),
+    )
+    expect(firm.filter((p) => p.style === 'SectionHeading')).toHaveLength(onScreen.length)
+    expect(firm.some((p) => p.style === 'Todo')).toBe(false)
   })
 })
 

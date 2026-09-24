@@ -128,5 +128,7 @@ export function policyFilename(firmName: string, kind: 'policy' | 'action-items'
       .replace(/[^A-Za-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .slice(0, 60) || 'firm'
-  return `${slug}-AI-${kind === 'policy' ? 'Policy' : 'Action-Items'}.docx`
+  // The policy is a draft the firm makes its own (Max, 2026-09-24); the action
+  // list keeps its name.
+  return `${slug}-AI-${kind === 'policy' ? 'Policy-DRAFT' : 'Action-Items'}.docx`
 }

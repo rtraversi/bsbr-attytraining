@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authorizeIntake } from '@/lib/intake/session'
+import { firmVisibleSections } from '@/lib/policy/docx'
 import { policyForFirm, type PolicyForFirm } from '@/lib/policy/for-firm'
 import type { AssembledSection, ActionItem } from '@/lib/policy/types'
 
@@ -46,8 +47,13 @@ export default async function PolicyPage() {
 
   if (!found.ok) return <Unavailable found={found} />
 
-  const blocks = found.result.policy.sections.flatMap((s) => s.blocks)
-  const todoCount = blocks.filter((b) => b.status === 'todo').length
+  // 🔴 THE SAME CLAUSES AS THE DOWNLOAD. `todo` blocks are dropped here exactly
+  // as the firm's .docx drops them (firmVisibleSections, lib/policy/docx.ts),
+  // so the screen and the file can never disagree. Since 2026-09-24 the policy
+  // is presented as a draft and gaps go to the action list, so an unwritten
+  // clause is not shown to the firm at all.
+  const sections = firmVisibleSections(found.result.policy)
+  const blocks = sections.flatMap((s) => s.blocks)
 
   return (
     <Shell>
@@ -55,8 +61,7 @@ export default async function PolicyPage() {
         <h2 className={`${HEADING} text-2xl`}>{found.firmName}</h2>
         <p className={`mt-2 text-[14.5px] leading-relaxed ${MUTED}`}>
           Assembled from the answers you gave.{' '}
-          {found.result.policy.sections.length} sections, {blocks.length} clauses
-          {todoCount > 0 ? `, ${todoCount} still being written` : ''}. Change any answer and this
+          {sections.length} sections, {blocks.length} clauses. Change any answer and this
           document is rebuilt from the new ones.
         </p>
 
@@ -79,24 +84,19 @@ export default async function PolicyPage() {
           </Link>
         </div>
 
-        {todoCount > 0 && (
-          // 🔴 SAID BEFORE THEY SCROLL, NOT DISCOVERED HALFWAY DOWN. An
-          // unfinished clause is visible wherever it falls (see PolicyBlock),
-          // but a firm reading a long document should know the count up front
-          // rather than meeting the first one as a surprise.
-          <p className="mt-5 rounded-xl bg-[#FFF4F3] px-4 py-3 text-[13px] leading-relaxed text-[#8C1D18] dark:bg-[#2A1614] dark:text-[#F2B8B5]">
-            {todoCount} {todoCount === 1 ? 'clause is' : 'clauses are'} still being drafted and are
-            marked below. This is not a finished policy yet — do not adopt it until they are
-            resolved.
-          </p>
-        )}
+        {/* ⚠️ APPROVED COPY, VERBATIM (Max, 2026-09-24). Replaced a red "not a
+            finished policy yet" banner: the draft framing does that job, and
+            anything missing goes on the action list. */}
+        <p className={`mt-5 text-[14.5px] leading-relaxed ${MUTED}`}>
+          This is a draft built from your answers. Review it, make it yours, and use the action list to fill what&apos;s missing.
+        </p>
       </section>
 
       <article className={`${CARD} mb-10`}>
         <h2 className={SECTION_HEADING}>
           Artificial Intelligence Policy for {found.firmName}
         </h2>
-        {found.result.policy.sections.map((section) => (
+        {sections.map((section) => (
           <PolicySection key={section.key} section={section} />
         ))}
       </article>
@@ -201,13 +201,12 @@ function PolicySection({ section }: { section: AssembledSection }) {
 }
 
 /**
- * An unwritten clause, kept in place and impossible to mistake for policy.
+ * A `todo` item, set apart in red.
  *
- * 🔴 NEVER HIDDEN. A section that quietly dropped its unfinished clauses would
- * look finished, and a firm would adopt a document with holes in it believing
- * it was complete. That is the same rule assemble() follows when it emits a
- * loud marker instead of silence, and the Markdown and .docx renderers follow
- * with a blockquote and red bold text. Three renderers, one rule.
+ * ⚠️ Since 2026-09-24 a firm never sees an unwritten CLAUSE: this page drops
+ * them exactly as the firm's .docx does (firmVisibleSections), because the
+ * policy is presented as a draft and its gaps belong on the action list. This
+ * stays for an action item that is still `todo`, which none are today.
  */
 function TodoText({ text }: { text: string }) {
   return (

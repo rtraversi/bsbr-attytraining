@@ -285,7 +285,25 @@ export function docx(paragraphs: readonly Paragraph[]): Uint8Array {
 // ---------------------------------------------------------------------------
 
 /**
+ * The sections a FIRM sees: every `todo` block dropped, and any section left
+ * empty by that dropped with it.
+ *
+ * One function for the screen (/dashboard/policy) and this download, so the
+ * two can never show different clauses. The operator audience does not use it
+ * and still sees every block.
+ */
+export function firmVisibleSections(policy: AssembledPolicy): AssembledPolicy['sections'] {
+  return policy.sections
+    .map((section) => ({ ...section, blocks: section.blocks.filter((b) => b.status !== 'todo') }))
+    .filter((section) => section.blocks.length > 0)
+}
+
+/**
  * The policy, as paragraphs.
+ *
+ * For a firm the title says "(Draft)" (Max, 2026-09-24): the firm builds its own
+ * policy from the template and nobody reviews it, so what it downloads is a
+ * rough draft to make its own, and the action list carries what is missing.
  *
  * Section numbers are the SPINE's, not sequential — a firm that skips a section
  * keeps the gap, so two firms citing "§11" always mean the same rule. See
@@ -297,16 +315,22 @@ export function policyParagraphs(
   { audience = 'operator' }: { audience?: PolicyAudience } = {},
 ): Paragraph[] {
   const out: Paragraph[] = [
-    { style: 'Title', text: `Artificial Intelligence Policy for ${firmName}` },
+    {
+      style: 'Title',
+      text:
+        audience === 'firm'
+          ? `Artificial Intelligence Policy for ${firmName} (Draft)`
+          : `Artificial Intelligence Policy for ${firmName}`,
+    },
   ]
 
-  for (const section of policy.sections) {
-    const blocks =
-      audience === 'firm' ? section.blocks.filter((b) => b.status !== 'todo') : section.blocks
+  // A section whose only content was unwritten becomes a heading over nothing
+  // once the markers are dropped, so firmVisibleSections omits it, the same way
+  // assemble() already omits a section a firm's answers never reached.
+  const sections = audience === 'firm' ? firmVisibleSections(policy) : policy.sections
 
-    // A section whose only content was unwritten becomes a heading over
-    // nothing once the markers are dropped. Omit it, the same way assemble()
-    // already omits a section a firm's answers never reached.
+  for (const section of sections) {
+    const blocks = section.blocks
     if (blocks.length === 0) continue
 
     out.push({
