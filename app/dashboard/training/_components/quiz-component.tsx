@@ -143,7 +143,7 @@ export function QuizComponent({ courseId, onPass, onExit }: Props) {
     <QuizRunner
       key={runKey}
       title="Certificate Assessment"
-      subtitle="Certification quiz — you need 80% or higher to pass."
+      subtitle="Certification quiz: you need 80% or higher to pass."
       questions={session.questions}
       allowBack={false}
       requiresAttestation
@@ -169,7 +169,7 @@ function FinalResult({ result, onRetry }: { result: QuizResult; onRetry: () => v
             <CheckIcon />
           </div>
           <p className="text-lg font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
-            Passed — {Math.round(result.score)}%
+            Passed: {Math.round(result.score)}%
           </p>
         </div>
         <p className="text-sm text-[#6D7980] dark:text-[#7A8189]">
@@ -182,7 +182,7 @@ function FinalResult({ result, onRetry }: { result: QuizResult; onRetry: () => v
   return (
     <div className={card}>
       <p className="mb-1 text-lg font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
-        Score: {Math.round(result.score)}% — not quite
+        Score: {Math.round(result.score)}%, not quite
       </p>
       <p className="mb-6 text-sm text-[#6D7980] dark:text-[#7A8189]">
         You need {result.passThreshold}% to pass. Take your time reviewing the material and try

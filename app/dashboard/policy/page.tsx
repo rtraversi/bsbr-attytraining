@@ -8,7 +8,7 @@ import { policyForFirm, type PolicyForFirm } from '@/lib/policy/for-firm'
 import { PolicyView } from './_components/policy-view'
 
 export const metadata = {
-  title: "Your firm's AI policy — IURIX",
+  title: "Your firm's AI policy | IURIX",
 }
 
 /**

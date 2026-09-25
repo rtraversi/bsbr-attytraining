@@ -113,7 +113,7 @@ export async function POST() {
     return NextResponse.json(
       {
         error:
-          'We could not read how many seats your firm has, so we have not sent this yet. Nothing you typed is lost — try again in a moment, and contact support if it keeps happening.',
+          'We could not read how many seats your firm has, so we have not sent this yet. Nothing you typed is lost. Try again in a moment, and contact support if it keeps happening.',
       },
       { status: 503 },
     )

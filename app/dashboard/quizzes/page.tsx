@@ -8,7 +8,7 @@ import { READINESS_LESSON } from '@/lib/training/lessons'
 import { QuizzesClient } from './_components/quizzes-client'
 
 export const metadata = {
-  title: 'Quizzes — IURIX',
+  title: 'Quizzes | IURIX',
 }
 
 export default async function QuizzesPage() {

@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       {
         error:
           'Please accept the Terms of Service and Privacy Policy to continue. If you ' +
-          'already ticked the box, reload the page — our terms may have been updated.',
+          'already ticked the box, reload the page. Our terms may have been updated.',
         code: 'terms_not_accepted',
       },
       { status: 400 }

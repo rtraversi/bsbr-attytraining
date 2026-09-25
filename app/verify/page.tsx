@@ -4,7 +4,7 @@ import { VerifyForm } from './_components/verify-form'
 
 /** Same reasoning as /verify/[token] — this page renders real people's names. */
 export const metadata: Metadata = {
-  title: 'Verify a certificate — IURIX',
+  title: 'Verify a certificate | IURIX',
   robots: { index: false, follow: false, nocache: true },
 }
 

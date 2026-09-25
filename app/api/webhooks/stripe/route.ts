@@ -931,7 +931,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
 
         await sendEmail({
           to: email,
-          subject: `${firm.name} has renewed — complete your AI compliance training`,
+          subject: `${firm.name} has renewed: complete your AI compliance training`,
           html: `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:14px">Hi ${name},</p>
 <p style="font-size:14px">${firm.name} has renewed its annual accreditation. You have been re-enrolled and need to complete this year's training on the firm's AI use policy to keep your certification current.</p>

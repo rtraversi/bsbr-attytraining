@@ -298,7 +298,7 @@ export function canAttempt(
     return {
       allowed: false,
       reason: p.shortcutLocked
-        ? 'The readiness shortcut is locked — complete lessons 1–4 first.'
+        ? 'The readiness shortcut is locked: complete lessons 1–4 first.'
         : 'Finish the training content to unlock this shortcut.',
     }
   }

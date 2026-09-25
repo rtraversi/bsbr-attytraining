@@ -116,7 +116,7 @@ export async function POST(req: Request) {
       customer: firm.stripe_customer_id,
       collection_method: 'charge_automatically',
       automatic_tax: { enabled: true },
-      description: 'IURIX — mid-year seat addition',
+      description: 'IURIX: mid-year seat addition',
     })
     invoiceId = invoice.id!
 

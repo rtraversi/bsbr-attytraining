@@ -11,7 +11,7 @@ import { clientQuestionsByLesson } from '@/lib/training/questions'
 import { TrainingClient } from './_components/training-client'
 
 export const metadata = {
-  title: 'Training — IURIX',
+  title: 'Training | IURIX',
 }
 
 // The certification question set is NOT chosen here any more.

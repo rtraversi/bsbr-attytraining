@@ -520,7 +520,7 @@ export function TrainingClient({
                     ? `Lesson ${nextUp.lesson}: ${overviewLesson.title}`
                     : nextUp.kind === 'check'
                       ? `${nextUpCheckName}${
-                          nextUpCheckLesson ? ` — ${nextUpCheckLesson.title}` : ''
+                          nextUpCheckLesson ? `: ${nextUpCheckLesson.title}` : ''
                         }`
                       : 'Certificate Assessment'}
                 </p>
@@ -603,7 +603,7 @@ export function TrainingClient({
               <ClockIcon />
             </div>
             <div>
-              <p className={`${HEADING} mb-1 text-sm`}>Training complete — certificate generating</p>
+              <p className={`${HEADING} mb-1 text-sm`}>Training complete: certificate generating</p>
               <p className={`text-sm ${MUTED}`}>
                 Your compliance certificate is being generated. This usually takes less than a minute.
               </p>
@@ -616,7 +616,7 @@ export function TrainingClient({
         {!focus && !contentOnly && phase === 'certified' && (
           <div className={`${CARD} mt-6 flex items-center justify-between gap-4 p-6`}>
             <p className={`text-sm ${MUTED}`}>
-              Certified — your certificate is issued and ready to download.
+              Certified. Your certificate is issued and ready to download.
             </p>
             <Link
               href="/dashboard/quizzes"

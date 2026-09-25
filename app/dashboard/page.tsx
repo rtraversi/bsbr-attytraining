@@ -6,7 +6,7 @@ import { AdminDashboard } from './_components/admin-dashboard'
 import type { TrainingStatus } from './_components/team-table'
 
 export const metadata = {
-  title: 'Dashboard — IURIX',
+  title: 'Dashboard | IURIX',
 }
 
 const STATUS_SORT: Record<TrainingStatus, number> = {
@@ -200,7 +200,7 @@ export default async function DashboardPage() {
       renewalDate={
         periodEnd
           ? periodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-          : '—'
+          : ''
       }
       daysOverdue={daysOverdue}
       isGracePeriod={isGracePeriod}

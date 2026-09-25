@@ -2,7 +2,7 @@ import { Reveal } from "@/app/mockup/_components/reveal"
 import { CountUp } from "@/app/mockup/_components/count-up"
 
 const STATS = [
-  { value: 30, unit: "minutes", label: "Total time per person — no all-day seminar" },
+  { value: 30, unit: "minutes", label: "Total time per person: no all-day seminar" },
   { value: 1, unit: "standard", label: "A single, consistent policy across the whole firm" },
   { value: 0, unit: "jargon", label: "Plain guidance your staff will actually apply" },
 ]
@@ -49,7 +49,7 @@ export function WhySection() {
             it right.</em>
           </h2>
           <p className="mt-4 max-w-xl text-pretty text-lg leading-relaxed text-[color-mix(in_oklch,var(--mk-cream)_75%,transparent)]">
-            Ad-hoc AI use creates real exposure — confidentiality breaches, unverified output, and
+            Ad-hoc AI use creates real exposure: confidentiality breaches, unverified output, and
             unclear accountability. A short, shared training closes that gap fast.
           </p>
         </Reveal>

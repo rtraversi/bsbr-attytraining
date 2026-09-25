@@ -19,7 +19,7 @@ export function SiteFooter() {
         </div>
 
         <p className="max-w-md text-pretty text-sm leading-relaxed text-muted-foreground">
-          Responsible AI training for law firms. Educational content only — not legal advice.
+          Responsible AI training for law firms. Educational content only, not legal advice.
         </p>
 
         <p className="text-sm text-muted-foreground">

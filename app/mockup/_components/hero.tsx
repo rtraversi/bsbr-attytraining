@@ -8,7 +8,7 @@ const LESSONS = [
     n: "01",
     hue: "var(--primary)",
     title: "Introduction to AI in Legal Practice",
-    line: "The two pillars — confidentiality and accuracy — and what Rule 5.3 expects of every role.",
+    line: "The two pillars (confidentiality and accuracy) and what Rule 5.3 expects of every role.",
   },
   {
     icon: Lock,
@@ -29,14 +29,14 @@ const LESSONS = [
     n: "04",
     hue: "var(--mk-amber-deep)",
     title: "Automations vs. Chatbox Use",
-    line: "The route the data takes decides compliance — safe automations vs. risky pasting.",
+    line: "The route the data takes decides compliance: safe automations vs. risky pasting.",
   },
   {
     icon: Compass,
     n: "05",
     hue: "var(--mk-plum)",
     title: "Applying the Rules Every Day",
-    line: "Gray areas in practice: act, ask, or escalate — and how to size up new AI tools.",
+    line: "Gray areas in practice: act, ask, or escalate, and how to size up new AI tools.",
   },
 ]
 
@@ -85,7 +85,7 @@ export function Hero() {
             style={{ animation: "fadeRise 0.6s ease 0.3s forwards" }}
           >
             A focused 30-minute course that gives every attorney and staff member a clear,
-            defensible framework for using AI ethically — without slowing the practice down.
+            defensible framework for using AI ethically, without slowing the practice down.
           </p>
 
           <div

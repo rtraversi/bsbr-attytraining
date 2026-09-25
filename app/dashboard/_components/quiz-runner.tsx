@@ -260,7 +260,7 @@ export function QuizRunner({
             <>
               {showReadinessBanner && (
                 <div className="mb-6 rounded-2xl bg-[var(--brand-primary)]/[0.10] px-4 py-3 text-sm font-medium text-[var(--brand-emphasis)] dark:text-[#5FC8FF]">
-                  This is the readiness check — you need {readinessThreshold}% to clear it.
+                  This is the readiness check: you need {readinessThreshold}% to clear it.
                 </div>
               )}
 

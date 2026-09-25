@@ -306,7 +306,7 @@ export function ManageTeamPanel() {
                       return (
                         <tr key={m.id}>
                           <td colSpan={8} className={`px-2 py-3 text-sm italic ${MUTED}`}>
-                            Reassigned — invite sent to new employee
+                            Reassigned, invite sent to new employee
                           </td>
                         </tr>
                       )
@@ -338,7 +338,7 @@ export function ManageTeamPanel() {
                           )}
                         </td>
                         <td className={`px-2 py-3 whitespace-nowrap text-center ${m.score !== null ? 'font-semibold' : EM_DASH}`}>
-                          {m.score !== null ? `${Math.round(m.score)}%` : '—'}
+                          {m.score !== null ? `${Math.round(m.score)}%` : ''}
                         </td>
                         <td className={`whitespace-nowrap px-2 py-3 text-center ${m.completedAt ? MUTED : EM_DASH}`}>
                           {m.completedAt
@@ -347,7 +347,7 @@ export function ManageTeamPanel() {
                                 day: 'numeric',
                                 year: 'numeric',
                               })
-                            : '—'}
+                            : ''}
                         </td>
                         <td className="whitespace-nowrap px-2 py-3 text-center">
                           {m.certId ? (
@@ -358,7 +358,7 @@ export function ManageTeamPanel() {
                               View &amp; download
                             </button>
                           ) : (
-                            <span className={EM_DASH}>—</span>
+                            null
                           )}
                         </td>
                         {/* One column per action; ineligible rows show the same
@@ -394,14 +394,14 @@ export function ManageTeamPanel() {
                               <button
                                 onClick={() => handleRemind(m.user_id, m.name)}
                                 className={ICON_ACTION_DANGER}
-                                title="Sending failed — try again"
+                                title="Sending failed. Try again"
                                 aria-label={`Retry nudge for ${m.name}`}
                               >
                                 <BellIcon />
                               </button>
                             )
                           ) : (
-                            <span className={EM_DASH}>—</span>
+                            null
                           )}
                         </td>
                         <td className="whitespace-nowrap px-2 py-3 text-center">
@@ -415,7 +415,7 @@ export function ManageTeamPanel() {
                               <SwapIcon />
                             </button>
                           ) : (
-                            <span className={EM_DASH}>—</span>
+                            null
                           )}
                         </td>
                         <td className="whitespace-nowrap px-2 py-3 text-center">
@@ -430,9 +430,7 @@ export function ManageTeamPanel() {
                               {isDeleting ? <span className="text-sm">…</span> : <TrashIcon />}
                             </button>
                           ) : (
-                            <span className={EM_DASH} title="You can't delete your own account">
-                              —
-                            </span>
+                            <span className={EM_DASH} title="You can't delete your own account" />
                           )}
                         </td>
                       </tr>

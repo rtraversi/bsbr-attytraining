@@ -36,7 +36,7 @@ export function RecordSection() {
             </p>
             <p>
               Iurix gives you the opposite: a written policy, a staff training record, and
-              individually signed attestations — dated proof that your firm took AI
+              individually signed attestations: dated proof that your firm took AI
               governance seriously{" "}
               <em className="font-serif-italic not-italic text-ink">
                 before anything went wrong

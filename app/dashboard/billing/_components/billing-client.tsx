@@ -20,7 +20,7 @@ const BTN_DANGER =
   'shrink-0 rounded-xl bg-[#DC2626] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
 
 function fmtDate(iso: string | null): string {
-  if (!iso) return '—'
+  if (!iso) return ''
   return new Date(iso).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -217,7 +217,7 @@ export function BillingClient() {
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
                   <dt className={LABEL}>Seats</dt>
                   <dd className={`flex items-center gap-3 text-sm ${MUTED}`}>
-                    {data.seats ?? '—'} {data.seats === 1 ? 'seat' : 'seats'}
+                    {data.seats ?? ''} {data.seats === 1 ? 'seat' : 'seats'}
                     {!addSeatsOpen && (
                       <button
                         type="button"
@@ -282,7 +282,7 @@ export function BillingClient() {
                 {addSeatsResult && (
                   <p className="text-sm text-[var(--brand-emphasis)]">
                     Added {addSeatsResult.seatsAdded}{' '}
-                    {addSeatsResult.seatsAdded === 1 ? 'seat' : 'seats'} — charged{' '}
+                    {addSeatsResult.seatsAdded === 1 ? 'seat' : 'seats'}, charged{' '}
                     ${(addSeatsResult.chargedCents / 100).toLocaleString()}.
                   </p>
                 )}
@@ -302,7 +302,7 @@ export function BillingClient() {
                   <dd className="text-sm">
                     {data.cancelAtPeriodEnd ? (
                       <span className="font-semibold text-[#B45309] dark:text-[#F0B357]">
-                        Off — will not renew
+                        Off: will not renew
                       </span>
                     ) : (
                       <span className="font-semibold text-[var(--brand-emphasis)]">On</span>
@@ -532,7 +532,7 @@ export function BillingClient() {
                   <span className={LABEL}>Cancel and request a refund?</span>
                   <p className={`mt-3 text-sm leading-relaxed ${MUTED}`}>
                     This sends your cancellation and refund request to our team for review. It
-                    does not cancel your subscription automatically — we will follow up by email
+                    does not cancel your subscription automatically. We will follow up by email
                     once it is processed.
                   </p>
 

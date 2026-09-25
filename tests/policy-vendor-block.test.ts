@@ -151,7 +151,7 @@ describe('the block delivers what the research established', () => {
 
   it('gives the opt-out location verbatim from the research', () => {
     expect(composeVendorBlock(VENDOR_FACTS.monday)).toContain(
-      'They can be disabled — Administration > AI governance > AI permissions > Enable AI features.',
+      'They can be disabled: Administration > AI governance > AI permissions > Enable AI features.',
     )
   })
 

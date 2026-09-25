@@ -58,7 +58,7 @@ export function ComplianceScore({ score, total }: Props) {
           here: nobody has been invited, so there is no denominator to qualify. */}
       {total === 0 ? (
         <>
-          <p className={`${NUMBER} text-[#8A8A8A] dark:text-[#7A8189]`}>—</p>
+          <p className={`${NUMBER} text-[#8A8A8A] dark:text-[#7A8189]`}>{'\u00A0'}</p>
           <span className="text-xl font-extralight text-[#8A8A8A] dark:text-[#7A8189]">
             No staff invited yet
           </span>

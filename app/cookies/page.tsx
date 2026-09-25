@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { LegalPage, LegalPlaceholder, LegalSection } from '@/app/_components/legal-page'
 
 export const metadata = {
-  title: 'Cookie Policy — IURIX',
+  title: 'Cookie Policy | IURIX',
 }
 
 /**
@@ -25,7 +25,7 @@ export default function CookiesPage() {
   if (process.env.NODE_ENV === 'production') notFound()
 
   return (
-    <LegalPage title="Cookie Policy" updated="🚧 UNWRITTEN PAGE — NOT FOR DEPLOY 🚧">
+    <LegalPage title="Cookie Policy" updated="🚧 UNWRITTEN PAGE: NOT FOR DEPLOY 🚧">
       <LegalSection title="1. What Cookies Are">
         <Unwritten />
       </LegalSection>

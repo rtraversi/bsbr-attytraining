@@ -147,8 +147,8 @@ export async function POST(req: NextRequest) {
           // scope, not just unwritten yet. This message must not ask for
           // acceptance of a document /pricing's own checkbox doesn't offer.
           "Please review and accept the Terms of Service and Privacy Policy " +
-          "before continuing. If you already ticked the box, reload the page " +
-          "— our terms may have been updated since you opened it.",
+          "before continuing. If you already ticked the box, reload the page. " +
+          "Our terms may have been updated since you opened it.",
         code: "terms_not_accepted",
       },
       { status: 400 }

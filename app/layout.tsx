@@ -72,7 +72,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://iurixaccreditation.
 // correction is about Rule 5.3 not being the thesis, and the DESCRIPTION below
 // already satisfies it by leading with the written policy. Do not swap the
 // title back without asking.
-const TITLE = "IURIX — AI compliance certification for law firms";
+const TITLE = "IURIX | AI compliance certification for law firms";
 const DESCRIPTION =
   "A written AI use policy for your firm, training and signed attestations for your staff, and a record you can produce. One annual fee per seat.";
 
@@ -107,7 +107,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "IURIX — AI governance for small law firms",
+        alt: "IURIX: AI governance for small law firms",
       },
     ],
     locale: "en_US",

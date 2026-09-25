@@ -151,7 +151,7 @@ export function OverviewClient({
               </span>
               <p className={`font-headline text-2xl font-bold xl:text-4xl ${ACCENT}`}>
                 {currentGrade === null ? (
-                  <span className={`text-2xl font-medium xl:text-3xl ${MUTED}`}>—</span>
+                  <span className={`text-2xl font-medium xl:text-3xl ${MUTED}`}>{'\u00A0'}</span>
                 ) : (
                   <>
                     {currentGrade}
@@ -301,7 +301,7 @@ function RecentActivityCard({ activity }: { activity: ActivityItem[] }) {
       >
         {activity.length === 0 ? (
           <p className={`text-base xl:text-lg ${MUTED}`}>
-            No activity yet — start the training content or your first lesson check.
+            No activity yet. Start the training content or your first lesson check.
           </p>
         ) : (
           <button

@@ -64,7 +64,7 @@ export function ReassignPanel({ member, onClose, onSuccess }: ReassignPanelProps
       setConfirmedName(submittedName)
       setConfirmedEmail(submittedEmail)
       setPhase('success')
-      addToast(`Seat reassigned — invite sent to ${submittedName || submittedEmail}`)
+      addToast(`Seat reassigned, invite sent to ${submittedName || submittedEmail}`)
     } catch {
       setError('Network error. Please try again.')
       setPhase('idle')

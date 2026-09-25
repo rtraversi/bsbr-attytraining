@@ -4,7 +4,7 @@ import { consumeVerificationToken } from '@/lib/email-verification'
 import { IurixLockup } from '@/app/_components/iurix-lockup'
 
 export const metadata = {
-  title: 'Confirm your email — IURIX',
+  title: 'Confirm your email | IURIX',
 }
 
 /**
@@ -38,7 +38,7 @@ export default async function VerifyEmailPage({
       <div className="mx-auto max-w-xl px-6 py-16 text-center">
         {outcome.ok ? (
           <>
-            <h1 className="text-3xl font-semibold tracking-tight">Thank you — that&rsquo;s confirmed.</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">Thank you, that&rsquo;s confirmed.</h1>
             <p className="mt-3 text-[15px] leading-relaxed text-[#8A8A8A]">
               We know we can reach you at this address now, so your training invitation and your
               certificate will land where they should. There is nothing else to do here.

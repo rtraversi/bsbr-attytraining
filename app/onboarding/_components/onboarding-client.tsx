@@ -54,7 +54,7 @@ const BLOCKED_COPY: Record<BlockedReason, { heading: string; explanation: string
   duplicate: {
     heading: 'You already have an active account',
     explanation:
-      'This email already owns an active IURIX subscription, so this second purchase would have billed you twice for the same thing. We stopped it and cancelled the new subscription — your existing account and its certificates are untouched.',
+      'This email already owns an active IURIX subscription, so this second purchase would have billed you twice for the same thing. We stopped it and cancelled the new subscription. Your existing account and its certificates are untouched.',
     next: 'Sign in with this email to reach your dashboard. Get in touch about the payment just taken and we will put it right.',
   },
   non_us_billing: {
@@ -290,7 +290,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
           where the person returning a week later can also read it.
         */}
         <p className="mt-2.5 text-center text-base font-extralight text-[#7F7F7F]">
-          Choose a password and you are straight in — no email, no link. Next we ask about how your
+          Choose a password and you are straight in: no email, no link. Next we ask about how your
           firm uses AI, and your written policy is built from your answers.
         </p>
 

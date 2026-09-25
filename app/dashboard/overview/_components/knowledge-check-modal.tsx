@@ -46,7 +46,7 @@ export function KnowledgeCheckModal({ lesson, title, questions, isReadiness, onC
   return (
     <QuizRunner
       title="Knowledge Check"
-      subtitle={`Lesson ${lesson} — ${title}`}
+      subtitle={`Lesson ${lesson}: ${title}`}
       questions={questions}
       allowBack
       showReadinessBanner={isReadiness}
@@ -107,7 +107,7 @@ function KnowledgeCheckResult({
 
         {!isReadiness && result.score < result.passThreshold && (
           <p className="kc-rise kc-d3 mt-5 max-w-sm text-sm text-[#B45309] dark:text-[#F0B357]">
-            Your score was on the low side — consider reviewing this lesson again. (It’s still marked
+            Your score was on the low side. Consider reviewing this lesson again. (It’s still marked
             complete.)
           </p>
         )}
@@ -127,7 +127,7 @@ function KnowledgeCheckResult({
   return (
     <div className={card}>
       <p className="mb-1 text-lg font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
-        Score: {result.score}% — not quite
+        Score: {result.score}%, not quite
       </p>
       <p className="mb-6 text-sm text-[#6D7980] dark:text-[#7A8189]">
         You need {result.passThreshold}% to clear the readiness check. Review the material and try

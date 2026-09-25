@@ -233,8 +233,8 @@ export function EmailDeliverabilityChip({
   // reader whether this is one typo or half the roster.
   const dialogLabel =
     members.length === 1
-      ? 'Verify email address — 1 unconfirmed'
-      : `Verify email addresses — ${members.length} unconfirmed`
+      ? 'Verify email address: 1 unconfirmed'
+      : `Verify email addresses: ${members.length} unconfirmed`
 
   return (
     <div ref={wrapRef} className="relative shrink-0">
@@ -297,7 +297,7 @@ export function EmailDeliverabilityChip({
                     <span className={`text-[12px] font-semibold ${MUTED}`}>
                       {current === 'sent'
                         ? 'Confirmation sent'
-                        : 'Link ready — email could not go out, contact us and we will pass it on'}
+                        : 'Link ready. Email could not go out, contact us and we will pass it on'}
                     </span>
                   ) : (
                     <button

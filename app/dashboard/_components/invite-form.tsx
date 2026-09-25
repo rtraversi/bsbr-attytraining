@@ -131,7 +131,7 @@ export function InviteForm({ seatsRemaining }: { seatsRemaining: number }) {
 
       {devLink && (
         <div className="rounded-xl bg-[#FFF7E6] p-2.5">
-          <p className="mb-1 font-mono text-[10px] text-[#B45309]">DEV — invite link (email not sent):</p>
+          <p className="mb-1 font-mono text-[10px] text-[#B45309]">DEV: invite link (email not sent):</p>
           <a href={devLink} className="break-all text-[10px] text-[#B45309] underline hover:opacity-80">
             {devLink}
           </a>
@@ -231,7 +231,7 @@ function InviteKindDialog({
           detail={
             <>
               <span className="font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">
-                Free — uses no seat.
+                Free: uses no seat.
               </span>{' '}
               Attorneys are unlimited. They can take the training, but no certificate is issued
               for them.

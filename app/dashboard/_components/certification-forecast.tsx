@@ -91,7 +91,7 @@ export function CertificationForecast() {
                   {projectedDateLabel}
                 </p>
                 <p className="flex items-center gap-1 text-lg font-semibold text-[#16A34A]">
-                  ↗ Pace picking up — {certifiedLast7Days} certified in the last 7 days
+                  ↗ Pace picking up: {certifiedLast7Days} certified in the last 7 days
                 </p>
               </>
             )}

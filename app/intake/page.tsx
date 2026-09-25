@@ -16,7 +16,7 @@ import { IntakeReview } from './_components/intake-review'
 import { IntakeShell } from './_components/intake-shell'
 
 export const metadata = {
-  title: "Your firm's AI policy — IURIX",
+  title: "Your firm's AI policy | IURIX",
 }
 
 /**

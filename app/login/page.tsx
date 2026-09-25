@@ -4,7 +4,7 @@ import { SignInBackground } from './_components/sign-in-background'
 import { AtcLogo } from '@/app/_components/atc-logo'
 
 export const metadata = {
-  title: 'Sign in — IURIX',
+  title: 'Sign in | IURIX',
 }
 
 // Footer escape routes. These were text-xs/font-extralight and read as decoration

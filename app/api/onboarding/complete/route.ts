@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (!firm) {
-    return NextResponse.json({ error: 'Firm not found — has the payment webhook fired yet?' }, { status: 404 })
+    return NextResponse.json({ error: 'Firm not found. Has the payment webhook fired yet?' }, { status: 404 })
   }
 
   // One-time. The Stripe webhook creates the admin's firm_members row as
@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
   const { data: course } = await supabase.from('courses').select('id').limit(1).maybeSingle()
   if (!course) {
     await supabase.from('courses').insert({
-      title: 'IURIX — Annual Certification',
+      title: 'IURIX: Annual Certification',
       description: "Training that holds your staff to your firm's written AI use policy.",
       cloudflare_stream_video_id: 'stub-not-yet-uploaded',
       pass_threshold: 80,

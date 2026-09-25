@@ -86,7 +86,7 @@ export async function GET() {
   y -= 22
 
   // Subtitle
-  page.drawText('AI Compliance Training — Staff Certification Attestation', {
+  page.drawText('AI Compliance Training: Staff Certification Attestation', {
     x: ML, y, font: regular, size: 11, color: GREY,
   })
   y -= 14

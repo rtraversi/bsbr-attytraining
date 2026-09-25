@@ -98,7 +98,7 @@ export function Pricing() {
             firm
           </h2>
           <p className="mt-4 text-pretty text-lg leading-relaxed text-muted-foreground">
-            Volume bands, billed annually. Add a seat for everyone who touches client work —
+            Volume bands, billed annually. Add a seat for everyone who touches client work:
             attorneys, paralegals, and staff.
           </p>
         </Reveal>
@@ -232,7 +232,7 @@ export function Pricing() {
                   className="mt-0.5 h-4 w-4 shrink-0"
                 />
                 <span>
-                  My firm is based in the United States. IURIX is available to US firms only —
+                  My firm is based in the United States. IURIX is available to US firms only:
                   all training and certification data is held in the US.
                 </span>
               </label>

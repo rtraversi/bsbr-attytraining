@@ -197,7 +197,7 @@ function CsvDialog({
         </p>
         {(result.emailFailed?.length ?? 0) > 0 && (
           <p className="mt-3 text-xs leading-relaxed text-[#B45309] dark:text-[#F0B357]">
-            Those people are on your team and their seats are real — only the email did not go.
+            Those people are on your team and their seats are real. Only the email did not go.
             They are badged “Invite not delivered” in the team table, where you can resend.
           </p>
         )}
@@ -227,7 +227,7 @@ function CsvDialog({
   return (
     <Modal
       title="Invite your team from a file"
-      description="Upload one file and everyone in it is invited at once — one email each, sent when you press Send."
+      description="Upload one file and everyone in it is invited at once: one email each, sent when you press Send."
       onClose={onClose}
       busy={busy}
       wide
@@ -252,7 +252,7 @@ Dana Whitfield,dana@yourfirm.com,false`}
         </pre>
         <ul className="mt-3 flex flex-col gap-2">
           <Col name="name">
-            Their full name — first and last, written the way you would write it formally, not a
+            Their full name: first and last, written the way you would write it formally, not a
             nickname or an initial.
           </Col>
           <Col name="email">
@@ -267,7 +267,7 @@ Dana Whitfield,dana@yourfirm.com,false`}
           </Col>
         </ul>
         <p className="mt-3">
-          The header row is optional — without one we read the first column as the name and the
+          The header row is optional. Without one we read the first column as the name and the
           second as the email.
         </p>
       </Section>
@@ -308,8 +308,8 @@ Dana Whitfield,dana@yourfirm.com,false`}
           <p className="mt-3 text-xs leading-relaxed text-[#8A8A8A] dark:text-[#7A8189]">
             <span className="font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
               {rows.length} {rows.length === 1 ? 'row' : 'rows'} found
-            </span>{' '}
-            — {staffRows} staff, {attorneyRows} {attorneyRows === 1 ? 'attorney' : 'attorneys'}.
+            </span>
+            : {staffRows} staff, {attorneyRows} {attorneyRows === 1 ? 'attorney' : 'attorneys'}.
             You have {seatsRemaining} staff {seatsRemaining === 1 ? 'seat' : 'seats'} left.
             {overSeats > 0 && (
               // Said before Send, not after a rejection. The server enforces the
@@ -318,8 +318,8 @@ Dana Whitfield,dana@yourfirm.com,false`}
                 {' '}
                 <span className="font-semibold text-[#B45309] dark:text-[#F0B357]">
                   That is {overSeats} more staff than you have seats for
-                </span>{' '}
-                —{' '}
+                </span>
+                .{' '}
                 <a
                   href="/dashboard/billing#add-seats"
                   className="font-semibold underline underline-offset-2 hover:opacity-80"

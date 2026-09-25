@@ -9,7 +9,7 @@ import { BillingSettings } from './_components/billing-settings'
 import { AppearanceSettings } from './_components/appearance-settings'
 
 export const metadata = {
-  title: 'Settings — IURIX',
+  title: 'Settings | IURIX',
 }
 
 /* ── Shared tokens — same values the previous version of this page used ────── */

@@ -49,7 +49,7 @@ const LESSON_1_QUESTIONS: PoolQuestion[] = [
     answers: [
       'The AI vendor',
       'The supervising attorney',
-      'No one — AI output is unattributable',
+      'No one: AI output is unattributable',
       'The client',
     ],
     correct_index: 1,
@@ -87,7 +87,7 @@ const LESSON_2_QUESTIONS: PoolQuestion[] = [
       'Slower drafting',
       'Breaching client confidentiality',
       'Higher software costs',
-      'Nothing — public tools are always safe',
+      'Nothing: public tools are always safe',
     ],
     correct_index: 1,
   },

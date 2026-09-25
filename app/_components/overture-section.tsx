@@ -18,7 +18,7 @@ export function OvertureSection() {
           wasting billable hours. They want their lawyers using it. But they also want
           to know their data is safe, and that their attorney is{" "}
           <em className="font-serif-italic not-italic text-teal-mid">
-            a competent, zealous advocate — not a figurehead.
+            a competent, zealous advocate, not a figurehead.
           </em>
         </p>
       </div>

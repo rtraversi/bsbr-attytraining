@@ -15,7 +15,7 @@ import { ResultCard, NotFoundCard } from '../_components/result-card'
  * after the fact.
  */
 export const metadata: Metadata = {
-  title: 'Verify a certificate — IURIX',
+  title: 'Verify a certificate | IURIX',
   robots: { index: false, follow: false, nocache: true },
 }
 

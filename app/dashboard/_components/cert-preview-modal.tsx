@@ -12,7 +12,7 @@ interface Props {
 }
 
 function fmt(iso: string | null) {
-  if (!iso) return '—'
+  if (!iso) return ''
   return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
@@ -51,7 +51,7 @@ export function CertPreviewModal({ certId, certNumber, employeeName, issuedAt, e
         </div>
 
         <div className="mb-6 space-y-3">
-          <p className="font-mono text-xs text-[#8A8A8A] dark:text-[#7A8189]">#{certNumber ?? '—'}</p>
+          <p className="font-mono text-xs text-[#8A8A8A] dark:text-[#7A8189]">{certNumber ? `#${certNumber}` : ''}</p>
           <p className="text-base font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]">{employeeName}</p>
           <div className="space-y-1.5 text-sm text-[#3D3D3D] dark:text-[#C4C9CE]">
             <p>

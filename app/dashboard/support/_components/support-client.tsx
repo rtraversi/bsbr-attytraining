@@ -36,7 +36,7 @@ const faqs = [
   {
     question: 'How do I invite a new staff member?',
     answer:
-      'From your dashboard, enter their email in the Invitations block — or upload a CSV to invite several people at once. They’ll receive a secure link to set a password and begin training.',
+      'From your dashboard, enter their email in the Invitations block, or upload a CSV to invite several people at once. They’ll receive a secure link to set a password and begin training.',
   },
   {
     question: 'What score is needed to pass the Certificate Assessment?',
@@ -46,7 +46,7 @@ const faqs = [
   {
     question: 'Why hasn’t a reminder email been sent?',
     answer:
-      'Automatic reminders go to staff who haven’t finished training after your reminder window — set the cadence in Settings under Notifications. You can also send one instantly from the Manage team table’s Remind action.',
+      'Automatic reminders go to staff who haven’t finished training after your reminder window. Set the cadence in Settings under Notifications. You can also send one instantly from the Manage team table’s Remind action.',
   },
   {
     question: 'How long is a certificate valid?',
@@ -56,7 +56,7 @@ const faqs = [
   {
     question: 'Can I export training completion records?',
     answer:
-      'Yes. Download any individual certificate from the team table, or generate the firm attestation PDF — a summary of all active certificates — from the Quick actions on your dashboard.',
+      'Yes. Download any individual certificate from the team table, or generate the firm attestation PDF (a summary of all active certificates) from the Quick actions on your dashboard.',
   },
 ]
 

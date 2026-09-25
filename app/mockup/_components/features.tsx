@@ -15,7 +15,7 @@ const LESSONS = [
     index: "Lesson 01",
     hue: "var(--primary)",
     title: "Introduction to AI in Legal Practice",
-    body: "The two pillars — confidentiality and accuracy — where AI shows up in a firm, and what ABA Model Rule 5.3 expects of attorneys and staff alike.",
+    body: "The two pillars (confidentiality and accuracy): where AI shows up in a firm, and what ABA Model Rule 5.3 expects of attorneys and staff alike.",
     wide: true,
   },
   {
@@ -39,7 +39,7 @@ const LESSONS = [
     index: "Lesson 04",
     hue: "var(--mk-amber-deep)",
     title: "Automations vs. Chatbox Use",
-    body: "The route the data takes decides compliance — why API-driven automations are safe where pasting into a chatbox is not.",
+    body: "The route the data takes decides compliance: why API-driven automations are safe where pasting into a chatbox is not.",
     wide: false,
   },
   {
@@ -66,7 +66,7 @@ export function Features() {
           Five lessons. Thirty minutes. <em style={{ color: "var(--primary)" }}>One standard.</em>
         </h2>
         <p className="mt-4 text-pretty text-lg leading-relaxed text-muted-foreground">
-          The exact course your staff completes — co-authored with a practicing attorney and
+          The exact course your staff completes, co-authored with a practicing attorney and
           mapped to the ethical duties that already govern your firm.
         </p>
       </Reveal>
@@ -122,7 +122,7 @@ export function Features() {
                 Interactive, <em>not</em> a lecture
               </h3>
               <p className="mt-1 text-sm leading-relaxed text-foreground/75">
-                Real scenarios — the Perfect Brief, the Uninvited AI Guest — plus flashcards,
+                Real scenarios (the Perfect Brief, the Uninvited AI Guest) plus flashcards,
                 sorting exercises, and knowledge checks in every lesson.
               </p>
             </div>

@@ -36,7 +36,7 @@ const CASES = [
   {
     court: "E.D. Mich. · Feb 2026",
     name: "Warner v. Gilbarco, Inc.",
-    body: "Attorney-directed AI analysis and drafting stayed protected — even on a general-purpose platform — absent disclosure to an adversary.",
+    body: "Attorney-directed AI analysis and drafting stayed protected, even on a general-purpose platform, absent disclosure to an adversary.",
   },
   {
     court: "S.D.N.Y. · Feb 2026",
@@ -70,7 +70,7 @@ export function ExposureSection() {
           <div>
             <div className="space-y-5 text-[17px] leading-[1.7] text-ink-soft">
               <p>
-                Malpractice carriers are starting to ask about AI practices at renewal —
+                Malpractice carriers are starting to ask about AI practices at renewal,
                 and{" "}
                 <strong className="font-semibold text-ink">
                   &ldquo;we don&apos;t have a policy&rdquo;
@@ -78,13 +78,13 @@ export function ExposureSection() {
                 is becoming a harder answer to give.
               </p>
               <p>
-                Bar discipline for AI-related errors — fabricated citations, mishandled
-                confidential data — is no longer a rare headline; it&apos;s a pattern
+                Bar discipline for AI-related errors (fabricated citations, mishandled
+                confidential data) is no longer a rare headline; it&apos;s a pattern
                 carriers and bar associations are watching closely.
               </p>
               <p>
                 Iurix accreditation gives your firm a documented governance program to
-                point to — the kind of proactive posture that&apos;s increasingly
+                point to: the kind of proactive posture that&apos;s increasingly
                 expected, and the kind{" "}
                 <strong className="font-semibold text-ink">
                   most firms still don&apos;t have
@@ -96,7 +96,7 @@ export function ExposureSection() {
             {/* COPRAC's 2026 guidance, quoted verbatim and attributed.
                 Extracted from the source PDF at
                 calbar.ca.gov/.../Generative-AI-Practical-Guidance.pdf on
-                2026-08-04 — a state bar telling firms in terms to train their
+                2026-08-04: a state bar telling firms in terms to train their
                 NONLAWYER staff. That is the product, described by a regulator,
                 so it is set as a pull quote rather than buried in a list.
 
@@ -112,14 +112,14 @@ export function ExposureSection() {
               </blockquote>
               <figcaption className="mt-4 text-[12px] uppercase leading-[1.6] tracking-[0.12em] text-ink-mute">
                 State Bar of California, Committee on Professional Responsibility and
-                Conduct — Practical Guidance for the Use of Generative AI in the
+                Conduct: Practical Guidance for the Use of Generative AI in the
                 Practice of Law, 2026
               </figcaption>
             </figure>
 
             <p className="mt-6 text-[15px] leading-[1.6] text-ink-soft">
               California revised its guidance in 2026 at the request of its Supreme
-              Court. Other states are moving the same way — and periodic staff training
+              Court. Other states are moving the same way, and periodic staff training
               is what they are asking for.
             </p>
 
@@ -156,7 +156,7 @@ export function ExposureSection() {
             </div>
             <p className="border-b border-silver px-6 py-5 text-[15px] leading-[1.6] text-ink">
               Three rulings this year draw the same line: AI use is defensible when
-              the protections are contractual and documented —{" "}
+              the protections are contractual and documented:{" "}
               <strong className="font-semibold">and not when they aren&apos;t.</strong>
             </p>
             {CASES.map((c, i) => (

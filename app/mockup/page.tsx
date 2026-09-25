@@ -9,7 +9,7 @@ import { Pricing } from "@/app/mockup/_components/pricing"
 import { SiteFooter } from "@/app/mockup/_components/site-footer"
 
 export const metadata = {
-  title: "Mockup — light concept",
+  title: "Mockup | light concept",
 }
 
 // "Warm Counsel" palette — warm paper ground, deep pine-teal primary,

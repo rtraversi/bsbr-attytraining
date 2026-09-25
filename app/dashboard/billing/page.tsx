@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { BillingClient } from './_components/billing-client'
 
 export const metadata = {
-  title: 'Billing — IURIX',
+  title: 'Billing | IURIX',
 }
 
 /**

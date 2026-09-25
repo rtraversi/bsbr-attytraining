@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
         )
         await sendEmail({
           to: user.email,
-          subject: 'Auto-renewal is off — what happens next',
+          subject: 'Auto-renewal is off: what happens next',
           html,
         })
       } catch (err) {

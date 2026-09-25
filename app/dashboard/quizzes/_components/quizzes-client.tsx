@@ -388,8 +388,8 @@ function FinalTestCard({
         <p className={`mt-2 text-center text-xs ${MUTED}`}>
           {unlocked
             ? contentViewed
-              ? 'You’ve cleared every lesson check — pass this to earn your certificate.'
-              : 'You’ve cleared every lesson check — finish the training content, then pass this to earn your certificate.'
+              ? 'You’ve cleared every lesson check. Pass this to earn your certificate.'
+              : 'You’ve cleared every lesson check. Finish the training content, then pass this to earn your certificate.'
             : 'Complete the Final Review to unlock.'}
         </p>
 
@@ -404,7 +404,7 @@ function FinalTestCard({
                   : 'text-[var(--brand-emphasis)]'
               }`}
             >
-              {readinessPct}% — {readinessNote}
+              {readinessPct}%: {readinessNote}
             </span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-[#DDE3E9] dark:bg-[#1F2429]">
@@ -466,7 +466,7 @@ function FinalTestCard({
    cert #, dates, and legal disclaimer; Download opens CertPreviewModal.
    ═══════════════════════════════════════════════════════════════════════════ */
 function fmtCertDate(iso: string | null): string {
-  if (!iso) return '—'
+  if (!iso) return ''
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
@@ -507,9 +507,9 @@ function CertificateCard({
     <>
       <span className={`text-sm italic md:text-base ${MUTED}`}>
         {lockedAction?.kind === 'content'
-          ? 'Finish the training content to unlock your certificate — go to Content'
+          ? 'Finish the training content to unlock your certificate: go to Content'
           : lockedAction?.kind === 'check'
-            ? `Clear your remaining checks to unlock your certificate — start ${
+            ? `Clear your remaining checks to unlock your certificate: start ${
                 lockedAction.lesson.isReadiness
                   ? 'the Final Review'
                   : `Lesson ${lockedAction.lesson.number}`
@@ -566,7 +566,7 @@ function CertificateCard({
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
                       <div>
                         <p className={`text-xs ${MUTED}`}>Certificate</p>
-                        <p className="mt-0.5 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">#{cert.number ?? '—'}</p>
+                        <p className="mt-0.5 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">{cert.number ? `#${cert.number}` : ''}</p>
                       </div>
                       <div>
                         <p className={`text-xs ${MUTED}`}>Issued</p>
@@ -850,7 +850,7 @@ function PathMap({
           </div>
         ) : progress.shortcutLocked && lesson5.status !== 'cleared' ? (
           <p className={`mt-5 text-center text-xs ${MUTED}`}>
-            Shortcut locked — complete lessons 1–4 in order.
+            Shortcut locked: complete lessons 1–4 in order.
           </p>
         ) : shortcutContentGated ? (
           <p className={`mt-5 text-center text-xs ${MUTED}`}>

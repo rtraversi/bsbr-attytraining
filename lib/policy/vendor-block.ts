@@ -147,7 +147,7 @@ export function composeVendorSentences(facts: VendorFacts): string[] {
         // An em dash rather than "at:", because an opt-out is not always a menu
         // path — Slack's is an email to its support address, and "disabled at:
         // Org Owner emails feedback@slack.com" does not parse.
-        ? `They can be disabled — ${facts.optoutLocation}.`
+        ? `They can be disabled: ${facts.optoutLocation}.`
         : `They can be disabled, though ${name} does not publish where that control lives. ` +
             `The firm shall locate it and record where it is.`,
     )
