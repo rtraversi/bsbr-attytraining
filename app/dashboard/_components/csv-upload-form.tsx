@@ -91,7 +91,7 @@ export function CsvUploadForm({ seatsRemaining }: { seatsRemaining: number }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full rounded-full border border-[#E5EEF5] py-2 text-center text-[13px]/[18px] font-bold text-[#3D3D3D] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[var(--brand-primary)] dark:hover:text-[var(--brand-primary)]"
+        className="w-full rounded-full bg-[#F2F4F7] py-2 text-center hover:bg-[#EAF6FF] dark:bg-[#131A20] dark:hover:bg-[#18212A] text-[13px]/[18px] font-bold text-[#3D3D3D] transition-colors hover:text-[var(--brand-emphasis)] dark:text-[#C4C9CE] dark:hover:text-[var(--brand-primary)]"
       >
         Bulk invite (CSV)
       </button>
@@ -208,7 +208,7 @@ function CsvDialog({
           <button
             type="button"
             onClick={reset}
-            className="flex-1 rounded-full border border-[#E5EEF5] bg-[#F2F4F7] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#E5EEF5] dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
+            className="flex-1 rounded-full bg-[#F2F4F7] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#E5EEF5] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
           >
             Upload another
           </button>
@@ -244,7 +244,7 @@ function CsvDialog({
 
       {/* ── 2. The columns ──────────────────────────────────────────────────── */}
       <Section n={2} title="Three columns, one person per row">
-        <pre className="overflow-x-auto rounded-lg border border-[#E5EEF5] bg-[#F7F9FB] p-3 font-mono text-[11px] leading-relaxed text-[#0A0A0A] dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA]">
+        <pre className="overflow-x-auto rounded-lg bg-[#F7F9FB] p-3 font-mono text-[11px] leading-relaxed text-[#0A0A0A] dark:bg-[#131A20] dark:text-[#F5F7FA]">
 {`name,email,attorney
 Jane Ruiz,jane@yourfirm.com,true
 Marcus Bell,marcus@yourfirm.com,
@@ -287,7 +287,7 @@ Dana Whitfield,dana@yourfirm.com,false`}
       {/* ── The picker ──────────────────────────────────────────────────────── */}
       <div className="mt-5 border-t border-[#E5EEF5] pt-5 dark:border-[#1F2429]">
         <label className="cursor-pointer">
-          <span className="block w-full rounded-full border border-[#E5EEF5] py-3 text-center text-sm font-bold text-[#3D3D3D] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[var(--brand-primary)] dark:hover:text-[var(--brand-primary)]">
+          <span className="block w-full rounded-full bg-[#F2F4F7] py-3 text-center hover:bg-[#EAF6FF] dark:bg-[#131A20] dark:hover:bg-[#18212A] text-sm font-bold text-[#3D3D3D] transition-colors hover:text-[var(--brand-emphasis)] dark:text-[#C4C9CE] dark:hover:text-[var(--brand-primary)]">
             {fileName || 'Choose a .csv file'}
           </span>
           <input

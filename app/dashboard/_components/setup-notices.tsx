@@ -257,7 +257,7 @@ export function EmailDeliverabilityChip({
           // right-0 anchors to the chip's right edge: the chip sits in the pill's
           // right-hand cluster, so a left-anchored panel would run off-screen on
           // a laptop. z-50 clears the shell's z-10 backdrop pattern.
-          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-[#E5C98A] bg-white p-4 text-left shadow-[0_12px_32px_rgba(10,10,10,0.16)] dark:border-[#4A3D1A] dark:bg-[#0D0F12]"
+          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(22rem,calc(100vw-2rem))] rounded-2xl bg-white p-4 text-left shadow-[0_12px_32px_rgba(10,10,10,0.16)] dark:bg-[#0D0F12]"
         >
           <p className={`text-[13px] leading-relaxed ${MUTED}`}>
             We have no proof these addresses can receive mail, so training invitations and
@@ -304,7 +304,7 @@ export function EmailDeliverabilityChip({
                       type="button"
                       onClick={() => void send(member.id)}
                       disabled={current === 'sending'}
-                      className="shrink-0 rounded-full border border-[#E5C98A] bg-white px-3.5 py-1.5 text-[12px] font-bold text-[#96700F] transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[#0D0F12] dark:text-[#D9AE45]"
+                      className="shrink-0 rounded-full bg-[#FFF3D6] px-3.5 py-1.5 text-[12px] font-bold text-[#96700F] transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[#2A2210] dark:text-[#D9AE45]"
                     >
                       {current === 'sending'
                         ? 'Sending…'

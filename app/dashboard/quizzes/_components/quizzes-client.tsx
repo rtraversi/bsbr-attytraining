@@ -130,10 +130,11 @@ function useExpand() {
 }
 
 const PILL =
-  'rounded-[28px] border border-[#E5EEF5] bg-[#F2F4F7] dark:border-[#1F2429] dark:bg-[#0D0F12] md:rounded-[36px]'
-// Same translucent glass treatment as the unlocked "Certificate Assessment" card.
+  'rounded-[28px] bg-[#F2F4F7] shadow-[0_4px_20px_rgba(0,148,255,0.06)] dark:bg-[#0D0F12] md:rounded-[36px]'
+// Same treatment as the unlocked "Certificate Assessment" card. Near-opaque on
+// purpose (Max, 2026-09-25): the page pattern must not show through the text.
 const GLASS =
-  'rounded-[28px] border border-[var(--brand-primary)]/40 bg-[var(--brand-primary)]/[0.06] md:rounded-[36px] dark:bg-[var(--brand-primary)]/[0.08]'
+  'rounded-[28px] bg-[#EEF8FF] shadow-[0_6px_24px_rgba(0,148,255,0.12)] md:rounded-[36px] dark:bg-[#0F1A22]'
 const HEADING = 'font-semibold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
 const BODY = 'font-extralight text-[#3D3D3D] dark:text-[#C4CBD2]'
 const MUTED = 'font-normal text-[#8A8A8A] dark:text-[#7A8189]'
@@ -841,7 +842,7 @@ function PathMap({
             <button
               type="button"
               onClick={() => tryOpen(5)}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#CDEEFF] bg-[#EAF8FF] px-4 py-2 text-xs font-bold text-[var(--brand-emphasis)] transition-colors hover:bg-[#D8F2FF] dark:border-[#1F3A4A] dark:bg-[#0E2430] dark:text-[#5FC8FF] dark:hover:bg-[#123040]"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-[#EAF8FF] px-4 py-2 text-xs font-bold text-[var(--brand-emphasis)] transition-colors hover:bg-[#D8F2FF] dark:bg-[#0E2430] dark:text-[#5FC8FF] dark:hover:bg-[#123040]"
             >
               <UnlockIcon className="h-3.5 w-3.5" />
               Skip to Final Review

@@ -86,7 +86,7 @@ function ResendInviteModal({
       />
 
       {/* Card */}
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-[#E5EEF5] bg-white p-6 shadow-2xl dark:border-[#1F2429] dark:bg-[#0D0F12]">
+      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-[#0D0F12]">
         <h2 className="mb-1 text-lg font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">Resend invite</h2>
         <p className="mb-5 text-xs text-[#8A8A8A] dark:text-[#7A8189]">
           Send a fresh login link to a team member. Enter the email on their seat.
@@ -115,7 +115,7 @@ function ResendInviteModal({
               type="button"
               onClick={onClose}
               disabled={phase === 'loading'}
-              className="flex-1 rounded-full border border-[#E5EEF5] bg-[#F2F4F7] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#E5EEF5] disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
+              className="flex-1 rounded-full bg-[#F2F4F7] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#E5EEF5] disabled:opacity-50 dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
             >
               Cancel
             </button>

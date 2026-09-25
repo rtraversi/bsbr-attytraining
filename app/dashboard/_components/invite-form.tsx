@@ -130,7 +130,7 @@ export function InviteForm({ seatsRemaining }: { seatsRemaining: number }) {
       {errorMsg && !asking && <p className="text-xs text-[#DC2626]">{errorMsg}</p>}
 
       {devLink && (
-        <div className="rounded-xl border border-[#FDE8B8] bg-[#FFF7E6] p-2.5">
+        <div className="rounded-xl bg-[#FFF7E6] p-2.5">
           <p className="mb-1 font-mono text-[10px] text-[#B45309]">DEV — invite link (email not sent):</p>
           <a href={devLink} className="break-all text-[10px] text-[#B45309] underline hover:opacity-80">
             {devLink}
@@ -278,12 +278,12 @@ function KindOption({
       // Not `disabled`: the staff option at zero seats still has to be readable
       // and reachable, because it carries the Billing link that fixes it — and a
       // disabled button is neither focusable nor a reliable click target.
-      className={`rounded-xl border p-4 text-left transition-colors ${
+      className={`rounded-xl p-4 text-left transition-colors ${
         disabled
-          ? 'cursor-default border-[#E5EEF5] bg-[#FAFBFC] dark:border-[#1F2429] dark:bg-[#0A0C0E]'
+          ? 'cursor-default bg-[#FAFBFC] dark:bg-[#0A0C0E]'
           : selected
-            ? 'border-[var(--brand-emphasis)] bg-[#EAF6FF] dark:border-[var(--brand-primary)] dark:bg-[var(--brand-emphasis)]/10'
-            : 'cursor-pointer border-[#E5EEF5] hover:border-[var(--brand-emphasis)] dark:border-[#1F2429] dark:hover:border-[var(--brand-primary)]'
+            ? 'bg-[#DDF3FF] dark:bg-[var(--brand-emphasis)]/20'
+            : 'cursor-pointer bg-[#F5F7FA] hover:bg-[#EEF9FF] dark:bg-[#131A20] dark:hover:bg-[#18212A]'
       }`}
     >
       <span

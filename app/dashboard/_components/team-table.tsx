@@ -204,7 +204,7 @@ const EM_DASH = 'text-[#C7CDD3] dark:text-[#3A4048]'
 
 // Neutral outline button — kept for the pagination Prev/Next controls only.
 const ROW_ACTION =
-  'whitespace-nowrap rounded-lg border border-[#E5EEF5] px-2.5 py-1 text-sm font-semibold text-[#3D3D3D] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#1F2429] dark:text-[#C4C9CE] dark:hover:border-[var(--brand-primary)] dark:hover:text-[var(--brand-primary)]'
+  'whitespace-nowrap rounded-lg bg-[#F2F4F7] px-2.5 py-1 hover:bg-[#EAF6FF] dark:bg-[#131A20] dark:hover:bg-[#18212A] text-sm font-semibold text-[#3D3D3D] transition-colors hover:text-[var(--brand-emphasis)] disabled:cursor-not-allowed disabled:opacity-40 dark:text-[#C4C9CE] dark:hover:text-[var(--brand-primary)]'
 
 // Per-column row actions: bare icon buttons, one column each (Remind /
 // Reassign / Delete). The column headers carry the label, so the buttons stay

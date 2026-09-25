@@ -21,7 +21,7 @@ export function AppearanceSettings() {
         </p>
       </div>
 
-      <div className="inline-flex rounded-xl border border-[#E5EEF5] bg-[#F5F7FA] p-[3px] dark:border-[#1F2429] dark:bg-[#050607]">
+      <div className="inline-flex rounded-xl bg-[#F5F7FA] p-[3px] dark:bg-[#050607]">
         <button
           type="button"
           onClick={() => themeCtx?.setTheme('light')}

@@ -36,7 +36,7 @@ export function CertPreviewModal({ certId, certNumber, employeeName, issuedAt, e
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Card */}
-      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-[#E5EEF5] bg-white p-6 shadow-2xl dark:border-[#1F2429] dark:bg-[#0D0F12]">
+      <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-[#0D0F12]">
         <div className="mb-5 flex items-center justify-between">
           <p className="text-xs uppercase tracking-widest text-[#8A8A8A] dark:text-[#7A8189]">Certificate</p>
           <button
@@ -79,7 +79,7 @@ export function CertPreviewModal({ certId, certNumber, employeeName, issuedAt, e
           </button>
           <button
             onClick={onClose}
-            className="flex-1 rounded-xl border border-[#E5EEF5] bg-[#F2F4F7] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#E5EEF5] dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
+            className="flex-1 rounded-xl bg-[#F2F4F7] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#E5EEF5] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
           >
             Close
           </button>

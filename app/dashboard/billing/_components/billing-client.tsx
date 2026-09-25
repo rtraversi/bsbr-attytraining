@@ -15,7 +15,7 @@ const LABEL = 'block text-sm font-semibold text-[#0A0A0A] dark:text-[#F5F7FA]'
 const BTN_PRIMARY =
   'shrink-0 rounded-xl bg-[var(--brand-emphasis)] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
 const BTN_QUIET =
-  'shrink-0 rounded-xl border border-[#E5EEF5] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-[#0A0A0A] transition-colors hover:bg-[#F5F7FA] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#1F2429] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]'
+  'shrink-0 rounded-xl bg-[#F2F4F7] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-[#0A0A0A] transition-colors hover:bg-[#EAF6FF] dark:bg-[#131A20] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]'
 const BTN_DANGER =
   'shrink-0 rounded-xl bg-[#DC2626] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
 
@@ -235,7 +235,7 @@ export function BillingClient() {
                 </div>
 
                 {addSeatsOpen && data.seats != null && (
-                  <div className="rounded-xl border border-[#E5EEF5] bg-[#F5F7FA] p-4 dark:border-[#1F2429] dark:bg-[#0D0F12]">
+                  <div className="rounded-xl bg-[#F5F7FA] p-4 dark:bg-[#0D0F12]">
                     <p className={`text-sm ${MUTED}`}>
                       Adds seats for the rest of your current year, at your current rate of{' '}
                       <strong className="text-[#0A0A0A] dark:text-[#F5F7FA]">
@@ -312,7 +312,7 @@ export function BillingClient() {
               </dl>
 
               {data.cancelAtPeriodEnd && (
-                <p className="mt-6 rounded-xl border border-[#FDE8B8] bg-[#FFF7E6] px-4 py-3 text-sm leading-relaxed text-[#B45309] dark:border-[#B45309]/40 dark:bg-[#B45309]/10 dark:text-[#F0B357]">
+                <p className="mt-6 rounded-xl bg-[#FFF7E6] px-4 py-3 text-sm leading-relaxed text-[#B45309] dark:bg-[#B45309]/10 dark:text-[#F0B357]">
                   Your subscription is set to end on{' '}
                   <strong>{fmtDate(data.currentPeriodEnd)}</strong>. Until then everything
                   works normally. After that date your staff can no longer take or retake

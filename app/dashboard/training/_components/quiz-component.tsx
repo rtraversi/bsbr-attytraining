@@ -159,11 +159,11 @@ export function QuizComponent({ courseId, onPass, onExit }: Props) {
 
 function FinalResult({ result, onRetry }: { result: QuizResult; onRetry: () => void }) {
   const card =
-    'mx-auto max-w-xl rounded-3xl border bg-white p-8 shadow-[0_4px_20px_rgba(0,148,255,0.08)] dark:bg-[#0D0F12]'
+    'mx-auto max-w-xl rounded-3xl bg-white p-8 shadow-[0_4px_20px_rgba(0,148,255,0.08)] dark:bg-[#0D0F12]'
 
   if (result.passed) {
     return (
-      <div className={`${card} border-[var(--brand-primary)]/30`}>
+      <div className={card}>
         <div className="mb-4 flex items-center gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)]/15">
             <CheckIcon />
@@ -180,7 +180,7 @@ function FinalResult({ result, onRetry }: { result: QuizResult; onRetry: () => v
   }
 
   return (
-    <div className={`${card} border-[#E5EEF5] dark:border-[#1F2429]`}>
+    <div className={card}>
       <p className="mb-1 text-lg font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
         Score: {Math.round(result.score)}% — not quite
       </p>

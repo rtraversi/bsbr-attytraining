@@ -164,13 +164,10 @@ function MoonIcon() {
  * (Rob asked for the icons), plus the click-triggered squish (see the
  * `nav-switch-clicking` keyframe in globals.css).
  *
- * The icons sit ABOVE the knob and never change colour: the sun is always dark
- * and the moon always light, which is correct in both themes because the track
- * and the knob invert together. Light mode = white knob over the sun on a black
- * track; dark mode = black knob over the moon on a light track. Either way the
- * dark glyph is on the light surface and the light glyph on the dark one. The
- * knob marks the selected side, so the unselected glyph is dimmed rather than
- * recoloured. */
+ * Blue and white in BOTH themes (Max, 2026-09-25): the track is the app blue,
+ * the knob is white, the glyph under the knob is blue and the other glyph is
+ * white. The knob marks the selected side, so the colours follow the knob
+ * rather than the theme, which is why nothing here needs a `dark:` variant. */
 function ThemeToggle() {
   const themeCtx = useTheme()
   const [clicking, setClicking] = useState(false)
@@ -189,7 +186,7 @@ function ThemeToggle() {
       aria-checked={isDark}
       aria-label="Toggle dark mode"
       onClick={handleClick}
-      className={`relative h-10 w-[88px] shrink-0 rounded-full bg-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-emphasis)] focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:bg-[#F5F7FA] dark:focus-visible:ring-[var(--brand-primary)] dark:focus-visible:ring-offset-[#0D0F12] ${
+      className={`relative h-10 w-[88px] shrink-0 rounded-full bg-[var(--brand-emphasis)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-emphasis)] focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-[var(--brand-primary)] dark:focus-visible:ring-offset-[#0D0F12] ${
         clicking ? 'nav-switch-clicking' : ''
       }`}
     >
@@ -198,22 +195,22 @@ function ThemeToggle() {
           knob when the knob is on its side. */}
       <span
         aria-hidden
-        className={`absolute top-1 h-8 w-10 rounded-full bg-white transition-[left] duration-[380ms] ease-[cubic-bezier(.34,1.56,.64,1)] dark:bg-[#0A0A0A] ${
+        className={`absolute top-1 h-8 w-10 rounded-full bg-white transition-[left] duration-[380ms] ease-[cubic-bezier(.34,1.56,.64,1)] ${
           isDark ? 'left-11' : 'left-1'
         }`}
       />
       <span
         aria-hidden
-        className={`pointer-events-none absolute top-1 left-1 z-10 flex h-8 w-10 items-center justify-center text-[#0A0A0A] transition-opacity duration-[380ms] ${
-          isDark ? 'opacity-50' : 'opacity-100'
+        className={`pointer-events-none absolute top-1 left-1 z-10 flex h-8 w-10 items-center justify-center transition-colors duration-[380ms] ${
+          isDark ? 'text-white' : 'text-[var(--brand-emphasis)]'
         }`}
       >
         <SunIcon />
       </span>
       <span
         aria-hidden
-        className={`pointer-events-none absolute top-1 left-11 z-10 flex h-8 w-10 items-center justify-center text-[#F5F7FA] transition-opacity duration-[380ms] ${
-          isDark ? 'opacity-100' : 'opacity-50'
+        className={`pointer-events-none absolute top-1 left-11 z-10 flex h-8 w-10 items-center justify-center transition-colors duration-[380ms] ${
+          isDark ? 'text-[var(--brand-emphasis)]' : 'text-white'
         }`}
       >
         <MoonIcon />
@@ -342,7 +339,7 @@ export function NavPill({ firmName, role, setup = null, policyReady = false }: N
 
   return (
     <nav className="flex max-w-full">
-      <div className="relative flex w-full items-center justify-between gap-2 rounded-full bg-white p-1.5 shadow-[0_1px_2px_rgba(10,10,10,0.04)] transition-shadow hover:shadow-[0_6px_20px_rgba(10,10,10,0.10)] dark:bg-[#0D0F12] dark:shadow-none dark:hover:shadow-[0_6px_20px_rgba(0,0,0,0.5)]">
+      <div className="relative flex w-full items-center justify-between gap-2 rounded-full bg-white p-1.5 shadow-[0_10px_36px_-6px_rgba(0,148,255,0.28)] transition-shadow hover:shadow-[0_14px_44px_-6px_rgba(0,148,255,0.36)] dark:bg-[#0D0F12] dark:shadow-[0_10px_36px_-6px_rgba(50,199,255,0.22)] dark:hover:shadow-[0_14px_44px_-6px_rgba(50,199,255,0.3)]">
         {isAdmin ? (
           <Link
             href="/dashboard"

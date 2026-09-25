@@ -208,11 +208,11 @@ export function QuizRunner({
       {/* The three bands below (header / body / footer) share one width ladder
           on purpose. Each has its own centred inner wrapper, so the ladder has
           to be repeated rather than hoisted — the bands themselves are
-          full-bleed, since their borders and backgrounds must run edge to edge.
+          full-bleed, since their backgrounds and shadows must run edge to edge.
           If you change one, change all three or the progress bar, the question
           card and the action bar stop lining up with each other. */}
       {answering && (
-        <header className="shrink-0 border-b border-[#E5EEF5] bg-white px-5 pt-6 pb-5 md:px-8 dark:border-[#1F2429] dark:bg-[#0D0F12]">
+        <header className="relative z-10 shrink-0 bg-white px-5 pt-6 pb-5 shadow-[0_6px_24px_rgba(0,148,255,0.06)] md:px-8 dark:bg-[#0D0F12] dark:shadow-none">
           <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 lg:max-w-5xl xl:max-w-6xl">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div className="min-w-0">
@@ -259,7 +259,7 @@ export function QuizRunner({
           {phase === 'quiz' && currentQ && (
             <>
               {showReadinessBanner && (
-                <div className="mb-6 rounded-2xl border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/[0.08] px-4 py-3 text-sm font-medium text-[var(--brand-emphasis)] dark:text-[#5FC8FF]">
+                <div className="mb-6 rounded-2xl bg-[var(--brand-primary)]/[0.10] px-4 py-3 text-sm font-medium text-[var(--brand-emphasis)] dark:text-[#5FC8FF]">
                   This is the readiness check — you need {readinessThreshold}% to clear it.
                 </div>
               )}
@@ -272,7 +272,7 @@ export function QuizRunner({
                   every breakpoint. With it gone the flex row had a single child,
                   so the wrapper went too rather than leaving a one-item flex —
                   the heading now runs the full width of the card. */}
-              <div className="mb-8 rounded-3xl border border-[#E5EEF5] bg-white p-6 shadow-[0_4px_20px_rgba(0,148,255,0.08)] md:mb-10 md:p-9 dark:border-[#1F2429] dark:bg-[#0D0F12]">
+              <div className="mb-8 rounded-3xl bg-white p-6 shadow-[0_4px_20px_rgba(0,148,255,0.08)] md:mb-10 md:p-9 dark:bg-[#0D0F12]">
                 <h2 className="text-2xl leading-snug font-bold text-[#0A0A0A] md:text-3xl lg:text-4xl dark:text-[#F5F7FA]">
                   {currentQ.question_text}
                 </h2>
@@ -291,17 +291,19 @@ export function QuizRunner({
                     <button
                       key={i}
                       onClick={() => setSelected(i)}
-                      className={`flex items-center gap-4 rounded-2xl border-2 p-6 text-left transition-all active:scale-[0.99] md:gap-5 md:p-7 ${
+                      className={`flex items-center gap-4 rounded-2xl p-6 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-emphasis)] active:scale-[0.99] md:gap-5 md:p-7 ${
+                        // No contour (Max, 2026-09-25): selected is a FILL, the
+                        // same light blue tint as hover but deeper; depth is shadow.
                         isSelected
-                          ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/[0.08] shadow-[0_0_0_4px_rgba(50,199,255,0.15)]'
-                          : 'border-[#E5EEF5] bg-white hover:border-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/[0.05] dark:border-[#1F2429] dark:bg-[#0D0F12] dark:hover:border-[var(--brand-primary)]'
+                          ? 'bg-[#DDF3FF] shadow-[0_6px_20px_rgba(0,148,255,0.14)] dark:bg-[var(--brand-primary)]/[0.18]'
+                          : 'bg-white shadow-[0_2px_10px_rgba(0,148,255,0.06)] hover:bg-[#EEF9FF] dark:bg-[#0D0F12] dark:shadow-none dark:hover:bg-[var(--brand-primary)]/[0.08]'
                       }`}
                     >
                       <span
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 font-bold transition-all md:h-12 md:w-12 md:text-lg ${
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-bold transition-all md:h-12 md:w-12 md:text-lg ${
                           isSelected
-                            ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)] text-white'
-                            : 'border-[#BCC8D0] text-[#6D7980] dark:border-[#3A4249] dark:text-[#7A8189]'
+                            ? 'bg-[var(--brand-primary)] text-white'
+                            : 'bg-[#EEF2F5] text-[#6D7980] dark:bg-[#1A2027] dark:text-[#7A8189]'
                         }`}
                       >
                         {LETTERS[i] ?? i + 1}
@@ -320,7 +322,7 @@ export function QuizRunner({
 
           {/* Attestation phase */}
           {phase === 'attestation' && (
-            <div className="w-full rounded-3xl border border-[#E5EEF5] bg-white p-6 shadow-[0_4px_20px_rgba(0,148,255,0.08)] md:p-9 dark:border-[#1F2429] dark:bg-[#0D0F12]">
+            <div className="w-full rounded-3xl bg-white p-6 shadow-[0_4px_20px_rgba(0,148,255,0.08)] md:p-9 dark:bg-[#0D0F12]">
               <h2 className="mb-1 text-xl font-bold text-[#0A0A0A] md:text-2xl dark:text-[#F5F7FA]">
                 Almost done
               </h2>
@@ -328,7 +330,7 @@ export function QuizRunner({
                 You have answered all {questions.length} questions. Confirm below to submit for
                 scoring.
               </p>
-              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#E5EEF5] bg-[#F5F7FA] p-5 transition-colors hover:border-[var(--brand-primary)] md:p-6 dark:border-[#1F2429] dark:bg-[#0D0F12] dark:hover:border-[var(--brand-primary)]">
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-[#F5F7FA] p-5 transition-colors hover:bg-[#EEF9FF] md:p-6 dark:bg-[#131A20] dark:hover:bg-[var(--brand-primary)]/[0.08]">
                 <input
                   type="checkbox"
                   checked={attested}
@@ -361,7 +363,7 @@ export function QuizRunner({
       {/* Action band — Previous / Next|Submit. A flex sibling rather than a
           `fixed` overlay, so it can never cover the content it sits under. */}
       {answering && (
-        <footer className="shrink-0 border-t border-[#E5EEF5] bg-white px-5 py-4 md:px-8 dark:border-[#1F2429] dark:bg-[#0D0F12]">
+        <footer className="relative z-10 shrink-0 bg-white px-5 py-4 shadow-[0_-6px_24px_rgba(0,148,255,0.06)] md:px-8 dark:bg-[#0D0F12] dark:shadow-none">
           <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4 lg:max-w-5xl xl:max-w-6xl">
             {allowBack && phase === 'quiz' && qIndex > 0 ? (
               <button
@@ -393,7 +395,7 @@ export function QuizRunner({
 
 function TimerPill({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#E5EEF5] bg-[#F5F7FA] px-2.5 py-1.5 text-xs font-bold text-[#6D7980] dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#7A8189]">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F5F7FA] px-2.5 py-1.5 text-xs font-bold text-[#6D7980] dark:bg-[#131A20] dark:text-[#7A8189]">
       <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>

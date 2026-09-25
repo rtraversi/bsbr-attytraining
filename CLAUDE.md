@@ -385,7 +385,7 @@ Grading, session validation and the single-use claim live in **`lib/training/ass
 
 ## Conventions
 
-Conventions not yet established. Will populate as patterns emerge during development.
+- **No contours (2026-09-25, Max):** "no more contours on buttons from here on out" / "no contour of any kind actually". No borders or outlines on buttons, cards, answer tiles or modals; selected, active and hover states use fill (the light blue tint), depth comes from shadow. Keyboard `focus-visible` rings stay.
 <!-- GSD:conventions-end -->
 
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->

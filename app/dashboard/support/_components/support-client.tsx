@@ -198,7 +198,7 @@ export function SupportClient({ userEmail }: Props) {
                   <a
                     key={title}
                     href="#questions"
-                    className={`${CARD} group flex min-h-40 flex-col justify-between border border-transparent transition-colors hover:border-[var(--brand-primary)]/60`}
+                    className={`${CARD} group flex min-h-40 flex-col justify-between transition-colors hover:bg-[#EEF9FF] dark:hover:bg-[var(--brand-primary)]/[0.08]`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <h3 className={`${HEADING} text-lg xl:text-xl`}>{title}</h3>
@@ -344,7 +344,7 @@ export function SupportClient({ userEmail }: Props) {
                 </p>
                 <button
                   onClick={closeContact}
-                  className="mt-6 cursor-pointer rounded-full border border-[#E5EEF5] px-6 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#F5F7FA] dark:border-[#1F2429] dark:text-[#F5F7FA] dark:hover:bg-[#131A20]"
+                  className="mt-6 cursor-pointer rounded-full bg-[#F2F4F7] px-6 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#EAF6FF] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#18212A]"
                 >
                   Done
                 </button>

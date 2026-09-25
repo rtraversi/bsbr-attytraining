@@ -65,7 +65,7 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className={`relative z-10 max-h-[85vh] w-full overflow-y-auto rounded-2xl border border-[#E5EEF5] bg-white p-6 shadow-2xl outline-none dark:border-[#1F2429] dark:bg-[#0D0F12] ${
+        className={`relative z-10 max-h-[85vh] w-full overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl outline-none dark:bg-[#0D0F12] ${
           wide ? 'max-w-lg' : 'max-w-md'
         }`}
       >
@@ -104,7 +104,7 @@ export function ModalActions({
         type="button"
         onClick={onCancel}
         disabled={busy}
-        className="flex-1 rounded-full border border-[#E5EEF5] bg-[#F2F4F7] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#E5EEF5] disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
+        className="flex-1 rounded-full bg-[#F2F4F7] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#E5EEF5] disabled:opacity-50 dark:bg-[#131A20] dark:text-[#F5F7FA] dark:hover:bg-[#1F2429]"
       >
         Cancel
       </button>

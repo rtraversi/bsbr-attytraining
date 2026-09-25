@@ -17,7 +17,7 @@ const LABEL = `text-xs font-bold uppercase tracking-wide ${MUTED}`
 // justify-center matters at lg+, where the tiles stretch to fill the viewport-
 // proportional row instead of leaving dead space under a natural-height grid.
 const QUICK_ACTION_TILE =
-  'flex flex-col items-center justify-center gap-2 rounded-2xl border border-[#E5EEF5] bg-[#F5F7FA] px-3 py-4 transition-all hover:-translate-y-0.5 hover:border-[var(--brand-emphasis)] hover:bg-[#EAF8FF] dark:border-[#1F2429] dark:bg-[#131A20] dark:hover:border-[var(--brand-primary)] dark:hover:bg-[var(--brand-emphasis)]/10'
+  'flex flex-col items-center justify-center gap-2 rounded-2xl bg-[#F5F7FA] px-3 py-4 shadow-[0_2px_10px_rgba(0,148,255,0.06)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_22px_rgba(0,148,255,0.14)] hover:bg-[#EAF8FF] dark:bg-[#131A20] dark:hover:bg-[var(--brand-emphasis)]/10'
 
 export interface AdminDashboardProps {
   memberDetails: MemberDetail[]
@@ -193,7 +193,7 @@ export function AdminDashboard({
 
             {/* Subscription warnings live inline here rather than as page-wide banners. */}
             {isGracePeriod && daysOverdue !== null && (
-              <div className="mb-4 rounded-xl border border-[#FDE8B8] bg-[#FFF7E6] px-3 py-2.5 dark:border-[#B45309]/40 dark:bg-[#B45309]/10">
+              <div className="mb-4 rounded-xl bg-[#FFF7E6] px-3 py-2.5 dark:bg-[#B45309]/10">
                 <p className="text-xs leading-relaxed text-[#B45309] dark:text-[#F0B357]">
                   <strong>Payment overdue.</strong> {30 - daysOverdue} day
                   {30 - daysOverdue !== 1 ? 's' : ''} left to renew before your grace period ends.
@@ -201,7 +201,7 @@ export function AdminDashboard({
               </div>
             )}
             {isLapsed && (
-              <div className="mb-4 rounded-xl border border-[#FECACA] bg-[#FEE2E2] px-3 py-2.5 dark:border-[#DC2626]/40 dark:bg-[#DC2626]/10">
+              <div className="mb-4 rounded-xl bg-[#FEE2E2] px-3 py-2.5 dark:bg-[#DC2626]/10">
                 <p className="text-xs leading-relaxed text-[#DC2626] dark:text-[#F87171]">
                   <strong>Your grace period has ended.</strong> Renewing now starts a new subscription
                   cycle. Existing compliance records are preserved.

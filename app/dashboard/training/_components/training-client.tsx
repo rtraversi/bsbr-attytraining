@@ -58,7 +58,7 @@ interface Props {
 // Tailwind's preflight writes font-family onto heading elements and beats the
 // inherited value. (Bitten twice on this project.)
 const CARD =
-  'rounded-[20px] border border-[#E5EEF5] bg-white shadow-[0_4px_20px_rgba(0,148,255,0.08)] dark:border-[#1F2429] dark:bg-[#0D0F12] dark:shadow-none'
+  'rounded-[20px] bg-white shadow-[0_4px_20px_rgba(0,148,255,0.08)] dark:bg-[#0D0F12] dark:shadow-none'
 const HEADING = 'font-headline font-bold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 
@@ -419,7 +419,7 @@ export function TrainingClient({
                   {!checksCleared && (
                     <Link
                       href="/dashboard/quizzes"
-                      className="rounded-full border border-white/40 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/10"
+                      className="rounded-full bg-white/10 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/20"
                     >
                       Go to Lesson Checks →
                     </Link>
@@ -451,7 +451,7 @@ export function TrainingClient({
                   </button>
                   <button
                     onClick={() => setNagLesson(null)}
-                    className="rounded-full border border-white/40 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/10"
+                    className="rounded-full bg-white/10 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/20"
                   >
                     Done
                   </button>
@@ -626,7 +626,7 @@ function Requirement({ done, label }: { done: boolean; label: string }) {
     <p className="flex items-center gap-2 py-1 text-xs">
       <span
         className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
-          done ? 'bg-[var(--brand-emphasis)] text-white' : 'border border-[#E5EEF5] dark:border-[#1F2429]'
+          done ? 'bg-[var(--brand-emphasis)] text-white' : 'bg-[#EEF2F5] dark:bg-[#1A2027]'
         }`}
       >
         {done && (

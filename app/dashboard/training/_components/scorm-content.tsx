@@ -43,7 +43,7 @@ declare global {
 const COMPLETE_STATUSES = new Set(['completed', 'passed'])
 
 const DEFAULT_FRAME =
-  'relative h-[75vh] min-h-[560px] w-full overflow-hidden rounded-2xl border border-[#1F2429] bg-[#0A0E12]'
+  'relative h-[75vh] min-h-[560px] w-full overflow-hidden rounded-2xl bg-[#0A0E12]'
 
 interface Props {
   /** Fired once, after the completion event has been durably recorded server-side. */

@@ -70,7 +70,7 @@ function KnowledgeCheckResult({
   onDone: () => void
 }) {
   const card =
-    'mx-auto max-w-xl rounded-3xl border bg-white p-8 shadow-[0_4px_20px_rgba(0,148,255,0.08)] dark:bg-[#0D0F12]'
+    'mx-auto max-w-xl rounded-3xl bg-white p-8 shadow-[0_4px_20px_rgba(0,148,255,0.08)] dark:bg-[#0D0F12]'
 
   if (result.passed) {
     /* Clearing a lesson is the one genuine achievement in this flow, and it used
@@ -81,7 +81,7 @@ function KnowledgeCheckResult({
        steer) rather than being a separate piece of iconography. */
     return (
       <div
-        className="kc-card mx-auto flex max-w-xl flex-col items-center rounded-3xl border border-[var(--brand-primary)]/30 bg-white px-8 py-12 text-center shadow-[0_10px_44px_-12px_rgba(50,199,255,0.45)] md:px-12 md:py-14 dark:bg-[#0D0F12]"
+        className="kc-card mx-auto flex max-w-xl flex-col items-center rounded-3xl bg-white px-8 py-12 text-center shadow-[0_10px_44px_-12px_rgba(50,199,255,0.45)] md:px-12 md:py-14 dark:bg-[#0D0F12]"
       >
         <KcCelebrationStyles />
 
@@ -125,7 +125,7 @@ function KnowledgeCheckResult({
   }
 
   return (
-    <div className={`${card} border-[#E5EEF5] dark:border-[#1F2429]`}>
+    <div className={card}>
       <p className="mb-1 text-lg font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
         Score: {result.score}% — not quite
       </p>

@@ -39,7 +39,7 @@ interface Props {
 
 /* ── Shared tokens — exact values already in the codebase ──────────────────── */
 const CARD =
-  'rounded-[20px] border border-[#E5EEF5] bg-white shadow-[0_4px_20px_rgba(0,148,255,0.08)] dark:border-[#1F2429] dark:bg-[#0D0F12] dark:shadow-none'
+  'rounded-[20px] bg-white shadow-[0_4px_20px_rgba(0,148,255,0.08)] dark:bg-[#0D0F12] dark:shadow-none'
 // `font-headline` is set explicitly on every heading: the layout sets it on the
 // shell, but Tailwind's preflight writes font-family straight onto some elements
 // and beats the inherited value.
@@ -505,7 +505,7 @@ function ContentOutlineRow({
           </svg>
         </span>
       ) : current ? (
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-[var(--brand-emphasis)] text-[11px] font-bold text-[var(--brand-emphasis)] xl:h-7 xl:w-7 xl:text-xs">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#EAF6FF] text-[11px] font-bold text-[var(--brand-emphasis)] dark:bg-[var(--brand-emphasis)]/15 xl:h-7 xl:w-7 xl:text-xs">
           {lesson.number}
         </span>
       ) : (
@@ -611,7 +611,7 @@ function QuizRow({
         <span
           className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold xl:h-7 xl:w-7 xl:text-xs ${
             isNext
-              ? 'border-2 border-[var(--brand-emphasis)] text-[var(--brand-emphasis)]'
+              ? 'bg-[#EAF6FF] text-[var(--brand-emphasis)] dark:bg-[var(--brand-emphasis)]/15'
               : `bg-[#F2F4F7] dark:bg-[#1F2429] ${MUTED}`
           }`}
         >
