@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { QUIZ_WARNING_MS } from '@/lib/training/quiz-timing'
 
 /* ═══════════════════════════════════════════════════════════════════════════
    QuizRunner — the shared question-taking surface used by BOTH the per-lesson
@@ -49,8 +50,16 @@ interface QuizRunnerProps {
   /** Show the readiness-check banner above the question card (lesson 5 only). */
   showReadinessBanner?: boolean
   readinessThreshold?: number
-  /** Timer slot copy. Defaults to "No time limit"; reserved for a future countdown. */
+  /** Timer slot copy when there is no time limit. Defaults to "No time limit". */
   timerLabel?: string | null
+  /**
+   * A countdown (Certificate Assessment only; knowledge checks pass nothing and
+   * stay untimed). `deadline` is a local-clock ms timestamp already corrected
+   * for server clock skew by the caller. At `QUIZ_WARNING_MS` left `warning`
+   * shows; at zero the answers lock and the runner jumps to the attestation
+   * step with `timeUp` in place of its usual line.
+   */
+  timeLimit?: { deadline: number; warning: string; timeUp: string } | null
   /** Score + record. Resolve with the result, or throw an Error to show inline. */
   onSubmit: (answers: QuizAnswer[]) => Promise<QuizResult>
   /** Optional close/exit affordance (renders a close button while answering). */
@@ -75,6 +84,7 @@ export function QuizRunner({
   showReadinessBanner = false,
   readinessThreshold = 80,
   timerLabel = 'No time limit',
+  timeLimit = null,
   onSubmit,
   onExit,
   onResult,
@@ -110,11 +120,43 @@ export function QuizRunner({
     return () => document.documentElement.classList.remove('quiz-active')
   }, [])
 
+  // ── Countdown ─────────────────────────────────────────────────────────────
+  // Ticks once a second, and only when there is a limit. The server enforces
+  // the limit (quiz_sessions.expires_at); this is the learner's view of it.
+  const [nowMs, setNowMs] = useState(() => Date.now())
+  useEffect(() => {
+    if (!timeLimit) return
+    const id = setInterval(() => setNowMs(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [timeLimit])
+  const remainingMs = timeLimit ? Math.max(0, timeLimit.deadline - nowMs) : null
+  const timeUp = remainingMs === 0
+
   const currentQ = questions[qIndex]
   const isLast = qIndex === questions.length - 1
 
+  // At 0:00 the answers lock and the runner jumps to the attestation step. The
+  // answer currently selected on screen counts as given (it is what the learner
+  // chose); anything never reached is simply absent and scores as wrong, as it
+  // always has. Attestation is still required: a certificate never issues
+  // without it. Refs keep this effect keyed on timeUp alone.
+  const selectedRef = useRef(selected)
+  selectedRef.current = selected
+  const lockedRef = useRef(locked)
+  lockedRef.current = locked
+  const phaseRef = useRef(phase)
+  phaseRef.current = phase
+  useEffect(() => {
+    if (!timeUp || phaseRef.current !== 'quiz') return
+    const sel = selectedRef.current
+    const q = questions[qIndex]
+    if (sel !== null && q) setLocked({ ...lockedRef.current, [q.id]: sel })
+    setPhase('attestation')
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once, on the transition to time up
+  }, [timeUp])
+
   function goNext() {
-    if (selected === null) return
+    if (selected === null || timeUp) return
     const nextLocked = { ...locked, [currentQ.id]: selected }
     setLocked(nextLocked)
     if (isLast) {
@@ -128,7 +170,7 @@ export function QuizRunner({
   }
 
   function goPrev() {
-    if (!allowBack || qIndex === 0) return
+    if (!allowBack || qIndex === 0 || timeUp) return
     // Persist the current (possibly changed) selection before stepping back so
     // a revisited answer isn't lost, then restore the target question's answer.
     const updated = selected !== null ? { ...locked, [currentQ.id]: selected } : locked
@@ -224,7 +266,10 @@ export function QuizRunner({
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-2.5">
-                <TimerPill label={timerLabel ?? 'No time limit'} />
+                <TimerPill
+                  label={remainingMs !== null ? formatClock(remainingMs) : (timerLabel ?? 'No time limit')}
+                  urgent={remainingMs !== null && remainingMs <= QUIZ_WARNING_MS}
+                />
                 <span className="text-sm font-bold whitespace-nowrap text-[var(--brand-emphasis)]">
                   Question {Math.min(qIndex + 1, questions.length)}/{questions.length}
                 </span>
@@ -255,6 +300,15 @@ export function QuizRunner({
           wrapper past it and manufacture a scrollbar on a page that fits. */}
       <main className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col justify-center-safe px-5 py-8 md:px-8 md:py-10 lg:max-w-5xl xl:max-w-6xl">
+          {timeLimit && answering && remainingMs !== null && remainingMs > 0 && remainingMs <= QUIZ_WARNING_MS && (
+            <div
+              role="status"
+              className="mb-6 rounded-2xl bg-[#FFF7E6] px-4 py-3 text-sm font-semibold text-[#B45309] dark:bg-[#B45309]/15 dark:text-[#F0B357]"
+            >
+              {timeLimit.warning}
+            </div>
+          )}
+
           {/* Question phase */}
           {phase === 'quiz' && currentQ && (
             <>
@@ -290,7 +344,9 @@ export function QuizRunner({
                   return (
                     <button
                       key={i}
-                      onClick={() => setSelected(i)}
+                      onClick={() => {
+                        if (!timeUp) setSelected(i)
+                      }}
                       className={`flex items-center gap-4 rounded-2xl p-6 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-emphasis)] active:scale-[0.99] md:gap-5 md:p-7 ${
                         // No contour (Max, 2026-09-25): selected is a FILL, the
                         // same light blue tint as hover but deeper; depth is shadow.
@@ -326,10 +382,16 @@ export function QuizRunner({
               <h2 className="mb-1 text-xl font-bold text-[#0A0A0A] md:text-2xl dark:text-[#F5F7FA]">
                 Almost done
               </h2>
-              <p className="mb-6 text-sm text-[#6D7980] md:text-base dark:text-[#7A8189]">
-                You have answered all {questions.length} questions. Confirm below to submit for
-                scoring.
-              </p>
+              {timeLimit && timeUp ? (
+                <p role="alert" className="mb-6 text-sm font-semibold text-[#B45309] md:text-base dark:text-[#F0B357]">
+                  {timeLimit.timeUp}
+                </p>
+              ) : (
+                <p className="mb-6 text-sm text-[#6D7980] md:text-base dark:text-[#7A8189]">
+                  You have answered all {questions.length} questions. Confirm below to submit for
+                  scoring.
+                </p>
+              )}
               <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-[#F5F7FA] p-5 transition-colors hover:bg-[#EEF9FF] md:p-6 dark:bg-[#131A20] dark:hover:bg-[var(--brand-primary)]/[0.08]">
                 <input
                   type="checkbox"
@@ -393,9 +455,24 @@ export function QuizRunner({
 
 /* ── Small presentational bits ─────────────────────────────────────────────── */
 
-function TimerPill({ label }: { label: string }) {
+/** mm:ss, rounding UP so the clock reads 30:00 at the start and 0:00 only at the end. */
+function formatClock(ms: number): string {
+  const total = Math.ceil(ms / 1000)
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+function TimerPill({ label, urgent = false }: { label: string; urgent?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F5F7FA] px-2.5 py-1.5 text-xs font-bold text-[#6D7980] dark:bg-[#131A20] dark:text-[#7A8189]">
+    <span
+      aria-live="off"
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-bold tabular-nums ${
+        urgent
+          ? 'bg-[#FFF7E6] text-[#B45309] dark:bg-[#B45309]/15 dark:text-[#F0B357]'
+          : 'bg-[#F5F7FA] text-[#6D7980] dark:bg-[#131A20] dark:text-[#7A8189]'
+      }`}
+    >
       <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>

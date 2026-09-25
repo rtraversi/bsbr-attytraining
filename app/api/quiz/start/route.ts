@@ -68,5 +68,9 @@ export async function POST(req: NextRequest) {
     sessionId: result.sessionId,
     questions: result.questions,
     expiresAt: result.expiresAt,
+    // The server's clock at response time. The client measures its own clock
+    // against this, so the Certificate Assessment countdown is right even on a
+    // machine whose clock is off (the server remains the actual clock).
+    serverNow: new Date().toISOString(),
   })
 }

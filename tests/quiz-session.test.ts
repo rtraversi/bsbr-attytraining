@@ -37,6 +37,12 @@ import {
   startQuizSession,
   type QuestionForSelection,
 } from '@/lib/training/assessment'
+import {
+  QUIZ_SESSION_TTL_MS,
+  QUIZ_SUBMIT_GRACE_MS,
+  QUIZ_TIME_LIMIT_MS,
+} from '@/lib/training/quiz-timing'
+import { readFileSync } from 'node:fs'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -66,6 +72,8 @@ let learnerId: string
 let passerId: string
 let attorneyId: string
 let outsiderId: string
+/** Only ever used by the 30-minute window tests, so no other test's open session can be reused. */
+let timerId: string
 /** questionId → correct_index, for the course under test. */
 const correctIndexById = new Map<string, number>()
 const lessonById = new Map<string, number | null>()
@@ -147,6 +155,7 @@ beforeAll(async () => {
   passerId = await createLearner('passer')
   attorneyId = await createLearner('attorney')
   outsiderId = await createLearner('outsider')
+  timerId = await createLearner('timer')
 
   const firm = must(
     await admin
@@ -211,7 +220,7 @@ afterAll(async () => {
   if (courseId) await admin.from('courses').delete().eq('id', courseId)
   if (otherCourseId) await admin.from('courses').delete().eq('id', otherCourseId)
 
-  for (const id of [outsiderId, attorneyId, passerId, learnerId]) {
+  for (const id of [timerId, outsiderId, attorneyId, passerId, learnerId]) {
     if (id) await admin.auth.admin.deleteUser(id)
   }
 })
@@ -308,6 +317,99 @@ describe('checkSessionUsable', () => {
   it('rejects an expired session, and treats the exact expiry instant as expired', () => {
     expect(checkSessionUsable({ ...base, expires_at: base.expires_at }, expected, new Date('2026-01-01T04:00:00Z'))?.status).toBe(410)
     expect(checkSessionUsable(base, expected, new Date('2026-01-01T05:00:00Z'))?.status).toBe(410)
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+// The 30-minute limit (Max, 2026-09-25). The server is the clock: a session is
+// gradeable for 30 minutes plus a 2-minute grace from issued_at, and no longer.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('the Certificate Assessment time limit', () => {
+  const issued = new Date('2026-01-01T00:00:00Z')
+  const at = (ms: number) => new Date(issued.getTime() + ms)
+  const row = {
+    user_id: 'u1',
+    firm_id: 'f1',
+    course_id: 'c1',
+    issued_at: issued.toISOString(),
+    expires_at: at(QUIZ_SESSION_TTL_MS).toISOString(),
+    consumed_at: null as string | null,
+  }
+  const expected = { userId: 'u1', firmId: 'f1', courseId: 'c1' }
+  const MIN = 60 * 1000
+
+  it('is 30 minutes on the clock plus a 2-minute grace', () => {
+    expect(QUIZ_TIME_LIMIT_MS).toBe(30 * MIN)
+    expect(QUIZ_SUBMIT_GRACE_MS).toBe(2 * MIN)
+    expect(QUIZ_SESSION_TTL_MS).toBe(32 * MIN)
+  })
+
+  it('accepts a submission inside the 30 minutes', () => {
+    expect(checkSessionUsable(row, expected, at(29 * MIN))).toBeNull()
+  })
+
+  it('accepts a submission inside the grace, after the clock shows 0:00', () => {
+    expect(checkSessionUsable(row, expected, at(31 * MIN))).toBeNull()
+  })
+
+  it('refuses at the end of the grace and after it, with the existing expired response', () => {
+    for (const t of [32 * MIN, 33 * MIN, 4 * 60 * MIN]) {
+      const r = checkSessionUsable(row, expected, at(t))
+      expect(r?.status).toBe(410)
+      expect(r?.error).toBe('This quiz session has expired. Start a new attempt.')
+    }
+  })
+
+  it('caps a session minted under the old four-hour rule at 32 minutes too', () => {
+    const legacy = { ...row, expires_at: at(4 * 60 * MIN).toISOString() }
+    expect(checkSessionUsable(legacy, expected, at(31 * MIN))).toBeNull()
+    expect(checkSessionUsable(legacy, expected, at(33 * MIN))?.status).toBe(410)
+  })
+
+  it('mints a session that expires 32 minutes after it is issued', async () => {
+    const now = new Date()
+    const r = await startQuizSession(admin, { userId: timerId, firmId, courseId }, now)
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    const { data } = await sessions().select('issued_at, expires_at').eq('id', r.sessionId).single()
+    expect(new Date(data!.expires_at).getTime() - new Date(data!.issued_at).getTime()).toBe(QUIZ_SESSION_TTL_MS)
+    expect(r.expiresAt).toBe(data!.expires_at)
+  })
+
+  it('reuses an open session only inside the window; after it, start mints a new attempt', async () => {
+    const t0 = new Date(Date.now() + 10 * 60 * MIN) // clear of the session the test above opened
+    const first = await startQuizSession(admin, { userId: timerId, firmId, courseId }, t0)
+    if (!first.ok) throw new Error(first.error)
+
+    const inside = await startQuizSession(
+      admin,
+      { userId: timerId, firmId, courseId },
+      new Date(t0.getTime() + 31 * MIN),
+    )
+    if (!inside.ok) throw new Error(inside.error)
+    expect(inside.sessionId).toBe(first.sessionId)
+
+    const after = await startQuizSession(
+      admin,
+      { userId: timerId, firmId, courseId },
+      new Date(t0.getTime() + 33 * MIN),
+    )
+    if (!after.ok) throw new Error(after.error)
+    expect(after.sessionId).not.toBe(first.sessionId)
+  })
+
+  it('leaves the lesson knowledge checks untimed', () => {
+    // The knowledge checks never touch quiz_sessions: their route and modal
+    // have no clock to consult, and the runner only counts down when a caller
+    // passes timeLimit, which only the Certificate Assessment does.
+    const kcRoute = readFileSync('app/api/training/knowledge-check/route.ts', 'utf8')
+    const kcModal = readFileSync('app/dashboard/overview/_components/knowledge-check-modal.tsx', 'utf8')
+    for (const src of [kcRoute, kcModal]) {
+      expect(src).not.toMatch(/quiz-timing|QUIZ_TIME_LIMIT|QUIZ_SESSION_TTL|timeLimit|quiz_sessions/)
+    }
+    const assessment = readFileSync('app/dashboard/training/_components/quiz-component.tsx', 'utf8')
+    expect(assessment).toMatch(/timeLimit=\{timeLimit\}/)
   })
 })
 

@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { QUIZ_SUBMIT_GRACE_MS } from '@/lib/training/quiz-timing'
 import { QuizRunner, type QuizAnswer, type QuizResult } from '@/app/dashboard/_components/quiz-runner'
 
 export interface QuizQuestion {
@@ -18,6 +19,13 @@ interface Props {
 interface Session {
   sessionId: string
   questions: QuizQuestion[]
+  /**
+   * When the 30 minutes run out, on THIS machine's clock: the server's
+   * expires_at minus the submit grace, shifted by the measured difference
+   * between the server's clock and ours. Comes from the server on every start,
+   * so a reload resumes the same session with the same remaining time.
+   */
+  deadline: number
 }
 
 /**
@@ -49,16 +57,21 @@ export function QuizComponent({ courseId, onPass, onExit }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ courseId }),
       })
+      const receivedAt = Date.now()
       const data = (await res.json()) as {
         sessionId?: string
         questions?: QuizQuestion[]
+        expiresAt?: string
+        serverNow?: string
         error?: string
       }
-      if (!res.ok || !data.sessionId || !data.questions?.length) {
+      if (!res.ok || !data.sessionId || !data.questions?.length || !data.expiresAt) {
         setLoadError(data.error ?? 'Could not start the assessment. Please try again.')
         return
       }
-      setSession({ sessionId: data.sessionId, questions: data.questions })
+      const skew = data.serverNow ? Date.parse(data.serverNow) - receivedAt : 0
+      const deadline = Date.parse(data.expiresAt) - QUIZ_SUBMIT_GRACE_MS - skew
+      setSession({ sessionId: data.sessionId, questions: data.questions, deadline })
     } catch {
       setLoadError('Network error. Please try again.')
     }
@@ -91,6 +104,14 @@ export function QuizComponent({ courseId, onPass, onExit }: Props) {
       passThreshold?: number
       error?: string
     }
+    // 410: the 30 minutes and the 2-minute grace have both run out. Send the
+    // learner to the existing retake path (the "Try Again" screen below, which
+    // starts a fresh attempt) rather than leaving them on a dead Submit button.
+    if (res.status === 410) {
+      setSession(null)
+      setLoadError(data.error ?? 'This quiz session has expired. Start a new attempt.')
+      throw new Error(data.error ?? 'This quiz session has expired. Start a new attempt.')
+    }
     if (!res.ok) throw new Error(data.error ?? 'Submission failed. Please try again.')
     return {
       score: data.score ?? 0,
@@ -106,6 +127,20 @@ export function QuizComponent({ courseId, onPass, onExit }: Props) {
   // makes the retake entirely this component's business, where it used to be
   // an `attemptKey` remount driven by TrainingClient.
   const restart = () => setRunKey(k => k + 1)
+
+  // Stable across renders so the runner's one-second tick is not reset.
+  // Wording is Max's draft (2026-09-25), expected to change on the dev server.
+  const timeLimit = useMemo(
+    () =>
+      session
+        ? {
+            deadline: session.deadline,
+            warning: '5 minutes left.',
+            timeUp: "Time's up. Your answers are locked. Confirm below to submit.",
+          }
+        : null,
+    [session],
+  )
 
   if (!session) {
     return (
@@ -143,8 +178,9 @@ export function QuizComponent({ courseId, onPass, onExit }: Props) {
     <QuizRunner
       key={runKey}
       title="Certificate Assessment"
-      subtitle="Certification quiz: you need 80% or higher to pass."
+      subtitle="Certification quiz: you need 80% or higher to pass. You have 30 minutes to finish."
       questions={session.questions}
+      timeLimit={timeLimit}
       allowBack={false}
       requiresAttestation
       onSubmit={onSubmit}

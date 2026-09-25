@@ -17,17 +17,23 @@
 import type { createAdminClient } from '@/lib/supabase/admin'
 import type { Database, Json } from '@/types/supabase'
 import { ensureEnrollment } from '@/lib/enrollments'
+import { QUIZ_SESSION_TTL_MS } from './quiz-timing'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
 /**
  * How long a minted exam stays gradeable.
  *
- * Not a time limit on the quiz — the product deliberately has none. This exists
- * so an abandoned session cannot be resumed against a question pool that has
- * since been rewritten. Four hours is far past any honest attempt.
+ * Until 2026-09-25 this was four hours and explicitly NOT a time limit ("the
+ * product deliberately has none"). Reversed by Max, 2026-09-25: "lets add time
+ * limit to cert assessment. half an hour." The server is the clock: a session
+ * expires 30 minutes plus a 2-minute submit grace after it is issued
+ * (lib/training/quiz-timing.ts), and the existing expiry checks enforce it —
+ * checkSessionUsable at grading, and the open-session lookup in
+ * startQuizSession, which therefore only reuses a session inside that window.
+ * Lesson knowledge checks never go through here and stay untimed.
  */
-export const QUIZ_SESSION_TTL_MS = 4 * 60 * 60 * 1000
+export { QUIZ_SESSION_TTL_MS } from './quiz-timing'
 
 /** Fisher–Yates. Moved from app/dashboard/training/page.tsx:18. */
 export function shuffleArray<T>(arr: T[]): T[] {
@@ -182,12 +188,20 @@ export type RecordAttemptResult =
 // are gone.
 //
 // checkSessionUsable is typed on the fields it actually READS rather than on the
-// whole row. A predicate that demands `issued_at` in order to answer a question
-// it never asks about is a predicate nobody can call with a fixture.
+// whole row. `issued_at` is optional: when present it caps the session at
+// issued_at + QUIZ_SESSION_TTL_MS, so a session minted under the old four-hour
+// rule cannot outlive the 30-minute limit; fixtures without it still work.
 type SessionUsabilityRow = Pick<
   Database['public']['Tables']['quiz_sessions']['Row'],
   'user_id' | 'firm_id' | 'course_id' | 'expires_at' | 'consumed_at'
->
+> & { issued_at?: string | null }
+
+/** The instant a session stops being gradeable: the earlier of its stored expiry and issued_at + TTL. */
+export function sessionDeadline(session: { expires_at: string; issued_at?: string | null }): number {
+  const stored = new Date(session.expires_at).getTime()
+  if (!session.issued_at) return stored
+  return Math.min(stored, new Date(session.issued_at).getTime() + QUIZ_SESSION_TTL_MS)
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Grading — pure, so the arithmetic that decides whether someone is certified
@@ -262,7 +276,7 @@ export function checkSessionUsable(
     }
   }
 
-  if (new Date(session.expires_at).getTime() <= now.getTime()) {
+  if (sessionDeadline(session) <= now.getTime()) {
     return {
       ok: false,
       status: 410,
@@ -345,6 +359,10 @@ export async function startQuizSession(
     .eq('course_id', courseId)
     .is('consumed_at', null)
     .gt('expires_at', now.toISOString())
+    // Inside the 30 + 2 minute window only. For a new session expires_at alone
+    // says this; the issued_at bound also retires any open session minted under
+    // the old four-hour TTL, so nobody resumes a clock that was never 30 minutes.
+    .gt('issued_at', new Date(now.getTime() - QUIZ_SESSION_TTL_MS).toISOString())
     .order('issued_at', { ascending: false })
     .limit(1)
 
@@ -437,7 +455,7 @@ export async function recordQuizAttempt(
   // ── Load the exam ──────────────────────────────────────────────────────────
   const { data: sessionRow, error: sessionErr } = await admin
     .from('quiz_sessions')
-    .select('id, user_id, firm_id, course_id, question_ids, expires_at, consumed_at')
+    .select('id, user_id, firm_id, course_id, question_ids, issued_at, expires_at, consumed_at')
     .eq('id', sessionId)
     .maybeSingle()
 
