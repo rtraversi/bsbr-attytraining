@@ -66,7 +66,7 @@ export function IncludedSection() {
                 <p className="text-[10.5px] font-medium uppercase tracking-[0.22em] text-gold-soft">
                   Per seat, per year
                 </p>
-                <p className="font-gyrotrope mt-4 text-[64px] font-normal leading-none tracking-[-0.02em] text-marble">
+                <p className="font-display mt-4 text-[64px] font-normal leading-none tracking-[-0.02em] text-marble">
                   $35
                 </p>
                 <p className="mt-3.5 text-[15px] leading-[1.6] text-mint">

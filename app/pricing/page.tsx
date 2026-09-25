@@ -20,7 +20,7 @@ export default function PricingPage() {
           <p className="mb-5 text-[11px] font-medium uppercase tracking-[0.2em] text-gold-deep">
             Pricing
           </p>
-          <h1 className="font-gyrotrope text-[clamp(2.5rem,6vw,4.5rem)] font-normal leading-[1.02] tracking-[-0.02em]">
+          <h1 className="font-display text-[clamp(2.5rem,6vw,4.5rem)] font-normal leading-[1.02] tracking-[-0.02em]">
             One fee.{" "}
             <em className="font-serif-italic not-italic text-teal-mid">Every</em> staff
             member certified.

@@ -65,7 +65,7 @@ export function HeroSection() {
           />
         </div>
 
-        <h1 className="hero-rise font-gyrotrope mx-auto mt-[34px] max-w-[15ch] text-[clamp(38px,5.6vw,68px)] font-normal leading-[1.05] tracking-[-0.022em] text-marble [animation-delay:0.14s]">
+        <h1 className="hero-rise font-display mx-auto mt-[34px] max-w-[15ch] text-[clamp(38px,5.6vw,68px)] font-normal leading-[1.05] tracking-[-0.022em] text-marble [animation-delay:0.14s]">
           The Standard Other Firms Will Be{" "}
           <em className="font-serif-italic not-italic text-gold-soft">Held To</em>
         </h1>
@@ -112,7 +112,7 @@ export function HeroSection() {
             <h2
               key={d}
               className={[
-                "font-gyrotrope flex items-baseline gap-[13px] border-mint-line/20 text-[20px] font-normal leading-[1.3] text-marble",
+                "font-display flex items-baseline gap-[13px] border-mint-line/20 text-[20px] font-normal leading-[1.3] text-marble",
                 "border-b py-[26px] last:border-b-0",
                 "lg:border-b-0 lg:border-l lg:px-8 lg:py-[30px]",
                 i === 0 ? "lg:border-l-0 lg:pl-0" : "",

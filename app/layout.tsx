@@ -6,12 +6,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const gyrotrope = localFont({
-  src: "../public/fonts/GyrotropeVF.ttf",
-  variable: "--font-gyrotrope",
-  display: "swap",
-});
-
 const hostGrotesk = localFont({
   src: [
     { path: "../public/fonts/HostGrotesk[wght].ttf", style: "normal" },
@@ -136,7 +130,6 @@ export default function RootLayout({
       className={cn(
         GeistSans.variable,
         GeistMono.variable,
-        gyrotrope.variable,
         hostGrotesk.variable,
         instrumentSerif.variable,
         stackSans.variable,

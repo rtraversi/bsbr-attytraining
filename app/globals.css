@@ -209,8 +209,11 @@
 }
 
 @layer utilities {
-  .font-gyrotrope {
-    font-family: var(--font-gyrotrope), Georgia, serif;
+  /* Marketing display type. Was Gyrotrope (a wide, geometric "techy" face) until
+     2026-09-25 — Rob wanted something more normal, so headings now share Host
+     Grotesk with the body copy. Swap the family here to restyle every heading. */
+  .font-display {
+    font-family: var(--font-host-grotesk), system-ui, sans-serif;
   }
   .font-host-grotesk {
     font-family: var(--font-host-grotesk), system-ui, sans-serif;

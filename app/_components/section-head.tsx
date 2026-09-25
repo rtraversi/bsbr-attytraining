@@ -33,7 +33,7 @@ export function SectionHead({
     <div className="mb-14">
       <div className="mb-[22px] flex items-center gap-4">
         <span
-          className={`font-gyrotrope flex-none text-[14px] tracking-[0.18em] ${numColor}`}
+          className={`font-display flex-none text-[14px] tracking-[0.18em] ${numColor}`}
         >
           {num}
         </span>
@@ -47,7 +47,7 @@ export function SectionHead({
         <span className={`h-px flex-1 ${ruleColor}`} aria-hidden />
       </div>
       <h2
-        className={`font-gyrotrope max-w-[900px] text-[clamp(30px,3.8vw,44px)] font-normal leading-[1.12] tracking-[-0.015em] ${headingColor}`}
+        className={`font-display max-w-[900px] text-[clamp(30px,3.8vw,44px)] font-normal leading-[1.12] tracking-[-0.015em] ${headingColor}`}
       >
         {heading}
       </h2>

@@ -105,7 +105,7 @@ export function ExposureSection() {
                 state-specific accreditation claim (CLAUDE.md), and this must not
                 read as though the product is California-endorsed. */}
             <figure className="mt-10 border-l-2 border-gold pl-7">
-              <blockquote className="font-gyrotrope text-[21px] leading-[1.5] text-ink">
+              <blockquote className="font-display text-[21px] leading-[1.5] text-ink">
                 &ldquo;Lawyers should ensure that their lawyer and nonlawyer staff
                 receive periodic training on the appropriate use of AI and safeguards
                 surrounding the use of AI.&rdquo;
@@ -169,7 +169,7 @@ export function ExposureSection() {
                 <p className="text-[10.5px] font-medium uppercase tracking-[0.2em] text-ink-mute">
                   {c.court}
                 </p>
-                <h3 className="font-gyrotrope my-1.5 text-[19px] font-normal text-ink">
+                <h3 className="font-display my-1.5 text-[19px] font-normal text-ink">
                   {c.name}
                 </h3>
                 <p className="text-[15px] leading-[1.6] text-ink-soft">{c.body}</p>

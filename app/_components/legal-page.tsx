@@ -26,7 +26,7 @@ export function LegalPage({
           <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.2em] text-gold-deep">
             Iurix
           </p>
-          <h1 className="font-gyrotrope text-[clamp(30px,4vw,44px)] font-normal leading-[1.1] tracking-[-0.015em]">
+          <h1 className="font-display text-[clamp(30px,4vw,44px)] font-normal leading-[1.1] tracking-[-0.015em]">
             {title}
           </h1>
           <p className="mt-3 border-b border-silver pb-8 text-[14px] text-ink-mute">
@@ -54,7 +54,7 @@ export function LegalSection({
 }) {
   return (
     <section>
-      <h2 className="font-gyrotrope mb-3 text-[21px] font-normal leading-[1.3] text-ink">
+      <h2 className="font-display mb-3 text-[21px] font-normal leading-[1.3] text-ink">
         {title}
       </h2>
       <div className="space-y-3">{children}</div>

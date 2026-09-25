@@ -98,7 +98,7 @@ export function PricingSlider() {
         </label>
 
         <div className="mt-4 flex items-baseline gap-3">
-          <span className="font-gyrotrope text-6xl font-normal tabular-nums text-ink md:text-7xl">
+          <span className="font-display text-6xl font-normal tabular-nums text-ink md:text-7xl">
             {seats}
           </span>
           <span className="text-ink-mute">
