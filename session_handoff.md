@@ -1,8 +1,51 @@
 # Session Handoff
 
-**Date:** 2026-09-24 (latest section; older sections kept below)
-**Who:** Rob, with terminal-Claude (earlier sections: Max, Rob)
+**Date:** 2026-09-25 (latest section; older sections kept below)
+**Who:** Max, with desktop + terminal-Claude (earlier sections: Rob, Max)
 **Written for:** someone who has never seen this repository
+
+---
+
+## 🔴 Added 2026-09-25 (Max, desktop + terminal) — the intake/policy batch is LIVE
+
+**Shipped to production.** Branch `intake-ui-0924` merged with origin/main (the only conflict was
+this file; both 09-24 sections kept), fast-forwarded onto `main`, deployed by `workflow_dispatch`
+run **`36162224628`**: success, `headSha` **`bc09ec2`** verified equal to `origin/main`. No
+migrations, no new environment variables. Pre-flight: tsc clean, lint 0 errors, 553 tests passed,
+`next build` clean.
+
+**Smoke-checked live (read-only):** `/`, `/pricing`, `/login` 200; `/api/health` ok with db ok;
+homepage title reads `IURIX | …` (the new build); the live Rise export decodes to
+`aiTutorEnabled:false`. Rollback if ever needed: `wrangler rollback --name bsbr-attytraining`
+(Max decides).
+
+### What shipped
+- The intake/policy batch: **no approval gate** (firms read and download their policy on submit),
+  the policy presented as a **draft** with a separate **action list** (14 possible items).
+- **Policy page redesigned** (mockup B: hero, Policy | Action list tabs, Edit answers). The
+  duplicate title clause is hidden from the firm's view and download.
+- **Attorney / Staff badge** in the nav; **attorneys get the training content only** (no tab
+  bar, Overview, Quizzes, knowledge checks or certification quiz; refused server-side too).
+- **No contours** anywhere (fill + shadow; rule in CLAUDE.md > Conventions) and **no em dashes**
+  in customer-facing text.
+- **Intake out of Settings**: it lives under Policy now.
+- **Bea-free Rise export** (AI Tutor off; lesson ids unchanged, so resume keeps working).
+- **Certificate card** on Quizzes: no ring, no pop-up, downloads directly.
+- **30-minute limit on the Certificate Assessment** (server clock: 30 min + 2 min grace;
+  knowledge checks untimed).
+- Rob's 09-24 note that the delivery-email copy is the top blocker is **superseded**: the
+  approval/delivery step it belonged to is gone.
+
+### Still open
+- **Max:** copy pass on the 14 action items (`lib/policy/action-items.ts`, all marked draft) and
+  the cancel/refund text on `/dashboard/billing`.
+- **Katy:** certificate design review (post-launch); a glance at the punctuation-only em-dash
+  edits to her training text (`lib/training/lessons.ts`, two answers in `questions.ts`); the em
+  dashes left in Terms and Privacy are hers to decide.
+- **#18** renewal-side true-up charging is still not wired.
+- `types/supabase.ts` is still hand-patched; regenerate for real with the CLI linked to staging.
+- Unused delivery code to keep or delete: `lib/policy/delivery.ts`, `scripts/deliver-policy.mjs`,
+  `lib/policy/delivery-email.ts` (plus `emails/policy-delivered.tsx`).
 
 ---
 
