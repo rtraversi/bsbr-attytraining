@@ -1,8 +1,45 @@
 # Session Handoff
 
-**Date:** 2026-09-02
-**Who:** Max, with terminal-Claude and Codex
+**Date:** 2026-09-24 (latest section; older sections kept below)
+**Who:** Rob, with terminal-Claude (earlier sections: Max, Rob)
 **Written for:** someone who has never seen this repository
+
+---
+
+## 🔴 Added 2026-09-24 (Rob, terminal-Claude) — Resend works; test runs were bouncing real mail
+
+**Session complete** — full record in `.planning/sessions/20260924-rob-summary.md`.
+
+**Resend is verified and sending.** `scripts/test-resend.mjs` (Rob's; run `dotenv -e .env.prod -- node scripts/test-resend.mjs`) delivered
+to `delivered@resend.dev`. The 403 "domain is not verified" blocker (item 5 under "Blocked on
+infrastructure" below) is **closed** — invite and certificate emails now actually reach people.
+
+**That immediately exposed a new problem, now fixed and live.** Test users are seeded at
+`@test.invalid` (`tests/quiz-session.test.ts` and four other files) and drive the real pipeline, so
+a quiz pass sent real cert emails that bounced. A sustained bounce rate can get the Resend account
+suspended — the same account that delivers customer invites. Fix `b7a78ca`: `sendEmail` in
+`lib/resend.ts` and in `workers/cert-worker/src/index.ts` now drops `.invalid` recipients
+(`isUndeliverable()`) and skips the send if none remain; an empty list still throws. 5 new tests in
+`tests/resend-recipients.test.ts`. **Deployed to production** — run `36037312575`, success,
+`headSha` verified = `b7a78ca`.
+
+**Cert worker also deployed** (`bsbr-cert-worker`, version `7126c9ab-34e6-44aa-8788-cc4ab558c309`,
+both crons, prod `SUPABASE_URL`/`APP_URL`). **To redeploy it: `pnpm run deploy` from
+`workers/cert-worker`.** That now works as-is; two traps hit on the way were fixed in config:
+
+1. **Bare `wrangler deploy` there picks up the ROOT `wrangler.jsonc`** (the main app) and fails on
+   missing `.open-next/worker.js`. Fixed: the worker's `deploy` / `deploy:staging` scripts now pass
+   `--config wrangler.toml` (and `--env=""` for prod). Never run bare `wrangler deploy` there —
+   the main app must only deploy via GitHub Actions.
+2. **Wrangler targeted the stale account `2809122619…`** → `Authentication error [code: 10000]`,
+   same trap as 2026-08-27. Fixed: `account_id = "4b2a402334decc9259d7317aaf9782f0"` is now in the
+   worker's `wrangler.toml` (Rob).
+
+**🔴 Max — this moves your delivery-email copy to the top of the list.** With Resend live, the
+only thing between a firm and its policy email is `POLICY_EMAIL_COPY_APPROVED = false` in
+`lib/policy/delivery-email.ts:41` (item 7 below). It's safe as-is — nothing sends a `[TODO(copy)]`
+email — but no firm gets its policy emailed until that copy lands. Cancel-refund copy on
+`/dashboard/billing` is next after that.
 
 ---
 
