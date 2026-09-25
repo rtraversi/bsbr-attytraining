@@ -1,3 +1,3 @@
-// version: 7.12.0.a.1.6.3
-// sha: f24b0b73e1ccf8687ddfbe3c0561cf3888d7a0f6
+// version: 7.12.0.a.1.6.8
+// sha: ddccb77fc2604ba2f04c02df28af901641816708
 function SetBookmark(){var o=window.parent,t=window.location.href;o.SetBookmark(t.substring(t.toLowerCase().lastIndexOf("/scormcontent/")+14,t.length),document.title),o.CommitData()}SetBookmark();

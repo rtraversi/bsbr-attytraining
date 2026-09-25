@@ -1,3 +1,3 @@
-// version: 7.12.0.a.1.6.3
-// sha: f24b0b73e1ccf8687ddfbe3c0561cf3888d7a0f6
+// version: 7.12.0.a.1.6.8
+// sha: ddccb77fc2604ba2f04c02df28af901641816708
 function SetSCOComplete(){var e=window.parent;e.SetReachedEnd(),e.CommitData()}SetSCOComplete();
