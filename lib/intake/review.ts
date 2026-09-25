@@ -2,11 +2,11 @@
 // Policy intake — reading it back.
 //
 // Turns an AnswerMap into "the questions as asked and the answers as given",
-// which is what the firm sees after they submit and what Settings shows under
-// its own heading. ONE function behind both, because they are the same screen:
-// the spec logged them separately (2026-08-27 for Settings, 2026-08-28 for the
-// post-submit view) and building them twice is how they drift into two
-// different accounts of the same firm's answers.
+// which is what the firm sees after they submit. Settings showed the same
+// read-back under its own heading from 2026-08-27 until 2026-09-25, when the
+// intake moved under the Policy tab; keep ONE function behind any future
+// caller, since building it twice is how two screens drift into two different
+// accounts of the same firm's answers.
 //
 // Pure. No database, no React. Everything it knows it learns from QUESTIONS and
 // one AnswerMap, which is what lets tests drive the real code.
@@ -256,7 +256,7 @@ export function isSensitiveKey(key: string): boolean {
 /**
  * The state of an intake, for the two callers that render it.
  *
- * ONE function, because /intake and Settings must never disagree about whether
+ * ONE function, because /intake, the nav and /dashboard/policy must never disagree about whether
  * a firm may still edit. The dangerous mistake is reading `policy_delivered_at`
  * off a row that did not select it — `undefined` is falsy, which reads as
  * "not delivered". SESSION_COLUMNS in session.ts exists to stop that; this

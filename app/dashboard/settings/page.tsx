@@ -7,11 +7,6 @@ import { OrganizationSettings } from './_components/organization-settings'
 import { NotificationSettings } from './_components/notification-settings'
 import { BillingSettings } from './_components/billing-settings'
 import { AppearanceSettings } from './_components/appearance-settings'
-import { IntakeReview } from '@/app/intake/_components/intake-review'
-import { latestSession, loadAnswers } from '@/lib/intake/session'
-import { buildReview, intakeStateOf, type IntakeState } from '@/lib/intake/review'
-import type { ReviewSection } from '@/lib/intake/review'
-import { retentionOf, type Retention } from '@/lib/intake/retention'
 
 export const metadata = {
   title: 'Settings — IURIX',
@@ -44,51 +39,21 @@ export default async function SettingsPage() {
   let reminderDays = 7
   let notifyCertEarned = true
 
-  // ── The firm's own intake, read back ──────────────────────────────────────
-  //
-  // Spec'd 2026-08-27: "A firm can read back its own intake from Settings — the
-  // questions and the answers it gave." Same component as /intake renders after
-  // Send, because they are the same screen; the sensitive answers are excluded
-  // inside buildReview, not here.
-  //
-  // ADMIN ONLY. It carries firm-level disclosures and a roster of everyone who
-  // works there. Staff have no business in it, which is also why this whole
-  // block sits inside the isAdmin branch rather than being gated in the markup.
-  let intakeState: IntakeState = 'editable'
-  let intakeSections: ReviewSection[] = []
-  let intakeSubmittedAt: string | null = null
-  let intakeReopenedCount = 0
-  // D8-3. Defaults to the safe direction — no date, nothing deleted — for the
-  // non-admin path, where no firm row is read at all.
-  let intakeRetention: Retention = retentionOf(null)
+  // The firm's intake read-back used to live here (spec'd 2026-08-27). It moved
+  // to /dashboard/policy, which has its own nav tab (Max, 2026-09-25: "remove
+  // intake from settings we have its own tab now so no need").
 
   if (isAdmin) {
     const admin = createAdminClient()
     const { data: firm } = await admin
       .from('firms')
-      .select('name, reminder_days, notify_cert_earned, status, current_period_end')
+      .select('name, reminder_days, notify_cert_earned')
       .eq('id', firmId)
       .maybeSingle()
     orgName = firm?.name ?? ''
     reminderDays = firm?.reminder_days ?? 7
     notifyCertEarned = firm?.notify_cert_earned ?? true
-    intakeRetention = retentionOf(firm)
-
-    const session = await latestSession(admin, firmId)
-    intakeState = intakeStateOf(session)
-    if (session) {
-      intakeSubmittedAt = session.submitted_at
-      intakeReopenedCount = session.reopened_count ?? 0
-      // An OPEN intake is not read back here: it belongs on /intake, where it
-      // can still be answered.
-      if (intakeState === 'submitted' || intakeState === 'delivered') {
-        intakeSections = buildReview(await loadAnswers(admin, session.id))
-      }
-    }
   }
-
-  // An intake that has never been submitted gets a link rather than a read-back.
-  const showIntakeSection = isAdmin && intakeState !== 'editable'
 
   return (
     <main className="mx-auto w-full max-w-[1600px] px-6 py-10 md:px-10 xl:px-14 xl:py-14">
@@ -117,16 +82,6 @@ export default async function SettingsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1m4 0h1m-6 4h1m4 0h1m-6 4h1m4 0h1" />
                 </svg>
                 <span className="whitespace-nowrap">Organization</span>
-              </a>
-            )}
-            {/* Gated on the SECTION existing, not on isAdmin — an anchor to a
-                heading that is not rendered scrolls nowhere. */}
-            {showIntakeSection && (
-              <a href="#intake" className={NAV_LINK}>
-                <svg className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span className="whitespace-nowrap">Your intake</span>
               </a>
             )}
             {isAdmin && (
@@ -172,20 +127,6 @@ export default async function SettingsPage() {
               <h2 className={SECTION_HEADING}>Organization</h2>
               <section className={CARD}>
                 <OrganizationSettings initialName={orgName} />
-              </section>
-            </div>
-          )}
-
-          {showIntakeSection && (
-            <div id="intake">
-              <h2 className={SECTION_HEADING}>Your intake</h2>
-              <section className={CARD}>
-                <IntakeReview
-                  sections={intakeSections}
-                  submittedAt={intakeSubmittedAt}
-                  reopenedCount={intakeReopenedCount}
-                  retention={intakeRetention}
-                />
               </section>
             </div>
           )}

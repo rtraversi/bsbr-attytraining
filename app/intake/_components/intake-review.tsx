@@ -10,10 +10,10 @@ import type { Retention } from '@/lib/intake/retention'
 /**
  * A submitted intake, read back to the firm that gave it.
  *
- * ONE component, two callers: the /intake page after Send, and the Settings
- * heading spec'd on 2026-08-27. They are the same screen — the questions as
- * asked and the answers as given — and building them twice is how they drift
- * into two different accounts of the same firm's answers.
+ * One caller: the /intake page after Send. Settings also rendered it until
+ * 2026-09-25, when the intake moved under the Policy tab (Max: "remove intake
+ * from settings we have its own tab now so no need"). If a second caller comes
+ * back, reuse this rather than building the screen twice.
  *
  * 🔴 The sensitive answers are filtered in lib/intake/review.ts, not here. This
  * component renders whatever it is handed; the rule lives one level down where
@@ -40,7 +40,7 @@ export interface IntakeReviewProps {
   reopenedCount: number
   /** D8-3/D8-4. How long these answers are kept, said out loud. */
   retention: Retention
-  /** Settings renders inside a card that already has a heading; /intake does not. */
+  /** For a caller that renders it inside a card with its own heading; /intake does not. */
   heading?: string
 }
 
@@ -115,7 +115,7 @@ export function IntakeReview({
         answers below.
       </p>
       <p className={`mt-1 text-[14.5px] leading-relaxed ${MUTED}`}>
-        Your policy, action list and answers are always under Settings in your dashboard.
+        Your policy, action list and answers are always under Policy in your dashboard.
       </p>
 
       {/*
