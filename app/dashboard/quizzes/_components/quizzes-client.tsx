@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react'
 import type { ClientQuestion } from '@/lib/training/questions'
 import type { LessonState, Progress } from '@/lib/training/progress'
 import { KnowledgeCheckModal } from '../../overview/_components/knowledge-check-modal'
-import { CertPreviewModal } from '../../_components/cert-preview-modal'
 import { ClearedFlagIcon } from '../../_components/cleared-flag-icon'
 
 /** Issued-certificate details — the Quizzes tab is the one place these live. */
@@ -463,7 +462,9 @@ function FinalTestCard({
    Card 3 — "Access certificate" (reward; keeps its gradient-glow logic).
    The one real home for certificate details: hovering the pill (or tapping
    the summary, for touch devices where hover doesn't exist) reveals the
-   cert #, dates, and legal disclaimer; Download opens CertPreviewModal.
+   cert #, dates, name, course and legal disclaimer; Download fetches the PDF
+   directly. No border ring and no pop-up (Max, 2026-09-25: "no contour pls",
+   "just have it be inside the pill"); CertPreviewModal is still used elsewhere.
    ═══════════════════════════════════════════════════════════════════════════ */
 function fmtCertDate(iso: string | null): string {
   if (!iso) return ''
@@ -484,7 +485,21 @@ function CertificateCard({
   tryOpen: (l: LessonState | number) => void
 }) {
   const { open, toggle, hoverProps } = useExpand()
-  const [modalOpen, setModalOpen] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+
+  // The same call CertPreviewModal's "Download PDF" makes: a short-lived signed
+  // URL for this certificate, opened in a new tab.
+  async function handleDownload() {
+    if (!cert) return
+    setDownloading(true)
+    try {
+      const res = await fetch(`/api/certificates/${cert.id}/url`)
+      const data = (await res.json()) as { url?: string }
+      if (data.url) window.open(data.url, '_blank')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   // The locked pill used to be an inert div — it told the learner they were
   // blocked and gave them nowhere to go. It still READS as locked (same muted
@@ -525,82 +540,84 @@ function CertificateCard({
       <h2 className={`mb-4 text-2xl md:text-3xl ${HEADING}`}>Access certificate</h2>
       {cert ? (
         <>
-          <div className="rounded-[28px] bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-emphasis)] p-[1.5px] shadow-[0_0_44px_-10px_rgba(50,199,255,0.55)] md:rounded-[36px]">
-            <div className="rounded-[27px] bg-white px-6 py-5 md:rounded-[35px] md:px-8 md:py-6 dark:bg-[#0D0F12]">
-              <div className="flex items-center justify-between gap-4">
-                {/* Summary doubles as the tap-toggle for touch devices, where
-                    the hover reveal can't fire. */}
-                <button
-                  type="button"
-                  onClick={toggle}
-                  aria-expanded={open}
-                  className="flex min-w-0 cursor-pointer items-center gap-3 text-left"
-                >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)]/15">
-                    <CertIcon className="h-6 w-6 text-[var(--brand-emphasis)]" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className={`block text-base ${HEADING}`}>Your certificate</span>
-                    <span className={`block truncate text-sm ${BODY}`}>
-                      Issued and ready to download.
-                    </span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(true)}
-                  className="shrink-0 cursor-pointer rounded-full bg-[var(--brand-primary)] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
-                >
-                  Download
-                </button>
-              </div>
-
-              {/* Hover/tap-revealed details */}
-              <div
-                className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-                  open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-                }`}
+          <div className="rounded-[28px] bg-white px-6 py-5 shadow-[0_0_44px_-10px_rgba(50,199,255,0.55)] md:rounded-[36px] md:px-8 md:py-6 dark:bg-[#0D0F12]">
+            <div className="flex items-center justify-between gap-4">
+              {/* Summary doubles as the tap-toggle for touch devices, where
+                  the hover reveal can't fire. */}
+              <button
+                type="button"
+                onClick={toggle}
+                aria-expanded={open}
+                className="flex min-w-0 cursor-pointer items-center gap-3 text-left"
               >
-                <div className="overflow-hidden">
-                  <div className="mt-4 border-t border-[#E5EEF5] pt-4 dark:border-[#1F2429]">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
-                      <div>
-                        <p className={`text-xs ${MUTED}`}>Certificate</p>
-                        <p className="mt-0.5 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">{cert.number ? `#${cert.number}` : ''}</p>
-                      </div>
-                      <div>
-                        <p className={`text-xs ${MUTED}`}>Issued</p>
-                        <p className="mt-0.5 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
-                          {fmtCertDate(cert.issuedAt)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className={`text-xs ${MUTED}`}>Expires</p>
-                        <p className="mt-0.5 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
-                          {fmtCertDate(cert.expiresAt)}
-                        </p>
-                      </div>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)]/15">
+                  <CertIcon className="h-6 w-6 text-[var(--brand-emphasis)]" />
+                </span>
+                <span className="min-w-0">
+                  <span className={`block text-base ${HEADING}`}>Your certificate</span>
+                  <span className={`block truncate text-sm ${BODY}`}>
+                    Issued and ready to download.
+                  </span>
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDownload()}
+                disabled={downloading}
+                className="shrink-0 cursor-pointer rounded-full bg-[var(--brand-primary)] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {downloading ? 'Opening…' : 'Download'}
+              </button>
+            </div>
+
+            {/* Hover/tap-revealed details */}
+            <div
+              className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="mt-4 border-t border-[#E5EEF5] pt-4 dark:border-[#1F2429]">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+                    <div>
+                      <p className={`text-xs ${MUTED}`}>Certificate</p>
+                      <p className="mt-0.5 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">{cert.number ? `#${cert.number}` : ''}</p>
                     </div>
-                    <p className={`mt-4 text-xs leading-relaxed ${MUTED}`}>
-                      This certificate documents completion of training. It is not legal advice and
-                      does not constitute accreditation by the ABA or any state bar.
-                    </p>
+                    <div>
+                      <p className={`text-xs ${MUTED}`}>Issued</p>
+                      <p className="mt-0.5 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
+                        {fmtCertDate(cert.issuedAt)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className={`text-xs ${MUTED}`}>Expires</p>
+                      <p className="mt-0.5 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
+                        {fmtCertDate(cert.expiresAt)}
+                      </p>
+                    </div>
+                    {/* Moved in from CertPreviewModal, which this card no
+                        longer opens. */}
+                    <div>
+                      <p className={`text-xs ${MUTED}`}>Name</p>
+                      <p className="mt-0.5 text-sm font-bold break-words text-[#0A0A0A] dark:text-[#F5F7FA]">
+                        {employeeName}
+                      </p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <p className={`text-xs ${MUTED}`}>Course</p>
+                      <p className="mt-0.5 text-sm font-bold text-[#0A0A0A] dark:text-[#F5F7FA]">
+                        Responsible Use of AI within the Legal Industry
+                      </p>
+                    </div>
                   </div>
+                  <p className={`mt-4 text-xs leading-relaxed ${MUTED}`}>
+                    This certificate documents completion of training. It is not legal advice and
+                    does not constitute accreditation by the ABA or any state bar.
+                  </p>
                 </div>
               </div>
             </div>
-          </div>
-
-          {modalOpen && (
-            <CertPreviewModal
-              certId={cert.id}
-              certNumber={cert.number}
-              employeeName={employeeName}
-              issuedAt={cert.issuedAt}
-              expiresAt={cert.expiresAt}
-              onClose={() => setModalOpen(false)}
-            />
-          )}
+            </div>
         </>
       ) : lockedAction?.kind === 'content' ? (
         <Link href="/dashboard/training" className={`${lockedPillClass} hover:opacity-100`}>
