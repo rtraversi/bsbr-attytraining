@@ -40,7 +40,7 @@ function PasswordField({
           value={value}
           onChange={onChange}
           disabled={disabled}
-          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 pr-14 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
+          className="w-full rounded-xl bg-zinc-100 px-5 py-4 pr-14 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
         />
         <button
           type="button"
@@ -155,7 +155,7 @@ export function UpdatePasswordForm({ email }: { email: string }) {
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-7">
       {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3.5 text-sm text-red-600">
+        <p className="rounded-lg bg-red-50 px-4 py-3.5 text-sm text-red-600">
           {error}
         </p>
       )}
@@ -172,7 +172,7 @@ export function UpdatePasswordForm({ email }: { email: string }) {
           readOnly
           aria-readonly
           tabIndex={-1}
-          className="cursor-default rounded-xl border border-zinc-200 bg-zinc-100 px-5 py-4 text-base text-zinc-500"
+          className="cursor-default rounded-xl bg-zinc-100 px-5 py-4 text-base text-zinc-500"
         />
       </div>
 

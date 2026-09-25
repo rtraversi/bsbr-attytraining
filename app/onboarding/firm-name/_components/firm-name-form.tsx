@@ -70,7 +70,7 @@ export function FirmNameForm({ next }: { next: string }) {
             onChange={(e) => setFirmName(e.target.value)}
             disabled={busy}
             placeholder="Chavez Law"
-            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
+            className="w-full rounded-xl bg-zinc-100 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
           />
           <p className="text-sm font-extralight text-zinc-500">You can change it later.</p>
         </div>

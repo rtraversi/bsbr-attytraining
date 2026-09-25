@@ -296,7 +296,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
 
         <form onSubmit={handleSubmit} className="mt-8 flex w-full flex-col gap-6">
           {/* Seats purchased — read-only, from the Stripe session. */}
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4">
+          <div className="rounded-xl bg-zinc-100 px-5 py-4">
             <div className="flex items-center justify-between gap-4">
               <span className="text-sm text-zinc-500">Seats purchased</span>
               <span className="text-sm font-medium text-zinc-900">
@@ -325,7 +325,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
               readOnly
               aria-readonly
               tabIndex={-1}
-              className="cursor-default rounded-xl border border-zinc-200 bg-zinc-100 px-5 py-4 text-base text-zinc-500"
+              className="cursor-default rounded-xl bg-zinc-100 px-5 py-4 text-base text-zinc-500"
             />
             <p className="text-sm font-extralight text-zinc-500">
               The address you paid with. This is how you sign in.
@@ -351,7 +351,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
                 readOnly
                 aria-readonly
                 tabIndex={-1}
-                className="cursor-default rounded-xl border border-zinc-200 bg-zinc-100 px-5 py-4 text-base text-zinc-500"
+                className="cursor-default rounded-xl bg-zinc-100 px-5 py-4 text-base text-zinc-500"
               />
             ) : (
               <input
@@ -364,7 +364,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
                 onChange={(e) => setFirmName(e.target.value)}
                 disabled={phase === 'submitting'}
                 placeholder="Chavez Law"
-                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
+                className="w-full rounded-xl bg-zinc-100 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
               />
             )}
             <p className="text-sm font-extralight text-zinc-500">
@@ -385,7 +385,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={phase === 'submitting'}
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
+              className="w-full rounded-xl bg-zinc-100 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
             />
             <p className="text-sm font-extralight text-zinc-500">At least 8 characters.</p>
           </div>
@@ -403,7 +403,7 @@ export function OnboardingClient({ sessionId }: { sessionId: string }) {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               disabled={phase === 'submitting'}
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
+              className="w-full rounded-xl bg-zinc-100 px-5 py-4 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
             />
           </div>
 

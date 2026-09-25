@@ -18,7 +18,7 @@ const PRESENTATION: Record<
     label: 'Valid',
     blurb: 'This certificate is genuine and currently in force.',
     dot: 'bg-emerald-400',
-    ring: 'border-emerald-400/30 bg-emerald-400/5',
+    ring: 'bg-emerald-400/15',
     text: 'text-emerald-300',
   },
   expired: {
@@ -26,14 +26,14 @@ const PRESENTATION: Record<
     blurb:
       'This certificate was genuine when issued, but its one-year term has ended. The holder needs to recertify.',
     dot: 'bg-amber-400',
-    ring: 'border-amber-400/30 bg-amber-400/5',
+    ring: 'bg-amber-400/15',
     text: 'text-amber-300',
   },
   revoked: {
     label: 'Revoked',
     blurb: 'This certificate has been withdrawn and should not be relied on.',
     dot: 'bg-red-400',
-    ring: 'border-red-400/30 bg-red-400/5',
+    ring: 'bg-red-400/15',
     text: 'text-red-300',
   },
 }
@@ -58,9 +58,9 @@ export function ResultCard({ result }: { result: VerificationResult }) {
   const p = PRESENTATION[result.status]
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 md:p-8">
+    <div className="rounded-2xl bg-white/[0.05] p-6 md:p-8">
       <div
-        className={`inline-flex items-center gap-2.5 rounded-full border px-3.5 py-1.5 ${p.ring}`}
+        className={`inline-flex items-center gap-2.5 rounded-full px-3.5 py-1.5 ${p.ring}`}
       >
         <span className={`h-1.5 w-1.5 rounded-full ${p.dot}`} />
         <span className={`text-xs font-semibold uppercase tracking-[0.14em] ${p.text}`}>
@@ -98,8 +98,8 @@ export function ResultCard({ result }: { result: VerificationResult }) {
  */
 export function NotFoundCard({ children }: { children?: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 md:p-8">
-      <div className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5">
+    <div className="rounded-2xl bg-white/[0.05] p-6 md:p-8">
+      <div className="inline-flex items-center gap-2.5 rounded-full bg-white/10 px-3.5 py-1.5">
         <span className="h-1.5 w-1.5 rounded-full bg-white/40" />
         <span className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">
           Not verified

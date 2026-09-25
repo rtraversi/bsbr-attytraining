@@ -58,7 +58,7 @@ export function IntakeIntro({
         Copy on this screen is Max's, verbatim (step 2 and the heading revised
         2026-09-24). Do not "improve" it.
       */}
-      <ol className={`mt-6 divide-y ${LINE} border-y ${LINE}`}>
+      <ol className={`mt-6 divide-y ${LINE}`}>
         <Step
           n={1}
           title="You answer these questions"

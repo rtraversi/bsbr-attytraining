@@ -19,7 +19,7 @@
 export const PAGE = 'font-headline min-h-screen bg-[#FAFAF8] text-[#0A0A0A] dark:bg-[#050607] dark:text-[#F5F7FA]'
 
 export const CARD =
-  'relative rounded-2xl border border-[#E5EEF5] bg-white p-6 dark:border-[#1F2429] dark:bg-[#0D0F12]'
+  'relative rounded-2xl bg-white p-6 shadow-[0_4px_20px_rgba(0,148,255,0.08)] dark:bg-[#0D0F12] dark:shadow-none'
 
 export const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
 
@@ -33,38 +33,38 @@ export const PROMPT = 'text-base font-semibold leading-snug'
  * outlining every row permanently — sixteen bordered rows read as a table.
  */
 export const OPTION_ROW =
-  'flex cursor-pointer items-start gap-2.5 rounded-lg border border-transparent px-2.5 py-2 transition-colors hover:border-[#E5EEF5] hover:bg-[#F6F9FB] dark:hover:border-[#1F2429] dark:hover:bg-[#131A20]'
+  'flex cursor-pointer items-start gap-2.5 rounded-lg px-2.5 py-2 transition-colors hover:bg-[#EEF9FF] dark:hover:bg-[#131A20]'
 
 export const CHECKBOX =
   'mt-1 h-[15px] w-[15px] shrink-0 accent-[var(--brand-emphasis)]'
 
 /** Text input, textarea, select — one look. */
 export const FIELD =
-  'w-full rounded-lg border border-[#E5EEF5] bg-[#FAFAF8] px-3 py-2.5 text-[14.5px] outline-none transition-colors placeholder:text-[#8A8A8A] focus:border-[var(--brand-emphasis)] dark:border-[#1F2429] dark:bg-[#050607] dark:placeholder:text-[#7A8189]'
+  'w-full rounded-lg bg-[#F2F5F8] px-3 py-2.5 text-[14.5px] outline-none transition-colors placeholder:text-[#8A8A8A] focus:bg-white focus:ring-2 focus:ring-[var(--brand-emphasis)] dark:bg-[#131A20] dark:placeholder:text-[#7A8189] dark:focus:bg-[#050607]'
 
 /** The bare underline input used inside an "Something else" option row. */
 export const INLINE_FIELD =
-  'min-w-36 flex-1 border-0 border-b border-[#E5EEF5] bg-transparent px-2 py-1 text-sm outline-none placeholder:text-[#8A8A8A] focus:border-[var(--brand-emphasis)] dark:border-[#1F2429] dark:placeholder:text-[#7A8189]'
+  'min-w-36 flex-1 rounded-md bg-[#F2F5F8] px-2 py-1 text-sm outline-none placeholder:text-[#8A8A8A] focus:ring-2 focus:ring-[var(--brand-emphasis)] dark:bg-[#131A20] dark:placeholder:text-[#7A8189]'
 
 /** Segmented pill — yes/no, and the tool grid's agreement column. */
 export const PILL_OFF =
-  'grid place-items-center rounded-lg border border-[#E5EEF5] bg-white px-4 py-2.5 text-sm font-semibold text-[#8A8A8A] transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] dark:border-[#1F2429] dark:bg-[#0D0F12] dark:text-[#7A8189]'
+  'grid place-items-center rounded-lg bg-[#F2F5F8] px-4 py-2.5 text-sm font-semibold text-[#8A8A8A] transition-colors hover:bg-[#EAF6FF] hover:text-[var(--brand-emphasis)] dark:bg-[#131A20] dark:text-[#7A8189] dark:hover:bg-[#18212A]'
 
 export const PILL_ON =
-  'grid place-items-center rounded-lg border border-[var(--brand-emphasis)] bg-[var(--brand-emphasis)] px-4 py-2.5 text-sm font-semibold text-white transition-colors'
+  'grid place-items-center rounded-lg bg-[var(--brand-emphasis)] px-4 py-2.5 text-sm font-semibold text-white transition-colors'
 
 export const BTN =
-  'rounded-full border border-[#E5EEF5] bg-white px-6 py-2.5 text-sm font-semibold transition-colors hover:border-[var(--brand-emphasis)] dark:border-[#1F2429] dark:bg-[#0D0F12]'
+  'rounded-full bg-[#F2F4F7] px-6 py-2.5 text-sm font-semibold transition-colors hover:bg-[#EAF6FF] dark:bg-[#131A20] dark:hover:bg-[#18212A]'
 
 export const BTN_PRIMARY =
-  'rounded-full border border-[var(--brand-emphasis)] bg-[var(--brand-emphasis)] px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50'
+  'rounded-full bg-[var(--brand-emphasis)] px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50'
 
 export const BTN_GHOST =
-  `rounded-full border border-transparent bg-transparent px-6 py-2.5 text-sm font-semibold transition-colors hover:bg-[#F6F9FB] dark:hover:bg-[#131A20] ${MUTED}`
+  `rounded-full bg-transparent px-6 py-2.5 text-sm font-semibold transition-colors hover:bg-[#F6F9FB] dark:hover:bg-[#131A20] ${MUTED}`
 
 /** Round arrow, prev/next. Moves one QUESTION. */
 export const NAV_BTN =
-  'grid h-10 w-10 place-items-center rounded-full border border-[#E5EEF5] bg-white text-lg transition-colors hover:border-[var(--brand-emphasis)] hover:text-[var(--brand-emphasis)] disabled:cursor-default disabled:border-[#E5EEF5] disabled:text-[#C7CDD3] disabled:hover:border-[#E5EEF5] disabled:hover:text-[#C7CDD3] dark:border-[#1F2429] dark:bg-[#0D0F12] dark:disabled:border-[#1F2429]'
+  'grid h-10 w-10 place-items-center rounded-full bg-white text-lg shadow-[0_2px_10px_rgba(0,148,255,0.10)] transition-colors hover:bg-[#EAF6FF] hover:text-[var(--brand-emphasis)] disabled:cursor-default disabled:text-[#C7CDD3] disabled:shadow-none disabled:hover:bg-white disabled:hover:text-[#C7CDD3] dark:bg-[#131A20] dark:shadow-none dark:disabled:hover:bg-[#131A20]'
 
 /**
  * Square chip beside the section strip. Moves one SECTION — a different kind of

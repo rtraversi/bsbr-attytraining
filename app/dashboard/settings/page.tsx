@@ -13,7 +13,7 @@ export const metadata = {
 }
 
 /* ── Shared tokens — same values the previous version of this page used ────── */
-const CARD = 'rounded-3xl bg-white p-6 xl:p-8 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
+const CARD = 'rounded-3xl bg-white p-6 shadow-[0_4px_20px_rgba(0,148,255,0.08)] xl:p-8 dark:bg-[#0D0F12] dark:shadow-none'
 const HEADING = 'font-headline font-bold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
 const SECTION_HEADING = `${HEADING} mb-4 text-2xl md:text-3xl xl:mb-5 xl:text-[2.5rem]`
 const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'

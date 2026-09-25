@@ -65,7 +65,7 @@ export function OrganizationSettings({ initialName }: { initialName: string }) {
           value={draft}
           onChange={e => setDraft(e.target.value)}
           placeholder="Your firm's name"
-          className="w-full rounded-xl border border-[#E5EEF5] bg-white px-4 py-2.5 text-sm text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/30 sm:w-80 dark:border-[#1F2429] dark:bg-[#050607] dark:text-[#F5F7FA]"
+          className="w-full rounded-xl bg-[#F2F5F8] px-4 py-2.5 text-sm text-[#0A0A0A] outline-none transition-colors placeholder:text-[#B0B7BF] focus:bg-white focus:ring-2 focus:ring-[var(--brand-primary)]/30 sm:w-80 dark:bg-[#131A20] dark:text-[#F5F7FA]"
         />
       </Row>
 

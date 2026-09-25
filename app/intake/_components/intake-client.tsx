@@ -404,7 +404,7 @@ export function IntakeClient({
           reads their answers back and can reopen to change them.
         */}
         {sent ? (
-          <div className="rounded-xl border border-[#E5EEF5] bg-[#F6F9FB] px-5 py-4 dark:border-[#1F2429] dark:bg-[#131A20]">
+          <div className="rounded-xl bg-[#F2F5F8] px-5 py-4 dark:bg-[#131A20]">
             <p className="text-sm font-semibold">Sent. Thank you.</p>
             <p className={`mt-1 max-w-[38rem] text-[13px] leading-relaxed ${MUTED}`}>
               Bringing up your answers…

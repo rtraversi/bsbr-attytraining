@@ -89,7 +89,7 @@ export function PricingSlider() {
 
   return (
     <div className="mx-auto w-full max-w-3xl">
-      <div className="border border-silver bg-white p-8 md:p-12">
+      <div className="bg-white p-8 shadow-[0_6px_28px_-14px_rgba(0,70,140,0.18)] md:p-12">
         <label
           htmlFor="seats"
           className="block text-[11px] font-medium uppercase tracking-[0.2em] text-ink-mute"
@@ -149,10 +149,10 @@ export function PricingSlider() {
           {BANDS.map((band, i) => (
             <div
               key={band.label}
-              className={`border p-4 transition-colors ${
+              className={`p-4 transition-colors ${
                 i === activeBand
-                  ? "border-gold bg-marble-deep"
-                  : "border-silver bg-transparent"
+                  ? "bg-gold-pale/60"
+                  : "bg-marble"
               }`}
             >
               <p
@@ -209,7 +209,7 @@ export function PricingSlider() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@yourfirm.com"
-            className="w-full rounded-[1px] border border-silver bg-white px-4 py-3 text-base text-ink placeholder:text-ink-mute/60 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-teal-mid"
+            className="w-full rounded-[1px] bg-marble-deep px-4 py-3 text-base text-ink placeholder:text-ink-mute/60 focus:outline-none focus:ring-2 focus:ring-teal-mid"
           />
           <p className="text-xs text-ink-mute">
             You&apos;ll use this to sign in. If your firm already has an IURIX account, we&apos;ll let you know here instead of charging you twice.
@@ -232,7 +232,7 @@ export function PricingSlider() {
             value={firmName}
             onChange={(e) => setFirmName(e.target.value)}
             placeholder="Chavez Law"
-            className="w-full rounded-[1px] border border-silver bg-white px-4 py-3 text-base text-ink placeholder:text-ink-mute/60 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-teal-mid"
+            className="w-full rounded-[1px] bg-marble-deep px-4 py-3 text-base text-ink placeholder:text-ink-mute/60 focus:outline-none focus:ring-2 focus:ring-teal-mid"
           />
           <p className="text-xs text-ink-mute">
             This is the name on your policy and on every certificate. You can change it later.

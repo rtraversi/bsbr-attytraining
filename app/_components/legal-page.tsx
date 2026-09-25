@@ -94,7 +94,7 @@ export function LegalCallout({
 // can see where the block starts and ends.
 export function LegalDisclaimer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="border border-steel bg-white px-6 py-5">
+    <div className="bg-white px-6 py-5 shadow-[0_6px_28px_-14px_rgba(0,70,140,0.18)]">
       <div className="space-y-3 text-[13.5px] uppercase leading-[1.7] tracking-[0.02em] text-ink-soft">
         {children}
       </div>
@@ -112,7 +112,7 @@ export function LegalDisclaimer({ children }: { children: React.ReactNode }) {
  */
 export function LegalPlaceholder({ children }: { children: React.ReactNode }) {
   return (
-    <p className="rounded border border-dashed border-red-600/60 bg-red-50 px-3 py-2 font-mono text-xs text-red-700">
+    <p className="rounded bg-red-50 px-3 py-2 font-mono text-xs text-red-700">
       {children}
     </p>
   );

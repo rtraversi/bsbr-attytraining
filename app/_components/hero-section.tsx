@@ -94,7 +94,7 @@ export function HeroSection() {
           </Link>
           <Link
             href="#exposure"
-            className="rounded-[2px] border border-marble/35 px-7 py-3.5 text-[15px] font-medium text-marble transition-colors hover:border-marble hover:bg-marble hover:text-teal-ink"
+            className="rounded-[2px] bg-marble/10 px-7 py-3.5 text-[15px] font-medium text-marble transition-colors hover:bg-marble hover:text-teal-ink"
           >
             Why it matters
           </Link>

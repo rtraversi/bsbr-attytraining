@@ -148,7 +148,7 @@ export function ExposureSection() {
               notched label (an absolutely-positioned span straddling the top
               border) is gone: it needed the card and the section to share a
               background colour, which is no longer true. */}
-          <div className="border border-silver bg-white">
+          <div className="bg-white shadow-[0_6px_28px_-14px_rgba(0,70,140,0.18)]">
             <div className="bg-teal-ink px-6 py-3.5">
               <span className="text-[10.5px] font-medium uppercase tracking-[0.22em] text-gold-soft">
                 The 2026 decisions

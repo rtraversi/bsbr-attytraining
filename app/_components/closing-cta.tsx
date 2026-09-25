@@ -49,7 +49,7 @@ export function ClosingCta() {
           </Link>
           <a
             href="mailto:info@iurixaccreditation.com"
-            className="rounded-[2px] border border-marble/30 px-7 py-3.5 text-[15px] font-medium text-marble transition-colors hover:border-marble hover:bg-marble hover:text-teal-ink"
+            className="rounded-[2px] bg-marble/10 px-7 py-3.5 text-[15px] font-medium text-marble transition-colors hover:bg-marble hover:text-teal-ink"
           >
             Talk to us first
           </a>

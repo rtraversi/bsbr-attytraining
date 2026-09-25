@@ -45,7 +45,7 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-6">
       {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
           {error}
         </p>
       )}
@@ -63,7 +63,7 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
-          className="rounded-full border border-zinc-200 bg-zinc-50 px-5 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
+          className="rounded-full bg-zinc-100 px-5 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
         />
       </div>
 
@@ -81,7 +81,7 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
-            className="w-full rounded-full border border-zinc-200 bg-zinc-50 px-5 py-3.5 pr-14 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
+            className="w-full rounded-full bg-zinc-100 px-5 py-3.5 pr-14 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] disabled:opacity-50"
           />
           <button
             type="button"
@@ -122,7 +122,7 @@ export function LoginForm({ errorParam }: { errorParam?: string }) {
             aria-label="Remember you for 30 days"
             onClick={() => setRememberMe((v) => !v)}
             disabled={loading}
-            className="relative inline-flex h-5 w-5 shrink-0 cursor-pointer overflow-hidden rounded-md border border-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50"
+            className="relative inline-flex h-5 w-5 shrink-0 cursor-pointer overflow-hidden rounded-md bg-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 disabled:opacity-50"
           >
             <span
               aria-hidden

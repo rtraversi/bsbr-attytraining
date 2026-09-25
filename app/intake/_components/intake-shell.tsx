@@ -32,7 +32,7 @@ export function IntakeShell({
         ground, and inverting the page underneath it made it read as a different
         logo. (Same note as the mockup, and the lockup is light-grounds-only.)
       */}
-      <div className="border-b border-[#E5EEF5] bg-white px-5 py-10">
+      <div className="relative z-10 bg-white px-5 py-10 shadow-[0_6px_24px_rgba(0,148,255,0.06)]">
         <div className="flex items-center justify-center">
           <IurixLockup style={{ fontSize: '2.6rem' }} />
         </div>

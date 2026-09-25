@@ -6,7 +6,7 @@ import { verifyCertificateAction, type VerifyFormState } from '../actions'
 import { ResultCard, NotFoundCard } from './result-card'
 
 const FIELD =
-  'w-full rounded-xl border border-white/12 bg-white/[0.03] px-4 py-2.5 text-[15px] text-white outline-none transition-colors placeholder:text-white/25 focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/25'
+  'w-full rounded-xl bg-white/[0.08] px-4 py-2.5 text-[15px] text-white outline-none transition-colors placeholder:text-white/25 focus:ring-2 focus:ring-[var(--brand-primary)]/25'
 
 function SubmitButton() {
   const { pending } = useFormStatus()

@@ -38,7 +38,7 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-silver bg-marble/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 bg-marble/90 shadow-[0_6px_24px_-12px_rgba(0,70,140,0.18)] backdrop-blur-md">
       {/* flex-nowrap is load-bearing, not decorative: without it this row wraps
           and the nav stacks under the lockup the moment the content exceeds the
           track. Everything inside is nowrap + shrink-0 for the same reason. */}
@@ -90,7 +90,7 @@ export function SiteHeader() {
           aria-expanded={open}
           aria-controls="mobile-nav"
           aria-label="Toggle navigation"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[1px] border border-silver text-ink lg:hidden"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[1px] bg-marble-deep text-ink lg:hidden"
         >
           <svg
             viewBox="0 0 20 20"

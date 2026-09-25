@@ -29,7 +29,7 @@ export default async function VerifyEmailPage({
 
   return (
     <main className="font-headline min-h-screen bg-[#FAFAF8] text-[#0A0A0A]">
-      <div className="border-b border-[#E5EEF5] bg-white px-5 py-10">
+      <div className="relative z-10 bg-white px-5 py-10 shadow-[0_6px_24px_rgba(0,148,255,0.06)]">
         <div className="flex items-center justify-center">
           <IurixLockup style={{ fontSize: '2.6rem' }} />
         </div>
@@ -56,7 +56,7 @@ export default async function VerifyEmailPage({
 
         <Link
           href="/"
-          className="mt-8 inline-block rounded-full border border-[var(--brand-emphasis)] bg-[var(--brand-emphasis)] px-6 py-2.5 text-sm font-semibold text-white"
+          className="mt-8 inline-block rounded-full bg-[var(--brand-emphasis)] px-6 py-2.5 text-sm font-semibold text-white"
         >
           Go to IURIX
         </Link>
