@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchIsAttorney } from '@/lib/seats'
 import { deriveProgress, type KnowledgeCheckEvent } from '@/lib/training/progress'
 import { clientQuestionsByLesson } from '@/lib/training/questions'
 import { READINESS_LESSON } from '@/lib/training/lessons'
@@ -44,6 +45,11 @@ export default async function OverviewPage() {
   if (role !== 'employee' && role !== 'admin') redirect('/dashboard')
 
   const admin = createAdminClient()
+
+  // Attorneys get the lesson content only, never the summary or the quizzes
+  // (Max, 2026-09-25): they are not certified. The content lives on
+  // /dashboard/training.
+  if (await fetchIsAttorney(admin, user.id, firmId)) redirect('/dashboard/training')
 
   const { data: member } = await admin
     .from('firm_members')

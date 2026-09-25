@@ -64,13 +64,24 @@ export async function POST(req: NextRequest) {
   // ── Resolve firm member (training_events links firm_member_id, not user_id) ──
   const { data: member } = await admin
     .from('firm_members')
-    .select('id')
+    .select('id, is_attorney')
     .eq('user_id', userId)
     .eq('firm_id', firmId)
     .maybeSingle()
 
   if (!member) {
     return NextResponse.json({ error: 'Firm membership not found' }, { status: 403 })
+  }
+
+  // Attorneys get the lesson content only (Max, 2026-09-25). Knowledge checks
+  // are part of the certification path, which attorneys are not on; the UI no
+  // longer offers them, and this is the server-side half of that rule. Same
+  // message as /api/quiz/start and /api/quiz/attempt.
+  if (member.is_attorney === true) {
+    return NextResponse.json(
+      { error: 'Training is available to you, but you are not eligible for a certificate.' },
+      { status: 403 }
+    )
   }
 
   // ── Load prior knowledge-check events + content completion → derive state ───

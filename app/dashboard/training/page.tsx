@@ -47,6 +47,7 @@ export default async function TrainingPage() {
   }
   type MemberRow = {
     id: string
+    is_attorney: boolean
     scorm_suspend_data: string | null
     scorm_lesson_location: string | null
   }
@@ -54,7 +55,7 @@ export default async function TrainingPage() {
     admin.from('courses').select('id, title, pass_threshold').limit(1).maybeSingle(),
     admin
       .from('firm_members')
-      .select('id, scorm_suspend_data, scorm_lesson_location')
+      .select('id, is_attorney, scorm_suspend_data, scorm_lesson_location')
       .eq('user_id', userId)
       .eq('firm_id', firmId)
       .maybeSingle(),
@@ -145,6 +146,27 @@ export default async function TrainingPage() {
     member?.scorm_lesson_location ??
     (typeof locMeta?.location === 'string' ? locMeta.location : undefined)
   const totalTrainingSeconds = enrollment?.total_training_seconds ?? 0
+
+  // Attorneys get the lesson content only (Max, 2026-09-25): no summary, no
+  // knowledge checks, no certification quiz, no completion prompts. They are
+  // never certified (the quiz routes refuse them too), so nothing below this
+  // line applies to them. Resume still works: content-progress is open to them.
+  if (member?.is_attorney === true) {
+    return (
+      <TrainingClient
+        contentOnly
+        phase="not_started"
+        courseTitle={courseTitle}
+        courseId={course.id}
+        questionsByLesson={{}}
+        checksCleared={false}
+        contentViewed={false}
+        currentLessonNumber={currentLessonNumber}
+        initialLocation={initialLocation}
+        initialSuspendData={initialSuspendData}
+      />
+    )
+  }
 
   const kcEvents: KnowledgeCheckEvent[] = ((kcResult.data ?? []) as KcRow[])
     .map(r => {

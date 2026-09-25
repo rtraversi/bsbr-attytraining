@@ -51,6 +51,13 @@ interface Props {
    * design pass (intentionally not destructured below, so it isn't a dead binding).
    */
   totalTrainingSeconds?: number
+  /**
+   * Attorneys (firm_members.is_attorney): the lesson content only. No Lesson
+   * Overview, no Next Up, no knowledge checks, no certification quiz, no
+   * completion or "take the quiz" prompts, no progress pill (it counts the
+   * checks as half of it). Max, 2026-09-25.
+   */
+  contentOnly?: boolean
 }
 
 /* ── Tokens ────────────────────────────────────────────────────────────────── */
@@ -73,6 +80,7 @@ export function TrainingClient({
   currentLessonNumber,
   initialLocation,
   initialSuspendData,
+  contentOnly = false,
 }: Props) {
   const router = useRouter()
   const [phase, setPhase] = useState(initialPhase)
@@ -153,7 +161,7 @@ export function TrainingClient({
     const prev = prevLessonRef.current
     prevLessonRef.current = n
     setLiveLessonNumber(n)
-    if (prev !== null && n > prev) setNagLesson(prev) // the lesson just finished
+    if (!contentOnly && prev !== null && n > prev) setNagLesson(prev) // the lesson just finished
   }
 
   // Rise's SCORM completion signal ("passed-incomplete" reporting) requires an
@@ -164,7 +172,8 @@ export function TrainingClient({
   // project's own architecture — Rise is the learning layer only and was never
   // meant to gate the real assessment.
   const gatesOpen = checksCleared
-  const showQuiz = phase === 'not_started' && gatesOpen && !!courseId && !quizDismissed
+  const showQuiz =
+    !contentOnly && phase === 'not_started' && gatesOpen && !!courseId && !quizDismissed
 
   // Honest progress: content is the first half (0–50%), lesson checks the second
   // (50%). Passing the assessment supersedes everything.
@@ -188,7 +197,8 @@ export function TrainingClient({
 
   // Content is done but the assessment isn't on screen — surface the next step
   // over the player rather than burying it below the fold.
-  const showCompletionOverlay = phase === 'not_started' && contentViewed && !showQuiz
+  const showCompletionOverlay =
+    !contentOnly && phase === 'not_started' && contentViewed && !showQuiz
 
   const openAssessment = () => setQuizDismissed(false)
 
@@ -259,7 +269,7 @@ export function TrainingClient({
 
       {/* Soft-nag quiz — the exact same KnowledgeCheckModal used on Quizzes/Overview.
           Closing it (pass, fail, or backing out) dismisses the nag for good. */}
-      {nagQuizOpen && nagLesson !== null && (
+      {!contentOnly && nagQuizOpen && nagLesson !== null && (
         <KnowledgeCheckModal
           lesson={nagLesson}
           title={LESSONS.find(l => l.number === nagLesson)?.title ?? ''}
@@ -337,32 +347,34 @@ export function TrainingClient({
             </button>
           </div>
 
-          <div
-            className={`relative flex shrink-0 items-center gap-3 rounded-full px-4 py-2 transition-opacity duration-500 ${
-              focus ? 'bg-black/50 backdrop-blur-sm' : CARD
-            } ${focus && chromeIdle ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
-          >
+          {!contentOnly && (
             <div
-              className={`h-1.5 w-20 overflow-hidden rounded-full sm:w-32 ${
-                focus ? 'bg-white/15' : 'bg-[#E5EEF5] dark:bg-[#1F2429]'
-              }`}
+              className={`relative flex shrink-0 items-center gap-3 rounded-full px-4 py-2 transition-opacity duration-500 ${
+                focus ? 'bg-black/50 backdrop-blur-sm' : CARD
+              } ${focus && chromeIdle ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
             >
               <div
-                className="h-full rounded-l-full transition-[width] duration-500"
-                style={{
-                  width: `${progressPct}%`,
-                  background: 'linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-emphasis) 100%)',
-                }}
-              />
+                className={`h-1.5 w-20 overflow-hidden rounded-full sm:w-32 ${
+                  focus ? 'bg-white/15' : 'bg-[#E5EEF5] dark:bg-[#1F2429]'
+                }`}
+              >
+                <div
+                  className="h-full rounded-l-full transition-[width] duration-500"
+                  style={{
+                    width: `${progressPct}%`,
+                    background: 'linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-emphasis) 100%)',
+                  }}
+                />
+              </div>
+              <span
+                className={`whitespace-nowrap text-sm font-bold ${
+                  focus ? 'text-[#5FC8FF]' : 'text-[var(--brand-emphasis)]'
+                }`}
+              >
+                {progressPct}% Complete
+              </span>
             </div>
-            <span
-              className={`whitespace-nowrap text-sm font-bold ${
-                focus ? 'text-[#5FC8FF]' : 'text-[var(--brand-emphasis)]'
-              }`}
-            >
-              {progressPct}% Complete
-            </span>
-          </div>
+          )}
         </div>
 
         {/* ── Player ──────────────────────────────────────────────────────── */}
@@ -432,7 +444,7 @@ export function TrainingClient({
           {/* Per-lesson soft nag — same z-20/backdrop treatment as the completion
               overlay, so it layers over the iframe in normal AND focus mode. Soft:
               "Done" always dismisses, never a hard block. Hidden while its quiz is open. */}
-          {nagLesson !== null && !nagQuizOpen && (
+          {!contentOnly && nagLesson !== null && !nagQuizOpen && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-[rgba(8,12,16,0.78)] px-6 backdrop-blur-md">
               <div className="mx-auto max-w-2xl text-center">
                 <p className="font-headline text-xl font-bold leading-snug text-white md:text-3xl">
@@ -462,7 +474,7 @@ export function TrainingClient({
         </div>
 
         {/* ── Below the fold — hidden in focus mode ───────────────────────── */}
-        {!focus && (
+        {!focus && !contentOnly && (
           <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className={phase === 'not_started' ? 'md:col-span-2' : 'md:col-span-3'}>
               <h2 className={`${HEADING} mb-3 text-2xl md:text-3xl xl:text-[2.5rem]`}>Lesson Overview</h2>
@@ -585,7 +597,7 @@ export function TrainingClient({
         )}
 
         {/* ── Certificate states ──────────────────────────────────────────── */}
-        {!focus && phase === 'cert_pending' && (
+        {!focus && !contentOnly && phase === 'cert_pending' && (
           <div className={`${CARD} mt-6 flex items-start gap-4 p-6`}>
             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EAF8FF] dark:bg-[var(--brand-emphasis)]/15">
               <ClockIcon />
@@ -601,7 +613,7 @@ export function TrainingClient({
 
         {/* Cert details + download live on the Quizzes tab now — this is just
             a pointer, matching Overview's minimal treatment. */}
-        {!focus && phase === 'certified' && (
+        {!focus && !contentOnly && phase === 'certified' && (
           <div className={`${CARD} mt-6 flex items-center justify-between gap-4 p-6`}>
             <p className={`text-sm ${MUTED}`}>
               Certified — your certificate is issued and ready to download.

@@ -15,10 +15,13 @@ import { ToastProvider } from './toast-provider'
 export function DashboardShell({
   role,
   pill,
+  isAttorney = false,
   children,
 }: {
   role: string | null
   pill: React.ReactNode
+  /** Attorneys get the lesson content only: no Overview / Content / Quizzes bar. */
+  isAttorney?: boolean
   children: React.ReactNode
 }) {
   const pathname = usePathname()
@@ -35,7 +38,7 @@ export function DashboardShell({
   // whereas this decides whether to render it at all. Both must hold — on a
   // training route mid-quiz the bar is rendered here and hidden by the CSS,
   // and returns when the quiz unmounts and drops the class.
-  const showTabBar = showTrainingShell && isTrainingRoute(pathname)
+  const showTabBar = showTrainingShell && isTrainingRoute(pathname) && !isAttorney
 
   // Standard shell — light-by-default themed experience with the bottom tab bar.
   // Background pattern: ONE full-bleed masked graphic, colored with the ADMIN

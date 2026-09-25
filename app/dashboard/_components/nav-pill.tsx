@@ -233,9 +233,11 @@ export function NavPill({
   const isAdmin = role === 'admin'
   const isDashboardActive = pathname === '/dashboard'
 
-  // Overview is the training entry point for everyone — greeting, course outline,
-  // cert status — now that admins are unblocked there too (route-based shell).
-  const trainingHref = '/dashboard/overview'
+  // Overview is the training entry point for staff — greeting, course outline,
+  // cert status. Attorneys get the lesson content only (Max, 2026-09-25), so
+  // their Training link goes straight to it; /dashboard/overview would only
+  // redirect them there anyway.
+  const trainingHref = isAttorney ? '/dashboard/training' : '/dashboard/overview'
 
   const links = [
     {

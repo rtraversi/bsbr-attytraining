@@ -67,7 +67,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <ThemeProvider>
       <ThemeScript />
-      <DashboardShell role={role} pill={pill}>
+      <DashboardShell role={role} pill={pill} isAttorney={isAttorney}>
         {children}
       </DashboardShell>
     </ThemeProvider>
