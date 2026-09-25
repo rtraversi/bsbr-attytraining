@@ -184,6 +184,19 @@ describe('the FIRM\'s policy is a draft, and matches the screen (2026-09-24)', (
     expect(firm.filter((p) => p.style === 'SectionHeading')).toHaveLength(onScreen.length)
     expect(firm.some((p) => p.style === 'Todo')).toBe(false)
   })
+
+  it('does not print the document title again as the first Application clause (2026-09-25)', () => {
+    // Spec section 2: the title is the document title, not a clause. The engine
+    // keeps p1-title (it is verbatim and transcription-checked); the firm's
+    // screen and download drop it, and the Title paragraph still carries it.
+    const onScreen = firmVisibleSections(result.policy).flatMap((s) => s.blocks)
+    expect(onScreen.some((b) => b.id === 'p1-title')).toBe(false)
+    expect(firm.filter((p) => p.style === 'Body').some((p) => p.text.startsWith('ARTIFICIAL INTELLIGENCE POLICY FOR'))).toBe(false)
+    expect(firm[0].text).toBe('Artificial Intelligence Policy for Chavez Law (Draft)')
+    // The operator audience still sees every block.
+    const operator = policyParagraphs(result.policy, 'Chavez Law')
+    expect(operator.some((p) => p.text.startsWith('ARTIFICIAL INTELLIGENCE POLICY FOR'))).toBe(true)
+  })
 })
 
 describe('the action item list is a SEPARATE document (D2)', () => {

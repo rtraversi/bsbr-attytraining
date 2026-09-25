@@ -5,24 +5,20 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { authorizeIntake } from '@/lib/intake/session'
 import { firmVisibleSections } from '@/lib/policy/docx'
 import { policyForFirm, type PolicyForFirm } from '@/lib/policy/for-firm'
-import type { AssembledSection, ActionItem } from '@/lib/policy/types'
+import { PolicyView } from './_components/policy-view'
 
 export const metadata = {
   title: "Your firm's AI policy — IURIX",
 }
 
-/* ── Shared tokens — the same values app/dashboard/settings/page.tsx uses ──── */
-const CARD = 'rounded-3xl bg-white p-6 xl:p-8 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
-const HEADING = 'font-headline font-bold tracking-tight text-[#0A0A0A] dark:text-[#F5F7FA]'
-const SECTION_HEADING = `${HEADING} mb-4 text-2xl md:text-3xl`
-const MUTED = 'text-[#8A8A8A] dark:text-[#7A8189]'
-const BTN =
-  'inline-flex items-center gap-2 rounded-xl bg-[var(--brand-emphasis)] px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90'
-const BTN_SECONDARY =
-  'inline-flex items-center gap-2 rounded-xl border border-[#E5EEF5] px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-[#EAF8FF] dark:border-[#1F2429] dark:hover:bg-[var(--brand-emphasis)]/10'
-
 /**
  * The firm's assembled AI policy, on screen and as a download.
+ *
+ * Layout is mockup B, "Tabs" (`policy-page-v1.html`, approved by Max
+ * 2026-09-25): a hero card with the firm name, "Policy draft", three counts and
+ * the two downloads; then a Policy | Action list tab switcher with Edit
+ * answers beside it. The rendering lives in PolicyView (a client component, for
+ * the tabs and the Edit answers call); this page only decides what to show.
  *
  * ── The gate is the intake's, unchanged ─────────────────────────────────────
  * authorizeIntake() — admin of a firm, claims read from app_metadata, which the
@@ -47,82 +43,30 @@ export default async function PolicyPage() {
 
   if (!found.ok) return <Unavailable found={found} />
 
-  // 🔴 THE SAME CLAUSES AS THE DOWNLOAD. `todo` blocks are dropped here exactly
-  // as the firm's .docx drops them (firmVisibleSections, lib/policy/docx.ts),
-  // so the screen and the file can never disagree. Since 2026-09-24 the policy
-  // is presented as a draft and gaps go to the action list, so an unwritten
-  // clause is not shown to the firm at all.
+  // 🔴 THE SAME CLAUSES AS THE DOWNLOAD. `todo` blocks (and the title clause,
+  // see FIRM_HIDDEN_BLOCK_IDS) are dropped here exactly as the firm's .docx
+  // drops them (firmVisibleSections, lib/policy/docx.ts), so the screen, the
+  // counts in the hero and the file can never disagree.
   const sections = firmVisibleSections(found.result.policy)
-  const blocks = sections.flatMap((s) => s.blocks)
 
   return (
-    <Shell>
-      <section className={`${CARD} mb-10`}>
-        <h2 className={`${HEADING} text-2xl`}>{found.firmName}</h2>
-        <p className={`mt-2 text-[14.5px] leading-relaxed ${MUTED}`}>
-          Assembled from the answers you gave.{' '}
-          {sections.length} sections, {blocks.length} clauses. Change any answer and this
-          document is rebuilt from the new ones.
-        </p>
-
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          {/* Plain links, not fetch + blob. The route sets Content-Disposition,
-              so the browser saves the file itself and this page needs no client
-              component to offer a download. */}
-          <a className={BTN} href="/api/policy?format=docx" download>
-            Download the policy (.docx)
-          </a>
-          <a
-            className={BTN_SECONDARY}
-            href="/api/policy?format=docx&document=action-items"
-            download
-          >
-            Download the action items (.docx)
-          </a>
-          <Link className={BTN_SECONDARY} href="/intake">
-            Change your answers
-          </Link>
-        </div>
-
-        {/* ⚠️ APPROVED COPY, VERBATIM (Max, 2026-09-24). Replaced a red "not a
-            finished policy yet" banner: the draft framing does that job, and
-            anything missing goes on the action list. */}
-        <p className={`mt-5 text-[14.5px] leading-relaxed ${MUTED}`}>
-          This is a draft built from your answers. Review it, make it yours, and use the action list to fill what&apos;s missing.
-        </p>
-      </section>
-
-      <article className={`${CARD} mb-10`}>
-        <h2 className={SECTION_HEADING}>
-          Artificial Intelligence Policy for {found.firmName}
-        </h2>
-        {sections.map((section) => (
-          <PolicySection key={section.key} section={section} />
-        ))}
-      </article>
-
-      {/* 🔴 A SEPARATE DOCUMENT, NOT AN APPENDIX — D2. A firm's adopted policy
-          must not contain a list of what the firm has not done yet. Its own
-          card, its own heading, its own download, and it says so in words. */}
-      <section className={CARD}>
-        <h2 className={SECTION_HEADING}>Action items</h2>
-        <p className={`mb-6 text-[14.5px] leading-relaxed ${MUTED}`}>
-          Things to confirm or decide. These accompany your policy and are deliberately not part of
-          it — your adopted policy should not contain a list of what you have not done yet.
-        </p>
-        {found.result.actionItems.length === 0 ? (
-          <p className="text-[14.5px]">Nothing outstanding.</p>
-        ) : (
-          <ul className="space-y-4">
-            {found.result.actionItems.map((item: ActionItem) => (
-              <li key={item.id} className="text-[14.5px] leading-relaxed">
-                {item.status === 'todo' ? <TodoText text={item.text} /> : item.text}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </Shell>
+    <Page>
+      <PolicyView
+        firmName={found.firmName}
+        sections={sections.map((s) => ({
+          key: s.key,
+          title: s.title,
+          blocks: s.blocks.map((b) => ({ id: b.id, text: b.text })),
+        }))}
+        // 🔴 D2: the action list is a SEPARATE document, not an appendix. It
+        // gets its own tab and its own download, never a place in the policy.
+        actionItems={found.result.actionItems.map((i) => ({
+          id: i.id,
+          text: i.text,
+          todo: i.status === 'todo',
+        }))}
+      />
+    </Page>
   )
 }
 
@@ -136,8 +80,8 @@ export default async function PolicyPage() {
  */
 function Unavailable({ found }: { found: Extract<PolicyForFirm, { ok: false }> }) {
   return (
-    <Shell>
-      <section className={CARD}>
+    <Page>
+      <section className="rounded-[28px] bg-white p-6 shadow-[0_6px_28px_-14px_rgba(0,70,140,0.18)] md:p-10 dark:bg-[#0D0F12] dark:shadow-none">
         <p className="text-[15px] leading-relaxed">
           {found.reason === 'no-intake' ? (
             <>Your policy is assembled from your intake, and you have not completed one yet.</>
@@ -148,70 +92,24 @@ function Unavailable({ found }: { found: Extract<PolicyForFirm, { ok: false }> }
             </>
           )}
         </p>
-        <Link href="/intake" className={`mt-5 ${BTN}`}>
+        <Link
+          href="/intake"
+          className="mt-5 inline-flex items-center gap-2 rounded-[14px] bg-[var(--brand-emphasis)] px-[18px] py-3 text-[15px] font-semibold text-white transition-opacity hover:opacity-90"
+        >
           {found.reason === 'no-intake' ? 'Start your intake' : 'Go to your intake'}
         </Link>
       </section>
-    </Shell>
-  )
-}
-
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <main className="mx-auto w-full max-w-[1000px] px-6 py-10 md:px-10 xl:py-14">
-      <div className="mb-10">
-        <h1 className={`${HEADING} text-4xl`}>Your AI policy</h1>
-        <p className={`mt-2 text-base ${MUTED}`}>
-          The written policy your firm adopts, and the training your staff take against it.
-        </p>
-      </div>
-      {children}
-    </main>
+    </Page>
   )
 }
 
 /**
- * One section, headed by its title only (Max, 2026-09-24).
- *
- * The spine number is not printed: it is deliberately not contiguous (a firm
- * that does no document review has no §11), so shown it reads as gaps. Same
- * rule as the .docx in lib/policy/docx.ts.
+ * Page width matches the nav's measure: about 1240px at most, fluid below it,
+ * with the shell's own 16px / 24px gutters. Replaces the old fixed 1000px Shell
+ * and its "Your AI policy" heading (Max, 2026-09-25).
  */
-function PolicySection({ section }: { section: AssembledSection }) {
+function Page({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-8 first:mt-0">
-      <h3 className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[var(--brand-emphasis)]">
-        {section.title}
-      </h3>
-      <div className="space-y-4">
-        {section.blocks.map((block) =>
-          block.status === 'todo' ? (
-            <TodoText key={block.id} text={block.text} />
-          ) : (
-            // whitespace-pre-line: Katy double-spaces after full stops and the
-            // transcription preserved that deliberately. HTML would collapse it.
-            <p key={block.id} className="whitespace-pre-line text-[15px] leading-relaxed">
-              {block.text}
-            </p>
-          ),
-        )}
-      </div>
-    </div>
-  )
-}
-
-/**
- * A `todo` item, set apart in red.
- *
- * ⚠️ Since 2026-09-24 a firm never sees an unwritten CLAUSE: this page drops
- * them exactly as the firm's .docx does (firmVisibleSections), because the
- * policy is presented as a draft and its gaps belong on the action list. This
- * stays for an action item that is still `todo`, which none are today.
- */
-function TodoText({ text }: { text: string }) {
-  return (
-    <p className="whitespace-pre-line rounded-xl border border-[#F2B8B5] bg-[#FFF4F3] px-4 py-3 text-[13.5px] font-semibold leading-relaxed text-[#8C1D18] dark:border-[#8C1D18] dark:bg-[#2A1614] dark:text-[#F2B8B5]">
-      {text}
-    </p>
+    <main className="mx-auto w-full max-w-[1240px] px-4 pt-6 pb-24 md:px-6 md:pt-8">{children}</main>
   )
 }

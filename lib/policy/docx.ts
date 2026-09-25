@@ -294,9 +294,25 @@ export function docx(paragraphs: readonly Paragraph[]): Uint8Array {
  */
 export function firmVisibleSections(policy: AssembledPolicy): AssembledPolicy['sections'] {
   return policy.sections
-    .map((section) => ({ ...section, blocks: section.blocks.filter((b) => b.status !== 'todo') }))
+    .map((section) => ({
+      ...section,
+      blocks: section.blocks.filter((b) => b.status !== 'todo' && !FIRM_HIDDEN_BLOCK_IDS.has(b.id)),
+    }))
     .filter((section) => section.blocks.length > 0)
 }
+
+/**
+ * Blocks the engine keeps but a FIRM never sees, on screen or in its download.
+ *
+ * `p1-title` is Katy's "ARTIFICIAL INTELLIGENCE POLICY FOR [FIRM NAME}", which
+ * the transcription carries as the first Application clause. The build spec
+ * (POLICY-BUILD-SPEC-2026-09-04.md, section 2) makes it the document TITLE, "not
+ * a clause inside this section", and both the page heading and the .docx Title
+ * paragraph already say it, so as a clause it printed twice. It stays in the
+ * engine, verbatim and still checked against her source by the transcription
+ * test; only the firm's view drops it (Max, 2026-09-25).
+ */
+const FIRM_HIDDEN_BLOCK_IDS: ReadonlySet<string> = new Set(['p1-title'])
 
 /**
  * The policy, as paragraphs.
