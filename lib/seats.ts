@@ -53,3 +53,28 @@ export async function fetchCertifiableMember(
 
   return (data as CertifiableMemberRow | null) ?? null
 }
+
+/**
+ * Is this signed-in member an attorney? Source of truth is
+ * firm_members.is_attorney (0028), written from the intake roster by promote
+ * and by both invite routes. It is not in the JWT, so server code reads it.
+ *
+ * No row, or a failed read, answers false ("Staff"). That is the safe side for
+ * the nav badge, and for training it leaves a member on the staff experience
+ * rather than hiding the quiz from someone who may be entitled to it; the
+ * certificate gate itself is isCertifiableMember, which fails closed.
+ */
+export async function fetchIsAttorney(
+  admin: AdminClient,
+  userId: string,
+  firmId: string
+): Promise<boolean> {
+  const { data } = await admin
+    .from('firm_members')
+    .select('is_attorney')
+    .eq('user_id', userId)
+    .eq('firm_id', firmId)
+    .maybeSingle()
+
+  return (data as { is_attorney: boolean } | null)?.is_attorney === true
+}

@@ -7,6 +7,7 @@ import { hasSubmittedIntake, intakeInProgress } from '@/lib/intake/gate'
 import { latestSession } from '@/lib/intake/session'
 import { intakeStateOf } from '@/lib/intake/review'
 import { needsEmailAttention } from '@/lib/email-verification'
+import { fetchIsAttorney } from '@/lib/seats'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -21,11 +22,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
   let firmName: string | null = null
   let setup: SetupState | null = null
   let policyReady = false
+  let isAttorney = false
 
-  if (firmId) {
+  if (firmId && user) {
     const admin = createAdminClient()
-    const { data: firm } = await admin.from('firms').select('name').eq('id', firmId).maybeSingle()
+    // is_attorney is not in the JWT, so it is read here, beside the firm name,
+    // for everyone: it drives the nav's role badge and the training shell.
+    const [{ data: firm }, attorney] = await Promise.all([
+      admin.from('firms').select('name').eq('id', firmId).maybeSingle(),
+      fetchIsAttorney(admin, user.id, firmId),
+    ])
     firmName = firm?.name ?? null
+    isAttorney = attorney
 
     // Setup chips are admin-only, so employees pay for none of this.
     if (role === 'admin') {
@@ -49,6 +57,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       role={role}
       setup={setup}
       policyReady={policyReady}
+      isAttorney={isAttorney}
     />
   )
 

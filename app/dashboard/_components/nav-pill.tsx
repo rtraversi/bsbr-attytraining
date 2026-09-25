@@ -34,6 +34,11 @@ interface NavPillProps {
    * is already reading intake state for the setup chips.
    */
   policyReady?: boolean
+  /**
+   * firm_members.is_attorney for the signed-in member, read in the layout (it
+   * is not in the JWT). Drives the role badge; false when there is no row.
+   */
+  isAttorney?: boolean
 }
 
 export interface SetupState {
@@ -101,37 +106,19 @@ function SupportIcon() {
   )
 }
 
-/** Generic person-outline mark used in the profile slot. */
-function ProfileIcon() {
-  return (
-    <svg className="h-full w-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-      />
-    </svg>
-  )
-}
-
-/** The circular profile slot. Always the person-outline mark — this product
- * deliberately holds no profile photographs (decision: Rob, 2026-07-28).
- * Tone mirrors the sketch's subtle, near-invisible-by-design opacity rules
- * for the mark's backdrop. */
-function ProfileSlot({ tone }: { tone: 'idle' | 'active' | 'identity' }) {
+/** The role badge at the left of the pill, in place of the old profile icon
+ * (Max, 2026-09-25). "Attorney" or "Staff", the same two labels the intake
+ * roster toggle uses. Tone follows the pill it sits in, as the icon's did. */
+function RoleBadge({ isAttorney, tone }: { isAttorney: boolean; tone: 'idle' | 'active' | 'identity' }) {
   const toneClass = {
-    idle: 'bg-white/15',
-    // Was bg-black/[0.08]; the active pill is now blue, on which a black tint
-    // reads as a visible disc. White at 15% keeps it near-invisible as designed.
-    active: 'bg-white/15 dark:bg-black/[0.08]',
-    identity: 'bg-black/[0.06] dark:bg-white/10',
+    idle: 'bg-white text-[var(--brand-emphasis)] dark:bg-[#0D0F12] dark:text-[var(--brand-primary)]',
+    active: 'bg-white/20 text-white dark:bg-black/10 dark:text-[#0A0A0A]',
+    identity: 'bg-white text-[#0A0A0A] dark:bg-[#0D0F12] dark:text-[#F5F7FA]',
   }[tone]
 
   return (
-    <span
-      className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full p-[5px] ${toneClass}`}
-    >
-      <ProfileIcon />
+    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] leading-[18px] font-bold ${toneClass}`}>
+      {isAttorney ? 'Attorney' : 'Staff'}
     </span>
   )
 }
@@ -222,7 +209,7 @@ function ThemeToggle() {
 /**
  * Unified overhead nav, shared by the admin and employee shells.
  *
- * Admin: profile-icon + firm name + "Dashboard" + grid icon merge into ONE
+ * Admin: role badge + firm name + "Dashboard" + grid icon merge into ONE
  * pill linking to /dashboard, sharing the exact same pillBase/pillIdle/
  * pillActive treatment as every other link (active only when on /dashboard).
  * Member: the same visual slot renders as plain, non-interactive identity
@@ -235,7 +222,13 @@ function ThemeToggle() {
  * Separate from EmployeeTabBar: this switches app sections, that one navigates
  * within the training area.
  */
-export function NavPill({ firmName, role, setup = null, policyReady = false }: NavPillProps) {
+export function NavPill({
+  firmName,
+  role,
+  setup = null,
+  policyReady = false,
+  isAttorney = false,
+}: NavPillProps) {
   const pathname = usePathname()
   const isAdmin = role === 'admin'
   const isDashboardActive = pathname === '/dashboard'
@@ -346,7 +339,7 @@ export function NavPill({ firmName, role, setup = null, policyReady = false }: N
             aria-current={isDashboardActive ? 'page' : undefined}
             className={`${pillBase} shrink-0 ${isDashboardActive ? pillActive : pillIdle}`}
           >
-            <ProfileSlot tone={isDashboardActive ? 'active' : 'idle'} />
+            <RoleBadge isAttorney={isAttorney} tone={isDashboardActive ? 'active' : 'idle'} />
             {/* Hidden below sm — same reasoning as the old firm-name-only rule:
                 on a phone this text alone would eat the pill's width and push
                 the nav links out of reach. Icons stay visible either way. */}
@@ -355,7 +348,7 @@ export function NavPill({ firmName, role, setup = null, policyReady = false }: N
           </Link>
         ) : (
           <span className={`${pillBase} shrink-0 bg-[#F5F7FA] text-[#0A0A0A] dark:bg-[#131A20] dark:text-[#F5F7FA]`}>
-            <ProfileSlot tone="identity" />
+            <RoleBadge isAttorney={isAttorney} tone="identity" />
             {firmName && <span className="font-headline hidden sm:inline">{firmName}</span>}
           </span>
         )}
