@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Instrument_Serif } from "next/font/google";
 import localFont from "next/font/local";
+import Script from "next/script";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -136,7 +137,22 @@ export default function RootLayout({
         kapakana.variable
       )}
     >
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        {/* Cloudflare Web Analytics — cookieless page views, speed and devices.
+            Installed here rather than by Cloudflare's automatic injection, which
+            never reached these Worker-served pages (checked 2026-09-25). The
+            token is public by design and is validated against the hostname, so
+            preview and localhost loads are simply not counted. Funnel and
+            attribution live in lib/analytics/events.ts, not here. The dashboard
+            site must stay on "Enable with JS Snippet installation": one beacon
+            per page. */}
+        <Script
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "736efc4c26a64db2a0f053bd30794e2c"}'
+          strategy="afterInteractive"
+        />
+      </body>
     </html>
   );
 }
