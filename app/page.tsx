@@ -7,7 +7,6 @@ import { RecordSection } from "@/app/_components/record-section";
 import { IncludedSection } from "@/app/_components/included-section";
 import { ClosingCta } from "@/app/_components/closing-cta";
 import { Footer } from "@/app/_components/footer";
-import { HitBeacon } from "@/app/_components/hit-beacon";
 import { VisitBeacon } from "@/app/_components/visit-beacon";
 
 // No metadata export here on purpose. This page used to set its own title and
@@ -25,9 +24,7 @@ import { VisitBeacon } from "@/app/_components/visit-beacon";
 export default function HomePage() {
   return (
     <div className="bg-marble">
-      {/* Renders nothing; counts ?v=1 vs ?v=2 opens for Katy. */}
-      <HitBeacon />
-      {/* Renders nothing; first-party page view for /ops/metrics. */}
+      {/* Renders nothing; first-party page view for /ops/metrics (incl. Katy's ?v=1 / ?v=2). */}
       <VisitBeacon />
       <SiteHeader />
       <main>

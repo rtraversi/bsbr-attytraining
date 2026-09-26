@@ -7,8 +7,9 @@ import { captureAttribution } from "@/lib/analytics/attribution";
 // the stored attribution. Mounted on the marketing pages whose views make up the
 // top of the funnel.
 //
-// Sits alongside HitBeacon rather than replacing it: HitBeacon feeds the counter
-// Katy already reads on the RMT portal, and retiring it is her call.
+// Replaced HitBeacon (2026-09-25), which counted Katy's ?v=1 / ?v=2 landings on
+// the rmtnetworks.com counter. Those now show as "link v1" / "link v2" sources
+// on /ops/metrics.
 export function VisitBeacon() {
   // StrictMode runs effects twice in dev; one view per load.
   const fired = useRef(false);
