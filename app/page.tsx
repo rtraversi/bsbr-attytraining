@@ -8,6 +8,7 @@ import { IncludedSection } from "@/app/_components/included-section";
 import { ClosingCta } from "@/app/_components/closing-cta";
 import { Footer } from "@/app/_components/footer";
 import { HitBeacon } from "@/app/_components/hit-beacon";
+import { VisitBeacon } from "@/app/_components/visit-beacon";
 
 // No metadata export here on purpose. This page used to set its own title and
 // description, which silently beat the root layout for the two plain tags while
@@ -26,6 +27,8 @@ export default function HomePage() {
     <div className="bg-marble">
       {/* Renders nothing; counts ?v=1 vs ?v=2 opens for Katy. */}
       <HitBeacon />
+      {/* Renders nothing; first-party page view for /ops/metrics. */}
+      <VisitBeacon />
       <SiteHeader />
       <main>
         <HeroSection />

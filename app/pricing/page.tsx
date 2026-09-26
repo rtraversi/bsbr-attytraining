@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/app/_components/site-header";
 import { Footer } from "@/app/_components/footer";
 import { PricingSlider } from "./_components/pricing-slider";
+import { VisitBeacon } from "@/app/_components/visit-beacon";
 
 export const metadata: Metadata = {
   title: "Pricing | Iurix Accreditation",
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
 export default function PricingPage() {
   return (
     <div className="min-h-screen bg-marble text-ink">
+      <VisitBeacon />
       <SiteHeader />
       <main className="mx-auto max-w-[1140px] px-6 pb-24 pt-16 md:px-8 md:pt-20">
         <div className="mx-auto mb-14 max-w-2xl text-center">

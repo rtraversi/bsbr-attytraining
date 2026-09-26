@@ -9,7 +9,41 @@ import {
   mergeAuthCookieOptions,
 } from '@/lib/supabase/cookie-options'
 
+// ── /ops — operator-only pages (currently /ops/metrics) ──────────────────────
+// There is no operator role in Supabase, and a firm admin must never reach
+// these, so they sit behind HTTP Basic auth against the
+// METRICS_DASHBOARD_PASSWORD Worker secret (any username). Unset → 404, so a
+// deployment without the secret exposes nothing. Handled before the Supabase
+// client is built: an operator page needs no session.
+function opsGate(request: NextRequest): NextResponse {
+  const password = process.env.METRICS_DASHBOARD_PASSWORD
+  if (!password) return new NextResponse('Not found', { status: 404 })
+
+  const header = request.headers.get('authorization') ?? ''
+  let supplied = ''
+  if (header.startsWith('Basic ')) {
+    try {
+      const decoded = atob(header.slice(6))
+      supplied = decoded.slice(decoded.indexOf(':') + 1)
+    } catch {
+      // malformed header — treated as no password
+    }
+  }
+  if (supplied !== password) {
+    return new NextResponse('Authentication required', {
+      status: 401,
+      headers: { 'WWW-Authenticate': 'Basic realm="Iurix operator", charset="UTF-8"' },
+    })
+  }
+  const response = NextResponse.next({ request })
+  response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+  response.headers.set('Cache-Control', 'no-store')
+  return response
+}
+
 export async function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith('/ops')) return opsGate(request)
+
   let response = NextResponse.next({ request })
 
   // ── ix-cookiesecure ────────────────────────────────────────────────────────

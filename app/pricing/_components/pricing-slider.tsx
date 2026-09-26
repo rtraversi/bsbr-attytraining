@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { CURRENT_TERMS_VERSION } from "@/lib/legal/terms";
+import { readAttribution } from "@/lib/analytics/attribution";
 import { normalizeFirmName } from "@/lib/firm-name";
 
 // Cofounder.co mechanism (brief §3.4): drag the seat slider → live cost breakdown
@@ -70,6 +71,9 @@ export function PricingSlider() {
           termsVersion: CURRENT_TERMS_VERSION,
           firmName: trimmedFirmName,
           email: email.trim(),
+          // Where this buyer came from, carried onto the Stripe session so the
+          // paid event can be credited to it. See lib/analytics/attribution.ts.
+          attribution: readAttribution(),
         }),
       });
       // Surface the server's own message rather than a generic retry prompt.

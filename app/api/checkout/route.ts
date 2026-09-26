@@ -10,6 +10,12 @@ import {
 import { CURRENT_TERMS_VERSION, isCurrentTermsVersion } from "@/lib/legal/terms";
 import { normalizeFirmName } from "@/lib/firm-name";
 import { resolveBuyer } from "@/lib/buyer-identity";
+import {
+  attributionToMetadata,
+  parseAttribution,
+  trackEvent,
+  type Attribution,
+} from "@/lib/analytics/events";
 
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
@@ -96,6 +102,7 @@ export async function POST(req: NextRequest) {
   let termsVersion: unknown;
   let firmName: string | null;
   let email: string;
+  let attribution: Attribution;
 
   try {
     const body = (await req.json()) as {
@@ -105,6 +112,7 @@ export async function POST(req: NextRequest) {
       termsVersion?: unknown;
       firmName?: unknown;
       email?: unknown;
+      attribution?: unknown;
     };
     seats = typeof body.seats === "number" ? Math.floor(body.seats) : 1;
     if (seats < 1 || seats > 500) seats = Math.max(1, Math.min(500, seats));
@@ -118,6 +126,8 @@ export async function POST(req: NextRequest) {
     // asks once, same as before this field existed.
     firmName = normalizeFirmName(body.firmName);
     email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    // Optional, first-party campaign labels from lib/analytics/attribution.ts.
+    attribution = parseAttribution(body.attribution);
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
@@ -291,6 +301,9 @@ export async function POST(req: NextRequest) {
         // written as an empty string, so the webhook's own fallback stays in
         // charge of what "no name given" means.
         ...(firmName ? { firm_name: firmName } : {}),
+        // Where the buyer came from (src_* keys). Read back by the webhook so
+        // the paid event is credited to the same source as this one.
+        ...attributionToMetadata(attribution),
       },
       automatic_tax: { enabled: true },
       tax_id_collection: { enabled: true },
@@ -305,6 +318,14 @@ export async function POST(req: NextRequest) {
     if (!session.url) {
       return NextResponse.json({ error: "Stripe did not return a checkout URL" }, { status: 500 });
     }
+
+    trackEvent("checkout_started", {
+      host: req.headers.get("host"),
+      path: "/api/checkout",
+      attribution,
+      country: req.headers.get("cf-ipcountry"),
+      seats,
+    });
 
     return NextResponse.json({ url: session.url });
   } catch (err) {

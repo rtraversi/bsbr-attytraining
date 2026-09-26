@@ -8,6 +8,7 @@ import { SEAT_OCCUPYING_STATUSES } from '@/lib/seats'
 import { normalizeFirmName } from '@/lib/firm-name'
 import { alertOperator } from '@/lib/operator-alert'
 import { resolveBuyer, type BuyerIdentity } from '@/lib/buyer-identity'
+import { attributionFromMetadata, trackEvent } from '@/lib/analytics/events'
 import { CheckoutEmailInUseEmail } from '@/emails/checkout-email-in-use'
 import { CheckoutNonUsEmail } from '@/emails/checkout-non-us'
 
@@ -71,9 +72,23 @@ export async function POST(req: NextRequest) {
 
   try {
     switch (event.type) {
-      case 'checkout.session.completed':
-        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session, event.id)
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session
+        await handleCheckoutCompleted(session, event.id)
+        // After the handler, so a thrown handler (500, Stripe retries) is not
+        // counted, and the idempotency insert above keeps a retry from counting
+        // twice. Money collected, whichever provisioning branch it took.
+        if (session.payment_status === 'paid') {
+          trackEvent('paid', {
+            host: req.headers.get('host'),
+            path: '/api/webhooks/stripe',
+            attribution: attributionFromMetadata(session.metadata),
+            // Net of sales tax (NC tax is collected, not earned); after discounts.
+            valueCents: (session.amount_total ?? 0) - (session.total_details?.amount_tax ?? 0),
+          })
+        }
         break
+      }
       case 'customer.subscription.updated':
         await handleSubscriptionUpdated(event.data.object as Stripe.Subscription)
         break
@@ -83,9 +98,18 @@ export async function POST(req: NextRequest) {
       case 'invoice.payment_failed':
         await handlePaymentFailed(event.data.object as Stripe.Invoice)
         break
-      case 'invoice.payment_succeeded':
-        await handlePaymentSucceeded(event.data.object as Stripe.Invoice)
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice
+        await handlePaymentSucceeded(invoice)
+        if (invoice.billing_reason === 'subscription_cycle') {
+          trackEvent('renewed', {
+            host: req.headers.get('host'),
+            path: '/api/webhooks/stripe',
+            valueCents: invoice.amount_paid - (invoice.total_taxes ?? []).reduce((sum, t) => sum + t.amount, 0),
+          })
+        }
         break
+      }
     }
   } catch (err) {
     console.error(`[stripe-webhook] ${event.type} handler threw:`, err)

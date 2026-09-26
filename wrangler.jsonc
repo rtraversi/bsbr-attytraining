@@ -6,6 +6,16 @@
   "compatibility_date": "2026-06-12",
   "preview_urls": true,
   "vars": {
-    "NEXT_PUBLIC_APP_URL": "https://iurixaccreditation.com"
-  }
+    "NEXT_PUBLIC_APP_URL": "https://iurixaccreditation.com",
+    // The account the Worker lives in. Not a secret — /ops/metrics needs it to
+    // address the Analytics Engine SQL API, alongside the CF_ANALYTICS_TOKEN
+    // secret (Account Analytics: Read).
+    "CF_ACCOUNT_ID": "4b2a402334decc9259d7317aaf9782f0"
+  },
+  // First-party funnel events — see lib/analytics/events.ts. The dataset is
+  // created on first write; no dashboard setup needed. Preview versions share
+  // this binding, so queries filter on host = iurixaccreditation.com.
+  "analytics_engine_datasets": [
+    { "binding": "IURIX_EVENTS", "dataset": "iurix_events" }
+  ]
 }
