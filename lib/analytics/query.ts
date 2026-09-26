@@ -40,6 +40,17 @@ async function sql(query: string): Promise<Row[]> {
 
 const num = (v: unknown) => Number(v ?? 0) || 0;
 
+/**
+ * One label per visitor source: explicit utm_source/ref first, then Katy's ?v=
+ * variant, then the referring site, else "direct".
+ */
+function sourceLabel(r: Row): string {
+  if (r.src) return String(r.src);
+  if (r.variant) return `link v${r.variant}`;
+  if (r.referrer) return String(r.referrer);
+  return "direct";
+}
+
 export type TrafficReport = {
   /** views of "/" and "/pricing", checkouts started, paid, renewed, revenue */
   funnel: {
@@ -62,21 +73,19 @@ export async function trafficReport(days: number): Promise<TrafficReport> {
   // `days` is chosen from a fixed list by the page; never interpolate raw input.
   const range = `timestamp > NOW() - INTERVAL '${Math.trunc(days)}' DAY AND blob2 = '${PROD_HOST}'`;
 
-  // A source label: explicit utm_source/ref first, then Katy's ?v= variant,
-  // then the referring site, else "direct".
-  const source = `multiIf(blob4 != '', blob4, blob7 != '', concat('link v', blob7), blob8 != '', blob8, 'direct')`;
-
   const [byEvent, bySource, byReferrer, byCountry, byDay] = await Promise.all([
     sql(`SELECT blob1 AS event, blob3 AS path,
                 SUM(_sample_interval) AS n,
                 SUM(_sample_interval * double1) AS cents
          FROM iurix_events WHERE ${range}
          GROUP BY event, path`),
-    sql(`SELECT ${source} AS source, blob1 AS event,
+    // Grouped on the raw columns and labelled in JS below: the Analytics Engine
+    // SQL dialect has no concat() (422 in production, 2026-09-25).
+    sql(`SELECT blob4 AS src, blob7 AS variant, blob8 AS referrer, blob1 AS event,
                 SUM(_sample_interval) AS n,
                 SUM(_sample_interval * double1) AS cents
          FROM iurix_events WHERE ${range} AND blob1 != 'renewed'
-         GROUP BY source, event`),
+         GROUP BY src, variant, referrer, event`),
     sql(`SELECT blob8 AS referrer, SUM(_sample_interval) AS n
          FROM iurix_events WHERE ${range} AND blob1 = 'page_view' AND blob8 != ''
          GROUP BY referrer ORDER BY n DESC LIMIT 15`),
@@ -113,7 +122,7 @@ export async function trafficReport(days: number): Promise<TrafficReport> {
 
   const sourceMap = new Map<string, TrafficReport["sources"][number]>();
   for (const r of bySource) {
-    const key = String(r.source);
+    const key = sourceLabel(r);
     const row = sourceMap.get(key) ?? { source: key, views: 0, checkouts: 0, paid: 0, paidCents: 0 };
     if (r.event === "page_view") row.views += num(r.n);
     if (r.event === "checkout_started") row.checkouts += num(r.n);
