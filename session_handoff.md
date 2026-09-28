@@ -1,8 +1,28 @@
 # Session Handoff
 
-**Date:** 2026-09-25 (latest section; older sections kept below)
-**Who:** Max, with desktop + terminal-Claude (earlier sections: Rob, Max)
+**Date:** 2026-09-28 (latest section; older sections kept below)
+**Who:** Rob, with terminal-Claude (earlier sections: Max, Rob)
 **Written for:** someone who has never seen this repository
+
+---
+
+## 🟢 Added 2026-09-28 (Rob, terminal) — IURIX is on Google Search
+
+**Shipped to production** (`f3bf477`, `c02cccd`; prod runs `36497043866`, `36499182598`).
+
+- **robots.txt + sitemap.xml** now exist (`app/robots.ts`, `app/sitemap.ts`). Add new public pages
+  to the sitemap.
+- **Search Console** domain property set up by Rob; homepage indexed, sitemap read (6 pages).
+- **`/ops/metrics` has a Google search section** (impressions, clicks, CTR, position, top terms,
+  top pages) via a service account. Secrets `GSC_CLIENT_EMAIL` / `GSC_PRIVATE_KEY` on the prod
+  Worker. Working; numbers fill in over the coming week.
+- ⚠️ **Deploy workflow defaults to preview.** Go live with
+  `gh workflow run deploy.yml --ref main -f target=production`.
+- ⚠️ **Wrangler on Rob's PC was on the wrong Cloudflare account** and made a stray Worker there;
+  now logged into prod. Next step: add `account_id` to root `wrangler.jsonc`.
+- Rob's loose ends: delete the stray Worker (bsbr.goldsberry account) and the downloaded JSON key.
+
+Details: `.planning/sessions/20260928-rob-summary.md`.
 
 ---
 
