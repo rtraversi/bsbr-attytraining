@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AnalyticsNotConfigured, trafficReport, type TrafficReport } from "@/lib/analytics/query";
 import { businessReport, type BusinessReport } from "@/lib/analytics/business";
+import { SearchConsoleNotConfigured, searchReport, type SearchReport } from "@/lib/analytics/search-console";
 
 // Operator-only metrics. Guarded by HTTP Basic auth in middleware.ts (the
 // METRICS_DASHBOARD_PASSWORD secret) — there is no operator role in Supabase,
@@ -32,7 +33,7 @@ export default async function MetricsPage({
   const { days: raw } = await searchParams;
   const days = RANGES.find((r) => String(r) === raw) ?? 30;
 
-  const [traffic, business] = await Promise.all([
+  const [traffic, business, search] = await Promise.all([
     trafficReport(days).then(
       (r) => ({ ok: true as const, r }),
       (e: unknown) => ({
@@ -46,6 +47,16 @@ export default async function MetricsPage({
     businessReport(days).then(
       (r) => ({ ok: true as const, r }),
       (e: unknown) => ({ ok: false as const, message: e instanceof Error ? e.message : String(e) }),
+    ),
+    searchReport(days).then(
+      (r) => ({ ok: true as const, r }),
+      (e: unknown) => ({
+        ok: false as const,
+        message:
+          e instanceof SearchConsoleNotConfigured
+            ? "Google Search Console isn't configured on this deployment (GSC_CLIENT_EMAIL / GSC_PRIVATE_KEY)."
+            : `Couldn't load Google Search Console: ${e instanceof Error ? e.message : String(e)}`,
+      }),
     ),
   ]);
 
@@ -97,6 +108,21 @@ export default async function MetricsPage({
               </Section>
             </div>
           </>
+        )}
+
+        <Section title="Google search" note={`Last ${days} days · Google reports with a 2–3 day lag`}>
+          {search.ok ? <SearchSummary s={search.r} /> : <Problem>{search.message}</Problem>}
+        </Section>
+
+        {search.ok && (
+          <div className="grid gap-8 md:grid-cols-2">
+            <Section title="Search terms">
+              <SearchTable first="Search" rows={search.r.queries} />
+            </Section>
+            <Section title="Pages in search">
+              <SearchTable first="Page" rows={search.r.pages} />
+            </Section>
+          </div>
         )}
 
         {business.ok && (
@@ -195,6 +221,29 @@ function BusinessFunnel({ b, days }: { b: BusinessReport; days: number }) {
         ]}
       />
     </div>
+  );
+}
+
+function SearchSummary({ s }: { s: SearchReport }) {
+  const t = s.totals;
+  return (
+    <Steps
+      steps={[
+        { label: "Impressions", value: t.impressions, sub: "times IURIX appeared in results" },
+        { label: "Clicks", value: t.clicks, sub: "visits from Google search" },
+        { label: "Click rate", value: t.impressions ? `${(t.ctr * 100).toFixed(1)}%` : "—" },
+        { label: "Average position", value: t.impressions ? t.position.toFixed(1) : "—", sub: "1 = top result" },
+      ]}
+    />
+  );
+}
+
+function SearchTable({ first, rows }: { first: string; rows: SearchReport["queries"] }) {
+  return (
+    <SimpleTable
+      head={[first, "Impressions", "Clicks", "Position"]}
+      rows={rows.map((r) => [r.key, r.impressions, r.clicks, r.position.toFixed(1)])}
+    />
   );
 }
 
