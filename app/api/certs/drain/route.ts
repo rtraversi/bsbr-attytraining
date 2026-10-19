@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/resend'
+import { secretsMatch } from '@/lib/secret-compare'
 
 const OPERATOR_EMAIL = 'rob@builtsmartbyrob.com'
 const MAX_ATTEMPTS = 3
 
 export async function POST(req: NextRequest) {
   const incomingSecret = req.headers.get('x-webhook-secret')
-  if (!incomingSecret || incomingSecret !== process.env.CERT_WEBHOOK_SECRET) {
+  if (!secretsMatch(incomingSecret, process.env.CERT_WEBHOOK_SECRET)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

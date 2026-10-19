@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { isFirmNameBlank } from '@/lib/firm-name'
+import { safeNextPath } from '@/lib/safe-redirect'
 import { AtcLogo } from '@/app/_components/atc-logo'
 import { FirmNameForm } from './_components/firm-name-form'
 
@@ -54,7 +55,7 @@ export default async function FirmNamePage({
 
   // Only ever an in-app path. An open redirect here would be handed to every
   // signed-in admin by a gate they cannot decline.
-  const safeNext = typeof next === 'string' && /^\/[^/\\]/.test(next) ? next : '/intake'
+  const safeNext = safeNextPath(next, '/intake')
 
   return (
     <main className="font-headline relative flex min-h-screen items-center justify-center px-4 py-16">

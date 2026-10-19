@@ -31,6 +31,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { decideCancelEligibility, REFUND_WINDOW_DAYS } from '@/lib/cancel-refund-eligibility'
 import { alertOperator } from '@/lib/operator-alert'
+import { escapeHtml } from '@/lib/escape-html'
 
 export async function POST() {
   const supabase = await createClient()
@@ -76,8 +77,8 @@ export async function POST() {
   }
 
   await alertOperator('🔴 Self-serve cancel + refund request', [
-    `<strong>Firm:</strong> ${firm.name || '(no name)'} (${firm.id})`,
-    `<strong>Requested by:</strong> ${user.email ?? '(unknown)'}`,
+    `<strong>Firm:</strong> ${escapeHtml(firm.name || '(no name)')} (${firm.id})`,
+    `<strong>Requested by:</strong> ${escapeHtml(user.email ?? '(unknown)')}`,
     `<strong>Purchased:</strong> ${firm.created_at} (within the ${REFUND_WINDOW_DAYS}-day window)`,
     `<strong>Subscription:</strong> ${firm.stripe_subscription_id}`,
     `<strong>Action needed:</strong> review in Stripe, issue the refund, and cancel the subscription. Neither happened automatically — this route only checked eligibility.`,

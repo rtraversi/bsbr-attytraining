@@ -56,9 +56,14 @@ export async function POST(req: Request) {
   }
 
   let seatsToAdd: number
+  let requestId: string | null
   try {
-    const body = (await req.json()) as { seats?: unknown }
+    const body = (await req.json()) as { seats?: unknown; requestId?: unknown }
     seatsToAdd = typeof body.seats === 'number' ? Math.floor(body.seats) : NaN
+    requestId =
+      typeof body.requestId === 'string' && /^[0-9a-f-]{36}$/i.test(body.requestId)
+        ? body.requestId
+        : null
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
@@ -96,10 +101,49 @@ export async function POST(req: Request) {
   const coversUntil = new Date(now.getTime())
   coversUntil.setUTCDate(coversUntil.getUTCDate() + 365)
 
+  // Stripe idempotency keys, from a per-attempt id the billing page sends. A
+  // replayed request (network retry, double submit) gets the SAME draft
+  // invoice and line item back instead of a second charge. A caller that
+  // sends none gets a fresh id: no dedupe, but nothing worse than before.
+  const idemBase = `add-seats:${firmId}:${requestId ?? crypto.randomUUID()}`
+
   let invoiceId: string
   try {
-    await stripe.invoiceItems.create({
-      customer: firm.stripe_customer_id,
+    // Invoice FIRST, then the line item attached to it by id. The reverse
+    // order (a pending item, then invoices.create) charges $0: on this API
+    // version invoices.create defaults pending_invoice_items_behavior to
+    // `exclude`, so the invoice came out empty, "paid", granted the seats, and
+    // left the real charge pending until the subscription's next renewal
+    // invoice swept it up. Attaching by id also keeps two concurrent adds from
+    // pulling each other's items onto one invoice.
+    const invoice = await stripe.invoices.create(
+      {
+        customer: firm.stripe_customer_id,
+        collection_method: 'charge_automatically',
+        automatic_tax: { enabled: true },
+        pending_invoice_items_behavior: 'exclude',
+        description: 'IURIX: mid-year seat addition',
+      },
+      { idempotencyKey: `${idemBase}:invoice` }
+    )
+    invoiceId = invoice.id!
+
+    // An idempotent replay returns the invoice as it was when first created
+    // (a draft), so ask Stripe for its state now. Past draft means the first
+    // request already finalized it: answer without charging or crediting
+    // seats a second time.
+    const current = await stripe.invoices.retrieve(invoiceId)
+    if (current.status !== 'draft') {
+      return NextResponse.json(
+        { error: 'This seat purchase was already submitted. Refresh the page to see your seats.' },
+        { status: 409 }
+      )
+    }
+
+    await stripe.invoiceItems.create(
+      {
+        customer: firm.stripe_customer_id,
+        invoice: invoiceId,
       amount: chargeCents,
       currency: 'usd',
       // Same code set on the subscription Product (Stripe dashboard,
@@ -110,17 +154,25 @@ export async function POST(req: Request) {
       description:
         `${seatsToAdd} additional ${seatsToAdd === 1 ? 'seat' : 'seats'} at ` +
         `$${currentRatePerSeat}/seat/yr (your current rate), added ${now.toISOString().slice(0, 10)}`,
-    })
+      },
+      { idempotencyKey: `${idemBase}:item` }
+    )
 
-    const invoice = await stripe.invoices.create({
-      customer: firm.stripe_customer_id,
-      collection_method: 'charge_automatically',
-      automatic_tax: { enabled: true },
-      description: 'IURIX: mid-year seat addition',
-    })
-    invoiceId = invoice.id!
-
-    await stripe.invoices.finalizeInvoice(invoiceId)
+    const finalized = await stripe.invoices.finalizeInvoice(invoiceId)
+    // Belt and braces for the $0 failure above: never pay, and never grant
+    // seats from, an invoice that doesn't carry the charge.
+    if (finalized.subtotal < chargeCents) {
+      console.error('[billing/add-seats] finalized invoice is short of the charge:', {
+        invoiceId,
+        subtotal: finalized.subtotal,
+        chargeCents,
+      })
+      await stripe.invoices.voidInvoice(invoiceId).catch(() => {})
+      return NextResponse.json(
+        { error: 'Could not prepare the charge. Please try again or contact support.' },
+        { status: 502 }
+      )
+    }
     const paid = await stripe.invoices.pay(invoiceId)
 
     if (paid.status !== 'paid') {

@@ -237,25 +237,18 @@ export async function POST(req: NextRequest) {
     const admin = createAdminClient();
     const buyer = await resolveBuyer(admin, email);
 
-    if (buyer.kind === "duplicate") {
+    // One response for both refusals. This route is public, so distinct
+    // messages told anyone whether an address owned a firm or was staff at
+    // one. It still has to say "this email can't be used" (refusing before
+    // the charge is the point of layer 1), but no longer which kind of account
+    // it belongs to.
+    if (buyer.kind === "duplicate" || buyer.kind === "email_in_use") {
       return NextResponse.json(
         {
           error:
-            "This email already has an active IURIX subscription. Sign in to reach your " +
-            "dashboard, or use a different email if this is a separate firm.",
-          code: "duplicate",
-        },
-        { status: 409 }
-      );
-    }
-
-    if (buyer.kind === "email_in_use") {
-      return NextResponse.json(
-        {
-          error:
-            "This email is already registered as a staff member at another firm's IURIX " +
-            "account. Use a different email to set up your own firm.",
-          code: "email_in_use",
+            "This email can't be used to set up a new firm. If you already have an IURIX " +
+            "account, sign in instead. Otherwise, use a different email.",
+          code: "email_unavailable",
         },
         { status: 409 }
       );

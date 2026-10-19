@@ -1018,6 +1018,18 @@ ${section('⚠️ SEAT DRIFT — billed quantity does not match the firm record'
 
 // ── Worker export ─────────────────────────────────────────────────────────────
 
+// Constant-time in the expected secret's length, so response timing can't be
+// used to guess it a byte at a time. Same as lib/secret-compare.ts in the app
+// (this Worker is a separate bundle and can't import it).
+function secretsMatch(provided: string | null, expected: string | undefined): boolean {
+  if (!provided || !expected) return false
+  const a = new TextEncoder().encode(provided)
+  const b = new TextEncoder().encode(expected)
+  let diff = a.length ^ b.length
+  for (let i = 0; i < b.length; i++) diff |= (a[i] ?? 0) ^ (b[i] ?? 0)
+  return diff === 0
+}
+
 export default {
   async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext) {
     if (event.cron === '0 9 * * *') {
@@ -1053,7 +1065,7 @@ export default {
     }
 
     const incomingSecret = request.headers.get('X-Webhook-Secret')
-    if (!incomingSecret || incomingSecret !== env.WEBHOOK_SECRET) {
+    if (!secretsMatch(incomingSecret, env.WEBHOOK_SECRET)) {
       return new Response('Unauthorized', { status: 401 })
     }
 

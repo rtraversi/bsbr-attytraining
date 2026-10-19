@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { BillingSummary } from '@/app/api/billing/summary/route'
 import { rateForSeatCount } from '@/lib/pricing'
 
@@ -113,6 +113,9 @@ export function BillingClient() {
     }
   }
 
+  // Stripe idempotency for /api/billing/add-seats: one id per purchase attempt.
+  const addSeatsRequestId = useRef(crypto.randomUUID())
+
   async function addSeats() {
     setAddSeatsSaving(true)
     setAddSeatsError(null)
@@ -120,8 +123,11 @@ export function BillingClient() {
       const res = await fetch('/api/billing/add-seats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seats: seatsToAdd }),
+        body: JSON.stringify({ seats: seatsToAdd, requestId: addSeatsRequestId.current }),
       })
+      // Any answer from the server ends this attempt; only a network error
+      // (outcome unknown) keeps the id, so retrying it can't charge twice.
+      addSeatsRequestId.current = crypto.randomUUID()
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null
         setAddSeatsError(body?.error ?? 'Could not add seats. Please try again.')

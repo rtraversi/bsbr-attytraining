@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/resend'
+import { escapeHtml } from '@/lib/escape-html'
 
 // The real support address, confirmed by Rob (cutover item C4, ix-supportdest).
 // Replaces the personal Gmail that stood in while the domain move was in flight.
@@ -25,20 +26,21 @@ function asTrimmedString(v: unknown, max: number): string | null {
   return s
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
-}
-
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Only members of a firm. The form lives in the dashboard, which already
+  // requires one; without this, any bare Supabase account (one created from
+  // the public anon key, say) could mail the support inbox without limit.
+  if (!user.app_metadata?.firm_id) {
+    return NextResponse.json(
+      { error: `Please email ${SUPPORT_INBOX} directly.` },
+      { status: 403 }
+    )
+  }
 
   let body: RequestBody
   try {

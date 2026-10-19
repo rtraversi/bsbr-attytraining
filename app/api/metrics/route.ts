@@ -2,6 +2,7 @@
 // keep the response shape stable.
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { secretsMatch } from '@/lib/secret-compare'
 
 export const runtime = 'nodejs'
 
@@ -9,7 +10,7 @@ export async function GET(req: NextRequest) {
   // Fail-closed secret gate — run BEFORE any query. Never log the secret value.
   const provided = req.headers.get('x-metrics-secret')
   const expected = process.env.METRICS_SECRET
-  if (!expected || !provided || provided !== expected) {
+  if (!secretsMatch(provided, expected)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

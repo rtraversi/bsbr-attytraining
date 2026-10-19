@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { render } from '@react-email/render'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/resend'
+import { secretsMatch } from '@/lib/secret-compare'
 import { CertDeliveryEmail } from '@/emails/cert-delivery'
 import { CertEarnedAdminEmail } from '@/emails/cert-earned-admin'
 import { generateCertPdf } from '@/lib/cert-pdf'
@@ -28,7 +29,7 @@ function formatDate(d: Date): string {
 export async function POST(req: NextRequest) {
   // Validate shared secret — Supabase sends this in every webhook request
   const incomingSecret = req.headers.get('x-webhook-secret')
-  if (!incomingSecret || incomingSecret !== process.env.CERT_WEBHOOK_SECRET) {
+  if (!secretsMatch(incomingSecret, process.env.CERT_WEBHOOK_SECRET)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

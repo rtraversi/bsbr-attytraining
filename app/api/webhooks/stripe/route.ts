@@ -11,6 +11,7 @@ import { resolveBuyer, type BuyerIdentity } from '@/lib/buyer-identity'
 import { attributionFromMetadata, trackEvent } from '@/lib/analytics/events'
 import { CheckoutEmailInUseEmail } from '@/emails/checkout-email-in-use'
 import { CheckoutNonUsEmail } from '@/emails/checkout-non-us'
+import { escapeHtml } from '@/lib/escape-html'
 
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
@@ -113,6 +114,20 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error(`[stripe-webhook] ${event.type} handler threw:`, err)
+    // Release the idempotency row so Stripe's retry actually re-runs the
+    // handler; otherwise the 500 is theatre and the retry hits the duplicate
+    // guard above. Safe for every event except checkout: the subscription and
+    // invoice handlers only set state (firm status, seat counts) or insert
+    // enrollments behind an existence check, so a re-run converges. Checkout
+    // can create users and firms, and releases its row itself, only over the
+    // region where nothing has been written (handleCheckoutCompleted).
+    if (event.type !== 'checkout.session.completed') {
+      const { error: releaseError } = await supabase
+        .from('processed_stripe_events')
+        .delete()
+        .eq('event_id', event.id)
+      if (releaseError) console.error('[stripe-webhook] idempotency release failed:', releaseError)
+    }
     return NextResponse.json({ error: 'Handler failed' }, { status: 500 })
   }
 
@@ -341,7 +356,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
     case 'unresolved':
       await recordProvisioningFailure(supabase, session, email, 'unresolved')
       await alertOperator('🔴 Stripe — provisioning collision could not be resolved', [
-        `<strong>Customer email:</strong> ${email}`,
+        `<strong>Customer email:</strong> ${escapeHtml(email)}`,
         `<strong>Checkout session:</strong> ${session.id}`,
         `<strong>Subscription:</strong> ${session.subscription as string}`,
         `<strong>Error:</strong> ${collisionMessage}`,
@@ -510,7 +525,7 @@ async function cancelDuplicateSubscription(
   const { cancelled, error: cancelError } = await cancelOrphanedSubscription(session)
 
   await alertOperator('⚠️ Stripe — duplicate purchase by an active firm owner', [
-    `<strong>Customer email:</strong> ${email}`,
+    `<strong>Customer email:</strong> ${escapeHtml(email)}`,
     `<strong>Existing firm:</strong> ${buyer.firmId} (active, untouched)`,
     `<strong>Firm's subscription — STILL ACTIVE, do not cancel:</strong> ${buyer.firmSubscriptionId ?? 'none on record'}`,
     `<strong>Duplicate subscription — ${cancelled ? 'CANCELLED' : 'STILL BILLING'}:</strong> ${duplicateSubscriptionId}`,
@@ -575,7 +590,7 @@ async function refuseNonUsBilling(
   }
 
   await alertOperator('⚠️ Stripe — purchase from a non-US billing address', [
-    `<strong>Customer email:</strong> ${email}`,
+    `<strong>Customer email:</strong> ${escapeHtml(email)}`,
     `<strong>Billing country:</strong> ${country ?? 'NONE COLLECTED — check billing_address_collection in /api/checkout'}`,
     `<strong>Checkout session:</strong> ${session.id}`,
     `<strong>Subscription — ${cancelled ? 'CANCELLED' : 'STILL BILLING'}:</strong> ${session.subscription as string}`,
@@ -618,7 +633,7 @@ async function refuseEmailInUse(
   }
 
   await alertOperator('⚠️ Stripe — buyer is staff at another active firm', [
-    `<strong>Customer email:</strong> ${email}`,
+    `<strong>Customer email:</strong> ${escapeHtml(email)}`,
     `<strong>Checkout session:</strong> ${session.id}`,
     `<strong>Subscription — ${cancelled ? 'CANCELLED' : 'STILL BILLING'}:</strong> ${session.subscription as string}`,
     `<strong>What happened:</strong> nothing was provisioned. Their employer's firm is untouched.`,
@@ -744,7 +759,7 @@ async function reactivateFirm(
   const oversubscribed = (occupiedCount ?? 0) > seats
 
   await alertOperator('✅ Stripe — returning client reactivated', [
-    `<strong>Customer email:</strong> ${email}`,
+    `<strong>Customer email:</strong> ${escapeHtml(email)}`,
     `<strong>Firm:</strong> ${firmId} (was ${firmStatus}, now active)`,
     `<strong>New customer:</strong> ${session.customer as string}`,
     `<strong>New subscription:</strong> ${sub.id}`,
@@ -816,8 +831,8 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   if (!firm) return
 
   await alertOperator('🔴 Stripe — payment failed, firm marked payment_failed', [
-    `<strong>Firm:</strong> ${firm.name || '(no name)'} (${firm.id})`,
-    `<strong>Customer email:</strong> ${invoice.customer_email ?? '(unknown)'}`,
+    `<strong>Firm:</strong> ${escapeHtml(firm.name || '(no name)')} (${firm.id})`,
+    `<strong>Customer email:</strong> ${escapeHtml(invoice.customer_email ?? '(unknown)')}`,
     `<strong>Subscription:</strong> ${subscriptionId}`,
     `<strong>Invoice:</strong> ${invoice.id}`,
     ...(invoice.hosted_invoice_url
@@ -957,8 +972,8 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
           to: email,
           subject: `${firm.name} has renewed: complete your AI compliance training`,
           html: `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;color:#111827;max-width:560px;margin:0 auto;padding:32px 24px">
-<p style="font-size:14px">Hi ${name},</p>
-<p style="font-size:14px">${firm.name} has renewed its annual accreditation. You have been re-enrolled and need to complete this year's training on the firm's AI use policy to keep your certification current.</p>
+<p style="font-size:14px">Hi ${escapeHtml(name)},</p>
+<p style="font-size:14px">${escapeHtml(firm.name)} has renewed its annual accreditation. You have been re-enrolled and need to complete this year's training on the firm's AI use policy to keep your certification current.</p>
 <p><a href="${appUrl}/dashboard/training" style="display:inline-block;background:#14b8a6;color:#0f172a;font-weight:600;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">Complete training</a></p>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0">
 <p style="font-size:12px;color:#6b7280">IURIX</p>

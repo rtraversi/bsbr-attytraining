@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isFirmNameBlank } from '@/lib/firm-name'
+import { secretsMatch } from '@/lib/secret-compare'
 import {
   REMEMBER_COOKIE,
   authCookieOptions,
@@ -29,7 +30,7 @@ function opsGate(request: NextRequest): NextResponse {
       // malformed header — treated as no password
     }
   }
-  if (supplied !== password) {
+  if (!secretsMatch(supplied, password)) {
     return new NextResponse('Authentication required', {
       status: 401,
       headers: { 'WWW-Authenticate': 'Basic realm="Iurix operator", charset="UTF-8"' },

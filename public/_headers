@@ -12,3 +12,14 @@
 # (images, the pattern SVG) since those keep stable names across edits.
 /_next/static/*
   Cache-Control: public,max-age=31536000,immutable
+
+# Security basics for every static asset, including the Rise export under
+# /training-content/. Worker-rendered pages get these (plus CSP) from
+# next.config.ts headers(); static assets never pass through that. SAMEORIGIN
+# keeps the Rise iframe working on our own training page while refusing to be
+# framed by anyone else.
+/*
+  Strict-Transport-Security: max-age=15552000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin

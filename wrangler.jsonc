@@ -1,10 +1,18 @@
 {
   "name": "bsbr-attytraining",
+  // Pinned so a wrangler logged into a different Cloudflare account (as Rob's
+  // was on 2026-09-28) refuses to deploy rather than creating a stray Worker
+  // there. Same account as CF_ACCOUNT_ID below.
+  "account_id": "4b2a402334decc9259d7317aaf9782f0",
   "main": ".open-next/worker.js",
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "compatibility_flags": ["nodejs_compat"],
   "compatibility_date": "2026-06-12",
   "preview_urls": true,
+  // Workers Logs: keeps request logs and console output, searchable in the
+  // dashboard (Workers > bsbr-attytraining > Logs). Without this nothing is
+  // retained, so there was no record to look at after suspicious traffic.
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
   "vars": {
     "NEXT_PUBLIC_APP_URL": "https://iurixaccreditation.com",
     // The account the Worker lives in. Not a secret — /ops/metrics needs it to
