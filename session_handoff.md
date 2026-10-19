@@ -21,6 +21,10 @@ untouched.** Full record: `.planning/sessions/20261019-rob-summary.md` and
 - ⚠️ **add-seats was charging $0** (pending item excluded from the invoice; the charge lands on the
   firm's next renewal). Fixed on the branch. Check Stripe for past seat additions with $0 invoices
   and a leftover pending invoice item.
+- **Mid-year seats re-modelled by Rob:** prorated from the day added to the renewal date at the
+  current rate, subscription quantity raised (proration off), everyone renews together. CLAUDE.md
+  and OPEN-ISSUES #18 updated; true-up credit code deleted.
+- ⛔ Do **not** enable Cloudflare Bot Fight Mode or Supabase captcha (reasons in the quick summary).
 - ⚠️ **`.env.local` points at PROD Supabase** — `pnpm test` writes test rows to production.
 - Cert Worker (`workers/cert-worker`) needs its own redeploy for the constant-time secret check.
 

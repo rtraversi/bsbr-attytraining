@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { BillingSummary } from '@/app/api/billing/summary/route'
 import { rateForSeatCount } from '@/lib/pricing'
+import { computeProratedSeatChargeCents, MIN_CHARGE_CENTS } from '@/lib/seat-ledger'
 
 /* ── Tokens — same values app/dashboard/settings/page.tsx uses ─────────────── */
 const CARD = 'rounded-3xl bg-white p-6 xl:p-8 dark:border dark:border-[#1F2429] dark:bg-[#0D0F12]'
@@ -39,6 +40,27 @@ function fmtAmount(minor: number, currency: string): string {
 const CANCEL_REFUND_REASON_COPY: Record<string, string> = {
   too_late: 'It has been more than 14 days since you purchased.',
   certificate_issued: 'A certificate has already been issued to your staff.',
+}
+
+// What /api/billing/add-seats will charge, before tax: the same proration the
+// server applies, from the period Stripe reported. The server recomputes it at
+// the moment of purchase, so a few hours' drift can move it by a cent.
+function addSeatsEstimateCents(seats: number, data: BillingSummary): number {
+  if (data.seats == null) return 0
+  const rateCents = rateForSeatCount(data.seats) * 100
+  if (!data.currentPeriodStart || !data.currentPeriodEnd) return seats * rateCents
+  const cents = computeProratedSeatChargeCents(
+    seats,
+    rateCents,
+    new Date(),
+    new Date(data.currentPeriodStart),
+    new Date(data.currentPeriodEnd)
+  )
+  return cents < MIN_CHARGE_CENTS ? 0 : cents
+}
+
+function fmtUsd(cents: number): string {
+  return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 }
 
 export function BillingClient() {
@@ -243,11 +265,13 @@ export function BillingClient() {
                 {addSeatsOpen && data.seats != null && (
                   <div className="rounded-xl bg-[#F5F7FA] p-4 dark:bg-[#0D0F12]">
                     <p className={`text-sm ${MUTED}`}>
-                      Adds seats for the rest of your current year, at your current rate of{' '}
+                      New seats are charged today for the rest of your current year
+                      {data.currentPeriodEnd ? <> (until {fmtDate(data.currentPeriodEnd)})</> : null}, prorated
+                      at your current rate of{' '}
                       <strong className="text-[#0A0A0A] dark:text-[#F5F7FA]">
-                        ${rateForSeatCount(data.seats)}/seat
+                        ${rateForSeatCount(data.seats)}/seat/yr
                       </strong>
-                      . This does not change your renewal date or your other seats&apos; rate.
+                      . At renewal, all your seats renew together at the rate for your new total.
                     </p>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <input
@@ -260,7 +284,7 @@ export function BillingClient() {
                         className="w-24 rounded-xl border border-[#E5EEF5] bg-white px-3 py-2 text-center text-sm text-[#0A0A0A] focus:outline-none focus:ring-2 focus:ring-[var(--brand-emphasis)] disabled:opacity-50 dark:border-[#1F2429] dark:bg-[#0D0F12] dark:text-[#F5F7FA]"
                       />
                       <span className={`text-sm ${MUTED}`}>
-                        = ${(seatsToAdd * rateForSeatCount(data.seats)).toLocaleString()} charged today
+                        = {fmtUsd(addSeatsEstimateCents(seatsToAdd, data))} charged today
                       </span>
                       <button
                         type="button"
@@ -288,8 +312,10 @@ export function BillingClient() {
                 {addSeatsResult && (
                   <p className="text-sm text-[var(--brand-emphasis)]">
                     Added {addSeatsResult.seatsAdded}{' '}
-                    {addSeatsResult.seatsAdded === 1 ? 'seat' : 'seats'}, charged{' '}
-                    ${(addSeatsResult.chargedCents / 100).toLocaleString()}.
+                    {addSeatsResult.seatsAdded === 1 ? 'seat' : 'seats'}
+                    {addSeatsResult.chargedCents > 0
+                      ? <>, charged {fmtUsd(addSeatsResult.chargedCents)} plus any sales tax.</>
+                      : <> at no charge until your renewal.</>}
                   </p>
                 )}
 

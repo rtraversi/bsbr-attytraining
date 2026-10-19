@@ -30,6 +30,15 @@ and not on production**.
    `/`, `/pricing`, `/login`. **Signed-in pages (dashboard, training iframe, billing) were not
    clicked through.**
 
+6. **Mid-year seats re-modelled (Rob, evening).** Proration from the day added to the renewal
+   date at the current rate; everyone re-rates at renewal. add-seats now also raises the
+   subscription quantity (proration off) — previously it never did, so renewal would have billed
+   the old count and the webhook would have reset `max_seats` down to it. CLAUDE.md + #18 updated.
+7. **Dashboard guidance corrected:** no Bot Fight Mode (can block Stripe / Supabase webhooks), no
+   Supabase captcha until the login forms send a Turnstile token (would lock everyone out).
+8. **`.env.local` points at PROD** (`ttqthtzdjacrhjtrcmmy`), contradicting the 09-xx handoff table
+   that says staging.
+
 ## Not done / blocked
 
 - Dashboard settings (Cloudflare HTTPS/HSTS/WAF/alerts, Supabase signups + captcha, Stripe

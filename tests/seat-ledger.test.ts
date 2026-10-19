@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeMidYearChargeCents, computeRenewalTrueUp } from '@/lib/seat-ledger'
+import { computeProratedSeatChargeCents } from '@/lib/seat-ledger'
 import { rateForSeatCount } from '@/lib/pricing'
 
 describe('rateForSeatCount', () => {
@@ -13,86 +13,39 @@ describe('rateForSeatCount', () => {
   })
 })
 
-describe('computeMidYearChargeCents', () => {
-  it('is seats times the current rate, full price, no proration', () => {
-    expect(computeMidYearChargeCents(1, 3500)).toBe(3500)
-    expect(computeMidYearChargeCents(4, 3500)).toBe(14000)
+describe('computeProratedSeatChargeCents', () => {
+  // Rob's example (2026-10-19): firm renews Jan 1, adds 1 seat June 1 at $35.
+  // June 1 → Jan 1 is 214 of 365 days: 214/365 × 3500 = 2052.05 → 2052.
+  const start = new Date('2027-01-01T00:00:00Z')
+  const end = new Date('2028-01-01T00:00:00Z')
+
+  it("matches Rob's worked example", () => {
+    expect(computeProratedSeatChargeCents(1, 3500, new Date('2027-06-01T00:00:00Z'), start, end)).toBe(2052)
   })
 
-  it('refuses a non-positive seat count', () => {
-    expect(() => computeMidYearChargeCents(0, 3500)).toThrow()
-    expect(() => computeMidYearChargeCents(-1, 3500)).toThrow()
-  })
-})
-
-describe('computeRenewalTrueUp', () => {
-  // Rob's worked example (session 2026-09-21): 1 seat added 2026-06-01 at
-  // $35/yr, renewal falls 2027-01-01. covers_until = 2027-05-31ish (added_at +
-  // 365 days). 5 months of that window remain past the renewal date.
-  it("matches Rob's worked example within a cent", () => {
-    const addedAt = new Date('2026-06-01T00:00:00Z')
-    const coversUntil = new Date(addedAt.getTime() + 365 * 86_400_000)
-    const renewalDate = new Date('2027-01-01T00:00:00Z')
-
-    const { totalCreditCents, credits } = computeRenewalTrueUp(
-      [{ id: 'row-1', seatCount: 1, ratePaidCents: 3500, coversUntil: coversUntil.toISOString() }],
-      renewalDate
-    )
-
-    // Rob's number: $35 - credit ≈ $20.44, i.e. credit ≈ $14.56-14.58.
-    expect(totalCreditCents).toBeGreaterThanOrEqual(1440)
-    expect(totalCreditCents).toBeLessThanOrEqual(1470)
-    expect(credits).toEqual([{ ledgerRowId: 'row-1', creditCents: totalCreditCents }])
+  it('scales with seat count', () => {
+    expect(computeProratedSeatChargeCents(3, 3500, new Date('2027-06-01T00:00:00Z'), start, end)).toBe(6156)
   })
 
-  it('a row bought exactly at the renewal boundary earns no credit', () => {
-    const renewalDate = new Date('2027-01-01T00:00:00Z')
-    const { totalCreditCents, credits } = computeRenewalTrueUp(
-      [{ id: 'row-1', seatCount: 3, ratePaidCents: 3500, coversUntil: renewalDate.toISOString() }],
-      renewalDate
-    )
-    expect(totalCreditCents).toBe(0)
-    expect(credits).toEqual([])
+  it('charges the full rate on the first day and nothing at the end', () => {
+    expect(computeProratedSeatChargeCents(1, 3500, start, start, end)).toBe(3500)
+    expect(computeProratedSeatChargeCents(1, 3500, end, start, end)).toBe(0)
   })
 
-  it('a row whose window already lapsed before renewal earns no credit (not negative)', () => {
-    const renewalDate = new Date('2027-06-01T00:00:00Z')
-    const coversUntil = new Date('2027-01-01T00:00:00Z')
-    const { totalCreditCents, credits } = computeRenewalTrueUp(
-      [{ id: 'row-1', seatCount: 3, ratePaidCents: 3500, coversUntil: coversUntil.toISOString() }],
-      renewalDate
-    )
-    expect(totalCreditCents).toBe(0)
-    expect(credits).toEqual([])
+  it('clamps a clock outside the period', () => {
+    expect(computeProratedSeatChargeCents(1, 3500, new Date('2026-12-01T00:00:00Z'), start, end)).toBe(3500)
+    expect(computeProratedSeatChargeCents(1, 3500, new Date('2028-02-01T00:00:00Z'), start, end)).toBe(0)
   })
 
-  it('multiple seats in one row scale the credit linearly', () => {
-    const addedAt = new Date('2026-06-01T00:00:00Z')
-    const coversUntil = new Date(addedAt.getTime() + 365 * 86_400_000)
-    const renewalDate = new Date('2027-01-01T00:00:00Z')
-
-    const single = computeRenewalTrueUp(
-      [{ id: 'a', seatCount: 1, ratePaidCents: 3500, coversUntil: coversUntil.toISOString() }],
-      renewalDate
-    ).totalCreditCents
-
-    const quadruple = computeRenewalTrueUp(
-      [{ id: 'b', seatCount: 4, ratePaidCents: 3500, coversUntil: coversUntil.toISOString() }],
-      renewalDate
-    ).totalCreditCents
-
-    expect(quadruple).toBe(single * 4)
+  it('uses the period length, so a 366-day year prorates by 366', () => {
+    const leapStart = new Date('2028-01-01T00:00:00Z')
+    const leapEnd = new Date('2029-01-01T00:00:00Z')
+    // Half-way through 366 days is 183 days in: 2028-07-02.
+    expect(computeProratedSeatChargeCents(1, 3600, new Date('2028-07-02T00:00:00Z'), leapStart, leapEnd)).toBe(1800)
   })
 
-  it('sums credit across several outstanding rows and reports each individually', () => {
-    const renewalDate = new Date('2027-01-01T00:00:00Z')
-    const rows = [
-      { id: 'a', seatCount: 2, ratePaidCents: 3500, coversUntil: '2027-04-01T00:00:00Z' },
-      { id: 'b', seatCount: 1, ratePaidCents: 3200, coversUntil: '2027-07-01T00:00:00Z' },
-    ]
-    const { totalCreditCents, credits } = computeRenewalTrueUp(rows, renewalDate)
-    expect(credits).toHaveLength(2)
-    expect(credits.map(c => c.ledgerRowId)).toEqual(['a', 'b'])
-    expect(totalCreditCents).toBe(credits[0].creditCents + credits[1].creditCents)
+  it('refuses a non-positive seat count or empty period', () => {
+    expect(() => computeProratedSeatChargeCents(0, 3500, start, start, end)).toThrow()
+    expect(() => computeProratedSeatChargeCents(1, 3500, start, end, start)).toThrow()
   })
 })

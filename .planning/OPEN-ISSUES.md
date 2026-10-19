@@ -438,37 +438,30 @@ anyone who skipped it (`onboarding-client.tsx`). Typecheck, lint and `pnpm test`
 source-scanning test that asserted the old literal (`tests/firm-name-gate.test.ts`) was updated to
 match. Resolves #15.
 
-### 18. Mid-year seat additions — 🟡 **PARTLY BUILT 2026-09-21** (the safe half); renewal charging deferred
-No proration at add-time, no band lookup at add-time. Rob confirmed the design with a worked
-example (3 seats Jan 1, +1 seat June 1 at $35, renewal next Jan 1 → that seat's renewal line is
-$35 − 5/12×$35 ≈ $20.42) and it's now recorded in `CLAUDE.md` as the one deliberate exception to
-flat-on-renewal.
+### 18. Mid-year seat additions — ✅ **REBUILT 2026-10-19** as proration to the renewal date (branch `security-hardening-1019`)
+Rob replaced the 2026-09-21 model (full year at add-time + true-up credit at renewal) with
+proration: 3 seats bought January, employee 4 added June 1 → charged 214/365 × $35 = $20.52 that
+day; next January all 4 renew together at $35. Mid-year band crossings are NOT re-rated until
+renewal. Recorded in `CLAUDE.md`.
 
-**Built and tested:**
-- `supabase/migrations/0033_seat_ledger.sql` — `seat_ledger(firm_id, seat_count, rate_paid_cents,
-  added_at, covers_until, credited_at)`. **Not yet applied to staging or prod** — needs `supabase
-  db push` against staging first (this session had no Docker/linked project available, so it
-  wasn't run); `types/supabase.ts` was hand-patched to match so the build typechecks, but that
-  patch should be replaced by a real `supabase gen types` once the migration is actually applied.
-- `lib/pricing.ts` (band rate lookup) and `lib/seat-ledger.ts` (`computeMidYearChargeCents`,
-  `computeRenewalTrueUp` — pure functions, unit-tested against Rob's own numbers in
-  `tests/seat-ledger.test.ts`).
-- `app/api/billing/add-seats/route.ts` — the one-time charge. Firm admin only; charges a Stripe
-  Invoice (invoice item + finalize + pay) at the firm's *current* per-seat rate, **never** bumps
-  the subscription's `quantity`, updates `firms.max_seats` / `seats.max_seats` only after the
-  charge is confirmed paid, and writes the `seat_ledger` row.
-- `/dashboard/billing` — "Add seats" control on the Current plan card. The two dead
-  `href="/api/portal"` "Add seats in Billing" links (`invite-form.tsx`, `csv-upload-form.tsx`) now
-  point at `/dashboard/billing#add-seats`.
+**What changed:**
+- `lib/seat-ledger.ts` → `computeProratedSeatChargeCents` (+ `MIN_CHARGE_CENTS`); the true-up
+  credit math (`computeRenewalTrueUp`) is deleted — nothing called it and the model no longer has
+  credits. Tests rewritten around Rob's example.
+- `app/api/billing/add-seats/route.ts`: reads the subscription's period and quantity, charges the
+  prorated amount on a one-off invoice (item attached to the invoice by id, idempotency keys,
+  replay → 409), then **raises the subscription quantity with `proration_behavior: 'none'`** so
+  renewal bills every seat. Before this, quantity was never raised: renewal would have billed the
+  old count, and `customer.subscription.updated` would have reset `max_seats` down to it.
+- **2026-10-19 bug, fixed in the same pass:** the old route created a pending invoice item and
+  then `invoices.create`, which on this API version excludes pending items — so the invoice was
+  $0, "paid", and the real charge sat pending until the next renewal invoice swept it up.
+- `/dashboard/billing` shows the prorated amount before purchase (`currentPeriodStart` added to
+  `/api/billing/summary`).
+- `seat_ledger` (0033, applied to both projects) is now an audit trail only.
 
-**Deliberately NOT built — flagged rather than rushed:** making the annual renewal itself
-app-controlled (recompute headcount, look up the new band, apply `computeRenewalTrueUp`'s credit,
-and actually get Stripe to charge that exact amount on the right day without misfiring proration
-or double-charging) is real design and testing work of its own — timing an app-driven charge
-against Stripe's own invoice/collection cycle needs a dedicated pass with Stripe sandbox testing,
-not a same-session addition. `lib/seat-ledger.ts` has the credit math ready; nothing calls it
-against a live Stripe invoice yet. #3 (the original "no mechanism at all" complaint) is resolved
-for the add side; the renewal side is where #3 partially remains.
+**Still to do:** one live-mode test (1 seat on an internal firm) after deploy; check Stripe for
+any earlier seat additions made under the $0 bug (pending invoice items on the customer).
 
 ### 19. Change payment method — confirmed already built, no work needed
 `/dashboard/billing`'s "Update payment method" button → `/api/portal` → Stripe Customer Portal.

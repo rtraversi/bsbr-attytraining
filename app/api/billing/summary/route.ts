@@ -27,6 +27,11 @@ function getPeriodEnd(sub: Stripe.Subscription): string | null {
   return ts ? new Date(ts * 1000).toISOString() : null
 }
 
+function getPeriodStart(sub: Stripe.Subscription): string | null {
+  const ts = sub.items.data[0]?.current_period_start
+  return ts ? new Date(ts * 1000).toISOString() : null
+}
+
 export interface BillingInvoice {
   id: string
   /** ISO date the invoice was created. */
@@ -44,6 +49,8 @@ export interface BillingSummary {
   hasSubscription: boolean
   seats: number | null
   currentPeriodEnd: string | null
+  /** Start of the current billing year; with currentPeriodEnd, prorates a mid-year seat add. */
+  currentPeriodStart: string | null
   /** Raw Stripe status — distinct from firms.status, see below. */
   status: Stripe.Subscription.Status | null
   /**
@@ -96,6 +103,7 @@ export async function GET() {
       hasSubscription: false,
       seats: null,
       currentPeriodEnd: null,
+      currentPeriodStart: null,
       status: null,
       cancelAtPeriodEnd: false,
       invoices: [],
@@ -131,6 +139,7 @@ export async function GET() {
       hasSubscription: true,
       seats: sub.items.data[0]?.quantity ?? null,
       currentPeriodEnd: getPeriodEnd(sub),
+      currentPeriodStart: getPeriodStart(sub),
       status: sub.status,
       cancelAtPeriodEnd: sub.cancel_at_period_end,
       invoices: (invoiceList?.data ?? []).map(inv => ({

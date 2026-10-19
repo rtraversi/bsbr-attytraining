@@ -49,6 +49,14 @@ shared a third-party light pen-test (logged-out, 48 requests, against `http://`)
 - `wrangler.jsonc`: `account_id` pinned (09-28 next step), `observability.enabled`.
 - `public/.well-known/security.txt`.
 
+## Added 2026-10-19 evening: mid-year seats re-modelled (Rob)
+
+Rob replaced the 2026-09-21 full-year + renewal-credit model with **proration to the renewal
+date at the current rate; band re-rating only at renewal**. add-seats now charges
+seats × rate × remaining/period on a one-off invoice, then raises the subscription quantity with
+`proration_behavior: 'none'`. `computeRenewalTrueUp` deleted. CLAUDE.md and OPEN-ISSUES #18
+rewritten. Billing page shows the prorated amount. Not exercised against live Stripe.
+
 ## Verification done
 
 - `tsc --noEmit` clean (app and `workers/cert-worker`), eslint 0 errors, `next build` clean.
@@ -60,10 +68,19 @@ shared a third-party light pen-test (logged-out, 48 requests, against `http://`)
 ## Next steps (Rob / Max)
 
 1. **Dashboard, no deploy (do first):** Cloudflare → SSL/TLS → Edge Certificates: *Always Use
-   HTTPS* on, HSTS on, mode Full (strict). Security: Bot Fight Mode; rate-limit rule ~5/min/IP on
-   `/api/checkout`, `/api/onboarding/*`, `/api/track`, `/ops/*`. Notifications: 5xx + security
-   event alerts. Supabase → Auth: disable public signups, enable Turnstile captcha, review rate
-   limits. Stripe: statement descriptor back to `IURIX ACCREDITATION`.
+   HTTPS* on, HSTS on (6 months, include subdomains, no preload, no-sniff), min TLS 1.2.
+   Security → WAF → Rate limiting rules: one rule, IP, 10 req / 10 s, block, on `/api/checkout`,
+   `/api/onboarding/*`, `/api/track`, `/ops*`. Notifications: DDoS alert if the plan offers it;
+   a free uptime monitor on `/api/health`. Supabase → Authentication: disable public signups
+   (verified safe: nothing in the browser calls signUp/OTP; invites and checkout use the admin
+   API); review Rate Limits. Stripe: statement descriptor back to `IURIX ACCREDITATION`.
+   - ⛔ **Do NOT enable Cloudflare Bot Fight Mode**: on most plans it can't be skipped per path and
+     can challenge server-to-server calls (Stripe webhooks, the Supabase DB webhook that triggers
+     cert generation).
+   - ⛔ **Do NOT enable Supabase Auth CAPTCHA yet**: once on, every sign-in / reset without a
+     captcha token is rejected, and the login and forgot-password forms don't send one. Needs a
+     code change first (Turnstile widget + `captchaToken` on `signInWithPassword`,
+     `resetPasswordForEmail`, `updateUser`), then the toggle.
 2. Click through the preview: login, dashboard, **training page (Rise iframe)**, pricing →
    Stripe Checkout redirect. Check the browser console for CSP report-only violations.
 3. Merge to main and deploy to production (`gh workflow run deploy.yml --ref main -f target=production`).
