@@ -1,8 +1,28 @@
 # Session Handoff
 
-**Date:** 2026-09-28 (latest section; older sections kept below)
+**Date:** 2026-10-19 (latest section; older sections kept below)
 **Who:** Rob, with terminal-Claude (earlier sections: Max, Rob)
 **Written for:** someone who has never seen this repository
+
+---
+
+## 🔴 Added 2026-10-19 (Rob, terminal, overnight) — security hardening on a branch, NOT live
+
+**Branch `security-hardening-1019`**, previewed OK (run `39342294644`), **not merged, production
+untouched.** Full record: `.planning/sessions/20261019-rob-summary.md` and
+`.planning/quick/261019-sec-security-hardening/261019-sec-SUMMARY.md`.
+
+- **Do first, in dashboards (no deploy):** Cloudflare *Always Use HTTPS* + HSTS (the bare domain
+  serves the login page over plain http today), Bot Fight Mode, WAF rate rule on `/api/checkout`,
+  `/api/onboarding/*`, `/api/track`, `/ops/*`, 5xx/security alerts; Supabase: disable public
+  signups, enable captcha; Stripe descriptor back to `IURIX ACCREDITATION`.
+- **Then:** click through the preview signed in (dashboard, training iframe, billing), merge to
+  main, `gh workflow run deploy.yml --ref main -f target=production`.
+- ⚠️ **add-seats was charging $0** (pending item excluded from the invoice; the charge lands on the
+  firm's next renewal). Fixed on the branch. Check Stripe for past seat additions with $0 invoices
+  and a leftover pending invoice item.
+- ⚠️ **`.env.local` points at PROD Supabase** — `pnpm test` writes test rows to production.
+- Cert Worker (`workers/cert-worker`) needs its own redeploy for the constant-time secret check.
 
 ---
 
