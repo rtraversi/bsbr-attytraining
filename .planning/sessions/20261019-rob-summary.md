@@ -1,8 +1,8 @@
 # 2026-10-19 — Rob, terminal-Claude (ran overnight unattended)
 
 Security check after Katy's Facebook post drove a traffic spike, plus a third-party light
-pen-test Rob shared. Everything is on branch **`security-hardening-1019`**, previewed, **not merged
-and not on production**.
+pen-test Rob shared. Built on branch `security-hardening-1019`, then **merged to `main` and deployed to production the
+same evening** (run `39344824894`, `4c30b49`).
 
 ## What happened
 
@@ -39,7 +39,23 @@ and not on production**.
 8. **`.env.local` points at PROD** (`ttqthtzdjacrhjtrcmmy`), contradicting the 09-xx handoff table
    that says staging.
 
-## Not done / blocked
+9. **Dashboard settings done by Rob, verified from outside:** Always Use HTTPS (301), HSTS (took a
+   second pass: the main HSTS toggle was off at first), WAF rate rule (429 after 10 req/10 s),
+   Supabase `disable_signup: true` (also a second pass), Stripe descriptor.
+10. **Merged + deployed.** Live check after deploy: pages 200, `/ops/metrics` 401, all headers
+    present, `x-powered-by` gone, open redirect closed, Rise launch page OK. Signed-in pages not
+    clicked through by Claude.
+
+## Still open
+
+- Uptime monitor (UptimeRobot on `/api/health`) — Rob.
+- One live add-seats test on an internal firm; check Stripe for past $0 seat invoices.
+- Redeploy `workers/cert-worker` (constant-time secret check).
+- Turnstile on login/forgot forms, then Supabase captcha.
+- Point `.env.local` back at staging.
+- Promote CSP report-only → enforced after ~a week of clean reports.
+
+## Not done / blocked (at the time)
 
 - Dashboard settings (Cloudflare HTTPS/HSTS/WAF/alerts, Supabase signups + captcha, Stripe
   descriptor) — no access from here. Listed in the quick-task summary, Next steps #1.

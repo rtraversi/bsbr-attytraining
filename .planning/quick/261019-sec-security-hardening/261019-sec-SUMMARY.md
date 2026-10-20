@@ -1,7 +1,7 @@
 # 261019-sec: Security hardening after the Facebook traffic spike
 
 **Date:** 2026-10-19 (Rob, terminal-Claude, run overnight unattended)
-**Branch:** `security-hardening-1019` (NOT merged, NOT on production)
+**Branch:** `security-hardening-1019` → merged to `main` and **deployed to production 2026-10-19** (run `39344824894`)
 **Trigger:** Katy's Facebook post drove a traffic spike; Rob asked for a security check and
 shared a third-party light pen-test (logged-out, 48 requests, against `http://`).
 
