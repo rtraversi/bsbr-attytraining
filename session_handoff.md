@@ -1,8 +1,25 @@
 # Session Handoff
 
-**Date:** 2026-10-19 (latest section; older sections kept below)
+**Date:** 2026-10-20 (latest section; older sections kept below)
 **Who:** Rob, with terminal-Claude (earlier sections: Max, Rob)
 **Written for:** someone who has never seen this repository
+
+---
+
+## 🟡 Added 2026-10-20 (Rob, terminal) — Facebook page, footer phone, Twilio scoped
+
+Full record: `.planning/sessions/20261020-rob-summary.md`.
+
+- **Facebook page set up** (bio live, action button, username, category Legal, address hidden).
+  Left: cover photo, seal-only profile picture, first post, swap old 919-609-2808 → 919-446-1819
+  in Contact info.
+- **Footer now shows 919-446-1819** (Google Voice, interim). Committed + pushed = **preview only**;
+  deploy with `gh workflow run deploy.yml --ref main -f target=production` to put it live.
+- ⚠️ **Google Voice only stays alive on OUTGOING calls/texts** — Rob texts from the GV app monthly.
+  An inbound cron ping would not count and was deliberately not built.
+- **Twilio scoped, not built:** `.planning/TWILIO-SCOPE.md` (SMS + voicemail + `/ops/phone` inbox,
+  target 2026-11-20). **Next:** phase 0 in the Twilio console (Rob) and start A2P 10DLC if replies
+  by text are wanted. Four decisions for Rob listed at the bottom of the scope doc.
 
 ---
 

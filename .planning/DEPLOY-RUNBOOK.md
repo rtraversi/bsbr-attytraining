@@ -101,7 +101,7 @@ Then by eye:
 - [ ] Header: mark + wordmark, nav on one line, no wrapping
 - [ ] Hero: mark unframed, Katy's three-line summary beneath it
 - [ ] *Reduce your exposure*: COPRAC pull quote + the three-case docket
-- [ ] Footer: `info@iurixaccreditation.com`, **no phone placeholder**
+- [ ] Footer: `info@iurixaccreditation.com` and `919-446-1819` (Google Voice, interim until Twilio — BACKLOG #7)
 - [ ] `/pricing`: slider moves, bands highlight, total updates. **Do not complete a checkout** —
       it is wired to live Stripe.
 

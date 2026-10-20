@@ -42,18 +42,25 @@ export function Footer() {
             {/* Contact address decided 2026-08-03 (Rob): info@iurixaccreditation.com,
                 a Zoho alias on the domain.
 
-                The phone number is deliberately ABSENT rather than shown as a
-                "[PHONE — TBD]" placeholder: this ships to the live site, and a
-                visible placeholder on a compliance product's footer reads as an
-                unfinished page to exactly the buyer we are trying to reassure.
-                Add the number here once the Twilio voicemail line is provisioned
-                (.planning/BACKLOG.md item 7). Do not invent one. */}
+                Phone 2026-10-20 (Rob): a Google Voice number, INTERIM until the
+                Twilio voicemail line lands (.planning/BACKLOG.md item 7, target
+                2026-11-20). Free Google Voice reclaims numbers after ~3 months
+                without outgoing calls or texts — keep it in use, or this footer
+                ends up advertising a dead (or someone else's) line. */}
             <p className="mt-1 text-[15px]">
               <a
                 href="mailto:info@iurixaccreditation.com"
                 className="text-ink-soft underline decoration-silver underline-offset-4 transition-colors hover:text-teal-mid"
               >
                 info@iurixaccreditation.com
+              </a>
+            </p>
+            <p className="mt-1 text-[15px]">
+              <a
+                href="tel:+19194461819"
+                className="text-ink-soft underline decoration-silver underline-offset-4 transition-colors hover:text-teal-mid"
+              >
+                919-446-1819
               </a>
             </p>
           </div>

@@ -64,7 +64,26 @@ removed so it can never leak a login link to the screen in prod.
 and `app/api/invite/route.ts`. Keep only the `console.error` for server logs.
 Do this after confirming emails deliver end-to-end.
 
-### 7. Business voicemail line (Twilio)
+### 7. Business voicemail line (Twilio) — 🎯 TARGET 2026-11-20
+> **Re-scoped 2026-10-20 → `.planning/TWILIO-SCOPE.md`** (SMS + voicemail + `/ops/phone` inbox,
+> in the main app rather than a separate Worker). That doc supersedes the design below.
+
+**Interim (Rob, 2026-10-20):** until this lands, the site footer and the Facebook page list a
+Google Voice number, **919-446-1819** (`app/_components/footer.tsx`). The reclamation risk below
+is live for that number: Google's policy counts *placing calls or sending texts* — outgoing only,
+so an automated inbound ping does not keep it alive. Rob sends one text from the GV app monthly.
+
+**Plan — next month (Rob is learning Twilio as part of this).** Number and credits are already
+in the Twilio account.
+1. Console tour: confirm the number is active and which project holds it (open decisions below).
+2. Hello-world with no code: point the number's Voice webhook at a **TwiML Bin** containing a
+   `<Say>` + `<Record>`; call it, confirm the recording appears in the console.
+3. Build the `/voice` + `/voicemail-complete` Worker per the design below, signature
+   validation first, then the Resend notification.
+4. Cut over. **Decide first: new number or port.** Porting 919-446-1819 out of Google Voice
+   into Twilio would keep the number already printed on the site and Facebook — no second
+   swap. Google charges a small unlock fee; confirm Twilio accepts the port-in before relying
+   on it. If not porting, change the footer, Facebook, and this note together.
 **Added:** 2026-08-03 (Rob)
 **Problem:** Iurix Accreditation has no business phone number. Forming as an NC LLC,
 and the marketing footer already reserves a `[PHONE — TBD]` slot. No physical phone,
