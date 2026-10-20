@@ -15,7 +15,7 @@ site, Rise launch page 200 with SAMEORIGIN. **Dashboard settings done and verifi
 Always Use HTTPS (301), HSTS from Cloudflare, WAF rate rule (429 after 10 req/10 s on
 `/api/checkout`), Supabase public signups off (`disable_signup: true`), Stripe descriptor. Still
 open: Better Stack monitor on `/api/health`, one live add-seats test (Stripe checked: no past $0
-seat invoices), cert Worker redeploy (wrangler on Rob's PC is on the wrong CF account), captcha
+seat invoices), captcha
 (code first). Rollback if needed:
 `wrangler rollback --name bsbr-attytraining`.
 
