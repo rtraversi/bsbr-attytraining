@@ -48,9 +48,13 @@ same evening** (run `39344824894`, `4c30b49`).
 
 ## Still open
 
-- Uptime monitor (UptimeRobot on `/api/health`) — Rob.
-- One live add-seats test on an internal firm; check Stripe for past $0 seat invoices.
-- Redeploy `workers/cert-worker` (constant-time secret check).
+- Uptime monitor: Rob uses **Better Stack**; add a monitor on `/api/health`.
+- One live add-seats test on an internal firm. (Stripe checked by Rob: no past $0 seat invoices or
+  pending items, so nothing to clean up.)
+- Redeploy `workers/cert-worker` (constant-time secret check). Not covered by the GitHub deploy
+  workflow; `cd workers/cert-worker && pnpm run deploy`. Wrangler on Rob's PC is logged into the
+  wrong Cloudflare account again (`f50094…`, not prod `4b2a40…`); the pinned `account_id` makes a
+  deploy fail rather than land there. `wrangler login` to the prod account first.
 - Turnstile on login/forgot forms, then Supabase captcha.
 - Point `.env.local` back at staging.
 - Promote CSP report-only → enforced after ~a week of clean reports.

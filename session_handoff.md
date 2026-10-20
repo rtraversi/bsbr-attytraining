@@ -14,8 +14,9 @@ run **`39344824894`** (smoke test passed). Live check: `/`, `/pricing`, `/login`
 site, Rise launch page 200 with SAMEORIGIN. **Dashboard settings done and verified by Rob + Claude:**
 Always Use HTTPS (301), HSTS from Cloudflare, WAF rate rule (429 after 10 req/10 s on
 `/api/checkout`), Supabase public signups off (`disable_signup: true`), Stripe descriptor. Still
-open: uptime monitor (UptimeRobot on `/api/health`), one live add-seats test, check Stripe for past
-$0 seat invoices, cert Worker redeploy, captcha (code first). Rollback if needed:
+open: Better Stack monitor on `/api/health`, one live add-seats test (Stripe checked: no past $0
+seat invoices), cert Worker redeploy (wrangler on Rob's PC is on the wrong CF account), captcha
+(code first). Rollback if needed:
 `wrangler rollback --name bsbr-attytraining`.
 
 ### Original overnight notes (branch stage)
