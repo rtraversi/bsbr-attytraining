@@ -6,7 +6,19 @@
 
 ---
 
-## 🔴 Added 2026-10-19 (Rob, terminal, overnight) — security hardening on a branch, NOT live
+## 🟢 Added 2026-10-19 (Rob, terminal) — security hardening + prorated seat adds are LIVE
+
+**Update, same evening:** merged to `main` (fast-forward, `4c30b49`) and deployed to production,
+run **`39344824894`** (smoke test passed). Live check: `/`, `/pricing`, `/login` 200, `/ops/metrics`
+401, all security headers present, `x-powered-by` gone, `next=//example.com` no longer leaves the
+site, Rise launch page 200 with SAMEORIGIN. **Dashboard settings done and verified by Rob + Claude:**
+Always Use HTTPS (301), HSTS from Cloudflare, WAF rate rule (429 after 10 req/10 s on
+`/api/checkout`), Supabase public signups off (`disable_signup: true`), Stripe descriptor. Still
+open: uptime monitor (UptimeRobot on `/api/health`), one live add-seats test, check Stripe for past
+$0 seat invoices, cert Worker redeploy, captcha (code first). Rollback if needed:
+`wrangler rollback --name bsbr-attytraining`.
+
+### Original overnight notes (branch stage)
 
 **Branch `security-hardening-1019`**, previewed OK (run `39342294644`), **not merged, production
 untouched.** Full record: `.planning/sessions/20261019-rob-summary.md` and
