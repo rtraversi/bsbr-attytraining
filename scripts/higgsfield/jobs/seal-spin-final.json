@@ -1,0 +1,11 @@
+{
+  "model": "bytedance/seedance-2.5/image-to-video",
+  "input": {
+    "image_url": "file:scripts/higgsfield/assets/seal-start.png",
+    "prompt": "The brushed-steel emblem in the center (a capital letter I shaped like the pillar of the scales of justice, framed by two curved rose-gold crescents) spins quickly on its vertical axis like a flipped coin: one fast, energetic full 360-degree turn completed within the first two seconds, light flashing across its metal surfaces, then it snaps to a stop facing front, exactly as in the first frame. The moment it stops, a burst of small, bright star-shaped sparkles twinkles along the edges of both crescents and around the emblem, clearly visible, then fades. Then the central letter I lights up with a soft teal-white glow from within and holds that glow steadily to the end. Camera locked off. Static dark teal background. The emblem keeps its exact shape and proportions. No text, no extra objects.",
+    "duration": 6,
+    "resolution": "720p",
+    "bitrate_mode": "standard",
+    "generate_audio": false
+  }
+}

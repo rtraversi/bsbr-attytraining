@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MarginNote } from "./motion/margin-note";
+import { HeroSealVideo } from "./motion/hero-seal-video";
 
 // Hero. Katy's headline and opening lines, verbatim.
 //
@@ -61,14 +62,18 @@ export function HeroSection() {
               leaves the height hint in force and the mark renders distorted —
               a 68px-wide box came out 326px tall. Any mark <img> that sizes
               one axis in CSS must set the other to auto. */}
-          <img
-            src="/brand/iurix-mark.png"
-            alt="The Iurix Accreditation mark"
-            width={326}
-            height={326}
-            className="relative block h-auto w-full select-none"
-            draggable={false}
-          />
+          {/* Spins once on load, then holds with the "I" lit (motion/hero-seal-video.tsx).
+              The still img below stays as the fallback and the SSR paint. */}
+          <HeroSealVideo>
+            <img
+              src="/brand/iurix-mark.png"
+              alt="The Iurix Accreditation mark"
+              width={326}
+              height={326}
+              className="relative block h-auto w-full select-none"
+              draggable={false}
+            />
+          </HeroSealVideo>
         </div>
 
         <h1 className="hero-rise font-display mx-auto mt-[34px] max-w-[15ch] text-[clamp(38px,5.6vw,68px)] font-normal leading-[1.05] tracking-[-0.022em] text-marble [animation-delay:0.14s]">

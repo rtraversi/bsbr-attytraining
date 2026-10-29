@@ -283,6 +283,13 @@
 }
 .hero-rise  { opacity: 0; animation: iurix-rise  0.82s cubic-bezier(.2,.7,.3,1) forwards; }
 .hero-seal  { opacity: 0; animation: iurix-bloom 1.05s cubic-bezier(.2,.7,.3,1) forwards; }
+/* The seal spin video (motion/hero-seal-video.tsx) is an opaque 16:9 frame; fade
+   its rectangle out so only the mark and its own glow read against the metal.
+   The mark spans 28% x 50% of the frame, so the solid core (18% x 31%) holds it. */
+.hero-seal-video {
+  -webkit-mask-image: radial-gradient(ellipse 30% 52% at 50% 50%, #000 60%, transparent 100%);
+  mask-image: radial-gradient(ellipse 30% 52% at 50% 50%, #000 60%, transparent 100%);
+}
 @media (prefers-reduced-motion: reduce) {
   .hero-rise, .hero-seal { opacity: 1; animation: none; }
 }

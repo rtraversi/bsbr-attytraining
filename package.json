@@ -11,7 +11,9 @@
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "test": "dotenv -e .env.local -- vitest run",
-    "test:watch": "dotenv -e .env.local -- vitest"
+    "test:watch": "dotenv -e .env.local -- vitest",
+    "higgsfield:example": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/higgsfield/index.ts",
+    "higgsfield:gen": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/higgsfield/generate.ts"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.12",
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@higgsfield/client": "^0.2.6",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

@@ -1,0 +1,10 @@
+{
+  "model": "bytedance/seedance-2.5/text-to-video",
+  "input": {
+    "prompt": "Cinematic, softly lit small law office in late afternoon, warm copper light and deep teal shadows, calm and realistic. Over-the-shoulder medium close-up of a paralegal at a tidy wooden desk in front of a large monitor. She highlights a block of text in an email on screen and copies it, then clicks into a separate chat window and moves the cursor toward the empty input box. She stops. Her hand lifts off the mouse. She glances to a single printed page pinned beside the monitor, reads it for a beat, gives a small nod, and closes the chat window. Slow, steady push-in, shallow depth of field, natural human movement, documentary feel. On-screen text is soft and unreadable. No logos, no brand names.",
+    "duration": 8,
+    "resolution": "480p",
+    "aspect_ratio": "16:9",
+    "generate_audio": false
+  }
+}

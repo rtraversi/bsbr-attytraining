@@ -81,3 +81,6 @@ skills-lock.json
 # Git worktrees. `git worktree add .worktrees/<branch>` puts a full checkout of
 # another branch inside this one; it must never be committed into it.
 .worktrees/
+
+# Higgsfield generation downloads
+scripts/higgsfield/out/
