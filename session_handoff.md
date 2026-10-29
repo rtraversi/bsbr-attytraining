@@ -1,8 +1,26 @@
 # Session Handoff
 
-**Date:** 2026-10-29 (latest section; older sections kept below)
-**Who:** Rob, with terminal-Claude, evening session (earlier sections: Max, Rob)
+**Date:** 2026-10-29 (latest sections: Max, Rob; earlier sections: Rob, Max)
+**Who:** Max, Rob (earlier sections: Rob, Max)
 **Written for:** someone who has never seen this repository
+
+---
+
+## 🟡 Added 2026-10-29 (Max): Sign-in palette test (preview only, pending vibrant tuning); Katy Chavez portal PR report
+
+Full record: `.planning/sessions/20261029-max-summary.md`.
+
+- **Sign-in page teal palette test (`app/login/page.tsx`):** Scoped `--brand-primary: #3D6764`,
+  `--brand-emphasis: #24403E`, and `#16292A`/85 footer with `#CDE3DF` mint links. Pushed commit
+  `4644641` to `main`, generating Cloudflare preview:
+  `https://d17ddd57-bsbr-attytraining.aistaffcompliance.workers.dev/login`.
+  **Feedback from Max:** `#3D6764` is too muted; the app interface needs more vibrant colors.
+  Left in pending state for next session to pick more vibrant hues (e.g. `#5CC6C3` / Pantone Rinsing Rivulet).
+  Production was untouched.
+- **Katy Chavez Portal report prepared for Rob:** Investigated missing updates after deployment in
+  `rtraversi/katychavez-portal-new`. Changes exist on branches and pass tests, but PRs #6 through #9
+  (Drafter 1.0.1–1.0.4) remain open/unmerged into `main`, and 1.0.4 requires Supabase migrations
+  (`1627_matter_form_copies.sql` and `1600-g1450-fee-amount.sql`). Full handoff brief compiled for Rob.
 
 ---
 
