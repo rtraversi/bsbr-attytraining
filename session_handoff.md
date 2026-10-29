@@ -1,8 +1,26 @@
 # Session Handoff
 
 **Date:** 2026-10-29 (latest section; older sections kept below)
-**Who:** Rob, with terminal-Claude (earlier sections: Max, Rob)
+**Who:** Rob, with terminal-Claude, evening session (earlier sections: Max, Rob)
 **Written for:** someone who has never seen this repository
+
+---
+
+## 🟢 Added 2026-10-29 evening (Rob, terminal): Higgsfield API set up; spinning hero seal LIVE
+
+Full record: `.planning/sessions/20261029b-rob-summary.md`.
+
+- **The hero seal now spins on load** (production run `40966563930`, verified live): a fast coin
+  spin, a sparkle burst, then the "I" glows teal-white and holds. It's a 375 KB video rendered with
+  Higgsfield (Seedance 2.5 image-to-video). The still mark stays as the fallback.
+  Code: `app/_components/motion/hero-seal-video.tsx`.
+- **Higgsfield runs through the API, not the CLI.** Rob's $115 is on the Higgsfield API
+  (open.higgsfield.ai), which the CLI can't use. Tooling: `pnpm higgsfield:gen <job.json>`, with
+  jobs saved in `scripts/higgsfield/jobs/`. It needs **`HF_CREDENTIALS=key-id:key-secret` in
+  `.env.local`**. Max, you'd need your own key; never commit it.
+- **Discount claimed until ~2026-11-05:** Seedance 2.5 (30%), Kling 3.0 (50%), Marketing Studio
+  Image. **Spent about $4.76 of $115.**
+- **Next:** the "paste" training-scenario clip (job file ready), then the Next.js 16 upgrade.
 
 ---
 
