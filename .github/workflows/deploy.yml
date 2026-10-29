@@ -68,7 +68,7 @@ jobs:
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-        run: pnpm exec opennextjs-cloudflare build
+        run: pnpm exec opennextjs-cloudflare build  --dangerouslyUseUnsupportedNextVersion
 
       # Guard against the exact failure that produced a 500-on-every-route
       # preview. If a Windows-built artifact ever reaches this workflow, or the
