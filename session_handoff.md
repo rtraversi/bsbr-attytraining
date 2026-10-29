@@ -1,8 +1,27 @@
 # Session Handoff
 
-**Date:** 2026-10-20 (latest section; older sections kept below)
+**Date:** 2026-10-29 (latest section; older sections kept below)
 **Who:** Rob, with terminal-Claude (earlier sections: Max, Rob)
 **Written for:** someone who has never seen this repository
+
+---
+
+## 🟢 Added 2026-10-29 (Rob, terminal): homepage motion layer LIVE; deploys unblocked (stopgap)
+
+Full record: `.planning/sessions/20261029-rob-summary.md`.
+
+- **The new homepage is live** (production run `40938593577`): a brushed-metal hero with a faded
+  grid, a pen-written "Click here" plus four margin notes, the four pillars and three 2026 rulings
+  as flip cards, a rose-gold ribbon drawn by scroll that wraps and "presses" the closing seal, and
+  icons on the included list. Copy is unchanged. The code is in `app/_components/motion/`.
+- **The 2026-10-20 footer phone 919-446-1819 also went live** with this deploy.
+- ⚠️ **Deploys had been failing since 2026-10-21.** OpenNext refuses Next 15 because it is more than
+  two years old. A stopgap `--dangerouslyUseUnsupportedNextVersion` flag is now in `deploy.yml`.
+  **Next priority: the Next.js 16 upgrade** (>=16.4.1), then remove the flag. The steps are in the
+  session file.
+- **Higgsfield:** the CLI is installed and signed in, on the free plan with 10 credits. Rob still
+  has to install the companion skills himself. Hero film and stills are the next creative step,
+  budget-gated.
 
 ---
 
