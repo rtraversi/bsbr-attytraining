@@ -8,6 +8,7 @@ import { IncludedSection } from "@/app/_components/included-section";
 import { ClosingCta } from "@/app/_components/closing-cta";
 import { Footer } from "@/app/_components/footer";
 import { VisitBeacon } from "@/app/_components/visit-beacon";
+import { PageRibbon } from "@/app/_components/motion/page-ribbon";
 
 // No metadata export here on purpose. This page used to set its own title and
 // description, which silently beat the root layout for the two plain tags while
@@ -27,7 +28,9 @@ export default function HomePage() {
       {/* Renders nothing; first-party page view for /ops/metrics (incl. Katy's ?v=1 / ?v=2). */}
       <VisitBeacon />
       <SiteHeader />
-      <main>
+      {/* relative: the ribbon SVG is positioned against <main>. */}
+      <main className="relative">
+        <PageRibbon />
         <HeroSection />
         <OvertureSection />
         <StandardSection />

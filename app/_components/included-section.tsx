@@ -1,5 +1,13 @@
 import Link from "next/link";
 import { SectionHead } from "./section-head";
+import {
+  CertificateIcon,
+  MembersIcon,
+  MonitoringIcon,
+  PolicyIcon,
+  TokenIcon,
+  TrainingIcon,
+} from "./homepage-icons";
 
 // "The Details" — Katy's copy.
 //
@@ -28,19 +36,24 @@ const BANDS = [
 // Katy's full list. The tailored policy, the website token, the monitoring feed
 // and the members-only decisions page are advertised ahead of being built, on
 // Rob's 2026-08-03 decision to publish the whole programme and build to match.
+//
+// Since 2026-10-29 (Rob) each item has a line icon and its lead phrase in bold.
+// The words are unchanged: lead + rest reads as Katy's original sentence.
 const INCLUDED = [
-  "A written policy, tailored to your firm",
-  "Online, interactive training for every non-attorney team member",
-  "Individual certifications for each team member who completes training",
-  "A yearly Iurix Accredited token to display on your website",
-  "Ongoing monitoring of AI-related sanctions and bar guidance, with training updated as the rules evolve",
-  "A members-only page summarising every AI-related sanction decision",
+  { Icon: PolicyIcon, lead: "A written policy", rest: ", tailored to your firm" },
+  { Icon: TrainingIcon, lead: "Online, interactive training", rest: " for every non-attorney team member" },
+  { Icon: CertificateIcon, lead: "Individual certifications", rest: " for each team member who completes training" },
+  { Icon: TokenIcon, lead: "A yearly Iurix Accredited token", rest: " to display on your website" },
+  { Icon: MonitoringIcon, lead: "Ongoing monitoring", rest: " of AI-related sanctions and bar guidance, with training updated as the rules evolve" },
+  { Icon: MembersIcon, lead: "A members-only page", rest: " summarising every AI-related sanction decision" },
 ];
 
 export function IncludedSection() {
   return (
-    <section id="included" className="scroll-mt-20 border-b border-silver py-20 md:py-28">
-      <div className="mx-auto max-w-[1140px] px-6 md:px-8">
+    <section id="included" className="relative scroll-mt-20 border-b border-silver py-20 md:py-28">
+      <i data-ribbon="0.02" style={{ top: "40%" }} aria-hidden />
+      <i data-ribbon="0.02" style={{ top: "90%" }} aria-hidden />
+      <div className="relative z-[2] mx-auto max-w-[1140px] px-6 md:px-8">
         <SectionHead
           num="IV"
           label="The details"
@@ -91,7 +104,7 @@ export function IncludedSection() {
 
                 <Link
                   href="/pricing"
-                  className="mt-[26px] block rounded-[2px] bg-marble px-6 py-3.5 text-center text-[15px] font-medium text-teal-ink transition-colors hover:bg-gold-pale"
+                  className="mt-[26px] block rounded-[7px] bg-marble px-6 py-3.5 text-center text-[15px] font-medium text-teal-ink transition-colors hover:bg-gold-pale"
                 >
                   Accredit your firm
                 </Link>
@@ -113,17 +126,17 @@ export function IncludedSection() {
             <h3 className="mb-1 text-[10.5px] font-medium uppercase tracking-[0.22em] text-gold-deep">
               What&apos;s included
             </h3>
-            <ul>
-              {INCLUDED.map((item) => (
+            <ul className="mt-6 grid gap-7">
+              {INCLUDED.map(({ Icon, lead, rest }) => (
                 <li
-                  key={item}
-                  className="flex gap-4 border-b border-silver py-4 text-[16px] leading-[1.6] text-ink-soft last:border-b-0"
+                  key={lead}
+                  className="grid grid-cols-[44px_1fr] items-start gap-5 text-[17px] leading-[1.55] text-ink-soft"
                 >
-                  <span
-                    className="mt-[0.62em] h-[4px] w-[4px] flex-none rotate-45 bg-gold"
-                    aria-hidden
-                  />
-                  <span>{item}</span>
+                  <Icon className="-mt-1 h-11 w-11" />
+                  <span>
+                    <strong className="font-semibold text-ink">{lead}</strong>
+                    {rest}
+                  </span>
                 </li>
               ))}
             </ul>

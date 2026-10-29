@@ -1,4 +1,6 @@
 import { SectionHead } from "./section-head";
+import { FlipCard, FlipHint } from "./motion/flip-card";
+import { MarginNote } from "./motion/margin-note";
 
 // "Reduce Your Exposure" — Katy's copy. (Her draft reads "Exposureq"; the stray
 // character is a typo, corrected.)
@@ -61,9 +63,13 @@ export function ExposureSection() {
   return (
     <section
       id="exposure"
-      className="scroll-mt-20 border-b border-silver bg-marble-deep py-20 md:py-28"
+      className="relative scroll-mt-20 border-b border-silver bg-marble-deep py-20 md:py-28"
     >
-      <div className="mx-auto max-w-[1140px] px-6 md:px-8">
+      <i data-ribbon="0.03" style={{ top: "20%" }} aria-hidden />
+      <i data-ribbon="0.03" style={{ top: "88%" }} aria-hidden />
+      <i data-ribbon="0.5" style={{ top: "96%" }} aria-hidden />
+      <i data-ribbon="0.97" style={{ top: "99.5%" }} aria-hidden />
+      <div className="relative z-[2] mx-auto max-w-[1140px] px-6 md:px-8">
         <SectionHead num="II" label="Your exposure" heading="Reduce your exposure" />
 
         <div className="grid gap-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-20">
@@ -148,33 +154,51 @@ export function ExposureSection() {
               notched label (an absolutely-positioned span straddling the top
               border) is gone: it needed the card and the section to share a
               background colour, which is no longer true. */}
-          <div className="bg-white shadow-[0_6px_28px_-14px_rgba(0,70,140,0.18)]">
-            <div className="bg-teal-ink px-6 py-3.5">
-              <span className="text-[10.5px] font-medium uppercase tracking-[0.22em] text-gold-soft">
-                The 2026 decisions
-              </span>
-            </div>
-            <p className="border-b border-silver px-6 py-5 text-[15px] leading-[1.6] text-ink">
-              Three rulings this year draw the same line: AI use is defensible when
-              the protections are contractual and documented:{" "}
-              <strong className="font-semibold">and not when they aren&apos;t.</strong>
-            </p>
-            {CASES.map((c, i) => (
-              <div
-                key={c.name}
-                className={`px-6 py-5 ${
-                  i < CASES.length - 1 ? "border-b border-silver" : ""
-                }`}
-              >
-                <p className="text-[10.5px] font-medium uppercase tracking-[0.2em] text-ink-mute">
-                  {c.court}
-                </p>
-                <h3 className="font-display my-1.5 text-[19px] font-normal text-ink">
-                  {c.name}
-                </h3>
-                <p className="text-[15px] leading-[1.6] text-ink-soft">{c.body}</p>
+          <div>
+            <div className="bg-white shadow-[0_6px_28px_-14px_rgba(0,70,140,0.18)]">
+              <div className="bg-teal-ink px-6 py-3.5">
+                <span className="text-[10.5px] font-medium uppercase tracking-[0.22em] text-gold-soft">
+                  The 2026 decisions
+                </span>
               </div>
-            ))}
+              <p className="px-6 py-5 text-[15px] leading-[1.6] text-ink">
+                Three rulings this year draw the same line: AI use is defensible when
+                the protections are contractual and documented:{" "}
+                <strong className="font-semibold">and not when they aren&apos;t.</strong>
+              </p>
+            </div>
+
+            {/* Case cards since 2026-10-29 (Rob): court and case name on the front,
+                italicised as a citation is, the holding on the back. */}
+            <MarginNote text="three courts, one line" point="down-right" className="note-cases" />
+            <div className="grid gap-[18px]">
+              {CASES.map((c) => (
+                <FlipCard
+                  key={c.name}
+                  className="case-card"
+                  front={
+                    <>
+                      <span className="text-[11.5px] font-medium uppercase tracking-[0.16em] text-gold-deep">
+                        {c.court}
+                      </span>
+                      <span className="font-serif-italic mt-auto pt-6 text-[30px] leading-[1.1] text-ink">
+                        {c.name}
+                      </span>
+                      <FlipHint>Read the holding</FlipHint>
+                    </>
+                  }
+                  back={
+                    <>
+                      <span className="text-[11.5px] font-medium uppercase tracking-[0.16em] text-gold-soft">
+                        {c.name}
+                      </span>
+                      <span className="mt-3 text-[15.5px] leading-[1.55] text-marble">{c.body}</span>
+                      <FlipHint>Turn back</FlipHint>
+                    </>
+                  }
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>

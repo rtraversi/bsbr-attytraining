@@ -1,4 +1,5 @@
 import { SectionHead } from "./section-head";
+import { MarginNote } from "./motion/margin-note";
 
 // "Document Your Best Efforts" — Katy's copy, verbatim.
 //
@@ -18,9 +19,13 @@ export function RecordSection() {
   return (
     <section
       id="record"
-      className="scroll-mt-20 border-b border-silver py-20 md:py-28"
+      className="relative scroll-mt-20 border-b border-silver py-20 md:py-28"
     >
-      <div className="mx-auto max-w-[1140px] px-6 md:px-8">
+      <i data-ribbon="0.97" style={{ top: "30%" }} aria-hidden />
+      <i data-ribbon="0.97" style={{ top: "74%" }} aria-hidden />
+      <i data-ribbon="0.5" style={{ top: "92%" }} aria-hidden />
+      <i data-ribbon="0.03" style={{ top: "97%" }} aria-hidden />
+      <div className="relative z-[2] mx-auto max-w-[1140px] px-6 md:px-8">
         <SectionHead
           num="III"
           label="The record"
@@ -45,20 +50,28 @@ export function RecordSection() {
             </p>
           </div>
 
-          <ul className="border-t border-silver">
-            {CLAIMS.map((c) => (
-              <li
-                key={c}
-                className="flex gap-4 border-b border-silver py-4 text-[16px] text-ink"
-              >
-                <span
-                  className="mt-[0.62em] h-[4px] w-[4px] flex-none rotate-45 bg-gold"
-                  aria-hidden
-                />
-                <span>{c}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="relative">
+            <ul className="border-t border-silver">
+              {CLAIMS.map((c) => (
+                <li
+                  key={c}
+                  className="flex gap-4 border-b border-silver py-4 text-[16px] text-ink"
+                >
+                  <span
+                    className="mt-[0.62em] h-[4px] w-[4px] flex-none rotate-45 bg-gold"
+                    aria-hidden
+                  />
+                  <span>{c}</span>
+                </li>
+              ))}
+            </ul>
+            <MarginNote
+              text="one for every person on staff"
+              point="up-left"
+              arrowFirst
+              className="note-each"
+            />
+          </div>
         </div>
       </div>
     </section>

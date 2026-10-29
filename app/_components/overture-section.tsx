@@ -11,8 +11,9 @@
 // the correspondence between the section numerals and the nav.
 export function OvertureSection() {
   return (
-    <section className="border-b border-silver py-[72px] md:py-[100px]">
-      <div className="mx-auto max-w-[1140px] px-6 md:px-8">
+    <section className="relative border-b border-silver py-[72px] md:py-[100px]">
+      <i data-ribbon="0.93" style={{ top: "50%" }} aria-hidden />
+      <div className="relative z-[2] mx-auto max-w-[1140px] px-6 md:px-8">
         <p className="font-display max-w-[900px] text-[clamp(23px,3vw,34px)] font-normal leading-[1.42] tracking-[-0.012em] text-ink">
           Clients know that a firm that doesn&apos;t use AI may be missing things, and
           wasting billable hours. They want their lawyers using it. But they also want

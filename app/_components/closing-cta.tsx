@@ -11,7 +11,9 @@ import Link from "next/link";
 // destination — info@iurixaccreditation.com, decided 2026-08-03.
 export function ClosingCta() {
   return (
-    <section className="relative overflow-hidden bg-teal-ink py-24 md:py-32">
+    // #closing and #close-seal are where the ribbon ends (motion/page-ribbon.tsx):
+    // it wraps once round the seal, then the seal presses (.is-sealed, globals.css).
+    <section id="closing" className="relative overflow-hidden bg-teal-ink py-24 md:py-32">
       {/* The crescent glow from the mark, as the one warm note on the dark ground */}
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_65%_at_50%_0%,rgba(146,108,93,0.28),transparent_65%)]"
@@ -24,14 +26,18 @@ export function ClosingCta() {
             preflight normally supplies height:auto, so this is belt and braces —
             but the same omission in a plain-CSS build of this page distorted
             both marks, so it is spelled out rather than relied upon. */}
-        <img
-          src="/brand/iurix-mark.png"
-          alt=""
-          width={326}
-          height={326}
-          className="mx-auto mb-10 h-auto w-[68px] select-none opacity-95"
-          draggable={false}
-        />
+        <div id="close-seal" className="close-seal relative mx-auto mb-10 w-[88px] md:w-[96px]">
+          <span className="hero-seal-bloom" aria-hidden />
+          <span className="seal-ring" aria-hidden />
+          <img
+            src="/brand/iurix-mark.png"
+            alt=""
+            width={326}
+            height={326}
+            className="relative block h-auto w-full select-none opacity-95"
+            draggable={false}
+          />
+        </div>
 
         <p className="font-display mx-auto max-w-[860px] text-[clamp(24px,3.2vw,38px)] font-normal leading-[1.35] tracking-[-0.01em] text-marble">
           Every clause written by an attorney.{" "}
@@ -43,13 +49,13 @@ export function ClosingCta() {
         <div className="mt-12 flex flex-wrap items-center justify-center gap-3.5">
           <Link
             href="/pricing"
-            className="rounded-[2px] bg-marble px-7 py-3.5 text-[15px] font-medium text-teal-ink transition-colors hover:bg-gold-pale"
+            className="rounded-[7px] bg-marble px-7 py-3.5 text-[15px] font-medium text-teal-ink transition-colors hover:bg-gold-pale"
           >
             Accredit your firm
           </Link>
           <a
             href="mailto:info@iurixaccreditation.com"
-            className="rounded-[2px] bg-marble/10 px-7 py-3.5 text-[15px] font-medium text-marble transition-colors hover:bg-marble hover:text-teal-ink"
+            className="rounded-[7px] bg-marble/10 px-7 py-3.5 text-[15px] font-medium text-marble transition-colors hover:bg-marble hover:text-teal-ink"
           >
             Talk to us first
           </a>

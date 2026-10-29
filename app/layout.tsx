@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Instrument_Serif } from "next/font/google";
+import { Cedarville_Cursive, Instrument_Serif } from "next/font/google";
 import localFont from "next/font/local";
 import Script from "next/script";
 import "./globals.css";
@@ -25,6 +25,16 @@ const instrumentSerif = Instrument_Serif({
   style: ["normal", "italic"],
   subsets: ["latin"],
   variable: "--font-instrument-serif",
+  display: "swap",
+});
+
+// Pen-written margin notes on the homepage ("Click here", "turn one over"). A
+// neat adult hand, not a marker scrawl: the notes read as a partner's annotations
+// on a document. Only app/_components/motion/margin-note.tsx uses it.
+const cedarville = Cedarville_Cursive({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-pen",
   display: "swap",
 });
 
@@ -134,7 +144,8 @@ export default function RootLayout({
         hostGrotesk.variable,
         instrumentSerif.variable,
         stackSans.variable,
-        kapakana.variable
+        kapakana.variable,
+        cedarville.variable
       )}
     >
       <body className="antialiased">

@@ -287,6 +287,231 @@
   .hero-rise, .hero-seal { opacity: 1; animation: none; }
 }
 
+/* ─── Homepage motion layer — 2026-10-29 (Rob) ─────────────────────────
+   Margin notes, flip cards, the ribbon, the brushed-metal hero and the seal
+   press. Reviewed as a standalone demo first; techniques borrowed from
+   mystudyguide.ai and re-drawn for this brand. Components live in
+   app/_components/motion/. Everything here has a reduced-motion rule at the
+   end of the block. No borders anywhere (CLAUDE.md: no contours). */
+
+/* Brushed-metal hero: horizontal grain (stretched SVG noise, kept faint — Rob
+   asked twice for less), soft anisotropic banding, darkening toward the foot. */
+.hero-metal {
+  background-color: #16292a;
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='900'><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='0.0022 0.6' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0.09 0 0 0 -0.03'/></filter><rect width='100%25' height='100%25' filter='url(%23b)'/></svg>"),
+    linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.28) 100%),
+    linear-gradient(90deg, #122425 0%, #1e3738 20%, #162b2c 41%, #233c3d 61%, #172c2d 80%, #102021 100%);
+  background-size: 900px 900px, auto, auto;
+}
+/* Faded gridline: 48px rule, heavier every 192px, vanishing toward the edges. */
+.hero-metal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(147,194,190,0.24) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(147,194,190,0.24) 1px, transparent 1px),
+    linear-gradient(rgba(147,194,190,0.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(147,194,190,0.11) 1px, transparent 1px);
+  background-size: 192px 192px, 192px 192px, 48px 48px, 48px 48px;
+  background-position: center top;
+  -webkit-mask-image: radial-gradient(ellipse 72% 64% at 50% 34%, #000 0%, rgba(0,0,0,0.55) 42%, transparent 80%);
+  mask-image: radial-gradient(ellipse 72% 64% at 50% 34%, #000 0%, rgba(0,0,0,0.55) 42%, transparent 80%);
+}
+/* The sheen: a soft band of reflected light crossing the metal every ~11s. */
+.hero-metal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(240,213,196,0.05) 46%, rgba(205,227,223,0.10) 50%, rgba(240,213,196,0.05) 54%, transparent 62%) no-repeat;
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  animation: metal-sheen 11s ease-in-out 1.2s infinite;
+}
+@keyframes metal-sheen {
+  0% { background-position: 100% 0; }
+  45%, 100% { background-position: 0% 0; }
+}
+
+/* Ribbon route markers (read by page-ribbon.tsx). */
+[data-ribbon] { position: absolute; width: 1px; height: 1px; pointer-events: none; }
+
+/* Margin notes */
+.margin-note {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  font-family: var(--font-pen), "Segoe Script", "Bradley Hand", cursive;
+  font-size: 24px;
+  line-height: 1.15;
+  color: #7f4f34;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.margin-note-dark { color: #d2a68c; }
+.note-arrow { display: block; width: 74px; height: 46px; flex: none; overflow: visible; }
+.note-arrow path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.8s cubic-bezier(.5,0,.2,1) 0.55s;
+}
+.note-text {
+  display: inline-block;
+  transform: rotate(-2.5deg);
+  clip-path: inset(-20% -4% -30% 0);
+  transition: clip-path 0.9s cubic-bezier(.4,0,.2,1);
+}
+.margin-note.is-pending .note-arrow path { stroke-dashoffset: 1; }
+.margin-note.is-pending .note-text { clip-path: inset(-20% 100% -30% 0); }
+.note-up-left { transform: scaleY(-1); }
+.note-down-right { transform: scaleX(-1); }
+.margin-note-onload .note-text { animation: note-write 0.9s cubic-bezier(.4,0,.2,1) 1.1s both; }
+.margin-note-onload .note-arrow path { animation: note-draw 0.8s cubic-bezier(.5,0,.2,1) 1.7s both; }
+@keyframes note-write {
+  from { clip-path: inset(-20% 100% -30% 0); }
+  to { clip-path: inset(-20% -4% -30% 0); }
+}
+@keyframes note-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+.note-nudge { display: inline-flex; animation: note-nudge 2.8s ease-in-out 2.8s infinite; }
+@keyframes note-nudge {
+  0%, 64%, 100% { transform: translate(0, 0); }
+  76% { transform: translate(6px, 5px); }
+  88% { transform: translate(0, 0); }
+}
+/* Placements, desktop. Below lg every note drops into the flow next to its target. */
+.note-click { right: calc(100% + 8px); top: -38px; }
+.note-click .note-text { font-size: 28px; }
+.note-price-host { position: relative; display: inline-block; }
+.note-price { left: calc(100% + 6px); top: -40px; }
+.note-turn { right: 2%; top: -58px; }
+.note-cases { position: relative; justify-content: flex-end; margin: 18px 0 4px; }
+.note-each { right: 0; bottom: -64px; }
+@media (max-width: 1023px) {
+  .margin-note { position: relative; inset: auto; margin: 6px 0 10px; font-size: 21px; white-space: normal; }
+  .note-arrow { width: 56px; height: 36px; }
+  .note-price-host { display: block; }
+  .note-price { justify-content: center; margin-top: 10px; }
+  .note-turn { justify-content: flex-end; }
+  .note-each { margin-top: 14px; }
+  .note-click { position: absolute; left: -4px; right: auto; top: auto; bottom: calc(100% + 2px); margin: 0; white-space: nowrap; }
+  .note-click .note-text { font-size: 24px; }
+  .hero-ctas { margin-top: 74px; }
+}
+
+/* Flip cards. Both faces share one grid cell, so the card takes the taller face's height. */
+.flip-card {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  perspective: 1600px;
+  -webkit-tap-highlight-color: transparent;
+}
+.flip-card:focus-visible { outline: 2px solid #d2a68c; outline-offset: 4px; border-radius: 4px; }
+.flip-card-inner { display: grid; transform-style: preserve-3d; transition: transform 0.8s cubic-bezier(.2,.75,.2,1); }
+.flip-card.is-flipped .flip-card-inner { transform: rotateY(180deg); }
+.flip-face {
+  grid-area: 1 / 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 248px;
+  padding: 30px 30px 26px;
+  overflow: hidden;
+  border-radius: 4px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flip-front {
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(20,32,31,0.06), 0 14px 34px -14px rgba(20,32,31,0.22);
+  transition: box-shadow 0.3s;
+}
+.flip-card:hover .flip-front { box-shadow: 0 1px 2px rgba(20,32,31,0.06), 0 22px 44px -16px rgba(20,32,31,0.30); }
+/* the foil corner: a folded rose-gold leaf, top right */
+.flip-front::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 46px;
+  height: 46px;
+  opacity: 0.9;
+  background: linear-gradient(225deg, #f0d5c4 0%, #d2a68c 32%, #a9714f 49%, transparent 50%);
+}
+.flip-back {
+  background: #16292a;
+  color: #f7f7f6;
+  transform: rotateY(180deg);
+  box-shadow: 0 18px 40px -16px rgba(22,41,42,0.55);
+}
+.flip-hint {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #656f6d;
+}
+.flip-hint svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.flip-back .flip-hint { margin-top: auto; padding-top: 16px; color: #93c2be; }
+/* the four pillars: a light wash of the brand mint */
+.pillar-card .flip-front { background: linear-gradient(155deg, #ffffff 0%, #f5faf9 42%, #e1eeeb 100%); }
+.case-card .flip-face { min-height: 190px; padding: 24px 26px 22px; }
+
+/* Line icons (app/_components/homepage-icons.tsx) */
+.line-icon { fill: none; stroke: #24403e; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.line-icon .icon-acc { stroke: #a9714f; }
+
+/* The closing seal "presses" once the ribbon has wrapped it. */
+.close-seal .seal-ring { position: absolute; inset: -16px; border-radius: 50%; pointer-events: none; }
+.close-seal.is-sealed img { animation: seal-press 1s cubic-bezier(.3,.7,.2,1) both; }
+.close-seal.is-sealed .hero-seal-bloom { animation: seal-glow 1.6s ease-out both; }
+.close-seal.is-sealed .seal-ring { animation: seal-ring 1.4s ease-out both; }
+@keyframes seal-press {
+  0% { transform: scale(1); }
+  35% { transform: scale(0.93); filter: brightness(1.25); }
+  100% { transform: scale(1); filter: brightness(1.08); }
+}
+@keyframes seal-glow {
+  0% { opacity: 0.6; transform: scale(0.9); }
+  40% { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes seal-ring {
+  0% { box-shadow: 0 0 0 0 rgba(210,166,140,0.55); }
+  100% { box-shadow: 0 0 0 26px rgba(210,166,140,0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-metal::after { display: none; animation: none; }
+  .flip-card-inner, .note-arrow path, .note-text { transition: none; }
+  .margin-note-onload .note-text, .margin-note-onload .note-arrow path, .note-nudge { animation: none; }
+  .close-seal.is-sealed img, .close-seal.is-sealed .hero-seal-bloom, .close-seal.is-sealed .seal-ring { animation: none; }
+}
+
 /* Scrabble tile entrance animation */
 @keyframes tile-in {
   0%   { opacity: 0; transform: translateY(14px) scale(0.84); }

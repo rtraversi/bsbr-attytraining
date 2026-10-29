@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MarginNote } from "./motion/margin-note";
 
 // Hero. Katy's headline and opening lines, verbatim.
 //
@@ -45,10 +46,15 @@ const DELIVERABLES = [
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-teal-ink text-marble">
+    // hero-metal (globals.css, 2026-10-29): brushed metal with a faded gridline
+    // behind it and a slow sheen. The <i data-ribbon> markers route the ribbon
+    // (motion/page-ribbon.tsx), which starts at #hero-seal.
+    <section id="hero" className="hero-metal relative overflow-hidden text-marble">
+      <i data-ribbon="0.9" style={{ top: "34%" }} aria-hidden />
+      <i data-ribbon="0.95" style={{ top: "66%" }} aria-hidden />
       <div className="relative z-10 mx-auto max-w-[1140px] px-6 pt-[72px] text-center md:px-8 md:pt-24">
         {/* The seal. height-auto is load-bearing — see the img note below. */}
-        <div className="hero-seal relative mx-auto w-[126px] md:w-[150px]">
+        <div id="hero-seal" className="hero-seal relative mx-auto w-[126px] md:w-[150px]">
           <span className="hero-seal-bloom" aria-hidden />
           {/* ⚠️ h-auto is REQUIRED. This img carries width={326} height={326},
               which map to CSS presentational hints. Setting only the width
@@ -85,28 +91,47 @@ export function HeroSection() {
           trained staff, and a signed record to prove it.
         </p>
 
-        <div className="hero-rise mt-[38px] flex flex-wrap items-center justify-center gap-3.5 [animation-delay:0.56s]">
-          <Link
-            href="/pricing"
-            className="rounded-[2px] bg-marble px-7 py-3.5 text-[15px] font-medium text-teal-ink transition-colors hover:bg-gold-pale"
-          >
-            Accredit your firm
-          </Link>
+        <div className="hero-rise hero-ctas mt-[38px] flex flex-wrap items-center justify-center gap-3.5 [animation-delay:0.56s]">
+          <span className="relative inline-block">
+            <Link
+              href="/pricing"
+              className="inline-block rounded-[7px] bg-marble px-7 py-3.5 text-[15px] font-medium text-teal-ink transition-colors hover:bg-gold-pale"
+            >
+              Accredit your firm
+            </Link>
+            <MarginNote
+              text="Click here"
+              point="down-right"
+              tone="dark"
+              trigger="load"
+              nudge
+              className="note-click"
+            />
+          </span>
           <Link
             href="#exposure"
-            className="rounded-[2px] bg-marble/10 px-7 py-3.5 text-[15px] font-medium text-marble transition-colors hover:bg-marble hover:text-teal-ink"
+            className="rounded-[7px] bg-marble/10 px-7 py-3.5 text-[15px] font-medium text-marble transition-colors hover:bg-marble hover:text-teal-ink"
           >
             Why it matters
           </Link>
         </div>
 
         <p className="hero-rise mt-6 text-[14px] text-silver [animation-delay:0.66s]">
-          $35 per seat, per year. The accreditation belongs to your firm.
+          <span className="note-price-host">
+            $35 per seat, per year. The accreditation belongs to your firm.
+            <MarginNote
+              text="and it stays flat when you renew"
+              point="down-left"
+              arrowFirst
+              tone="dark"
+              className="note-price"
+            />
+          </span>
         </p>
       </div>
 
       {/* Katy's three deliverables, as the ruled base of the certificate. */}
-      <div className="mt-16 border-t border-mint-line/25 bg-teal-deep">
+      <div className="relative z-[2] mt-16 border-t border-mint-line/25 bg-teal-deep">
         <div className="mx-auto grid max-w-[1140px] grid-cols-1 px-6 md:px-8 lg:grid-cols-3">
           {DELIVERABLES.map((d, i) => (
             <h2

@@ -77,7 +77,7 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/pricing"
-            className="whitespace-nowrap rounded-[1px] bg-teal-ink px-5 py-2.5 text-[15px] font-medium text-marble transition-colors hover:bg-ink"
+            className="whitespace-nowrap rounded-[7px] bg-teal-ink px-5 py-2.5 text-[15px] font-medium text-marble transition-colors hover:bg-ink"
           >
             Accredit your firm
           </Link>
@@ -138,7 +138,7 @@ export function SiteHeader() {
               <Link
                 href="/pricing"
                 onClick={() => setOpen(false)}
-                className="block rounded-[1px] bg-teal-ink px-5 py-3 text-center text-[15px] font-medium text-marble"
+                className="block rounded-[7px] bg-teal-ink px-5 py-3 text-center text-[15px] font-medium text-marble"
               >
                 Accredit your firm
               </Link>
