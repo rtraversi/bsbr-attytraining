@@ -21,7 +21,13 @@ export default async function LoginPage({
   const { error } = await searchParams
 
   return (
-    <div className="font-headline relative min-h-screen w-full">
+    <div
+      className="font-headline relative min-h-screen w-full"
+      style={{
+        '--brand-primary': '#3D6764',
+        '--brand-emphasis': '#24403E',
+      } as React.CSSProperties}
+    >
       {/* Full-page drone footage + dark overlay behind everything. The white form
           panel (opaque) covers the top of the right column; the footer sits below
           it so the footage shows through the translucent bar — but only within the
@@ -54,9 +60,9 @@ export default async function LoginPage({
             </div>
           </div>
 
-          {/* Footer bar — translucent #00B9FF over the footage, right column only */}
-          <div className="bg-[#00B9FF]/50 px-6 py-4">
-            <nav className="flex flex-wrap items-center justify-center gap-x-1 gap-y-0.5 text-[#FFE5E5]">
+          {/* Footer bar — translucent teal-ink over footage, right column only */}
+          <div className="bg-[#16292A]/85 px-6 py-4">
+            <nav className="flex flex-wrap items-center justify-center gap-x-1 gap-y-0.5 text-[#CDE3DF]">
               <Link href="/terms" className={FOOTER_LINK}>
                 Terms
               </Link>
