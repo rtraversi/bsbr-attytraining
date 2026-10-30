@@ -1,8 +1,21 @@
 # Session Handoff
 
-**Date:** 2026-10-29 (latest sections: Max, Rob; earlier sections: Rob, Max)
-**Who:** Max, Rob (earlier sections: Rob, Max)
+**Date:** 2026-10-30 (latest section; older sections kept below)
+**Who:** Rob, with terminal-Claude (earlier sections: Max, Rob, Max)
 **Written for:** someone who has never seen this repository
+
+---
+
+## ⚪ Added 2026-10-30 (Rob, terminal): Facebook post drafting, no code changes
+
+Full record: `.planning/sessions/20261030-rob-summary.md`.
+
+- Claude drafted a "why law firms should use Iurix" post for the **Iurix Accreditation Facebook
+  page**. **Rob and Katy are writing their own**, so nothing from the drafts is being used.
+- The spinning seal video `public/brand/iurix-seal-spin.mp4` is the image they plan to use with the
+  post. The raw MP4 doesn't have the radial edge fade the website applies.
+- `supabase/grants/` is still untracked. It isn't from this session, so it was left out of this commit.
+- **Next:** unchanged from the 2026-10-29 evening section below.
 
 ---
 
