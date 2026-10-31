@@ -1,6 +1,7 @@
 import { SectionHead } from "./section-head";
 import { FlipCard, FlipHint } from "./motion/flip-card";
 import { MarginNote } from "./motion/margin-note";
+import { PillarClip } from "./motion/pillar-clip";
 import {
   AttestationIcon,
   MonitoringIcon,
@@ -17,29 +18,35 @@ import {
 //
 // Flip cards since 2026-10-29 (Rob): the title and an icon on the front, over a
 // light mint wash; Katy's description on the dark back. Same words as before,
-// only the reveal changed.
+// only the reveal changed. On 2026-10-31 (Rob) the roman numerals came off both
+// faces (n stays as the React key) and each front gained a short clip in its
+// open space, played on hover (motion/pillar-clip.tsx).
 
 const PILLARS = [
   {
     n: "I",
+    clip: "policy",
     Icon: PolicyIcon,
     title: "A written firm policy",
     body: "A governance document tailored to your firm: what your staff may use AI for, what they may not, and how client confidences are handled.",
   },
   {
     n: "II",
+    clip: "training",
     Icon: TrainingIcon,
     title: "Online staff training",
     body: "Interactive training for every non-attorney team member, covering confidentiality, fabricated citations, client data, and where AI-assisted work stops.",
   },
   {
     n: "III",
+    clip: "attestation",
     Icon: AttestationIcon,
     title: "Attestations of compliance",
     body: "Each team member passes a scored assessment and signs an individual attestation. The firm holds the signed record, not just a completion tick.",
   },
   {
     n: "IV",
+    clip: "monitoring",
     Icon: MonitoringIcon,
     title: "Ongoing monitoring",
     body: "We track AI-related discipline decisions and sanctions nationwide, and update the training as the rules move, so your policy does not age out beneath you.",
@@ -71,16 +78,14 @@ export function StandardSection() {
 
         <div className="relative grid gap-[26px] md:grid-cols-2 md:gap-x-[34px] md:gap-y-[30px]">
           <MarginNote text="turn one over" point="down-right" className="note-turn" />
-          {PILLARS.map(({ n, Icon, title, body }) => (
+          {PILLARS.map(({ n, clip, Icon, title, body }) => (
             <FlipCard
               key={n}
               className="pillar-card"
               front={
                 <>
-                  <span className="flex items-start justify-between pr-10">
-                    <Icon className="h-[50px] w-[50px]" />
-                    <span className="font-serif-italic text-[20px] text-gold-deep">{n}</span>
-                  </span>
+                  <PillarClip name={clip} />
+                  <Icon className="h-[50px] w-[50px]" />
                   <span className="font-display mt-auto pt-8 text-[26px] leading-[1.15] tracking-[-0.015em] text-ink">
                     {title}
                   </span>
@@ -89,8 +94,7 @@ export function StandardSection() {
               }
               back={
                 <>
-                  <span className="font-serif-italic text-[16px] text-gold-soft">{n}</span>
-                  <span className="mt-0.5 text-[15px] tracking-[0.02em] text-mint">{title}</span>
+                  <span className="text-[15px] tracking-[0.02em] text-mint">{title}</span>
                   <span className="mt-4 text-[17px] leading-[1.6] text-marble">{body}</span>
                   <FlipHint>Turn back</FlipHint>
                 </>

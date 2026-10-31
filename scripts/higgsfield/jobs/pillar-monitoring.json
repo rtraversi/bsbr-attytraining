@@ -1,0 +1,10 @@
+{
+  "model": "bytedance/seedance-2.5/text-to-video",
+  "input": {
+    "prompt": "Elegant macro still-life, camera locked off, viewed from directly above. A small relief map of the contiguous United States in pale warm sandstone, raised slightly off the surface with crisp soft shadows, fully visible and centered. At first no lights are on. A soft band of light sweeps slowly across the map from the far west coast to the east coast, and as it passes, small points of warm rose-gold copper light appear one after another in different states until about a dozen glow gently. No state names, no labels. Soft, bright, even, cool daylight. The background is a very pale cool mint-white seamless surface, almost pure white with a faint green-grey tint and no warm or beige tones, filling the whole frame edge to edge: no desk, no horizon line, no visible edges, no dark corners, no vignette. Wide, low composition: the subject sits small in the middle horizontal band with generous empty space above and below. No hands. No readable text, no letters, no logos.",
+    "duration": 4,
+    "resolution": "480p",
+    "aspect_ratio": "21:9",
+    "generate_audio": false
+  }
+}

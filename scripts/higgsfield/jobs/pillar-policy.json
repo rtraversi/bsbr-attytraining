@@ -1,0 +1,10 @@
+{
+  "model": "bytedance/seedance-2.5/text-to-video",
+  "input": {
+    "prompt": "Elegant macro still-life, camera locked off, viewed from slightly above and pulled back so that one whole sheet of warm ivory paper is visible, small in the frame, lying flat and still from the very first moment, with several soft grey lines suggesting text and a clear soft shadow along its edges. A round brass seal stamp descends into frame from above, presses firmly down onto the lower right corner of the sheet, then lifts straight back up out of frame, leaving behind a round metallic rose-gold wax seal with a finely ridged rim. A small glint of light runs across the fresh seal. Soft, bright, even, cool daylight. The background is a very pale cool mint-white seamless surface, almost pure white with a faint green-grey tint and no warm or beige tones, filling the whole frame edge to edge: no desk, no horizon line, no visible edges, no dark corners, no vignette. Wide, low composition: the subject sits small in the middle horizontal band with generous empty space above and below. No hands. No readable text, no letters, no logos.",
+    "duration": 4,
+    "resolution": "480p",
+    "aspect_ratio": "21:9",
+    "generate_audio": false
+  }
+}

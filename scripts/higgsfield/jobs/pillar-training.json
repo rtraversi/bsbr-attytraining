@@ -1,0 +1,10 @@
+{
+  "model": "bytedance/seedance-2.5/text-to-video",
+  "input": {
+    "prompt": "Elegant macro still-life, camera locked off, eye level. Five small identical faceless figurines of brushed steel, simple rounded abstract human forms like minimalist chess pieces, stand evenly spaced in a row. A thin glowing rose-gold line draws itself along the surface beneath them from left to right, and as it reaches each figure that figure fills from within with a soft, deep, muted teal glow, the colour of dark sea-green ink and not bright cyan, one after another, until all five glow. Soft, bright, even, cool daylight. The background is a very pale cool mint-white seamless surface, almost pure white with a faint green-grey tint and no warm or beige tones, filling the whole frame edge to edge: no desk, no horizon line, no visible edges, no dark corners, no vignette. Wide, low composition: the subject sits small in the middle horizontal band with generous empty space above and below. No hands. No readable text, no letters, no logos.",
+    "duration": 4,
+    "resolution": "480p",
+    "aspect_ratio": "21:9",
+    "generate_audio": false
+  }
+}

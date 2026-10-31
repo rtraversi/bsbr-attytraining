@@ -1,0 +1,10 @@
+{
+  "model": "bytedance/seedance-2.5/text-to-video",
+  "input": {
+    "prompt": "Elegant macro still-life, camera locked off. A fountain pen with a polished rose-gold nib and a deep teal lacquered barrel glides across smooth cream paper and writes one flowing signature flourish from left to right in dark teal ink: a graceful abstract looping line, not letters. At the end the pen lifts away and a tiny glint of light catches the wet ink. Soft, bright, even daylight. The paper fills the whole frame edge to edge: very pale cream-white with a faint cool mint tint, seamless, no visible paper edges, no desk, no dark corners. Shallow depth of field. Wide, low composition with all the action in the middle horizontal band of the frame. The pen moves on its own; no hands. No text, no letters, no logos.",
+    "duration": 4,
+    "resolution": "480p",
+    "aspect_ratio": "21:9",
+    "generate_audio": false
+  }
+}
