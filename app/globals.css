@@ -448,6 +448,10 @@
   border-radius: 4px;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  /* Keeps the pillar clips' mix-blend-mode inside the face. Without it the blend
+     group is .flip-card-inner, and isolating that flattens its preserve-3d, so a
+     flipped card showed its front mirrored instead of its back. */
+  isolation: isolate;
 }
 .flip-front {
   background: #ffffff;
