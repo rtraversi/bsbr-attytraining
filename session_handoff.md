@@ -14,6 +14,10 @@ Full record: `.planning/sessions/20261031-rob-summary.md`.
   verified live): a stamp pressing a wax seal, figurines lighting teal, a pen signing, a map lighting
   up. Touch screens and reduced motion get a still. The roman numerals are gone from the cards.
   Case cards unchanged. Code: `app/_components/motion/pillar-clip.tsx`.
+- **Follow-up fix, also live (run `41206420277`, commit `3d6250a`):** in **Firefox**, a flipped card
+  showed its front mirrored instead of its back. The clips' blend mode flattened the 3D flip; fixed with
+  `isolation: isolate` on `.flip-face` in `app/globals.css`. Chrome never had the problem, so check
+  flip/3D changes in Firefox too. Verified in Playwright Firefox before and after.
 - Seedance 2.5 at 480p, re-encoded to 50–92 KB each. **Higgsfield spend is now roughly $9.40–10.00
   of $115**; the discount window ends ~2026-11-05.
 - **Next:** optional clip tweaks (policy sheet fades out; map opens mid-sweep), then the Next.js 16
