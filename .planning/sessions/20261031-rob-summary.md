@@ -60,3 +60,12 @@ Process: GSD isn't installed on Rob's machine, so edits were made directly, as o
 
 - Was the dropped map request billed? Check open.higgsfield.ai/billing.
 - Rob set up Cloudflare MCPs this session; not used yet.
+
+## Follow-up (same day): Firefox flip fix — LIVE
+
+Rob found that in **Firefox** a flipped pillar card showed its front mirrored instead of its back. The clips'
+`mix-blend-mode` made `.flip-card-inner` the blend group; Firefox isolates that and flattens its
+`preserve-3d`, so `backface-visibility` stopped working. Chrome was unaffected, which is why the preview
+review missed it. Fix: `isolation: isolate` on `.flip-face` (`app/globals.css`), commit `3d6250a`.
+Reproduced and verified fixed in Playwright Firefox (live before, preview after, live after). Production
+run `41206420277`, success. **Lesson: test flip/3D changes in Firefox as well as Chrome.**
