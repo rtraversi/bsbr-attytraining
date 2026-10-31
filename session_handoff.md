@@ -1,8 +1,23 @@
 # Session Handoff
 
-**Date:** 2026-10-30 (latest section; older sections kept below)
-**Who:** Rob, with terminal-Claude (earlier sections: Max, Rob, Max)
+**Date:** 2026-10-31 (latest section; older sections kept below)
+**Who:** Rob, with terminal-Claude (earlier sections: Rob, Max, Rob, Max)
 **Written for:** someone who has never seen this repository
+
+---
+
+## 🟢 Added 2026-10-31 (Rob, terminal): Higgsfield clips in the pillar flip cards — LIVE
+
+Full record: `.planning/sessions/20261031-rob-summary.md`.
+
+- **Each of the four pillar cards now plays a short clip on hover** (production run `41196587506`,
+  verified live): a stamp pressing a wax seal, figurines lighting teal, a pen signing, a map lighting
+  up. Touch screens and reduced motion get a still. The roman numerals are gone from the cards.
+  Case cards unchanged. Code: `app/_components/motion/pillar-clip.tsx`.
+- Seedance 2.5 at 480p, re-encoded to 50–92 KB each. **Higgsfield spend is now roughly $9.40–10.00
+  of $115**; the discount window ends ~2026-11-05.
+- **Next:** optional clip tweaks (policy sheet fades out; map opens mid-sweep), then the Next.js 16
+  upgrade.
 
 ---
 
